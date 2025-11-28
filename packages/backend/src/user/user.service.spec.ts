@@ -9,6 +9,7 @@ import { SubscriptionTier } from '@prisma/client';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import { EmailService } from '@/email/email.service';
 
 jest.mock('bcryptjs');
 
@@ -16,6 +17,7 @@ describe('UserService', () => {
   let service: UserService;
   let prismaService: PrismaService;
   let jwtService: JwtService;
+  let emailService: EmailService;
 
   const mockUser = {
     id: 'user-1',
@@ -67,12 +69,20 @@ describe('UserService', () => {
             verify: jest.fn(),
           },
         },
+        {
+          provide: EmailService,
+          useValue: {
+            sendVerificationEmail: jest.fn(),
+            sendPasswordResetEmail: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<UserService>(UserService);
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
+    emailService = module.get<EmailService>(EmailService);
   });
 
   afterEach(() => {
@@ -385,6 +395,43 @@ describe('UserService', () => {
       expect(result.jobs).toEqual([]);
       expect(result.optimizations).toEqual([]);
       expect(result.generatedPdfs).toEqual([]);
+    });
+  });
+  describe('validateOAuthLogin', () => {
+    const oauthProfile = {
+      email: 'oauth@example.com',
+      username: 'OAuth User',
+      avatarUrl: 'http://example.com/avatar.jpg',
+      provider: 'google',
+      providerId: '123456',
+    };
+
+    it('should return existing user if found', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
+
+      const result = await service.validateOAuthLogin(oauthProfile);
+
+      expect(result).toEqual(mockUser);
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { email: oauthProfile.email },
+      });
+    });
+
+    it('should create new user if not found', async () => {
+      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      (prismaService.user.create as jest.Mock).mockResolvedValue({
+        ...mockUser,
+        email: oauthProfile.email,
+        username: oauthProfile.username,
+        avatarUrl: oauthProfile.avatarUrl,
+      });
+
+      const result = await service.validateOAuthLogin(oauthProfile);
+
+      expect(result.email).toBe(oauthProfile.email);
+      expect(prismaService.user.create).toHaveBeenCalled();
     });
   });
 });

@@ -61,4 +61,17 @@ export const authService = {
   resetPassword: async (token: string, newPassword: string): Promise<void> => {
     await axios.post('/auth/reset-password', { token, newPassword });
   },
-};
+
+  verifyToken: async (token: string) => {
+    // Set the token in the authorization header
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    try {
+      // Get current user info to verify the token
+      const response = await axios.get('/auth/me');
+      return response.data;
+    } finally {
+      // Clean up the authorization header
+      delete axios.defaults.headers.common['Authorization'];
+    }
+  },
+}

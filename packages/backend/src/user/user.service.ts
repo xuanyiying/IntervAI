@@ -407,4 +407,50 @@ export class UserService {
       },
     });
   }
+
+  /**
+   * Validate OAuth login
+   */
+  async validateOAuthLogin(profile: {
+    email: string;
+    username: string;
+    avatarUrl?: string;
+    provider: string;
+    providerId: string;
+  }): Promise<User> {
+    // Check if user exists by email
+    let user = await this.prisma.user.findUnique({
+      where: { email: profile.email },
+    });
+
+    if (!user) {
+      // Create new user if not exists
+      // Generate random password since they use OAuth
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+      user = await this.prisma.user.create({
+        data: {
+          email: profile.email,
+          username: profile.username,
+          passwordHash,
+          subscriptionTier: SubscriptionTier.FREE,
+          isActive: true,
+          emailVerified: true, // OAuth emails are verified
+          avatarUrl: profile.avatarUrl,
+        },
+      });
+    } else {
+      // Update existing user info if needed
+      // For example, update avatar if not set
+      if (!user.avatarUrl && profile.avatarUrl) {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: { avatarUrl: profile.avatarUrl },
+        });
+      }
+    }
+
+    return user;
+  }
 }

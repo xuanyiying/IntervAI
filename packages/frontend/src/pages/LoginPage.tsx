@@ -75,6 +75,13 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  // Check if OAuth is enabled
+  const isGoogleOAuthEnabled =
+    import.meta.env.VITE_GOOGLE_OAUTH_ENABLED === 'true';
+  const isGithubOAuthEnabled =
+    import.meta.env.VITE_GITHUB_OAUTH_ENABLED === 'true';
+  const isAnyOAuthEnabled = isGoogleOAuthEnabled || isGithubOAuthEnabled;
+
   return (
     <div
       style={{
@@ -169,31 +176,49 @@ const LoginPage: React.FC = () => {
             </Form.Item>
           </Form>
 
-          {/* Divider */}
-          <Divider plain>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              或使用以下方式登录
-            </Text>
-          </Divider>
+          {/* Divider and Social Login */}
+          {isAnyOAuthEnabled && (
+            <>
+              <Divider plain>
+                <Text type="secondary" style={{ fontSize: '12px' }}>
+                  或使用以下方式登录
+                </Text>
+              </Divider>
 
-          {/* Social Login */}
-          <Space
-            style={{ width: '100%', justifyContent: 'center' }}
-            size="large"
-          >
-            <Button
-              shape="circle"
-              size="large"
-              icon={<GoogleOutlined />}
-              style={{ width: '48px', height: '48px' }}
-            />
-            <Button
-              shape="circle"
-              size="large"
-              icon={<GithubOutlined />}
-              style={{ width: '48px', height: '48px' }}
-            />
-          </Space>
+              {/* Social Login */}
+              <Space
+                style={{ width: '100%', justifyContent: 'center' }}
+                size="large"
+              >
+                {isGoogleOAuthEnabled && (
+                  <Button
+                    shape="circle"
+                    size="large"
+                    icon={<GoogleOutlined />}
+                    style={{ width: '48px', height: '48px' }}
+                    onClick={() => {
+                      window.location.href = `${
+                        import.meta.env.VITE_API_BASE_URL
+                      }/auth/google`;
+                    }}
+                  />
+                )}
+                {isGithubOAuthEnabled && (
+                  <Button
+                    shape="circle"
+                    size="large"
+                    icon={<GithubOutlined />}
+                    style={{ width: '48px', height: '48px' }}
+                    onClick={() => {
+                      window.location.href = `${
+                        import.meta.env.VITE_API_BASE_URL
+                      }/auth/github`;
+                    }}
+                  />
+                )}
+              </Space>
+            </>
+          )}
 
           {/* Register Link */}
           <div style={{ textAlign: 'center' }}>

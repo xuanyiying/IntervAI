@@ -15,11 +15,16 @@ import ResetPasswordPage from '../pages/ResetPasswordPage';
 import PricingPage from '../pages/PricingPage';
 import TermsOfServicePage from '../pages/TermsOfServicePage';
 import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
+import OAuthCallbackPage from '../pages/OAuthCallbackPage';
 
 const routes: RouteObject[] = [
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/oauth/callback',
+    element: <OAuthCallbackPage />,
   },
   {
     path: '/register',

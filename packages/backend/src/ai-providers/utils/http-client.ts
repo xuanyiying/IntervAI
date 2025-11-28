@@ -4,7 +4,12 @@
  */
 
 import { Logger } from '@nestjs/common';
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosError,
+  AxiosResponse,
+} from 'axios';
 
 /**
  * Authentication configuration
@@ -63,8 +68,11 @@ export class AIHttpClient {
     this.client.interceptors.request.use(
       (request) => {
         if (this.logger) {
+          const fullUrl = request.baseURL
+            ? `${request.baseURL.replace(/\/$/, '')}/${request.url?.replace(/^\//, '')}`
+            : request.url;
           this.logger.debug(
-            `[${this.providerName}] ${request.method?.toUpperCase()} ${request.url}`
+            `[${this.providerName}] ${request.method?.toUpperCase()} ${fullUrl}`
           );
         }
         return request;
@@ -138,9 +146,11 @@ export class AIHttpClient {
   /**
    * Make a GET request
    */
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.get<T>(url, config);
-    return response.data;
+  async get<T = any>(
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
+    return this.client.get<T>(url, config);
   }
 
   /**
@@ -150,9 +160,8 @@ export class AIHttpClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
-    const response = await this.client.post<T>(url, data, config);
-    return response.data;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.post<T>(url, data, config);
   }
 
   /**
@@ -162,17 +171,18 @@ export class AIHttpClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
-    const response = await this.client.put<T>(url, data, config);
-    return response.data;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.put<T>(url, data, config);
   }
 
   /**
    * Make a DELETE request
    */
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    const response = await this.client.delete<T>(url, config);
-    return response.data;
+  async delete<T = any>(
+    url: string,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
+    return this.client.delete<T>(url, config);
   }
 
   /**
@@ -182,8 +192,7 @@ export class AIHttpClient {
     url: string,
     data?: any,
     config?: AxiosRequestConfig
-  ): Promise<T> {
-    const response = await this.client.patch<T>(url, data, config);
-    return response.data;
+  ): Promise<AxiosResponse<T>> {
+    return this.client.patch<T>(url, data, config);
   }
 }
