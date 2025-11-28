@@ -68,7 +68,9 @@ export class OllamaProvider implements AIProvider {
     this.retryHandler = new RetryHandler();
 
     // Initialize HTTP client using AIHttpClient
-    const baseUrl = config.baseUrl || 'http://localhost:11434';
+    let baseUrl = config.baseUrl || 'http://localhost:11434';
+    // Remove trailing slash and /api if present to prevent double api paths
+    baseUrl = baseUrl.replace(/\/$/, '').replace(/\/api$/, '');
     const httpClient = new AIHttpClient({
       baseURL: baseUrl,
       timeout: config.timeout || 30000,
@@ -186,19 +188,13 @@ export class OllamaProvider implements AIProvider {
       this.logger.debug('Performing Ollama health check');
 
       // Try to get tags (list models) as a health check
-      const response = await this.httpClient.get('/api/tags');
+      await this.httpClient.get('/api/tags');
 
-      const isHealthy = response.status === 200;
+      this.logger.log('Ollama provider health check passed');
+      // Refresh models list on successful health check
+      await this.refreshModelsList();
 
-      if (isHealthy) {
-        this.logger.log('Ollama provider health check passed');
-        // Refresh models list on successful health check
-        await this.refreshModelsList();
-      } else {
-        this.logger.warn('Ollama provider health check failed');
-      }
-
-      return isHealthy;
+      return true;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);

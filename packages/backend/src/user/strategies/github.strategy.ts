@@ -1,0 +1,43 @@
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-github2';
+import { VerifyCallback } from 'passport-google-oauth20';
+import { ConfigService } from '@nestjs/config';
+import { UserService } from '../user.service';
+
+@Injectable()
+export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userService: UserService
+  ) {
+    super({
+      clientID:
+        configService.get<string>('GITHUB_CLIENT_ID') || 'mock-client-id',
+      clientSecret:
+        configService.get<string>('GITHUB_CLIENT_SECRET') ||
+        'mock-client-secret',
+      callbackURL:
+        configService.get<string>('GITHUB_CALLBACK_URL') ||
+        'http://localhost:3000/api/v1/auth/github/callback',
+      scope: ['user:email'],
+    });
+  }
+
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: any,
+    done: VerifyCallback
+  ): Promise<any> {
+    const { username, emails, photos } = profile;
+    const user = await this.userService.validateOAuthLogin({
+      email: emails[0].value,
+      username: username,
+      avatarUrl: photos[0].value,
+      provider: 'github',
+      providerId: profile.id,
+    });
+    done(null, user);
+  }
+}

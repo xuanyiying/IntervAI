@@ -9,6 +9,8 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Req,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,6 +28,8 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { GithubAuthGuard } from './guards/github-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -168,5 +172,60 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async exportUserData(@Request() req: any): Promise<UserDataExportDto> {
     return this.userService.exportUserData(req.user.id);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth login' })
+  async googleAuth(@Req() _req: any) {
+    // Guard redirects to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleAuthRedirect(@Req() req: any, @Res() res: any) {
+    try {
+      const { accessToken } = await this.userService.login({
+        email: req.user.email,
+        password: '', // Password not needed for OAuth login response generation
+      } as LoginDto);
+
+      // Redirect to frontend with token
+      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
+    } catch (error: any) {
+      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      res.redirect(
+        `${frontendUrl}/oauth/callback?error=${encodeURIComponent(error.message)}`
+      );
+    }
+  }
+
+  @Get('github')
+  @UseGuards(GithubAuthGuard)
+  @ApiOperation({ summary: 'GitHub OAuth login' })
+  async githubAuth(@Req() _req: any) {
+    // Guard redirects to GitHub
+  }
+
+  @Get('github/callback')
+  @UseGuards(GithubAuthGuard)
+  @ApiOperation({ summary: 'GitHub OAuth callback' })
+  async githubAuthRedirect(@Req() req: any, @Res() res: any) {
+    try {
+      const { accessToken } = await this.userService.login({
+        email: req.user.email,
+        password: '', // Password not needed for OAuth login response generation
+      } as LoginDto);
+
+      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
+    } catch (error: any) {
+      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      res.redirect(
+        `${frontendUrl}/oauth/callback?error=${encodeURIComponent(error.message)}`
+      );
+    }
   }
 }
