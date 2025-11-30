@@ -32,6 +32,7 @@ import {
   ModelConfig,
   CreateModelConfigDto,
 } from '../services/modelAdminService';
+import './common.css';
 
 const { Title, Text } = Typography;
 

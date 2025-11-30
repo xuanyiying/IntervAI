@@ -37,7 +37,8 @@ export class PaymentController {
   ) {
     return this.paymentService.createCheckoutSession(
       req.user.id,
-      createCheckoutSessionDto.priceId
+      createCheckoutSessionDto.priceId,
+      createCheckoutSessionDto.provider
     );
   }
 
@@ -74,13 +75,35 @@ export class PaymentController {
 
   @Post('webhook')
   @ApiOperation({ summary: 'Stripe webhook handler' })
-  async handleWebhook(
+  async handleStripeWebhook(
     @Headers('stripe-signature') signature: string,
     @Req() req: RawBodyRequest<Request>
   ) {
     if (!signature) {
       throw new BadRequestException('Missing stripe-signature header');
     }
-    return this.paymentService.handleWebhook(signature, req.rawBody as Buffer);
+    return this.paymentService.handleWebhook(
+      signature,
+      req.rawBody as Buffer,
+      'stripe'
+    );
+  }
+
+  @Post('webhook/paddle')
+  @ApiOperation({ summary: 'Paddle webhook handler' })
+  async handlePaddleWebhook(
+    @Headers('paddle-signature') signature: string,
+    @Req() req: RawBodyRequest<Request>
+  ) {
+    if (!signature) {
+      throw new BadRequestException('Missing paddle-signature header');
+    }
+    // Paddle might send raw body or JSON, depending on configuration.
+    // Assuming rawBody is available.
+    return this.paymentService.handleWebhook(
+      signature,
+      req.rawBody as Buffer, // Or req.body if JSON
+      'paddle'
+    );
   }
 }

@@ -1,226 +1,144 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
-import * as fs from 'fs';
+import { PrismaService } from '../prisma/prisma.service';
+import { OssConfigService } from './config/oss.config';
+import { OssFactory } from './providers/oss.factory';
+import { FileType, OssType } from './interfaces/storage.interface';
 
-jest.mock('fs');
+// Mock dependencies
+const mockPrismaService = {
+  storage: {
+    create: jest.fn(),
+    findFirst: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    delete: jest.fn(),
+    update: jest.fn(),
+    count: jest.fn(),
+    aggregate: jest.fn(),
+  },
+};
+
+const mockOssConfigService = {
+  getConfig: jest.fn().mockReturnValue({
+    type: OssType.MINIO,
+    config: {},
+  }),
+};
+
+const mockOssService = {
+  uploadFile: jest.fn(),
+  downloadFile: jest.fn(),
+  deleteFile: jest.fn(),
+};
 
 describe('StorageService', () => {
   let service: StorageService;
+  let prisma: typeof mockPrismaService;
 
   beforeEach(async () => {
+    // Mock OssFactory.getInstance before creating the module
+    jest.spyOn(OssFactory, 'getInstance').mockReturnValue(mockOssService as any);
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [StorageService],
+      providers: [
+        StorageService,
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: OssConfigService, useValue: mockOssConfigService },
+      ],
     }).compile();
 
     service = module.get<StorageService>(StorageService);
+    prisma = module.get(PrismaService);
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('uploadPDF', () => {
-    it('should upload PDF file successfully', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-      const buffer = Buffer.from('PDF content');
+  describe('uploadFile', () => {
+    it('should upload a file successfully', async () => {
+      const uploadData = {
+        originalName: 'test.png',
+        mimetype: 'image/png',
+        size: 1024,
+        buffer: Buffer.from('test'),
+        userId: 'user-1',
+        fileType: FileType.IMAGE,
+      };
 
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => {});
+      const uploadResult = {
+        key: 'images/test.png',
+        url: 'http://localhost:9000/bucket/images/test.png',
+        size: 1024,
+        contentType: 'image/png',
+      };
 
-      const result = await service.uploadPDF(fileName, buffer);
+      const storageRecord = {
+        id: 'file-1',
+        filename: 'test.png',
+        originalName: 'test.png',
+        mimeType: 'image/png',
+        fileSize: 1024,
+        fileUrl: uploadResult.url,
+        filePath: uploadResult.key,
+        hashMd5: '098f6bcd4621d373cade4e832627b4f6',
+        fileType: FileType.IMAGE,
+        userId: 'user-1',
+        ossType: OssType.MINIO,
+        isPublic: false,
+        downloadCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      expect(result).toBe(`/uploads/pdfs/${fileName}`);
-      expect(fs.writeFileSync).toHaveBeenCalled();
+      mockOssService.uploadFile.mockResolvedValue(uploadResult);
+      prisma.storage.findFirst.mockResolvedValue(null);
+      prisma.storage.create.mockResolvedValue(storageRecord);
+
+      const result = await service.uploadFile(uploadData);
+
+      expect(mockOssService.uploadFile).toHaveBeenCalled();
+      expect(prisma.storage.create).toHaveBeenCalled();
+      expect(result.id).toBe('file-1');
+      expect(result.url).toBe(uploadResult.url);
     });
 
-    it('should throw error if upload fails', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-      const buffer = Buffer.from('PDF content');
+    it('should return existing file if duplicate found', async () => {
+      const uploadData = {
+        originalName: 'test.png',
+        mimetype: 'image/png',
+        size: 1024,
+        buffer: Buffer.from('test'),
+        userId: 'user-1',
+        fileType: FileType.IMAGE,
+      };
 
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Write failed');
-      });
+      const existingFile = {
+        id: 'file-existing',
+        filename: 'test.png',
+        originalName: 'test.png',
+        mimeType: 'image/png',
+        fileSize: 1024,
+        fileUrl: 'http://existing-url',
+        filePath: 'images/test.png',
+        hashMd5: '098f6bcd4621d373cade4e832627b4f6',
+        fileType: FileType.IMAGE,
+        userId: 'user-1',
+        ossType: OssType.MINIO,
+        isPublic: false,
+        downloadCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      await expect(service.uploadPDF(fileName, buffer)).rejects.toThrow();
-    });
-  });
+      prisma.storage.findFirst.mockResolvedValue(existingFile);
 
-  describe('downloadPDF', () => {
-    it('should download PDF file successfully', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-      const buffer = Buffer.from('PDF content');
+      const result = await service.uploadFile(uploadData);
 
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFileSync as jest.Mock).mockReturnValue(buffer);
-
-      const result = await service.downloadPDF(fileName);
-
-      expect(result).toEqual(buffer);
-      expect(fs.readFileSync).toHaveBeenCalled();
-    });
-
-    it('should throw error if file not found', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      await expect(service.downloadPDF(fileName)).rejects.toThrow(
-        'File not found'
-      );
-    });
-
-    it('should throw error if read fails', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readFileSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Read failed');
-      });
-
-      await expect(service.downloadPDF(fileName)).rejects.toThrow();
-    });
-  });
-
-  describe('deletePDF', () => {
-    it('should delete PDF file successfully', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.unlinkSync as jest.Mock).mockImplementation(() => {});
-
-      await service.deletePDF(fileName);
-
-      expect(fs.unlinkSync).toHaveBeenCalled();
-    });
-
-    it('should not throw error if file not found', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      await expect(service.deletePDF(fileName)).resolves.not.toThrow();
-    });
-
-    it('should throw error if delete fails', async () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.unlinkSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Delete failed');
-      });
-
-      await expect(service.deletePDF(fileName)).rejects.toThrow();
-    });
-  });
-
-  describe('fileExists', () => {
-    it('should return true if file exists', () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-
-      const result = service.fileExists(fileName);
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false if file does not exist', () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      const result = service.fileExists(fileName);
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('getFileSize', () => {
-    it('should return file size in bytes', () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-      const fileSize = 1024000;
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.statSync as jest.Mock).mockReturnValue({ size: fileSize });
-
-      const result = service.getFileSize(fileName);
-
-      expect(result).toBe(fileSize);
-    });
-
-    it('should throw error if file not found', () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      expect(() => service.getFileSize(fileName)).toThrow('File not found');
-    });
-
-    it('should throw error if stat fails', () => {
-      const fileName = 'resume-opt-1-123456.pdf';
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.statSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Stat failed');
-      });
-
-      expect(() => service.getFileSize(fileName)).toThrow();
-    });
-  });
-
-  describe('cleanupExpiredFiles', () => {
-    it('should delete files older than maxAgeMs', async () => {
-      const now = Date.now();
-      const oldFileTime = now - 100 * 24 * 60 * 60 * 1000; // 100 days old
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readdirSync as jest.Mock).mockReturnValue([
-        'old-file.pdf',
-        'new-file.pdf',
-      ]);
-      (fs.statSync as jest.Mock)
-        .mockReturnValueOnce({ mtimeMs: oldFileTime }) // old-file.pdf
-        .mockReturnValueOnce({ mtimeMs: now }); // new-file.pdf
-      (fs.unlinkSync as jest.Mock).mockImplementation(() => {});
-
-      const result = await service.cleanupExpiredFiles(
-        90 * 24 * 60 * 60 * 1000
-      );
-
-      expect(result).toBe(1);
-      expect(fs.unlinkSync).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return 0 if no files to delete', async () => {
-      const now = Date.now();
-
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readdirSync as jest.Mock).mockReturnValue(['new-file.pdf']);
-      (fs.statSync as jest.Mock).mockReturnValue({ mtimeMs: now });
-
-      const result = await service.cleanupExpiredFiles(
-        90 * 24 * 60 * 60 * 1000
-      );
-
-      expect(result).toBe(0);
-      expect(fs.unlinkSync).not.toHaveBeenCalled();
-    });
-
-    it('should return 0 if upload directory does not exist', async () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(false);
-
-      const result = await service.cleanupExpiredFiles(
-        90 * 24 * 60 * 60 * 1000
-      );
-
-      expect(result).toBe(0);
-    });
-
-    it('should handle errors gracefully', async () => {
-      (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.readdirSync as jest.Mock).mockImplementation(() => {
-        throw new Error('Read directory failed');
-      });
-
-      await expect(
-        service.cleanupExpiredFiles(90 * 24 * 60 * 60 * 1000)
-      ).rejects.toThrow();
+      expect(mockOssService.uploadFile).not.toHaveBeenCalled();
+      expect(prisma.storage.create).not.toHaveBeenCalled();
+      expect(result.id).toBe('file-existing');
     });
   });
 });

@@ -28,4 +28,9 @@ export class RegisterDto {
   @IsString()
   @IsOptional()
   phone?: string;
+
+  @ApiProperty({ example: 'INV-123456', required: true })
+  @IsString()
+  @IsNotEmpty()
+  invitationCode!: string;
 }

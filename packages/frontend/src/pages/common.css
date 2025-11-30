@@ -1,0 +1,26 @@
+/* Mobile responsiveness for Settings and Profile pages */
+
+.settings-container,
+.profile-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Mobile devices */
+@media (max-width: 768px) {
+
+    .settings-container,
+    .profile-container {
+        padding: 16px;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+
+    .settings-container,
+    .profile-container {
+        padding: 12px;
+    }
+}

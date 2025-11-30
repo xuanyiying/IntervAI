@@ -9,29 +9,69 @@ import {
   message,
   Switch,
   Tag,
+  Modal,
+  Radio,
+  Space,
 } from 'antd';
-import { CheckOutlined } from '@ant-design/icons';
+import {
+  CheckOutlined,
+  CreditCardOutlined,
+  AlipayCircleOutlined,
+  WechatOutlined,
+} from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { paymentService } from '../services/payment.service';
+import { loadPaddle } from '../utils/paddle-loader';
+import './pricing.css';
 
 const { Title, Text } = Typography;
 
 const PricingPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedPriceId, setSelectedPriceId] = useState('');
+  const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'paddle'>(
+    'stripe'
+  );
   const { user } = useAuthStore();
 
-  const handleUpgrade = async (priceId: string) => {
+  const handleUpgrade = (priceId: string) => {
     if (!user) {
       message.warning('Please log in to upgrade your plan');
       return;
     }
+    setSelectedPriceId(priceId);
+    setIsModalVisible(true);
+  };
 
+  const handleConfirmPayment = async () => {
     setLoading(true);
     try {
-      const { url } = await paymentService.createCheckoutSession(priceId);
-      if (url) {
-        window.location.href = url;
+      if (paymentProvider === 'stripe') {
+        const { url } = await paymentService.createCheckoutSession(
+          selectedPriceId,
+          'stripe'
+        );
+        if (url) {
+          window.location.href = url;
+        }
+      } else {
+        // Paddle
+        const { transactionId } = await paymentService.createCheckoutSession(
+          selectedPriceId,
+          'paddle'
+        );
+        if (transactionId) {
+          const paddle = await loadPaddle();
+          paddle.Checkout.open({
+            transactionId,
+            settings: {
+              successUrl: `${window.location.origin}/payment/success`,
+            },
+          });
+          setIsModalVisible(false);
+        }
       }
     } catch (error) {
       console.error('Failed to start checkout session:', error);
@@ -42,14 +82,27 @@ const PricingPage: React.FC = () => {
   };
 
   const getPriceId = (tier: string) => {
+    const isPaddle = paymentProvider === 'paddle';
+
     if (tier === 'Pro') {
-      return isYearly
-        ? import.meta.env.VITE_STRIPE_PRICE_PRO_YEARLY
+      if (isYearly) {
+        return isPaddle
+          ? import.meta.env.VITE_PADDLE_PRICE_PRO_YEARLY
+          : import.meta.env.VITE_STRIPE_PRICE_PRO_YEARLY;
+      }
+      return isPaddle
+        ? import.meta.env.VITE_PADDLE_PRICE_PRO_MONTHLY
         : import.meta.env.VITE_STRIPE_PRICE_PRO_MONTHLY;
     }
+
     if (tier === 'Enterprise') {
-      return isYearly
-        ? import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE_YEARLY
+      if (isYearly) {
+        return isPaddle
+          ? import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_YEARLY
+          : import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE_YEARLY;
+      }
+      return isPaddle
+        ? import.meta.env.VITE_PADDLE_PRICE_ENTERPRISE_MONTHLY
         : import.meta.env.VITE_STRIPE_PRICE_ENTERPRISE_MONTHLY;
     }
     return '';
@@ -107,10 +160,16 @@ const PricingPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '40px 20px', maxWidth: 1200, margin: '0 auto' }}>
+    <div
+      className="pricing-container"
+      style={{ padding: '40px 20px', maxWidth: 1200, margin: '0 auto' }}
+    >
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
-        <Title level={1}>Simple, Transparent Pricing</Title>
+        <Title className="pricing-title" level={1}>
+          Simple, Transparent Pricing
+        </Title>
         <Text
+          className="pricing-subtitle"
           type="secondary"
           style={{ fontSize: 18, display: 'block', marginBottom: 24 }}
         >
@@ -118,6 +177,7 @@ const PricingPage: React.FC = () => {
         </Text>
 
         <div
+          className="pricing-switch-container"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -200,6 +260,71 @@ const PricingPage: React.FC = () => {
           </Col>
         ))}
       </Row>
+
+      <Modal
+        title="Select Payment Method"
+        open={isModalVisible}
+        onOk={handleConfirmPayment}
+        onCancel={() => setIsModalVisible(false)}
+        confirmLoading={loading}
+        okText="Proceed to Payment"
+      >
+        <div style={{ padding: '20px 0' }}>
+          <Radio.Group
+            onChange={(e) => setPaymentProvider(e.target.value)}
+            value={paymentProvider}
+            style={{ width: '100%' }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Radio
+                value="stripe"
+                style={{
+                  padding: '10px',
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  width: '100%',
+                }}
+              >
+                <Space>
+                  <CreditCardOutlined
+                    style={{ fontSize: '20px', color: '#1890ff' }}
+                  />
+                  <div>
+                    <Text strong>Credit Card</Text>
+                    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                      Secure payment via Stripe
+                    </div>
+                  </div>
+                </Space>
+              </Radio>
+              <Radio
+                value="paddle"
+                style={{
+                  padding: '10px',
+                  border: '1px solid #f0f0f0',
+                  borderRadius: '8px',
+                  width: '100%',
+                }}
+              >
+                <Space>
+                  <AlipayCircleOutlined
+                    style={{ fontSize: '20px', color: '#1677ff' }}
+                  />
+                  <WechatOutlined
+                    style={{ fontSize: '20px', color: '#52c41a' }}
+                  />
+                  <div>
+                    <Text strong>Alipay / WeChat Pay</Text>
+                    <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                      Local payment methods via Paddle
+                    </div>
+                  </div>
+                </Space>
+              </Radio>
+            </Space>
+          </Radio.Group>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { GenerateService } from '../generate/generate.service';
+import GenerateService from '../generate/generate.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 import { BackupService } from '../backup/backup.service';

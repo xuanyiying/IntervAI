@@ -12,8 +12,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import {
-  GenerateService,
+import GenerateService, {
   PDFOptions,
   ParsedResumeData,
 } from './generate.service';

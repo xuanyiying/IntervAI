@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  GenerateService,
+import GenerateService, {
   PDFOptions,
   ParsedResumeData,
 } from './generate.service';

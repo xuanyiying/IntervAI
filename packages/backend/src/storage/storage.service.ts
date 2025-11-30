@@ -1,191 +1,449 @@
 import { Injectable, Logger } from '@nestjs/common';
-import * as fs from 'fs';
+import { PrismaService } from '@/prisma/prisma.service';
+import { OssFactory } from './providers/oss.factory';
+import { OssService } from './providers/oss.interface';
+import { FileType, OssType, StorageFile } from './interfaces/storage.interface';
+import { Storage } from '@prisma/client';
+import { OssConfigService } from './config/oss.config';
+import * as crypto from 'crypto';
 import * as path from 'path';
+import * as fs from 'fs';
+import { Readable } from 'stream';
+import { UploadFileData, GetFilesParams } from './interfaces/storage.interface';
 
-/**
- * Storage service for managing file uploads and downloads
- * Supports both local file system and cloud storage (S3/OSS)
- * For MVP, uses local file system; can be extended for cloud storage
- */
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private readonly uploadDir = path.join(process.cwd(), 'uploads', 'pdfs');
+  private ossService: OssService;
 
-  constructor() {
-    this.ensureUploadDirectory();
+  constructor(
+    private prisma: PrismaService,
+    private ossConfigService: OssConfigService
+  ) {
+    const config = this.ossConfigService.getConfig();
+    this.ossService = OssFactory.getInstance(config);
   }
 
   /**
-   * Ensure upload directory exists
+   * Upload a single file
    */
-  private ensureUploadDirectory(): void {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-      this.logger.log(`Created upload directory: ${this.uploadDir}`);
+  async uploadFile(data: UploadFileData): Promise<StorageFile> {
+    this.logger.log(`Starting file upload: ${data.originalName}`);
+
+    // Validate file type
+    this.validateFileType(data.fileType, data.mimetype);
+
+    // Prepare file data
+    let fileData: Buffer | Readable;
+    let fileHash: string;
+
+    if (data.buffer) {
+      fileData = data.buffer;
+      fileHash = crypto.createHash('md5').update(data.buffer).digest('hex');
+    } else if (data.path) {
+      fileData = fs.createReadStream(data.path);
+      const buffer = fs.readFileSync(data.path);
+      fileHash = crypto.createHash('md5').update(buffer).digest('hex');
+    } else {
+      throw new Error('File path or buffer is required');
     }
-  }
 
-  /**
-   * Upload PDF file to storage
-   * Returns the file path/URL for storage
-   *
-   * @param fileName - Name of the file
-   * @param buffer - File buffer content
-   * @returns File URL/path
-   */
-  async uploadPDF(fileName: string, buffer: Buffer): Promise<string> {
-    try {
-      const filePath = path.join(this.uploadDir, fileName);
+    // Check for duplicate files
+    const existingFile = await this.prisma.storage.findFirst({
+      where: { hashMd5: fileHash },
+    });
 
-      // Write file to disk
-      fs.writeFileSync(filePath, buffer);
-
-      this.logger.log(`PDF uploaded successfully: ${fileName}`);
-
-      // Return relative URL path
-      return `/uploads/pdfs/${fileName}`;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error uploading PDF: ${errorMessage}`, error);
-      throw error;
+    if (existingFile) {
+      this.logger.log(`Duplicate file found: ${existingFile.id}`);
+      return this.mapStorageToFile(existingFile);
     }
+
+    // Determine folder
+    const folder = this.getFolderByType(data.fileType);
+
+    // Upload to OSS
+    this.logger.log(`Uploading to OSS: ${data.originalName}`);
+    const uploadResult = await this.ossService.uploadFile(
+      fileData,
+      data.originalName,
+      data.mimetype,
+      folder
+    );
+
+    // Create file record in database
+    const file = await this.prisma.storage.create({
+      data: {
+        filename: path.basename(uploadResult.key),
+        originalName: data.originalName,
+        mimeType: data.mimetype,
+        fileSize: data.size,
+        fileUrl: uploadResult.url,
+        filePath: uploadResult.key,
+        hashMd5: fileHash,
+        fileType: data.fileType,
+        userId: data.userId,
+        ossType: OssType.MINIO,
+        isPublic: false,
+        category: data.category,
+      },
+    });
+
+    this.logger.log(`File uploaded successfully: ${file.id}`);
+    return this.mapStorageToFile(file);
   }
 
   /**
-   * Download PDF file from storage
-   * Returns the file buffer
-   *
-   * @param fileName - Name of the file
-   * @returns File buffer
+   * Upload multiple files
    */
-  async downloadPDF(fileName: string): Promise<Buffer> {
-    try {
-      const filePath = path.join(this.uploadDir, fileName);
+  async uploadFiles(filesData: UploadFileData[]) {
+    const results: StorageFile[] = [];
+    const errors: Array<{ index: number; filename: string; error: string }> =
+      [];
 
-      // Check if file exists
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${fileName}`);
+    for (let i = 0; i < filesData.length; i++) {
+      try {
+        const file = await this.uploadFile(filesData[i]);
+        results.push(file);
+      } catch (error) {
+        errors.push({
+          index: i,
+          filename: filesData[i].originalName,
+          error: error instanceof Error ? error.message : 'Upload failed',
+        });
       }
-
-      // Read file from disk
-      const buffer = fs.readFileSync(filePath);
-
-      this.logger.log(`PDF downloaded successfully: ${fileName}`);
-
-      return buffer;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error downloading PDF: ${errorMessage}`, error);
-      throw error;
     }
+
+    return {
+      success: results,
+      errors,
+      total: filesData.length,
+      successCount: results.length,
+      errorCount: errors.length,
+    };
   }
 
   /**
-   * Delete PDF file from storage
-   *
-   * @param fileName - Name of the file
+   * Get file list
    */
-  async deletePDF(fileName: string): Promise<void> {
-    try {
-      const filePath = path.join(this.uploadDir, fileName);
+  async getFiles(params: GetFilesParams) {
+    const {
+      page,
+      pageSize,
+      userId,
+      fileType,
+      keyword,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+    } = params;
+    const skip = (page - 1) * pageSize;
 
-      // Check if file exists
-      if (!fs.existsSync(filePath)) {
-        this.logger.warn(`File not found for deletion: ${fileName}`);
-        return;
+    const where: Record<string, unknown> = {};
+    if (userId) where.userId = userId;
+    if (fileType) where.fileType = fileType;
+    if (keyword) {
+      where.OR = [
+        { filename: { contains: keyword } },
+        { originalName: { contains: keyword } },
+      ];
+    }
+
+    const [files, total] = await Promise.all([
+      this.prisma.storage.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      this.prisma.storage.count({ where }),
+    ]);
+
+    return {
+      files: files.map((f) => this.mapStorageToFile(f)),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
+  }
+
+  /**
+   * Get file by ID
+   */
+  async getFileById(id: string): Promise<StorageFile> {
+    const file = await this.prisma.storage.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new Error('File not found');
+    }
+
+    return this.mapStorageToFile(file);
+  }
+
+  /**
+   * Delete file
+   */
+  async deleteFile(id: string, userId: string): Promise<void> {
+    const file = await this.prisma.storage.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new Error('File not found');
+    }
+
+    if (file.userId !== userId) {
+      throw new Error('Permission denied');
+    }
+
+    // Delete from OSS
+    await this.ossService.deleteFile(file.filePath);
+    if (file.thumbnailUrl) {
+      await this.ossService.deleteFile(file.thumbnailUrl);
+    }
+
+    // Delete from database
+    await this.prisma.storage.delete({
+      where: { id },
+    });
+
+    this.logger.log(`File deleted: ${id}`);
+  }
+
+  /**
+   * Delete multiple files
+   */
+  async deleteFiles(ids: string[], userId: string) {
+    const files = await this.prisma.storage.findMany({
+      where: { id: { in: ids } },
+    });
+
+    const results: string[] = [];
+    const errors: Array<{ id: string; filename: string; error: string }> = [];
+
+    for (const file of files) {
+      try {
+        if (file.userId !== userId) {
+          errors.push({
+            id: file.id,
+            filename: file.originalName,
+            error: 'Permission denied',
+          });
+          continue;
+        }
+
+        await this.ossService.deleteFile(file.filePath);
+        if (file.thumbnailUrl) {
+          await this.ossService.deleteFile(file.thumbnailUrl).catch(() => {});
+        }
+
+        await this.prisma.storage.delete({
+          where: { id: file.id },
+        });
+
+        results.push(file.id);
+      } catch (error) {
+        errors.push({
+          id: file.id,
+          filename: file.originalName,
+          error: error instanceof Error ? error.message : 'Delete failed',
+        });
       }
-
-      // Delete file
-      fs.unlinkSync(filePath);
-
-      this.logger.log(`PDF deleted successfully: ${fileName}`);
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error deleting PDF: ${errorMessage}`, error);
-      throw error;
     }
+
+    return {
+      success: results,
+      errors,
+      total: ids.length,
+      successCount: results.length,
+      errorCount: errors.length,
+    };
   }
 
   /**
-   * Check if file exists in storage
-   *
-   * @param fileName - Name of the file
-   * @returns True if file exists, false otherwise
+   * Download file
    */
-  fileExists(fileName: string): boolean {
-    const filePath = path.join(this.uploadDir, fileName);
-    return fs.existsSync(filePath);
-  }
+  async downloadFile(id: string, userId?: string) {
+    const file = await this.prisma.storage.findUnique({
+      where: { id },
+    });
 
-  /**
-   * Get file size in bytes
-   *
-   * @param fileName - Name of the file
-   * @returns File size in bytes
-   */
-  getFileSize(fileName: string): number {
-    try {
-      const filePath = path.join(this.uploadDir, fileName);
-
-      if (!fs.existsSync(filePath)) {
-        throw new Error(`File not found: ${fileName}`);
-      }
-
-      const stats = fs.statSync(filePath);
-      return stats.size;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error getting file size: ${errorMessage}`, error);
-      throw error;
+    if (!file) {
+      throw new Error('File not found');
     }
+
+    if (userId && file.userId !== userId) {
+      throw new Error('Permission denied');
+    }
+
+    const buffer = await this.ossService.downloadFile(file.filePath);
+
+    return {
+      buffer,
+      filename: file.originalName,
+      mimetype: file.mimeType,
+      size: file.fileSize,
+    };
   }
 
   /**
-   * Clean up expired files
-   * Deletes files that haven't been accessed for more than maxAgeMs
-   *
-   * @param maxAgeMs - Maximum age in milliseconds (default: 90 days)
+   * Get file statistics
+   */
+  async getFileStats(userId?: string) {
+    const where = userId ? { userId } : {};
+
+    const [total, images, videos, totalSize] = await Promise.all([
+      this.prisma.storage.count({ where }),
+      this.prisma.storage.count({
+        where: { ...where, fileType: FileType.IMAGE },
+      }),
+      this.prisma.storage.count({
+        where: { ...where, fileType: FileType.VIDEO },
+      }),
+      this.prisma.storage.aggregate({
+        where,
+        _sum: { fileSize: true },
+      }),
+    ]);
+
+    const size = totalSize._sum?.fileSize || 0;
+
+    return {
+      total,
+      byType: { images, videos },
+      totalSize: size,
+      totalSizeFormatted: this.formatFileSize(size),
+    };
+  }
+
+  /**
+   * Update file
+   */
+  async updateFile(
+    id: string,
+    data: Partial<StorageFile>,
+    userId: string
+  ): Promise<StorageFile> {
+    const file = await this.prisma.storage.findUnique({
+      where: { id },
+    });
+
+    if (!file) {
+      throw new Error('File not found');
+    }
+
+    if (file.userId !== userId) {
+      throw new Error('Permission denied');
+    }
+
+    const updated = await this.prisma.storage.update({
+      where: { id },
+      data: {
+        originalName: data.originalName,
+        isPublic: data.isPublic,
+      },
+    });
+
+    return this.mapStorageToFile(updated);
+  }
+
+  /**
+   * Cleanup expired files
    */
   async cleanupExpiredFiles(
     maxAgeMs: number = 90 * 24 * 60 * 60 * 1000
   ): Promise<number> {
-    try {
-      const now = Date.now();
-      let deletedCount = 0;
+    const cutoffDate = new Date(Date.now() - maxAgeMs);
 
-      if (!fs.existsSync(this.uploadDir)) {
-        return 0;
-      }
+    const expiredFiles = await this.prisma.storage.findMany({
+      where: {
+        createdAt: { lt: cutoffDate },
+      },
+    });
 
-      const files = fs.readdirSync(this.uploadDir);
+    let deletedCount = 0;
 
-      for (const file of files) {
-        const filePath = path.join(this.uploadDir, file);
-        const stats = fs.statSync(filePath);
-        const fileAge = now - stats.mtimeMs;
-
-        if (fileAge > maxAgeMs) {
-          fs.unlinkSync(filePath);
-          deletedCount++;
-          this.logger.log(`Deleted expired file: ${file}`);
+    for (const file of expiredFiles) {
+      try {
+        await this.ossService.deleteFile(file.filePath);
+        if (file.thumbnailUrl) {
+          await this.ossService.deleteFile(file.thumbnailUrl).catch(() => {});
         }
+        await this.prisma.storage.delete({
+          where: { id: file.id },
+        });
+        deletedCount++;
+      } catch (error) {
+        this.logger.error(`Failed to delete expired file: ${file.id}`, error);
       }
-
-      this.logger.log(`Cleanup completed: ${deletedCount} files deleted`);
-      return deletedCount;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Error cleaning up expired files: ${errorMessage}`,
-        error
-      );
-      throw error;
     }
+
+    this.logger.log(`Cleanup completed: ${deletedCount} files deleted`);
+    return deletedCount;
+  }
+
+  /**
+   * Private helper methods
+   */
+
+  private validateFileType(fileType: FileType, mimetype: string): void {
+    const typeMap = {
+      [FileType.IMAGE]: ['image/'],
+      [FileType.VIDEO]: ['video/'],
+      [FileType.DOCUMENT]: [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+      ],
+      [FileType.AUDIO]: ['audio/'],
+    };
+
+    const allowed = typeMap[fileType] || [];
+    const isValid = allowed.some((type) => mimetype.startsWith(type));
+
+    if (!isValid) {
+      throw new Error(`Invalid file type: ${mimetype} for ${fileType}`);
+    }
+  }
+
+  private getFolderByType(type: FileType): string {
+    const folders = {
+      [FileType.IMAGE]: 'images',
+      [FileType.VIDEO]: 'videos',
+      [FileType.DOCUMENT]: 'documents',
+      [FileType.AUDIO]: 'audio',
+      [FileType.OTHER]: 'other',
+    };
+    return folders[type] || 'other';
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  private mapStorageToFile(file: Storage): StorageFile {
+    return {
+      id: file.id,
+      filename: file.filename,
+      originalName: file.originalName,
+      fileSize: file.fileSize,
+      mimeType: file.mimeType,
+      url: file.fileUrl,
+      fileType: file.fileType as unknown as FileType,
+      createdAt: file.createdAt,
+      updatedAt: file.updatedAt,
+      userId: file.userId,
+      category: file.category || undefined,
+      isPublic: file.isPublic,
+      thumbnailUrl: file.thumbnailUrl || undefined,
+    };
   }
 }

@@ -18,9 +18,13 @@ export interface BillingRecord {
 }
 
 export const paymentService = {
-  createCheckoutSession: async (priceId: string) => {
+  createCheckoutSession: async (
+    priceId: string,
+    provider: 'stripe' | 'paddle' = 'stripe'
+  ) => {
     const response = await axios.post('/payments/create-checkout-session', {
       priceId,
+      provider,
     });
     return response.data;
   },

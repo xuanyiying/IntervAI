@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
+import './auth.css';
 
 const { Title, Text } = Typography;
 
@@ -70,26 +71,8 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '48px 40px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
+    <div className="auth-container">
+      <div className="auth-card">
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {/* Logo and Title */}
           <div style={{ textAlign: 'center' }}>

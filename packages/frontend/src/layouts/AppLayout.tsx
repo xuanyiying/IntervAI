@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Layout, Avatar, Dropdown, Button, theme, Modal, Tooltip } from 'antd';
+import {
+  Layout,
+  Avatar,
+  Dropdown,
+  Button,
+  theme,
+  Modal,
+  Tooltip,
+  Drawer,
+} from 'antd';
 import type { MenuProps } from 'antd';
 import { useNavigate, Outlet } from 'react-router-dom';
 import {
@@ -18,10 +27,11 @@ import { useAuthStore } from '../stores/authStore';
 import CookieConsent from '../components/CookieConsent';
 import './AppLayout.css';
 
-const { Sider, Content } = Layout;
+const { Header, Sider, Content } = Layout;
 
 const AppLayout: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState('1');
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { user, clearAuth } = useAuthStore();
   const navigate = useNavigate();
   const {
@@ -105,9 +115,215 @@ const AppLayout: React.FC = () => {
     { key: '3', label: '自我介绍润色', time: '3天前' },
   ];
 
+  // Sidebar content component (shared between desktop and mobile)
+  const SidebarContent = () => (
+    <>
+      {/* New Chat Button */}
+      <div style={{ padding: '16px 12px' }}>
+        <Button
+          type="primary"
+          block
+          icon={<PlusOutlined />}
+          onClick={handleNewChat}
+          style={{
+            height: '44px',
+            borderRadius: '8px',
+            fontSize: '15px',
+            fontWeight: 500,
+          }}
+        >
+          新对话
+        </Button>
+      </div>
+
+      {/* History List */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }}>
+        <div
+          style={{
+            fontSize: '12px',
+            color: '#888',
+            marginBottom: '12px',
+            paddingLeft: '12px',
+            fontWeight: 500,
+          }}
+        >
+          历史会话
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {historyItems.map((item) => (
+            <div
+              key={item.key}
+              onClick={() => {
+                setSelectedChat(item.key);
+                setMobileDrawerOpen(false);
+              }}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                background:
+                  selectedChat === item.key ? '#f0f0f0' : 'transparent',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                if (selectedChat !== item.key) {
+                  e.currentTarget.style.background = '#fafafa';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedChat !== item.key) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '4px',
+                  }}
+                >
+                  <MessageOutlined
+                    style={{ fontSize: '14px', color: '#666' }}
+                  />
+                  <span
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {item.label}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    fontSize: '12px',
+                    color: '#999',
+                    paddingLeft: '22px',
+                  }}
+                >
+                  {item.time}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '4px', opacity: 0.6 }}>
+                <Tooltip title="重命名">
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Edit:', item.key);
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip title="删除">
+                  <Button
+                    type="text"
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    onClick={(e) => handleDeleteChat(item.key, e)}
+                  />
+                </Tooltip>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* User Profile */}
+      <div
+        style={{
+          padding: '16px',
+          borderTop: `1px solid ${colorBorderSecondary}`,
+          display: 'flex',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+      >
+        <Dropdown
+          menu={{ items: userMenu, onClick: handleMenuClick }}
+          placement="topLeft"
+          trigger={['click']}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+            <Avatar icon={<UserOutlined />} src={user?.avatar} />
+            <div style={{ marginLeft: '12px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {user?.username || 'User'}
+              </div>
+            </div>
+          </div>
+        </Dropdown>
+      </div>
+    </>
+  );
+
   return (
     <Layout style={{ height: '100vh', background: colorBgContainer }}>
+      {/* Mobile Header - only visible on mobile */}
+      <Header
+        className="mobile-header"
+        style={{
+          background: colorBgContainer,
+          borderBottom: `1px solid ${colorBorderSecondary}`,
+          padding: '0 16px',
+          display: 'none',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+        }}
+      >
+        <Button
+          type="text"
+          icon={
+            mobileDrawerOpen ? <MenuFoldOutlined /> : <MenuUnfoldOutlined />
+          }
+          onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
+          style={{
+            fontSize: '18px',
+            width: 44,
+            height: 44,
+          }}
+        />
+        <div style={{ fontSize: '16px', fontWeight: 600 }}>AI 简历助手</div>
+        <Dropdown
+          menu={{ items: userMenu, onClick: handleMenuClick }}
+          placement="bottomRight"
+          trigger={['click']}
+        >
+          <Avatar
+            size="default"
+            icon={<UserOutlined />}
+            src={user?.avatar}
+            style={{ cursor: 'pointer' }}
+          />
+        </Dropdown>
+      </Header>
+
+      {/* Desktop Sidebar */}
       <Sider
+        className="desktop-sider"
         width={260}
         theme="light"
         breakpoint="lg"
@@ -119,168 +335,34 @@ const AppLayout: React.FC = () => {
           console.log(collapsed, type);
         }}
         style={{
-          borderRight: `1px solid ${colorBorderSecondary} `,
+          borderRight: `1px solid ${colorBorderSecondary}`,
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
         }}
       >
-        {/* New Chat Button */}
-        <div style={{ padding: '16px 12px' }}>
-          <Button
-            type="primary"
-            block
-            icon={<PlusOutlined />}
-            onClick={handleNewChat}
-            style={{
-              height: '44px',
-              borderRadius: '8px',
-              fontSize: '15px',
-              fontWeight: 500,
-            }}
-          >
-            新对话
-          </Button>
-        </div>
+        <SidebarContent />
+      </Sider>
 
-        {/* History List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }}>
-          <div
-            style={{
-              fontSize: '12px',
-              color: '#888',
-              marginBottom: '12px',
-              paddingLeft: '12px',
-              fontWeight: 500,
-            }}
-          >
-            历史会话
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {historyItems.map((item) => (
-              <div
-                key={item.key}
-                onClick={() => setSelectedChat(item.key)}
-                style={{
-                  padding: '12px',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  background:
-                    selectedChat === item.key ? '#f0f0f0' : 'transparent',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  position: 'relative',
-                  overflow: 'hidden',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedChat !== item.key) {
-                    e.currentTarget.style.background = '#fafafa';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedChat !== item.key) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
-              >
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <MessageOutlined
-                      style={{ fontSize: '14px', color: '#666' }}
-                    />
-                    <span
-                      style={{
-                        fontSize: '14px',
-                        fontWeight: 500,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      color: '#999',
-                      paddingLeft: '22px',
-                    }}
-                  >
-                    {item.time}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '4px', opacity: 0.6 }}>
-                  <Tooltip title="重命名">
-                    <Button
-                      type="text"
-                      size="small"
-                      icon={<EditOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        console.log('Edit:', item.key);
-                      }}
-                    />
-                  </Tooltip>
-                  <Tooltip title="删除">
-                    <Button
-                      type="text"
-                      size="small"
-                      danger
-                      icon={<DeleteOutlined />}
-                      onClick={(e) => handleDeleteChat(item.key, e)}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* User Profile */}
+      {/* Mobile Drawer */}
+      <Drawer
+        className="mobile-drawer"
+        placement="left"
+        onClose={() => setMobileDrawerOpen(false)}
+        open={mobileDrawerOpen}
+        styles={{ body: { padding: 0 } }}
+        width={280}
+      >
         <div
           style={{
-            padding: '16px',
-            borderTop: `1px solid ${colorBorderSecondary} `,
             display: 'flex',
-            alignItems: 'center',
-            cursor: 'pointer',
+            flexDirection: 'column',
+            height: '100%',
           }}
         >
-          <Dropdown
-            menu={{ items: userMenu, onClick: handleMenuClick }}
-            placement="topLeft"
-            trigger={['click']}
-          >
-            <div
-              style={{ display: 'flex', alignItems: 'center', width: '100%' }}
-            >
-              <Avatar icon={<UserOutlined />} src={user?.avatar} />
-              <div style={{ marginLeft: '12px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    fontWeight: 500,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {user?.username || 'User'}
-                </div>
-              </div>
-            </div>
-          </Dropdown>
+          <SidebarContent />
         </div>
-      </Sider>
+      </Drawer>
 
       <Layout style={{ background: 'transparent' }}>
         <Content

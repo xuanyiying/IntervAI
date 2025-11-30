@@ -14,6 +14,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { EmailService } from '@/email/email.service';
+import { InvitationService } from '@/invitation/invitation.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -21,7 +22,8 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly invitationService: InvitationService
   ) {}
 
   /**
@@ -30,7 +32,14 @@ export class UserService {
    * Requirement 1.5: Use bcrypt to hash passwords
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, username, phone } = registerDto;
+    const { email, password, username, phone, invitationCode } = registerDto;
+
+    // Validate invitation code
+    const isCodeValid =
+      await this.invitationService.validateCode(invitationCode);
+    if (!isCodeValid) {
+      throw new BadRequestException('Invalid or used invitation code');
+    }
 
     // Sanitize email
     const sanitizedEmail = Sanitizer.sanitizeEmail(email);
@@ -69,6 +78,9 @@ export class UserService {
         verificationToken,
       },
     });
+
+    // Mark invitation code as used
+    await this.invitationService.markAsUsed(invitationCode, user.id);
 
     // Send verification email
     try {
