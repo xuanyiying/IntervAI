@@ -1,16 +1,20 @@
 import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
   BadRequestException,
+  ForbiddenException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { QuotaService } from '../quota/quota.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { StorageService } from '@/storage/storage.service';
+import { QuotaService } from '@/quota/quota.service';
 import { GeneratedPDF, Template } from '@prisma/client';
 import * as puppeteer from 'puppeteer';
 import * as Handlebars from 'handlebars';
+import {
+  FileType,
+  UploadFileData,
+} from '@/storage/interfaces/storage.interface';
 
 export interface PDFOptions {
   fontSize: number;
@@ -73,7 +77,7 @@ export interface ParsedResumeData {
 }
 
 @Injectable()
-export class GenerateService {
+class GenerateService {
   private readonly logger = new Logger(GenerateService.name);
   private browser: puppeteer.Browser | null = null;
 
@@ -172,7 +176,16 @@ export class GenerateService {
 
       // Upload PDF to storage (Requirement 7.7)
       const fileName = `resume-${optimizationId}-${Date.now()}.pdf`;
-      const fileUrl = await this.storageService.uploadPDF(fileName, pdfBuffer);
+      const uploadData: UploadFileData = {
+        originalName: fileName,
+        mimetype: 'application/pdf',
+        size: pdfBuffer.length,
+        buffer: pdfBuffer,
+        userId,
+        fileType: FileType.DOCUMENT,
+        category: 'resume',
+      };
+      const storageFile = await this.storageService.uploadFile(uploadData);
 
       // Set expiration date (90 days from now)
       const expiresAt = new Date();
@@ -184,7 +197,7 @@ export class GenerateService {
           userId,
           optimizationId,
           templateId,
-          fileUrl,
+          fileUrl: storageFile.url,
           fileSize: pdfBuffer.length,
           downloadCount: 0,
           expiresAt,
@@ -352,7 +365,7 @@ export class GenerateService {
   private getClassicTemplate(): string {
     return `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -501,7 +514,7 @@ export class GenerateService {
   private getModernTemplate(): string {
     return `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -659,7 +672,7 @@ export class GenerateService {
   private getProfessionalTemplate(): string {
     return `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <style>
@@ -818,7 +831,7 @@ export class GenerateService {
       await page.setContent(html, { waitUntil: 'networkidle0' });
 
       // Generate PDF with ATS-friendly settings (Requirement 7.5)
-      const pdfBuffer = await page.pdf({
+      return await page.pdf({
         format: 'A4',
         margin: {
           top: '10mm',
@@ -829,8 +842,6 @@ export class GenerateService {
         printBackground: true,
         preferCSSPageSize: true,
       });
-
-      return pdfBuffer;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -935,7 +946,7 @@ export class GenerateService {
       }
 
       // Download file from storage
-      const buffer = await this.storageService.downloadPDF(fileName);
+      const storageFile = await this.storageService.downloadFile(pdfId, userId);
 
       // Increment download count
       await this.prisma.generatedPDF.update({
@@ -949,7 +960,7 @@ export class GenerateService {
 
       this.logger.log(`PDF downloaded: ${pdfId}, download count incremented`);
 
-      return buffer;
+      return storageFile.buffer;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
@@ -1053,13 +1064,7 @@ export class GenerateService {
           'You do not have permission to delete this PDF'
         );
       }
-
-      // Extract file name from URL
-      const fileName = generatedPDF.fileUrl.split('/').pop();
-      if (fileName) {
-        // Delete file from storage
-        await this.storageService.deletePDF(fileName);
-      }
+      await this.storageService.deleteFile(pdfId, userId);
 
       // Delete database record
       await this.prisma.generatedPDF.delete({
@@ -1100,13 +1105,7 @@ export class GenerateService {
       // Delete each expired PDF
       for (const pdf of expiredPDFs) {
         try {
-          // Extract file name from URL
-          const fileName = pdf.fileUrl.split('/').pop();
-          if (fileName) {
-            // Delete file from storage
-            await this.storageService.deletePDF(fileName);
-          }
-
+          await this.storageService.deleteFile(pdf.id, pdf.userId);
           // Delete database record
           await this.prisma.generatedPDF.delete({
             where: { id: pdf.id },
@@ -1147,3 +1146,5 @@ export class GenerateService {
     }
   }
 }
+
+export default GenerateService;

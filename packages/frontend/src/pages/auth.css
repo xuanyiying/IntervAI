@@ -1,0 +1,42 @@
+/* Mobile responsiveness for auth pages */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile devices */
+@media (max-width: 768px) {
+    .auth-card {
+        padding: 32px 24px;
+        max-width: 100%;
+    }
+
+    .auth-container {
+        padding: 16px;
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+    .auth-card {
+        padding: 24px 20px;
+        border-radius: 12px;
+    }
+
+    .auth-container {
+        padding: 12px;
+    }
+}

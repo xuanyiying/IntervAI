@@ -56,8 +56,36 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 991px) {
+
+  /* Hide desktop sidebar on mobile */
+  .desktop-sider {
+    display: none !important;
+  }
+
+  /* Show mobile header */
+  .mobile-header {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 992px) {
+
+  /* Hide mobile drawer on desktop */
+  .mobile-drawer {
+    display: none !important;
+  }
+
+  /* Ensure desktop sidebar is visible */
+  .desktop-sider {
+    display: flex !important;
   }
 }

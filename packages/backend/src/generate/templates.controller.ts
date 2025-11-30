@@ -1,5 +1,5 @@
 import { Controller, Get, Param, UseGuards, Logger } from '@nestjs/common';
-import { GenerateService } from './generate.service';
+import GenerateService from './generate.service';
 import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
 import {
   ApiTags,

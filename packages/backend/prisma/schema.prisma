@@ -41,14 +41,19 @@ model User {
     resetPasswordExpires  DateTime?
     stripeCustomerId      String?
     stripeSubscriptionId  String?
+    paddleCustomerId      String?
+    paddleSubscriptionId  String?
+    subscriptionProvider  String? // 'stripe' | 'paddle'
 
     // Relations
-    resumes       Resume[]
-    jobs          Job[]
-    optimizations Optimization[]
-    generatedPdfs GeneratedPDF[]
-    conversations Conversation[]
-    messages      Message[]
+    resumes        Resume[]
+    jobs           Job[]
+    optimizations  Optimization[]
+    generatedPdfs  GeneratedPDF[]
+    conversations  Conversation[]
+    messages       Message[]
+    invitationCode InvitationCode?
+    storages       Storage[]
 
     @@index([email])
     @@map("users")
@@ -447,4 +452,67 @@ model Message {
     @@index([userId])
     @@index([conversationId, createdAt])
     @@map("messages")
+}
+
+// Invitation Code model
+model InvitationCode {
+    id        String    @id @default(uuid())
+    code      String    @unique
+    isUsed    Boolean   @default(false)
+    usedBy    String?   @unique // One code per user
+    usedAt    DateTime?
+    createdBy String // Admin ID
+    createdAt DateTime  @default(now())
+    expiresAt DateTime?
+
+    // Relations
+    user User? @relation(fields: [usedBy], references: [id])
+
+    @@index([code])
+    @@index([isUsed])
+    @@map("invitation_codes")
+}
+
+enum FileType {
+    IMAGE
+    VIDEO
+    DOCUMENT
+    AUDIO
+    OTHER
+}
+
+enum OssType {
+    MINIO
+    AWS_S3
+    ALIYUN_OSS
+    TENCENT_COS
+    LOCAL
+}
+
+// Storage model
+model Storage {
+    id            String   @id @default(uuid())
+    userId        String
+    filename      String
+    originalName  String
+    fileSize      Int
+    mimeType      String
+    fileUrl       String
+    filePath      String // OSS Key
+    hashMd5       String
+    fileType      FileType
+    category      String?
+    thumbnailUrl  String?
+    ossType       OssType
+    isPublic      Boolean  @default(false)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+
+    // Relations
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([fileType])
+    @@index([hashMd5])
+    @@map("storages")
 }

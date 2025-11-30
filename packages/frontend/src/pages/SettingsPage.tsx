@@ -10,6 +10,7 @@ import {
   message,
 } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
+import './common.css';
 
 const { Title } = Typography;
 
@@ -22,7 +23,7 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="settings-container">
       <Title level={2}>设置</Title>
 
       <Card style={{ marginTop: '24px' }}>

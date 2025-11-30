@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, Avatar, Descriptions, Button, Space, Typography } from 'antd';
 import { UserOutlined, EditOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
+import './common.css';
 
 const { Title } = Typography;
 
@@ -9,7 +10,7 @@ const ProfilePage: React.FC = () => {
   const { user } = useAuthStore();
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="profile-container">
       <Title level={2}>个人中心</Title>
 
       <Card style={{ marginTop: '24px' }}>

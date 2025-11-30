@@ -96,6 +96,7 @@ describe('UserService', () => {
         password: 'SecurePassword123!',
         username: 'newuser',
         phone: '+1234567890',
+        invitationCode: 'INVITE123',
       };
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
@@ -118,6 +119,7 @@ describe('UserService', () => {
       const registerDto = {
         email: 'test@example.com',
         password: 'SecurePassword123!',
+        invitationCode: 'INVITE123',
       };
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);

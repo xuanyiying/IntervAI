@@ -12,7 +12,7 @@ jest.mock('@nestjs/schedule', () => ({
 }));
 
 import { CleanupTask } from './cleanup.task';
-import { GenerateService } from '../generate/generate.service';
+import GenerateService from '../generate/generate.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 import { BackupService } from '../backup/backup.service';

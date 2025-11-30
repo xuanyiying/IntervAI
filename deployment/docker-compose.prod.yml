@@ -117,7 +117,7 @@ services:
   # Backend API Service - Production
   backend:
     build:
-      context: .
+      context: ..
       dockerfile: packages/backend/Dockerfile
       args:
         NODE_ENV: production
@@ -192,7 +192,7 @@ services:
   # Frontend Web Application - Production
   frontend:
     build:
-      context: .
+      context: ..
       dockerfile: packages/frontend/Dockerfile
       args:
         NODE_ENV: production

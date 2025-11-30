@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
+import './auth.css';
 
 const { Title, Text } = Typography;
 
@@ -83,26 +84,8 @@ const LoginPage: React.FC = () => {
   const isAnyOAuthEnabled = isGoogleOAuthEnabled || isGithubOAuthEnabled;
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          background: '#fff',
-          borderRadius: '16px',
-          padding: '48px 40px',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
+    <div className="auth-container">
+      <div className="auth-card">
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {/* Logo and Title */}
           <div style={{ textAlign: 'center' }}>
@@ -197,9 +180,10 @@ const LoginPage: React.FC = () => {
                     icon={<GoogleOutlined />}
                     style={{ width: '48px', height: '48px' }}
                     onClick={() => {
-                      window.location.href = `${
-                        import.meta.env.VITE_API_BASE_URL
-                      }/auth/google`;
+                      const backendUrl =
+                        import.meta.env.VITE_BACKEND_URL ||
+                        'http://localhost:3000';
+                      window.location.href = `${backendUrl}/auth/google`;
                     }}
                   />
                 )}
@@ -210,9 +194,10 @@ const LoginPage: React.FC = () => {
                     icon={<GithubOutlined />}
                     style={{ width: '48px', height: '48px' }}
                     onClick={() => {
-                      window.location.href = `${
-                        import.meta.env.VITE_API_BASE_URL
-                      }/auth/github`;
+                      const backendUrl =
+                        import.meta.env.VITE_BACKEND_URL ||
+                        'http://localhost:3000';
+                      window.location.href = `${backendUrl}/auth/github`;
                     }}
                   />
                 )}

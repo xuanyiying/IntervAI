@@ -22,6 +22,7 @@ import { ConversationModule } from './conversation/conversation.module';
 import { EmailModule } from './email/email.module';
 import { PaymentModule } from './payment/payment.module';
 import { AIProvidersModule } from './ai-providers/ai-providers.module';
+import { InvitationModule } from './invitation/invitation.module';
 import { loggerConfig } from './logger/logger.config';
 import {
   PerformanceMiddleware,
@@ -54,7 +55,9 @@ import { RequestLoggingMiddleware } from './common/middleware/request-logging.mi
     MonitoringModule,
     EmailModule,
     PaymentModule,
+    PaymentModule,
     AIProvidersModule,
+    InvitationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

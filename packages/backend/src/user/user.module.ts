@@ -9,12 +9,14 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { EmailModule } from '@/email/email.module';
+import { InvitationModule } from '@/invitation/invitation.module';
 
 @Module({
   imports: [
     PrismaModule,
     PassportModule,
     EmailModule,
+    InvitationModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

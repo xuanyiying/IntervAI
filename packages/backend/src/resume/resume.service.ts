@@ -1,24 +1,24 @@
 import {
-  Injectable,
   BadRequestException,
-  NotFoundException,
   ForbiddenException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AIEngine } from '../ai/ai.engine';
-import { Sanitizer } from '../common/utils/sanitizer';
-import { Resume, ParseStatus } from '@prisma/client';
+import { PrismaService } from '@/prisma/prisma.service';
+import { AIEngine } from '@/ai';
+import { Sanitizer } from '@/common/utils/sanitizer';
+import { ParseStatus, Resume } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { StorageService } from '@/storage/storage.service';
+import { FileType } from '@/storage/interfaces/storage.interface';
 
 const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/plain',
 ];
-
-const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 @Injectable()
@@ -27,7 +27,8 @@ export class ResumeService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private aiEngine: AIEngine,
+    private storageService: StorageService
   ) {}
 
   /**
@@ -59,47 +60,40 @@ export class ResumeService {
       );
     }
 
-    // Validate file extension
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.includes(fileExtension)) {
+    try {
+      // Upload file to Storage Service
+      const storageFile = await this.storageService.uploadFile({
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        buffer: file.buffer,
+        userId,
+        fileType: FileType.DOCUMENT,
+        category: 'resumes',
+      });
+
+      // Sanitize inputs
+      const sanitizedTitle = Sanitizer.sanitizeString(
+        title || file.originalname
+      );
+      const sanitizedFilename = Sanitizer.sanitizeFilename(file.originalname);
+      return await this.prisma.resume.create({
+        data: {
+          userId,
+          title: sanitizedTitle,
+          originalFilename: sanitizedFilename,
+          fileUrl: storageFile.url,
+          fileType: path.extname(file.originalname).toLowerCase().substring(1),
+          fileSize: file.size,
+          parseStatus: ParseStatus.PENDING,
+        },
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to upload resume: ${error.message}`, error);
       throw new BadRequestException(
-        `Unsupported file extension. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}. Received: ${fileExtension}`
+        `Failed to upload resume: ${error.message}`
       );
     }
-
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = path.join(process.cwd(), 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(7);
-    const filename = `${timestamp}-${randomString}${fileExtension}`;
-    const filepath = path.join(uploadsDir, filename);
-
-    // Save file to disk
-    fs.writeFileSync(filepath, file.buffer);
-
-    // Sanitize inputs
-    const sanitizedTitle = Sanitizer.sanitizeString(title || file.originalname);
-    const sanitizedFilename = Sanitizer.sanitizeFilename(file.originalname);
-
-    // Create resume record in database
-    const resume = await this.prisma.resume.create({
-      data: {
-        userId,
-        title: sanitizedTitle,
-        originalFilename: sanitizedFilename,
-        fileUrl: `/uploads/${filename}`,
-        fileType: fileExtension.substring(1), // Remove leading dot
-        fileSize: file.size,
-        parseStatus: ParseStatus.PENDING,
-      },
-    });
-
-    return resume;
   }
 
   /**
@@ -192,6 +186,9 @@ export class ResumeService {
    */
   async setPrimaryResume(resumeId: string, userId: string): Promise<Resume> {
     const resume = await this.getResume(resumeId, userId);
+    if (!resume) {
+      throw new NotFoundException(`Resume with ID ${resumeId} not found`);
+    }
 
     // Unset all other resumes as primary for this user
     await this.prisma.resume.updateMany({

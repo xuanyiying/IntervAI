@@ -18,6 +18,7 @@ import InterviewQuestionsCard from '../components/InterviewQuestionsCard';
 import { jobService, type JobInput, type Job } from '../services/jobService';
 import { optimizationService } from '../services/optimizationService';
 import type { InterviewQuestion, Resume, ParsedResumeData } from '../types';
+import './chat.css';
 
 interface MessageItem {
   key: string;
@@ -302,7 +303,10 @@ const ChatPage: React.FC = () => {
       }}
     >
       {/* Chat Area */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '24px' }}>
+      <div
+        className="chat-bubble-list"
+        style={{ flex: 1, overflow: 'auto', padding: '24px' }}
+      >
         <Bubble.List
           items={items.map((item) => ({
             key: item.key,
@@ -422,6 +426,7 @@ const ChatPage: React.FC = () => {
 
       {/* Input Area */}
       <div
+        className="chat-input-area"
         style={{
           padding: '16px 24px 24px',
           maxWidth: '800px',
@@ -432,6 +437,7 @@ const ChatPage: React.FC = () => {
         {/* Quick Actions */}
         {items.length <= 1 && (
           <div
+            className="chat-quick-actions"
             style={{
               display: 'flex',
               gap: '8px',
