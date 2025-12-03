@@ -1,8 +1,8 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ConfigProvider } from 'antd';
 import ResumeUploadDialog from './ResumeUploadDialog';
-import * as resumeService from '../services/resumeService';
 
 vi.mock('../services/resumeService');
 
@@ -10,12 +10,16 @@ describe('ResumeUploadDialog Component', () => {
   const mockOnClose = vi.fn();
   const mockOnUploadSuccess = vi.fn();
 
+  const renderWithProvider = (ui: React.ReactElement) => {
+    return render(<ConfigProvider>{ui}</ConfigProvider>);
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should render upload dialog when visible is true', () => {
-    render(
+    renderWithProvider(
       <ResumeUploadDialog
         visible={true}
         onClose={mockOnClose}
@@ -27,7 +31,7 @@ describe('ResumeUploadDialog Component', () => {
   });
 
   it('should display file format requirements', () => {
-    render(
+    renderWithProvider(
       <ResumeUploadDialog
         visible={true}
         onClose={mockOnClose}
@@ -40,7 +44,7 @@ describe('ResumeUploadDialog Component', () => {
   });
 
   it('should disable confirm button when no file is uploaded', () => {
-    render(
+    renderWithProvider(
       <ResumeUploadDialog
         visible={true}
         onClose={mockOnClose}

@@ -121,7 +121,7 @@ describe('ResumeService', () => {
   describe('uploadResume', () => {
     it('should upload a PDF file successfully', async () => {
       (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => { });
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {});
       (prismaService.resume.create as jest.Mock).mockResolvedValue(mockResume);
 
       const result = await service.uploadResume(
@@ -144,7 +144,7 @@ describe('ResumeService', () => {
       };
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => { });
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {});
       (prismaService.resume.create as jest.Mock).mockResolvedValue({
         ...mockResume,
         fileType: 'docx',
@@ -163,7 +163,7 @@ describe('ResumeService', () => {
       };
 
       (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.writeFileSync as jest.Mock).mockImplementation(() => { });
+      (fs.writeFileSync as jest.Mock).mockImplementation(() => {});
       (prismaService.resume.create as jest.Mock).mockResolvedValue({
         ...mockResume,
         fileType: 'txt',
@@ -331,7 +331,7 @@ describe('ResumeService', () => {
         mockResume
       );
       (fs.existsSync as jest.Mock).mockReturnValue(true);
-      (fs.unlinkSync as jest.Mock).mockImplementation(() => { });
+      (fs.unlinkSync as jest.Mock).mockImplementation(() => {});
       (prismaService.resume.delete as jest.Mock).mockResolvedValue(mockResume);
 
       await service.deleteResume('resume-1', 'user-1');
