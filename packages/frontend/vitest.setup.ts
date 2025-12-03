@@ -1,9 +1,13 @@
 import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util';
 
-Object.assign(global, { TextDecoder, TextEncoder });
+// Polyfill TextEncoder/TextDecoder for jsdom environment
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
 
 // Cleanup after each test
 afterEach(() => {
