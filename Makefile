@@ -1,34 +1,73 @@
-.PHONY: help docker-build docker-up docker-down docker-logs docker-ps docker-clean docker-db-migrate docker-db-seed docker-test docker-shell-backend docker-shell-frontend docker-shell-postgres docker-shell-redis
+.PHONY: help dev prod deploy-dev deploy-prod backup restore docker-build docker-up docker-down docker-logs docker-ps docker-clean docker-db-migrate docker-db-seed docker-test docker-shell-backend docker-shell-frontend docker-shell-postgres docker-shell-redis
 
 help:
-	@echo "Resume Optimizer Docker Commands"
+	@echo "Resume Optimizer - 部署和管理命令"
 	@echo "=================================="
 	@echo ""
-	@echo "Setup:"
-	@echo "  make docker-build          Build Docker images"
-	@echo "  make docker-up             Start all services"
-	@echo "  make docker-down           Stop all services"
-	@echo "  make docker-clean          Remove all containers and volumes"
+	@echo "快速部署 (推荐):"
+	@echo "  make dev                   开发环境一键部署"
+	@echo "  make prod                  生产环境一键部署"
+	@echo "  make deploy-dev            开发环境部署（完整）"
+	@echo "  make deploy-prod           生产环境部署（带备份）"
 	@echo ""
-	@echo "Database:"
-	@echo "  make docker-db-migrate     Run database migrations"
-	@echo "  make docker-db-seed        Seed initial data"
+	@echo "数据库管理:"
+	@echo "  make backup                备份数据库"
+	@echo "  make restore FILE=<file>   恢复数据库"
+	@echo "  make docker-db-migrate     运行数据库迁移"
+	@echo "  make docker-db-seed        填充初始数据"
 	@echo ""
-	@echo "Monitoring:"
-	@echo "  make docker-ps             Show running containers"
-	@echo "  make docker-logs           View logs from all services"
-	@echo "  make docker-logs-backend   View backend logs"
-	@echo "  make docker-logs-frontend  View frontend logs"
+	@echo "Docker 基础操作:"
+	@echo "  make docker-build          构建 Docker 镜像"
+	@echo "  make docker-up             启动所有服务"
+	@echo "  make docker-down           停止所有服务"
+	@echo "  make docker-clean          删除所有容器和数据卷"
 	@echo ""
-	@echo "Shell Access:"
-	@echo "  make docker-shell-backend  Access backend container shell"
-	@echo "  make docker-shell-frontend Access frontend container shell"
-	@echo "  make docker-shell-postgres Access PostgreSQL container shell"
-	@echo "  make docker-shell-redis    Access Redis container shell"
+	@echo "监控和日志:"
+	@echo "  make docker-ps             显示运行中的容器"
+	@echo "  make docker-logs           查看所有服务日志"
+	@echo "  make docker-logs-backend   查看后端日志"
+	@echo "  make docker-logs-frontend  查看前端日志"
 	@echo ""
-	@echo "Testing:"
-	@echo "  make docker-test           Run tests in backend"
+	@echo "容器访问:"
+	@echo "  make docker-shell-backend  进入后端容器"
+	@echo "  make docker-shell-frontend 进入前端容器"
+	@echo "  make docker-shell-postgres 进入 PostgreSQL 容器"
+	@echo "  make docker-shell-redis    进入 Redis 容器"
 	@echo ""
+	@echo "测试:"
+	@echo "  make docker-test           运行后端测试"
+	@echo ""
+
+# 快速部署命令
+dev:
+	@echo "开发环境一键部署..."
+	./deployment/scripts/deploy.sh --env dev
+
+prod:
+	@echo "生产环境一键部署..."
+	./deployment/scripts/deploy.sh --env prod --backup
+
+deploy-dev:
+	@echo "开发环境完整部署..."
+	./deployment/scripts/deploy.sh --env dev
+
+deploy-prod:
+	@echo "生产环境完整部署（带备份）..."
+	./deployment/scripts/deploy.sh --env prod --backup
+
+# 数据库管理
+backup:
+	@echo "备份数据库..."
+	./deployment/scripts/backup-database.sh
+
+restore:
+	@echo "恢复数据库..."
+	@if [ -z "$(FILE)" ]; then \
+		echo "错误: 请指定备份文件"; \
+		echo "用法: make restore FILE=resume_optimizer_20231201_120000.sql.gz"; \
+		exit 1; \
+	fi
+	./deployment/scripts/restore-database.sh $(FILE)
 
 docker-build:
 	@echo "Building Docker images..."
@@ -100,15 +139,15 @@ docker-health-check:
 	@echo "Redis: $$(docker-compose exec redis redis-cli ping && echo 'OK' || echo 'FAILED')"
 
 docker-backup-db:
-	@echo "Backing up database..."
-	docker-compose exec postgres pg_dump -U resume_user resume_optimizer > backup_$$(date +%Y%m%d_%H%M%S).sql
-	@echo "Backup complete"
+	@echo "使用新的备份脚本..."
+	./deployment/scripts/backup-database.sh
 
-docker-restore-db:
-	@echo "Restoring database from backup..."
-	@read -p "Enter backup file path: " backup_file; \
-	docker-compose exec -T postgres psql -U resume_user resume_optimizer < $$backup_file
-	@echo "Restore complete"
+db:
+	@echo "使用新的恢复脚本..."
+	@echo "可用备份: "
+	@ls -lh backups/postgres/ 2>/dev/null || echo "未找到"
+	@read -p "输入备份文件名: " backup_file; \
+	./deployment/scripts/resile
 
 docker-rebuild:
 	@echo "Rebuilding and restarting services..."
