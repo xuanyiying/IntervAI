@@ -22,7 +22,7 @@ export class MonitoringInterceptor implements NestInterceptor {
   constructor(
     private readonly metrics: MetricsService,
     @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
-  ) {}
+  ) { }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
@@ -37,7 +37,7 @@ export class MonitoringInterceptor implements NestInterceptor {
       tap((data) => {
         const duration = Date.now() - startTime;
         const statusCode = response.statusCode;
-        const responseSize = JSON.stringify(data).length;
+        const responseSize = JSON.stringify(data)?.length || 0;
 
         // Record metrics
         this.metrics.recordHttpRequest(
