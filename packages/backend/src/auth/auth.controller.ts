@@ -2,7 +2,7 @@ import { Controller, All, Req, Res } from '@nestjs/common';
 import { auth } from './auth.config';
 import { toNodeHandler } from 'better-auth/node';
 
-@Controller('auth')
+@Controller('auth/social')
 export class AuthController {
   @All('*')
   async handleAuth(@Req() req, @Res() res) {
