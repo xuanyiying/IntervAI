@@ -1,661 +1,650 @@
 // Prisma Schema for Resume Optimizer MVP
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum SubscriptionTier {
-    FREE
-    PRO
-    ENTERPRISE
+  FREE
+  PRO
+  ENTERPRISE
 }
 
 enum Role {
-    USER
-    ADMIN
+  USER
+  ADMIN
 }
 
 // User model
 model User {
-    id                    String           @id @default(uuid())
-    email                 String           @unique
-    passwordHash          String? // Made optional for OAuth users
-    username              String?
-    name                  String? // Added for BetterAuth
-    image                 String? // Added for BetterAuth
-    role                  Role             @default(USER)
-    phone                 String?
-    avatarUrl             String?
-    subscriptionTier      SubscriptionTier @default(FREE)
-    subscriptionExpiresAt DateTime?
-    createdAt             DateTime         @default(now())
-    updatedAt             DateTime         @updatedAt
-    lastLoginAt           DateTime?
-    isActive              Boolean          @default(true)
-    emailVerified         Boolean          @default(false)
-    verificationToken     String?
-    resetPasswordToken    String?
-    resetPasswordExpires  DateTime?
-    stripeCustomerId      String?
-    stripeSubscriptionId  String?
-    paddleCustomerId      String?
-    paddleSubscriptionId  String?
-    subscriptionProvider  String? // 'stripe' | 'paddle'
+  id                    String           @id @default(uuid())
+  email                 String           @unique
+  passwordHash          String? // Made optional for OAuth users
+  username              String?
+  name                  String? // Added for BetterAuth
+  image                 String? // Added for BetterAuth
+  role                  Role             @default(USER)
+  phone                 String?
+  avatarUrl             String?
+  subscriptionTier      SubscriptionTier @default(FREE)
+  subscriptionExpiresAt DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  lastLoginAt           DateTime?
+  isActive              Boolean          @default(true)
+  emailVerified         Boolean          @default(false)
+  verificationToken     String?
+  resetPasswordToken    String?
+  resetPasswordExpires  DateTime?
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  paddleCustomerId      String?
+  paddleSubscriptionId  String?
+  subscriptionProvider  String? // 'stripe' | 'paddle'
 
-    // Relations
-    resumes           Resume[]
-    jobs              Job[]
-    optimizations     Optimization[]
-    generatedPdfs     GeneratedPDF[]
-    conversations     Conversation[]
-    messages          Message[]
-    invitationCode    InvitationCode?
-    storages          Storage[]
-    interviewSessions InterviewSession[]
+  // Relations
+  resumes           Resume[]
+  jobs              Job[]
+  optimizations     Optimization[]
+  generatedPdfs     GeneratedPDF[]
+  conversations     Conversation[]
+  messages          Message[]
+  invitationCode    InvitationCode?
+  storages          Storage[]
+  interviewSessions InterviewSession[]
 
-    // BetterAuth Relations
-    sessions      Session[]
-    accounts      Account[]
-    agentSessions AgentSession[]
+  // BetterAuth Relations
+  sessions      Session[]
+  accounts      Account[]
+  agentSessions AgentSession[]
 
-    @@index([email])
-    @@map("users")
+  @@index([email])
+  @@map("users")
 }
 
 model Session {
-    id        String   @id
-    userId    String
-    expiresAt DateTime
-    token     String
-    ipAddress String?
-    userAgent String?
-    createdAt DateTime
-    updatedAt DateTime
+  id        String   @id
+  userId    String
+  expiresAt DateTime
+  token     String
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime
+  updatedAt DateTime
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([token])
-    @@map("sessions")
+  @@unique([token])
+  @@map("sessions")
 }
 
 model Account {
-    id                    String    @id
-    accountId             String
-    providerId            String
-    userId                String
-    user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    accessToken           String?
-    refreshToken          String?
-    idToken               String?
-    accessTokenExpiresAt  DateTime?
-    refreshTokenExpiresAt DateTime?
-    scope                 String?
-    password              String?
-    createdAt             DateTime
-    updatedAt             DateTime
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
 
-    @@map("accounts")
+  @@map("accounts")
 }
 
 model Verification {
-    id         String    @id
-    identifier String
-    value      String
-    expiresAt  DateTime
-    createdAt  DateTime?
-    updatedAt  DateTime?
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
 
-    @@map("verification")
+  @@map("verification")
 }
 
 // Resume model
 model Resume {
-    id               String      @id @default(uuid())
-    userId           String
-    title            String
-    originalFilename String?
-    fileUrl          String?
-    fileType         String?
-    fileSize         Int?
-    parsedData       Json?
-    version          Int         @default(1)
-    isPrimary        Boolean     @default(false)
-    parseStatus      ParseStatus @default(PENDING)
-    createdAt        DateTime    @default(now())
-    updatedAt        DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  userId           String
+  title            String
+  originalFilename String?
+  fileUrl          String?
+  fileType         String?
+  fileSize         Int?
+  parsedData       Json?
+  version          Int         @default(1)
+  isPrimary        Boolean     @default(false)
+  parseStatus      ParseStatus @default(PENDING)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-    // Relations
-    user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-    optimizations Optimization[]
+  // Relations
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimizations Optimization[]
 
-    @@index([userId])
-    @@index([userId, isPrimary])
-    @@map("resumes")
+  @@index([userId])
+  @@index([userId, isPrimary])
+  @@map("resumes")
 }
 
 enum ParseStatus {
-    PENDING
-    PROCESSING
-    COMPLETED
-    FAILED
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // Job model
 model Job {
-    id                 String   @id @default(uuid())
-    userId             String
-    title              String
-    company            String
-    location           String?
-    jobType            String?
-    salaryRange        String?
-    jobDescription     String   @db.Text
-    requirements       String   @db.Text
-    parsedRequirements Json?
-    sourceUrl          String?
-    createdAt          DateTime @default(now())
-    updatedAt          DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  userId             String
+  title              String
+  company            String
+  location           String?
+  jobType            String?
+  salaryRange        String?
+  jobDescription     String   @db.Text
+  requirements       String   @db.Text
+  parsedRequirements Json?
+  sourceUrl          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-    // Relations
-    user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-    optimizations Optimization[]
+  // Relations
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimizations Optimization[]
 
-    @@index([userId])
-    @@map("jobs")
+  @@index([userId])
+  @@map("jobs")
 }
 
 // Optimization model
 model Optimization {
-    id               String             @id @default(uuid())
-    userId           String
-    resumeId         String
-    jobId            String
-    matchScore       Json?
-    suggestions      Json[]
-    optimizedContent Json?
-    status           OptimizationStatus @default(PENDING)
-    createdAt        DateTime           @default(now())
-    completedAt      DateTime?
+  id               String             @id @default(uuid())
+  userId           String
+  resumeId         String
+  jobId            String
+  matchScore       Json?
+  suggestions      Json[]
+  optimizedContent Json?
+  status           OptimizationStatus @default(PENDING)
+  createdAt        DateTime           @default(now())
+  completedAt      DateTime?
 
-    // Relations
-    user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-    resume             Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-    job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
-    generatedPdfs      GeneratedPDF[]
-    interviewQuestions InterviewQuestion[]
-    interviewSessions  InterviewSession[]
+  // Relations
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume             Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  generatedPdfs      GeneratedPDF[]
+  interviewQuestions InterviewQuestion[]
+  interviewSessions  InterviewSession[]
 
-    @@index([userId])
-    @@index([resumeId])
-    @@index([jobId])
-    @@map("optimizations")
+  @@index([userId])
+  @@index([resumeId])
+  @@index([jobId])
+  @@map("optimizations")
 }
 
 enum OptimizationStatus {
-    PENDING
-    PROCESSING
-    COMPLETED
-    FAILED
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 // Generated PDF model
 model GeneratedPDF {
-    id             String    @id @default(uuid())
-    userId         String
-    optimizationId String
-    templateId     String
-    fileUrl        String
-    fileSize       Int
-    downloadCount  Int       @default(0)
-    createdAt      DateTime  @default(now())
-    expiresAt      DateTime?
+  id             String    @id @default(uuid())
+  userId         String
+  optimizationId String
+  templateId     String
+  fileUrl        String
+  fileSize       Int
+  downloadCount  Int       @default(0)
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime?
 
-    // Relations
-    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-    optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
-    template     Template     @relation(fields: [templateId], references: [id])
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  template     Template     @relation(fields: [templateId], references: [id])
 
-    @@index([userId])
-    @@index([optimizationId])
-    @@map("generated_pdfs")
+  @@index([userId])
+  @@index([optimizationId])
+  @@map("generated_pdfs")
 }
 
 // Template model
 model Template {
-    id            String   @id @default(uuid())
-    name          String   @unique
-    category      String
-    description   String
-    previewUrl    String
-    isPremium     Boolean  @default(false)
-    isActive      Boolean  @default(true)
-    configuration Json
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String   @unique
+  category      String
+  description   String
+  previewUrl    String
+  isPremium     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  configuration Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-    // Relations
-    generatedPdfs GeneratedPDF[]
+  // Relations
+  generatedPdfs GeneratedPDF[]
 
-    @@index([category])
-    @@index([isActive])
-    @@map("templates")
+  @@index([category])
+  @@index([isActive])
+  @@map("templates")
 }
 
 // Interview Question model
 model InterviewQuestion {
-    id              String       @id @default(uuid())
-    optimizationId  String
-    questionType    QuestionType
-    question        String       @db.Text
-    suggestedAnswer String       @db.Text
-    tips            String[]
-    difficulty      Difficulty
-    createdAt       DateTime     @default(now())
+  id              String       @id @default(uuid())
+  optimizationId  String
+  questionType    QuestionType
+  question        String       @db.Text
+  suggestedAnswer String       @db.Text
+  tips            String[]
+  difficulty      Difficulty
+  createdAt       DateTime     @default(now())
 
-    // Relations
-    optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  // Relations
+  optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
 
-    @@index([optimizationId])
-    @@map("interview_questions")
+  @@index([optimizationId])
+  @@map("interview_questions")
 }
 
 // Model Configuration model
 model ModelConfig {
-    id                 String   @id @default(uuid())
-    name               String   @unique
-    provider           String
-    apiKey             String   @db.Text // Encrypted in storage
-    endpoint           String?
-    defaultTemperature Float    @default(0.7)
-    defaultMaxTokens   Int      @default(2000)
-    costPerInputToken  Float    @default(0)
-    costPerOutputToken Float    @default(0)
-    rateLimitPerMinute Int      @default(0)
-    rateLimitPerDay    Int      @default(0)
-    isActive           Boolean  @default(true)
-    createdAt          DateTime @default(now())
-    updatedAt          DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  name               String   @unique
+  provider           String
+  apiKey             String   @db.Text // Encrypted in storage
+  endpoint           String?
+  defaultTemperature Float    @default(0.7)
+  defaultMaxTokens   Int      @default(2000)
+  costPerInputToken  Float    @default(0)
+  costPerOutputToken Float    @default(0)
+  rateLimitPerMinute Int      @default(0)
+  rateLimitPerDay    Int      @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-    @@index([provider])
-    @@index([isActive])
-    @@map("model_configs")
+  @@index([provider])
+  @@index([isActive])
+  @@map("model_configs")
 }
 
 // Prompt Template model
 model PromptTemplate {
-    id          String   @id @default(uuid())
-    name        String
-    scenario    String
-    language    String   @default("en") // Language code: 'en', 'zh-CN', etc.
-    template    String   @db.Text
-    variables   String[]
-    provider    String?
-    isEncrypted Boolean  @default(false)
-    version     Int      @default(1)
-    isActive    Boolean  @default(true)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  scenario    String
+  language    String   @default("en") // Language code: 'en', 'zh-CN', etc.
+  template    String   @db.Text
+  variables   String[]
+  provider    String?
+  isEncrypted Boolean  @default(false)
+  version     Int      @default(1)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-    // Relations
-    versions PromptTemplateVersion[]
+  // Relations
+  versions PromptTemplateVersion[]
 
-    @@unique([name, language]) // Allow same name in different languages
-    @@index([scenario])
-    @@index([language])
-    @@index([provider])
-    @@index([isActive])
-    @@map("prompt_templates")
+  @@unique([name, language]) // Allow same name in different languages
+  @@index([scenario])
+  @@index([language])
+  @@index([provider])
+  @@index([isActive])
+  @@map("prompt_templates")
 }
 
 // Prompt Template Version model
 model PromptTemplateVersion {
-    id         String   @id @default(uuid())
-    templateId String
-    version    Int
-    content    String   @db.Text
-    variables  String[]
-    author     String
-    reason     String?
-    isActive   Boolean  @default(false)
-    createdAt  DateTime @default(now())
+  id         String   @id @default(uuid())
+  templateId String
+  version    Int
+  content    String   @db.Text
+  variables  String[]
+  author     String
+  reason     String?
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-    // Relations
-    promptTemplate PromptTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  // Relations
+  promptTemplate PromptTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
-    @@unique([templateId, version])
-    @@index([templateId])
-    @@map("prompt_template_versions")
+  @@unique([templateId, version])
+  @@index([templateId])
+  @@map("prompt_template_versions")
 }
 
 // Usage Record model
 model UsageRecord {
-    id           String   @id @default(uuid())
-    userId       String
-    model        String
-    provider     String
-    scenario     String?
-    inputTokens  Int
-    outputTokens Int
-    cost         Float
-    latency      Int
-    success      Boolean
-    errorCode    String?
-    agentType    String? // 'pitch-perfect' | 'strategist' | 'role-play'
-    workflowStep String? // Step name in Agent workflow
-    timestamp    DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  model        String
+  provider     String
+  scenario     String?
+  inputTokens  Int
+  outputTokens Int
+  cost         Float
+  latency      Int
+  success      Boolean
+  errorCode    String?
+  agentType    String? // 'pitch-perfect' | 'strategist' | 'role-play'
+  workflowStep String? // Step name in Agent workflow
+  timestamp    DateTime @default(now())
 
-    @@index([userId])
-    @@index([model])
-    @@index([provider])
-    @@index([timestamp])
-    @@index([agentType])
-    @@index([workflowStep])
-    @@map("usage_records")
+  @@index([userId])
+  @@index([model])
+  @@index([provider])
+  @@index([timestamp])
+  @@index([agentType])
+  @@index([workflowStep])
+  @@map("usage_records")
 }
 
 // Performance Metrics model
 model PerformanceMetrics {
-    id              String   @id @default(uuid())
-    model           String   @unique
-    provider        String
-    totalCalls      Int      @default(0)
-    successfulCalls Int      @default(0)
-    failedCalls     Int      @default(0)
-    averageLatency  Float    @default(0)
-    maxLatency      Int      @default(0)
-    minLatency      Int      @default(0)
-    successRate     Float    @default(0)
-    failureRate     Float    @default(0)
-    lastUpdated     DateTime @default(now())
+  id              String   @id @default(uuid())
+  model           String   @unique
+  provider        String
+  totalCalls      Int      @default(0)
+  successfulCalls Int      @default(0)
+  failedCalls     Int      @default(0)
+  averageLatency  Float    @default(0)
+  maxLatency      Int      @default(0)
+  minLatency      Int      @default(0)
+  successRate     Float    @default(0)
+  failureRate     Float    @default(0)
+  lastUpdated     DateTime @default(now())
 
-    @@index([provider])
-    @@map("performance_metrics")
+  @@index([provider])
+  @@map("performance_metrics")
 }
 
 // Audit Log model
 model AuditLog {
-    id        String   @id @default(uuid())
-    action    String
-    resource  String
-    userId    String?
-    details   Json?
-    timestamp DateTime @default(now())
+  id        String   @id @default(uuid())
+  action    String
+  resource  String
+  userId    String?
+  details   Json?
+  timestamp DateTime @default(now())
 
-    @@index([action])
-    @@index([resource])
-    @@index([userId])
-    @@index([timestamp])
-    @@map("audit_logs")
+  @@index([action])
+  @@index([resource])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("audit_logs")
 }
 
 enum QuestionType {
-    BEHAVIORAL
-    TECHNICAL
-    SITUATIONAL
-    RESUME_BASED
+  BEHAVIORAL
+  TECHNICAL
+  SITUATIONAL
+  RESUME_BASED
 }
 
 enum Difficulty {
-    EASY
-    MEDIUM
-    HARD
+  EASY
+  MEDIUM
+  HARD
 }
 
 // AI Call Log model
 model AICallLog {
-    id              String   @id @default(uuid())
-    model           String
-    provider        String
-    scenario        String?
-    requestContent  String?  @db.Text
-    responseContent String?  @db.Text
-    inputTokens     Int?
-    outputTokens    Int?
-    latency         Int
-    success         Boolean
-    errorCode       String?
-    errorMessage    String?
-    stackTrace      String?  @db.Text
-    userId          String?
-    timestamp       DateTime @default(now())
+  id              String   @id @default(uuid())
+  model           String
+  provider        String
+  scenario        String?
+  requestContent  String?  @db.Text
+  responseContent String?  @db.Text
+  inputTokens     Int?
+  outputTokens    Int?
+  latency         Int
+  success         Boolean
+  errorCode       String?
+  errorMessage    String?
+  stackTrace      String?  @db.Text
+  userId          String?
+  timestamp       DateTime @default(now())
 
-    @@index([model])
-    @@index([provider])
-    @@index([scenario])
-    @@index([success])
-    @@index([timestamp])
-    @@index([userId])
-    @@map("ai_call_logs")
+  @@index([model])
+  @@index([provider])
+  @@index([scenario])
+  @@index([success])
+  @@index([timestamp])
+  @@index([userId])
+  @@map("ai_call_logs")
 }
 
 // AI Retry Log model
 model AIRetryLog {
-    id           String   @id @default(uuid())
-    model        String
-    provider     String
-    attempt      Int
-    maxAttempts  Int
-    errorCode    String?
-    errorMessage String?
-    timestamp    DateTime @default(now())
+  id           String   @id @default(uuid())
+  model        String
+  provider     String
+  attempt      Int
+  maxAttempts  Int
+  errorCode    String?
+  errorMessage String?
+  timestamp    DateTime @default(now())
 
-    @@index([model])
-    @@index([provider])
-    @@index([timestamp])
-    @@map("ai_retry_logs")
+  @@index([model])
+  @@index([provider])
+  @@index([timestamp])
+  @@map("ai_retry_logs")
 }
 
 // AI Degradation Log model
 model AIDegradationLog {
-    id               String   @id @default(uuid())
-    model            String
-    provider         String
-    reason           String
-    fallbackModel    String?
-    fallbackProvider String?
-    timestamp        DateTime @default(now())
+  id               String   @id @default(uuid())
+  model            String
+  provider         String
+  reason           String
+  fallbackModel    String?
+  fallbackProvider String?
+  timestamp        DateTime @default(now())
 
-    @@index([model])
-    @@index([provider])
-    @@index([timestamp])
-    @@map("ai_degradation_logs")
+  @@index([model])
+  @@index([provider])
+  @@index([timestamp])
+  @@map("ai_degradation_logs")
 }
 
 // Conversation model
 model Conversation {
-    id            String    @id @default(uuid())
-    userId        String
-    title         String
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    lastMessageAt DateTime?
-    messageCount  Int       @default(0)
-    isActive      Boolean   @default(true)
+  id            String    @id @default(uuid())
+  userId        String
+  title         String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastMessageAt DateTime?
+  messageCount  Int       @default(0)
+  isActive      Boolean   @default(true)
 
-    // Relations
-    user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    messages Message[]
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
 
-    @@index([userId])
-    @@index([userId, isActive])
-    @@map("conversations")
+  @@index([userId])
+  @@index([userId, isActive])
+  @@map("conversations")
 }
 
 enum MessageRole {
-    USER
-    ASSISTANT
-    SYSTEM
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
 // Message model
 model Message {
-    id             String      @id @default(uuid())
-    conversationId String
-    userId         String
-    role           MessageRole
-    content        String      @db.Text
-    attachments    Json?
-    metadata       Json?
-    createdAt      DateTime    @default(now())
+  id             String      @id @default(uuid())
+  conversationId String
+  userId         String
+  role           MessageRole
+  content        String      @db.Text
+  attachments    Json?
+  metadata       Json?
+  createdAt      DateTime    @default(now())
 
-    // Relations
-    conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([conversationId])
-    @@index([userId])
-    @@index([conversationId, createdAt])
-    @@map("messages")
+  @@index([conversationId])
+  @@index([userId])
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }
 
 // Invitation Code model
 model InvitationCode {
-    id        String    @id @default(uuid())
-    code      String    @unique
-    isUsed    Boolean   @default(false)
-    usedBy    String?   @unique // One code per user
-    usedAt    DateTime?
-    createdBy String // Admin ID
-    createdAt DateTime  @default(now())
-    expiresAt DateTime?
+  id        String    @id @default(uuid())
+  code      String    @unique
+  isUsed    Boolean   @default(false)
+  usedBy    String?   @unique // One code per user
+  usedAt    DateTime?
+  createdBy String // Admin ID
+  createdAt DateTime  @default(now())
+  expiresAt DateTime?
 
-    // Relations
-    user User? @relation(fields: [usedBy], references: [id])
+  // Relations
+  user User? @relation(fields: [usedBy], references: [id])
 
-    @@index([code])
-    @@index([isUsed])
-    @@map("invitation_codes")
+  @@index([code])
+  @@index([isUsed])
+  @@map("invitation_codes")
 }
 
 enum FileType {
-    IMAGE
-    VIDEO
-    DOCUMENT
-    AUDIO
-    OTHER
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+  OTHER
 }
 
 enum OssType {
-    MINIO
-    AWS_S3
-    ALIYUN_OSS
-    TENCENT_COS
-    LOCAL
+  MINIO
+  AWS_S3
+  ALIYUN_OSS
+  TENCENT_COS
+  LOCAL
 }
 
 // Storage model
 model Storage {
-    id           String   @id @default(uuid())
-    userId       String
-    filename     String
-    originalName String
-    fileSize     Int
-    mimeType     String
-    fileUrl      String
-    filePath     String // OSS Key
-    hashMd5      String
-    fileType     FileType
-    category     String?
-    thumbnailUrl String?
-    ossType      OssType
-    isPublic     Boolean  @default(false)
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
+  id           String   @id @default(uuid())
+  userId       String
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  fileUrl      String
+  filePath     String // OSS Key
+  hashMd5      String
+  fileType     FileType
+  category     String?
+  thumbnailUrl String?
+  ossType      OssType
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-    // Relations
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([fileType])
-    @@index([hashMd5])
-    @@map("storages")
+  @@index([userId])
+  @@index([fileType])
+  @@index([hashMd5])
+  @@map("storages")
 }
 
 // Interview Session model
 model InterviewSession {
-    id             String          @id @default(uuid())
-    userId         String
-    optimizationId String
-    status         InterviewStatus @default(IN_PROGRESS)
-    startTime      DateTime        @default(now())
-    endTime        DateTime?
-    score          Int?
-    feedback       String?         @db.Text
-    createdAt      DateTime        @default(now())
-    updatedAt      DateTime        @updatedAt
+  id             String          @id @default(uuid())
+  userId         String
+  optimizationId String
+  status         InterviewStatus @default(IN_PROGRESS)
+  startTime      DateTime        @default(now())
+  endTime        DateTime?
+  score          Int?
+  feedback       String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
-    // Relations
-    user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-    optimization Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
-    messages     InterviewMessage[]
+  // Relations
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimization Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  messages     InterviewMessage[]
 
-    @@index([userId])
-    @@index([optimizationId])
-    @@map("interview_sessions")
+  @@index([userId])
+  @@index([optimizationId])
+  @@map("interview_sessions")
 }
 
 // Interview Message model
 model InterviewMessage {
-    id        String      @id @default(uuid())
-    sessionId String
-    role      MessageRole // USER or ASSISTANT
-    content   String      @db.Text
-    audioUrl  String?
-    createdAt DateTime    @default(now())
+  id        String      @id @default(uuid())
+  sessionId String
+  role      MessageRole // USER or ASSISTANT
+  content   String      @db.Text
+  audioUrl  String?
+  createdAt DateTime    @default(now())
 
-    // Relations
-    session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  // Relations
+  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-    @@index([sessionId])
-    @@map("interview_messages")
+  @@index([sessionId])
+  @@map("interview_messages")
 }
 
 enum InterviewStatus {
-    IN_PROGRESS
-    COMPLETED
-    CANCELLED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
-// Vector Document model for RAG
-model VectorDocument {
-    id        String                       @id @default(cuid())
-    content   String                       @db.Text
-    embedding Unsupported("vector(1536)")?
-    metadata  Json?
-    createdAt DateTime                     @default(now())
-    updatedAt DateTime                     @updatedAt
 
-    @@index([createdAt])
-    @@map("vector_documents")
-}
 
 // Agent Session model for tracking Agent executions
 model AgentSession {
-    id          String    @id @default(cuid())
-    userId      String
-    agentType   String // 'pitch-perfect' | 'strategist' | 'role-play'
-    status      String // 'active' | 'completed' | 'failed'
-    input       Json?
-    output      Json?
-    tokenUsage  Json? // { total: number, byStep: Record<string, number> }
-    cost        Float     @default(0)
-    startedAt   DateTime  @default(now())
-    completedAt DateTime?
-    metadata    Json?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  agentType   String // 'pitch-perfect' | 'strategist' | 'role-play'
+  status      String // 'active' | 'completed' | 'failed'
+  input       Json?
+  output      Json?
+  tokenUsage  Json? // { total: number, byStep: Record<string, number> }
+  cost        Float     @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-    // Relations
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([agentType])
-    @@index([status])
-    @@index([startedAt])
-    @@map("agent_sessions")
+  @@index([userId])
+  @@index([agentType])
+  @@index([status])
+  @@index([startedAt])
+  @@map("agent_sessions")
 }

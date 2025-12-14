@@ -221,6 +221,9 @@ export class AIEngineService implements OnModuleInit {
         cost,
         latency,
         success: true,
+        agentType: null,
+        workflowStep: null,
+        errorCode: null,
       });
 
       // Record performance metrics

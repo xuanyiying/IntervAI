@@ -5,25 +5,9 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { UsageRecord as PrismaUsageRecord } from '@prisma/client';
-
-export interface UsageRecord {
-  id: string;
-  userId: string;
-  model: string;
-  provider: string;
-  scenario?: string;
-  inputTokens: number;
-  outputTokens: number;
-  cost: number;
-  latency: number;
-  success: boolean;
-  errorCode?: string;
-  timestamp: Date;
-  agentType?: string; // 'pitch-perfect' | 'strategist' | 'role-play'
-  workflowStep?: string; // Step name in Agent workflow
-}
+import { PrismaService } from '@/prisma/prisma.service';
+import { UsageRecord } from '@prisma/client';
+export type { UsageRecord };
 
 export interface CostReport {
   period: {
@@ -53,7 +37,7 @@ export class UsageTrackerService {
   private readonly logger = new Logger(UsageTrackerService.name);
   private costThresholds: Map<string, CostThreshold> = new Map();
 
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   /**
    * Record AI usage
@@ -79,7 +63,7 @@ export class UsageTrackerService {
           latency: record.latency,
           success: record.success,
           errorCode: record.errorCode || null,
-          agentType: record.agentType || null,
+          agentType: record.agentType || undefined,
           workflowStep: record.workflowStep || null,
           timestamp: new Date(),
         },
@@ -365,10 +349,10 @@ export class UsageTrackerService {
         averageLatency:
           data.latencies.length > 0
             ? Math.round(
-                (data.latencies.reduce((a, b) => a + b, 0) /
-                  data.latencies.length) *
-                  100
-              ) / 100
+              (data.latencies.reduce((a, b) => a + b, 0) /
+                data.latencies.length) *
+              100
+            ) / 100
             : 0,
       }));
 
@@ -460,10 +444,10 @@ export class UsageTrackerService {
         averageLatency:
           data.latencies.length > 0
             ? Math.round(
-                (data.latencies.reduce((a, b) => a + b, 0) /
-                  data.latencies.length) *
-                  100
-              ) / 100
+              (data.latencies.reduce((a, b) => a + b, 0) /
+                data.latencies.length) *
+              100
+            ) / 100
             : 0,
       }));
 
@@ -800,24 +784,22 @@ export class UsageTrackerService {
   /**
    * Map Prisma UsageRecord to UsageRecord interface
    */
-  private mapPrismaToUsageRecord(
-    record: PrismaUsageRecord & { agentType?: string; workflowStep?: string }
-  ): UsageRecord {
+  private mapPrismaToUsageRecord(record: UsageRecord): UsageRecord {
     return {
       id: record.id,
       userId: record.userId,
       model: record.model,
       provider: record.provider,
-      scenario: record.scenario || undefined,
+      scenario: record.scenario || null,
       inputTokens: record.inputTokens,
       outputTokens: record.outputTokens,
       cost: record.cost,
       latency: record.latency,
       success: record.success,
-      errorCode: record.errorCode || undefined,
+      errorCode: record.errorCode || null,
       timestamp: record.timestamp,
-      agentType: record.agentType || undefined,
-      workflowStep: record.workflowStep || undefined,
+      agentType: record.agentType || null,
+      workflowStep: record.workflowStep || null,
     };
   }
 }

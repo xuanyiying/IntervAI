@@ -1,12 +1,14 @@
 /**
  * Vector Database Service
- * Manages vector storage and similarity search using pgvector
+ * Manages vector storage and similarity search using ChromaDB
  * Requirements: 9.2, 9.3
  */
 
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ChromaClient, Collection } from 'chromadb';
 import { EmbeddingService } from './embedding.service';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface VectorDocument {
   id: string;
@@ -25,13 +27,33 @@ export interface SimilaritySearchResult {
 }
 
 @Injectable()
-export class VectorDbService {
+export class VectorDbService implements OnModuleInit {
   private readonly logger = new Logger(VectorDbService.name);
+  private client: ChromaClient;
+  private collection: Collection;
+  private readonly collectionName = 'resume-optimizer-vectors';
 
   constructor(
-    private prisma: PrismaService,
+    private configService: ConfigService,
     private embeddingService: EmbeddingService
-  ) {}
+  ) { }
+
+  async onModuleInit() {
+    try {
+      const chromaUrl = this.configService.get<string>('CHROMA_DB_URL', 'http://chromadb:8000');
+      this.client = new ChromaClient({ path: chromaUrl });
+
+      // Initialize collection
+      this.collection = await this.client.getOrCreateCollection({
+        name: this.collectionName,
+      });
+
+      this.logger.log(`Connected to ChromaDB at ${chromaUrl}, collection: ${this.collectionName}`);
+    } catch (error) {
+      this.logger.error(`Failed to connect to ChromaDB: ${error instanceof Error ? error.message : String(error)}`);
+      // We don't throw here to allow app to start even if vector DB is temporarily modifying
+    }
+  }
 
   /**
    * Add documents to vector database
@@ -44,6 +66,11 @@ export class VectorDbService {
   ): Promise<VectorDocument[]> {
     try {
       const results: VectorDocument[] = [];
+      const ids: string[] = [];
+      const embeddings: number[][] = [];
+      const metadatas: Record<string, any>[] = [];
+      const contents: string[] = [];
+      const now = new Date();
 
       for (const doc of documents) {
         // Generate embedding for document
@@ -51,26 +78,42 @@ export class VectorDbService {
           doc.content
         );
 
-        // Store in database
-        const created = await (this.prisma as any).vectorDocument.create({
-          data: {
-            content: doc.content,
-            embedding: embedding as unknown, // pgvector type
-            metadata: doc.metadata || {},
-          },
-        });
+        const id = uuidv4();
+
+        // Prepare data for batch insertion
+        ids.push(id);
+        embeddings.push(embedding);
+
+        // Add timestamps to metadata
+        const metadata = {
+          ...(doc.metadata || {}),
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        };
+        metadatas.push(metadata);
+
+        contents.push(doc.content);
 
         results.push({
-          id: created.id,
-          content: created.content,
+          id,
+          content: doc.content,
           embedding,
-          metadata: created.metadata as Record<string, unknown>,
-          createdAt: created.createdAt,
-          updatedAt: created.updatedAt,
+          metadata: doc.metadata || {},
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
+
+      if (ids.length > 0) {
+        await this.collection.add({
+          ids,
+          embeddings,
+          metadatas,
+          documents: contents,
         });
 
         this.logger.debug(
-          `Added document to vector database: ${created.id} (${doc.content.length} chars)`
+          `Added ${ids.length} documents to vector database`
         );
       }
 
@@ -84,7 +127,7 @@ export class VectorDbService {
   }
 
   /**
-   * Perform similarity search using pgvector
+   * Perform similarity search using ChromaDB
    * Property 34: Top-K Retrieval Accuracy
    * Property 35: Similarity Score Inclusion
    * Validates: Requirements 9.3, 9.5
@@ -98,37 +141,38 @@ export class VectorDbService {
       const queryEmbedding =
         await this.embeddingService.generateEmbedding(query);
 
-      // Use pgvector for similarity search
-      // The <=> operator computes the L2 distance
-      // We convert distance to similarity: similarity = 1 / (1 + distance)
-      const results = await (this.prisma as any).$queryRaw<
-        Array<{
-          id: string;
-          content: string;
-          metadata: Record<string, unknown>;
-          distance: number;
-        }>
-      >`
-        SELECT 
-          id, 
-          content, 
-          metadata,
-          embedding <=> ${JSON.stringify(queryEmbedding)}::vector as distance
-        FROM vector_documents
-        ORDER BY embedding <=> ${JSON.stringify(queryEmbedding)}::vector
-        LIMIT ${k}
-      `;
+      // Perform search
+      const results = await this.collection.query({
+        queryEmbeddings: [queryEmbedding],
+        nResults: k,
+      });
 
-      // Convert distance to similarity score
-      const searchResults: SimilaritySearchResult[] = results.map((result) => ({
-        id: result.id,
-        content: result.content,
-        metadata: result.metadata,
-        similarity: 1 / (1 + result.distance), // Convert L2 distance to similarity
-      }));
+      const searchResults: SimilaritySearchResult[] = [];
+
+      if (results.ids && results.ids.length > 0 && results.ids[0]) {
+        const resultIds = results.ids[0];
+        const resultDistances = results.distances?.[0] || [];
+        const resultDocuments = results.documents?.[0] || [];
+        const resultMetadatas = results.metadatas?.[0] || [];
+
+        for (let i = 0; i < resultIds.length; i++) {
+          // Chroma returns distance (default L2), convert to similarity likely
+          // But usually we just return what we get or normalize. 
+          // The previous implementation used: similarity = 1 / (1 + distance) for L2
+          const distance = resultDistances[i] ?? 0;
+          const similarity = 1 / (1 + distance);
+
+          searchResults.push({
+            id: resultIds[i],
+            content: resultDocuments[i] || '',
+            metadata: resultMetadatas[i] || {},
+            similarity,
+          });
+        }
+      }
 
       this.logger.debug(
-        `Similarity search completed: found ${searchResults.length} results for query (${query.length} chars)`
+        `Similarity search completed: found ${searchResults.length} results for query`
       );
 
       return searchResults;
@@ -145,21 +189,26 @@ export class VectorDbService {
    */
   async getDocument(id: string): Promise<VectorDocument | null> {
     try {
-      const doc = await (this.prisma as any).vectorDocument.findUnique({
-        where: { id },
+      const result = await this.collection.get({
+        ids: [id],
+        include: ['embeddings', 'metadatas', 'documents'] as any
       });
 
-      if (!doc) {
+      if (!result.ids || result.ids.length === 0) {
         return null;
       }
 
+      const metadata = result.metadatas?.[0] || {};
+      const createdAtStr = metadata.createdAt as string;
+      const updatedAtStr = metadata.updatedAt as string;
+
       return {
-        id: doc.id,
-        content: doc.content,
-        embedding: doc.embedding as number[],
-        metadata: doc.metadata as Record<string, unknown>,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
+        id: result.ids[0],
+        content: result.documents?.[0] || '',
+        embedding: result.embeddings?.[0] || [],
+        metadata,
+        createdAt: createdAtStr ? new Date(createdAtStr) : new Date(),
+        updatedAt: updatedAtStr ? new Date(updatedAtStr) : new Date(),
       };
     } catch (error) {
       this.logger.error(
@@ -174,8 +223,8 @@ export class VectorDbService {
    */
   async deleteDocument(id: string): Promise<void> {
     try {
-      await (this.prisma as any).vectorDocument.delete({
-        where: { id },
+      await this.collection.delete({
+        ids: [id],
       });
 
       this.logger.debug(`Deleted document from vector database: ${id}`);
@@ -195,20 +244,30 @@ export class VectorDbService {
     metadata: Record<string, unknown>
   ): Promise<VectorDocument> {
     try {
-      const updated = await (this.prisma as any).vectorDocument.update({
-        where: { id },
-        data: {
-          metadata,
-        },
+      // Need to fetch existing data to preserve content and embedding if we only update metadata
+      // Chroma update requires id. 
+
+      const existing = await this.getDocument(id);
+      if (!existing) {
+        throw new Error(`Document with id ${id} not found`);
+      }
+
+      const now = new Date();
+      const newMetadata = {
+        ...existing.metadata,
+        ...metadata,
+        updatedAt: now.toISOString(),
+      };
+
+      await this.collection.update({
+        ids: [id],
+        metadatas: [newMetadata],
       });
 
       return {
-        id: updated.id,
-        content: updated.content,
-        embedding: updated.embedding as number[],
-        metadata: updated.metadata as Record<string, unknown>,
-        createdAt: updated.createdAt,
-        updatedAt: updated.updatedAt,
+        ...existing,
+        metadata: newMetadata,
+        updatedAt: now,
       };
     } catch (error) {
       this.logger.error(
@@ -223,13 +282,28 @@ export class VectorDbService {
    */
   async clear(): Promise<void> {
     try {
-      await (this.prisma as any).vectorDocument.deleteMany({});
+      // Chroma doesn't have a direct clear, typically we delete the collection and recreate, or delete all items?
+      // Delete all is cleaner.
+      // We can also just get all IDs and delete.
+      const peek = await this.collection.peek({ limit: 10000 }); // limit?
+      if (peek.ids && peek.ids.length > 0) {
+        await this.collection.delete({
+          ids: peek.ids
+        });
+      }
       this.logger.debug('Cleared all documents from vector database');
     } catch (error) {
-      this.logger.error(
-        `Failed to clear vector database: ${error instanceof Error ? error.message : String(error)}`
-      );
-      throw error;
+      // If getting all IDs is too heavy, we can delete collection and recreate
+      try {
+        await this.client.deleteCollection({ name: this.collectionName });
+        this.collection = await this.client.createCollection({ name: this.collectionName });
+        this.logger.debug('Recreated collection to clear documents');
+      } catch (innerError) {
+        this.logger.error(
+          `Failed to clear vector database: ${error instanceof Error ? error.message : String(error)}`
+        );
+        throw error;
+      }
     }
   }
 
@@ -238,7 +312,7 @@ export class VectorDbService {
    */
   async getDocumentCount(): Promise<number> {
     try {
-      return await (this.prisma as any).vectorDocument.count();
+      return await this.collection.count();
     } catch (error) {
       this.logger.error(
         `Failed to get document count: ${error instanceof Error ? error.message : String(error)}`
@@ -247,3 +321,4 @@ export class VectorDbService {
     }
   }
 }
+
