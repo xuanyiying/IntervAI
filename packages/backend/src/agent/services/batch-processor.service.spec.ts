@@ -84,9 +84,7 @@ describe('BatchProcessorService', () => {
 
   describe('batch generation', () => {
     it('should handle batch generation errors gracefully', async () => {
-      mockAIEngineService.call.mockRejectedValue(
-        new Error('API error')
-      );
+      mockAIEngineService.call.mockRejectedValue(new Error('API error'));
 
       // The batch generation should not throw, but handle errors internally
       // This is tested by verifying the service doesn't crash
@@ -94,7 +92,7 @@ describe('BatchProcessorService', () => {
     });
 
     it('should add documents to vector database', async () => {
-      mockVectorDbService.addDocuments.mockResolvedValue(undefined);
+      mockVectorDbService.addDocuments.mockResolvedValue([]);
 
       // Verify the service can call addDocuments
       await mockVectorDbService.addDocuments([

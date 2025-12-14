@@ -7,8 +7,8 @@
 
 import { QwenProvider } from './qwen.provider';
 import { QwenConfig } from '../interfaces/model-config.interface';
-import { AIRequest, AIResponse } from '../interfaces';
-import { AIError, AIErrorCode } from '../utils/ai-error';
+import { AIRequest } from '../interfaces';
+import { AIError } from '../utils/ai-error';
 import axios from 'axios';
 
 jest.mock('axios');

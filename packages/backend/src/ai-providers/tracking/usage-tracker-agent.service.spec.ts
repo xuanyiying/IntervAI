@@ -53,12 +53,12 @@ describe('UsageTrackerService - Agent Tracking', () => {
         success: true,
         agentType: 'pitch-perfect',
         workflowStep: 'extract-achievements',
+        errorCode: null,
       };
 
       const mockRecord = {
         id: 'record-1',
         ...agentUsageData,
-        errorCode: null,
         timestamp: new Date(),
       };
 
@@ -84,25 +84,26 @@ describe('UsageTrackerService - Agent Tracking', () => {
         userId: 'user-1',
         model: 'gpt-4',
         provider: 'openai',
+        scenario: null,
         inputTokens: 100,
         outputTokens: 50,
         cost: 0.003,
         latency: 1500,
         success: true,
+        errorCode: null,
+        agentType: null,
+        workflowStep: null,
       };
 
       const mockRecord = {
         id: 'record-1',
         ...usageData,
-        errorCode: null,
-        agentType: null,
-        workflowStep: null,
         timestamp: new Date(),
       };
 
       mockPrismaService.usageRecord.create.mockResolvedValue(mockRecord);
 
-      const result = await service.recordUsage(usageData as any);
+      const result = await service.recordUsage(usageData);
 
       expect(result.agentType).toBeUndefined();
       expect(result.workflowStep).toBeUndefined();

@@ -13,10 +13,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U resume_user -d resume_optimizer']
+      test: [ 'CMD-SHELL', 'pg_isready -U resume_user -d resume_optimizer' ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: resume-optimizer-chromadb
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - chroma_data:/chroma/chroma
+    ports:
+      - '8000:8000'
 
   redis:
     image: redis:7-alpine
@@ -26,7 +36,7 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
+      test: [ 'CMD', 'redis-cli', 'ping' ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,3 +44,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  chroma_data:

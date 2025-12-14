@@ -57,6 +57,7 @@
     "better-auth": "^1.4.5",
     "bull": "^4.11.0",
     "cheerio": "^1.0.0-rc.12",
+    "chromadb": "^3.1.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "compression": "^1.7.4",

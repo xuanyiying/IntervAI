@@ -52,12 +52,14 @@ describe('UsageTrackerService', () => {
         cost: 0.003,
         latency: 1500,
         success: true,
+        errorCode: null,
+        agentType: null,
+        workflowStep: null,
       };
 
       const mockRecord = {
         id: 'record-1',
         ...usageData,
-        errorCode: null,
         timestamp: new Date(),
       };
 

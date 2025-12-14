@@ -495,7 +495,7 @@ Result: Reduced deployment time from 2 hours to 15 minutes, improved system scal
       }
 
       // Create document with metadata
-      await (prisma as unknown).vectorDocument.create({
+      await (prisma as any).vectorDocument.create({
         data: {
           content: example.content,
           metadata: {
