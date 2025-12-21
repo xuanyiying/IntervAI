@@ -69,6 +69,14 @@ import { AuthModule } from './auth/auth.module';
           port: configService.get('REDIS_PORT', 6379),
           password: configService.get('REDIS_PASSWORD'),
         },
+        // Add queue processing options to prevent overload
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000,
+          },
+        },
       }),
       inject: [ConfigService],
     }),
