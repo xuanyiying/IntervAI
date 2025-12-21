@@ -15,6 +15,7 @@ import {
   Tooltip,
   Popconfirm,
 } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
   PlusOutlined,
   EditOutlined,
@@ -35,6 +36,7 @@ const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 const PromptManagementPage: React.FC = () => {
+  const { t } = useTranslation();
   const [prompts, setPrompts] = useState<PromptTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -46,6 +48,10 @@ const PromptManagementPage: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<
     string | undefined
   >();
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [versions, setVersions] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [activeScenario, setActiveScenario] = useState<string>('');
 
   useEffect(() => {
     loadPrompts();
@@ -61,7 +67,7 @@ const PromptManagementPage: React.FC = () => {
       });
       setPrompts(response.data);
     } catch (error) {
-      message.error('加载提示词失败');
+      message.error(t('common.error', 'Error'));
       console.error('Load prompts error:', error);
     } finally {
       setLoading(false);
@@ -84,10 +90,35 @@ const PromptManagementPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await promptAdminService.deletePrompt(id);
-      message.success('删除成功');
+      message.success(t('common.success', 'Success'));
       loadPrompts();
     } catch (error) {
-      message.error('删除失败');
+      message.error(t('common.error', 'Error'));
+    }
+  };
+
+  const handleShowHistory = async (scenario: string) => {
+    setActiveScenario(scenario);
+    setHistoryModalVisible(true);
+    setHistoryLoading(true);
+    try {
+      const data = await promptAdminService.getVersions(scenario);
+      setVersions(data);
+    } catch (error) {
+      message.error(t('common.error', 'Error'));
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const handleRollback = async (version: number) => {
+    try {
+      await promptAdminService.rollback(activeScenario, version);
+      message.success(t('common.success', 'Success'));
+      setHistoryModalVisible(false);
+      loadPrompts();
+    } catch (error) {
+      message.error(t('common.error', 'Error'));
     }
   };
 
@@ -95,15 +126,15 @@ const PromptManagementPage: React.FC = () => {
     try {
       if (editingPrompt) {
         await promptAdminService.updatePrompt(editingPrompt.id, values);
-        message.success('更新成功');
+        message.success(t('common.success', 'Success'));
       } else {
         await promptAdminService.createPrompt(values);
-        message.success('创建成功');
+        message.success(t('common.success', 'Success'));
       }
       setModalVisible(false);
       loadPrompts();
     } catch (error) {
-      message.error(editingPrompt ? '更新失败' : '创建失败');
+      message.error(t('common.error', 'Error'));
     }
   };
 
@@ -115,23 +146,23 @@ const PromptManagementPage: React.FC = () => {
 
   const columns: ColumnsType<PromptTemplate> = [
     {
-      title: '名称',
+      title: t('models.name'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
       fixed: 'left',
     },
     {
-      title: '场景',
+      title: t('prompts.scenario'),
       dataIndex: 'scenario',
       key: 'scenario',
       width: 180,
       render: (scenario: string) => (
-        <Tag color="blue">{scenario.replace(/_/g, ' ')}</Tag>
+        <Tag color="blue">{t(`scenario.${scenario}`, { defaultValue: scenario.replace(/_/g, ' ') })}</Tag>
       ),
     },
     {
-      title: '语言',
+      title: t('prompts.language'),
       dataIndex: 'language',
       key: 'language',
       width: 80,
@@ -142,7 +173,7 @@ const PromptManagementPage: React.FC = () => {
       ),
     },
     {
-      title: '模板预览',
+      title: t('prompts.template'),
       dataIndex: 'template',
       key: 'template',
       ellipsis: true,
@@ -153,7 +184,7 @@ const PromptManagementPage: React.FC = () => {
       ),
     },
     {
-      title: '变量',
+      title: t('prompts.variables'),
       dataIndex: 'variables',
       key: 'variables',
       width: 150,
@@ -168,51 +199,51 @@ const PromptManagementPage: React.FC = () => {
       ),
     },
     {
-      title: '版本',
+      title: t('prompts.version'),
       dataIndex: 'version',
       key: 'version',
       width: 80,
       align: 'center',
     },
     {
-      title: '状态',
+      title: t('common.status'),
       dataIndex: 'isActive',
       key: 'isActive',
       width: 80,
       render: (isActive: boolean) => (
         <Tag color={isActive ? 'success' : 'default'}>
-          {isActive ? '启用' : '禁用'}
+          {isActive ? t('common.active') : t('common.inactive')}
         </Tag>
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'actions',
       width: 150,
       fixed: 'right',
       render: (_, record) => (
         <Space>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          <Tooltip title="版本历史">
+          <Tooltip title={t('prompts.history')}>
             <Button
               type="text"
               icon={<HistoryOutlined />}
-              onClick={() => message.info('版本历史功能开发中')}
+              onClick={() => handleShowHistory(record.scenario)}
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此提示词？"
+            title={t('common.delete_confirm', 'Are you sure to delete?')}
             onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common.delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -227,46 +258,46 @@ const PromptManagementPage: React.FC = () => {
         <div style={{ marginBottom: 24 }}>
           <div className="admin-header">
             <Title level={3} style={{ margin: 0 }}>
-              提示词管理
+              {t('prompts.title')}
             </Title>
             <Space>
               <Select
-                placeholder="筛选场景"
+                placeholder={t('prompts.scenario_placeholder', 'Filter Scenario')}
                 style={{ width: 200 }}
                 allowClear
                 value={selectedScenario}
                 onChange={setSelectedScenario}
               >
-                <Select.Option value="resume_parsing">简历解析</Select.Option>
+                <Select.Option value="resume_parsing">{t('scenario.resume_parsing', 'Resume Parsing')}</Select.Option>
                 <Select.Option value="job_description_parsing">
-                  职位描述解析
+                  {t('scenario.job_description_parsing', 'JD Parsing')}
                 </Select.Option>
                 <Select.Option value="resume_optimization">
-                  简历优化
+                  {t('scenario.resume_optimization', 'Resume Optimization')}
                 </Select.Option>
                 <Select.Option value="interview_question_generation">
-                  面试问题生成
+                  {t('scenario.interview_question_generation', 'Interview Questions')}
                 </Select.Option>
                 <Select.Option value="match_score_calculation">
-                  匹配度计算
+                  {t('scenario.match_score_calculation', 'Match Score')}
                 </Select.Option>
               </Select>
-              <Button icon={<ReloadOutlined />} onClick={loadPrompts}>
-                刷新
+              <Button icon={<ReloadOutlined />} onClick={() => loadPrompts()}>
+                {t('common.refresh')}
               </Button>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
                 onClick={handleCreate}
               >
-                新建提示词
+                {t('prompts.new_prompt')}
               </Button>
             </Space>
           </div>
 
           <Tabs activeKey={selectedLanguage} onChange={setSelectedLanguage}>
-            <TabPane tab="英文 (EN)" key="en" />
-            <TabPane tab="中文 (CN)" key="zh-CN" />
+            <TabPane tab={t('prompts.lang_en', 'English (EN)')} key="en" />
+            <TabPane tab={t('prompts.lang_cn', 'Chinese (CN)')} key="zh-CN" />
           </Tabs>
         </div>
 
@@ -279,13 +310,13 @@ const PromptManagementPage: React.FC = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
+            showTotal: (total) => t('common.total_items', { total, count: total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingPrompt ? '编辑提示词' : '新建提示词'}
+        title={editingPrompt ? t('prompts.edit_prompt') : t('prompts.new_prompt')}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         width={800}
@@ -299,54 +330,54 @@ const PromptManagementPage: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="名称"
-            rules={[{ required: true, message: '请输入名称' }]}
+            label={t('models.name')}
+            rules={[{ required: true, message: t('common.required', 'Required') }]}
           >
-            <Input placeholder="例如: resume_parsing_default" />
+            <Input placeholder="e.g. resume_parsing_default" />
           </Form.Item>
 
           <Form.Item
             name="scenario"
-            label="场景"
-            rules={[{ required: true, message: '请选择场景' }]}
+            label={t('prompts.scenario')}
+            rules={[{ required: true, message: t('common.required', 'Required') }]}
           >
-            <Select placeholder="选择场景">
-              <Select.Option value="resume_parsing">简历解析</Select.Option>
+            <Select placeholder={t('prompts.scenario_placeholder')}>
+              <Select.Option value="resume_parsing">{t('scenario.resume_parsing')}</Select.Option>
               <Select.Option value="job_description_parsing">
-                职位描述解析
+                {t('scenario.job_description_parsing')}
               </Select.Option>
               <Select.Option value="resume_optimization">
-                简历优化
+                {t('scenario.resume_optimization')}
               </Select.Option>
               <Select.Option value="interview_question_generation">
-                面试问题生成
+                {t('scenario.interview_question_generation')}
               </Select.Option>
               <Select.Option value="match_score_calculation">
-                匹配度计算
+                {t('scenario.match_score_calculation')}
               </Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="language"
-            label="语言"
-            rules={[{ required: true, message: '请选择语言' }]}
+            label={t('prompts.language')}
+            rules={[{ required: true, message: t('common.required', 'Required') }]}
           >
             <Select>
-              <Select.Option value="en">英文 (EN)</Select.Option>
-              <Select.Option value="zh-CN">中文 (CN)</Select.Option>
+              <Select.Option value="en">{t('prompts.lang_en')}</Select.Option>
+              <Select.Option value="zh-CN">{t('prompts.lang_cn')}</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="template"
-            label="模板内容"
-            rules={[{ required: true, message: '请输入模板内容' }]}
-            extra="使用 {variable_name} 格式定义变量"
+            label={t('prompts.template')}
+            rules={[{ required: true, message: t('common.required', 'Required') }]}
+            extra={t('prompts.template_extra', 'Use {variable_name} format')}
           >
             <TextArea
               rows={10}
-              placeholder="请输入提示词模板..."
+              placeholder={t('prompts.template_placeholder', 'Enter prompt template...')}
               onChange={(e) => {
                 const vars = extractVariables(e.target.value);
                 form.setFieldsValue({ variables: vars });
@@ -354,23 +385,77 @@ const PromptManagementPage: React.FC = () => {
             />
           </Form.Item>
 
-          <Form.Item name="variables" label="变量（自动提取）">
-            <Select mode="tags" placeholder="自动从模板中提取" disabled />
+          <Form.Item name="variables" label={t('prompts.variables')}>
+            <Select mode="tags" placeholder={t('prompts.variables_placeholder', 'Auto-extracted')} disabled />
           </Form.Item>
 
-          <Form.Item name="provider" label="提供商（可选）">
-            <Input placeholder="例如: openai, qwen" />
+          <Form.Item name="provider" label={t('models.provider')}>
+            <Input placeholder="e.g. openai, qwen" />
           </Form.Item>
 
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
-                {editingPrompt ? '更新' : '创建'}
+                {editingPrompt ? t('common.save') : t('common.confirm')}
               </Button>
-              <Button onClick={() => setModalVisible(false)}>取消</Button>
+              <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`${t('prompts.history')} - ${activeScenario}`}
+        open={historyModalVisible}
+        onCancel={() => setHistoryModalVisible(false)}
+        width={700}
+        footer={null}
+      >
+        <Table
+          loading={historyLoading}
+          dataSource={versions}
+          rowKey="id"
+          columns={[
+            {
+              title: t('prompts.version'),
+              dataIndex: 'version',
+              key: 'version',
+              width: 80,
+            },
+            {
+              title: t('common.author', 'Author'),
+              dataIndex: 'author',
+              key: 'author',
+              width: 120,
+            },
+            {
+              title: t('common.reason', 'Reason'),
+              dataIndex: 'reason',
+              key: 'reason',
+            },
+            {
+              title: t('common.time', 'Time'),
+              dataIndex: 'createdAt',
+              key: 'createdAt',
+              render: (date: string) => new Date(date).toLocaleString(),
+            },
+            {
+              title: t('common.actions'),
+              key: 'action',
+              width: 100,
+              render: (_, record) => (
+                <Popconfirm
+                  title={t('prompts.rollback_confirm', 'Are you sure to rollback?')}
+                  onConfirm={() => handleRollback(record.version)}
+                  okText={t('common.confirm')}
+                  cancelText={t('common.cancel')}
+                >
+                  <Button type="link">{t('prompts.rollback')}</Button>
+                </Popconfirm>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </div>
   );

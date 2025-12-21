@@ -24,7 +24,7 @@ export class UserService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly invitationService: InvitationService
-  ) {}
+  ) { }
 
   /**
    * Register a new user
@@ -106,8 +106,10 @@ export class UserService {
         subscriptionTier: user.subscriptionTier,
         emailVerified: user.emailVerified,
         role: user.role,
+        createdAt: user.createdAt,
       },
     };
+
   }
 
   /**
@@ -155,8 +157,10 @@ export class UserService {
         subscriptionTier: user.subscriptionTier,
         emailVerified: user.emailVerified,
         role: user.role,
+        createdAt: user.createdAt,
       },
     };
+
   }
 
   /**

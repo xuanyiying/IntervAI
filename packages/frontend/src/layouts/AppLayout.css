@@ -27,6 +27,10 @@
   transition: opacity 0.2s ease;
 }
 
+.admin-nav-item:hover {
+  background-color: #fafafa;
+}
+
 /* Custom scrollbar for sider */
 ::-webkit-scrollbar {
   width: 6px;

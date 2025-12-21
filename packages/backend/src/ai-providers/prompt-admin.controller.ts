@@ -13,7 +13,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PromptTemplateManager } from './config/prompt-template.manager';
-import { PromptTemplate, PromptTemplateVersion } from '@prisma/client';
 import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
 
 /**
@@ -57,7 +56,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class PromptAdminController {
-  constructor(private promptTemplateManager: PromptTemplateManager) {}
+  constructor(private promptTemplateManager: PromptTemplateManager) { }
 
   /**
    * List all prompt templates
@@ -103,10 +102,7 @@ export class PromptAdminController {
    */
   @Get(':id')
   async getPrompt(@Param('id') id: string) {
-    // Note: We'll need to add a getById method to PromptTemplateManager
-    // For now, get all and filter
-    const templates = await this.promptTemplateManager.getAllTemplates();
-    const template = templates.find((t) => t.id === id);
+    const template = await this.promptTemplateManager.getTemplateById(id);
 
     if (!template) {
       throw new BadRequestException(`Prompt template with ID ${id} not found`);
@@ -139,9 +135,7 @@ export class PromptAdminController {
    */
   @Put(':id')
   async updatePrompt(@Param('id') id: string, @Body() dto: UpdatePromptDto) {
-    // For simplicity, we'll need to add an update method
-    // For now, return a placeholder
-    throw new BadRequestException('Update functionality to be implemented');
+    return await this.promptTemplateManager.updateTemplate(id, dto as any);
   }
 
   /**
@@ -151,8 +145,7 @@ export class PromptAdminController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async deletePrompt(@Param('id') id: string) {
-    // Delete functionality to be added to PromptTemplateManager
-    throw new BadRequestException('Delete functionality to be implemented');
+    await this.promptTemplateManager.deleteTemplate(id);
   }
 
   /**

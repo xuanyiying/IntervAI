@@ -280,10 +280,17 @@ const ModelManagementPage: React.FC = () => {
   ];
 
   return (
-    <div className="admin-container">
+    <div style={{ padding: '24px', height: '100%', overflow: 'auto' }}>
       <Card>
         <div style={{ marginBottom: 24 }}>
-          <div className="admin-header">
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 16,
+            }}
+          >
             <Title level={3} style={{ margin: 0 }}>
               模型配置管理
             </Title>

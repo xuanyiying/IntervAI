@@ -535,24 +535,24 @@ Track these metrics:
 
 ### Getting Help
 
-- **FAQ**: https://help.example.com/agents
-- **Contact Support**: support@example.com
-- **Community Forum**: https://community.example.com
+- **FAQ**: <https://help.example.com/agents>
+- **Contact Support**: <support@example.com>
+- **Community Forum**: <https://community.example.com>
 
 ### Additional Resources
 
-- Interview preparation guide: https://resources.example.com/interview-guide
-- STAR method tutorial: https://resources.example.com/star-method
-- System design patterns: https://resources.example.com/system-design
-- Behavioral interview tips: https://resources.example.com/behavioral
+- Interview preparation guide: <https://resources.example.com/interview-guide>
+- STAR method tutorial: <https://resources.example.com/star-method>
+- System design patterns: <https://resources.example.com/system-design>
+- Behavioral interview tips: <https://resources.example.com/behavioral>
 
 ### Feedback
 
 We'd love to hear from you! Share your experience:
 
-- Rate the agents: https://feedback.example.com
-- Report issues: https://github.com/example/issues
-- Suggest features: https://feedback.example.com/feature-requests
+- Rate the agents: <https://feedback.example.com>
+- Report issues: <https://github.com/example/issues>
+- Suggest features: <https://feedback.example.com/feature-requests>
 
 ## Conclusion
 

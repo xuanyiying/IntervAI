@@ -127,7 +127,7 @@ Resume Optimizer is a comprehensive SaaS platform designed to help job seekers e
 
 The platform follows a modern microservices-inspired architecture within a monorepo:
 
-```
+```text
 ┌─────────────────┐    ┌──────────────────┐
 │   Frontend      │    │   Load Balancer  │
 │   (React/Vite)  │◄──►│   (Nginx)        │
@@ -231,7 +231,7 @@ flowchart TD
 
 This is a monorepo containing:
 
-```
+```text
 .
 ├── packages
 │   ├── backend                 # NestJS backend service
@@ -280,12 +280,6 @@ This is a monorepo containing:
 ### Installation
 
 1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd resume-optimizer
-```
-
 2. Install dependencies using pnpm (recommended):
 
 ```bash
@@ -394,9 +388,15 @@ pnpm test:watch
 
 ## Deployment
 
+### Detailed Documentation
+
+- [CI/CD Setup Guide](docs/devops/ci-cd-setup.md)
+- [Workflows Documentation](docs/devops/workflows.md)
+- [Branch Protection Rules](docs/devops/branch-protection.md)
+
 ### Docker Deployment (Recommended)
 
-#### Development
+#### Development Environment
 
 ```bash
 docker-compose up -d
@@ -416,14 +416,14 @@ docker-compose -f docker-compose.prod.yml up -d
 pnpm build
 ```
 
-2. Set up environment variables for production:
+1. Set up environment variables for production:
 
 ```bash
 cp .env.production .env.production.local
 # Edit .env.production.local with production settings
 ```
 
-3. Start the services:
+1. Start the services:
 
 ```bash
 # Backend

@@ -63,24 +63,24 @@ A comprehensive GitHub Actions CI/CD pipeline has been configured for the Resume
 
 ### Documentation
 
-1. **`.github/WORKFLOWS.md`** - Workflow documentation
+1. **`docs/deployment/workflows.md`** - Workflow documentation
    - Overview of all workflows
    - Trigger conditions
    - Environment variables
    - Troubleshooting guide
 
-2. **`.github/BRANCH_PROTECTION.md`** - Branch protection rules
+2. **`docs/development/branch-protection.md`** - Branch protection rules
    - Recommended configurations
    - Setup instructions
    - Best practices
 
-3. **`.github/CI_CD_SETUP.md`** - Complete setup guide
+3. **`docs/deployment/ci-cd-setup.md`** - Complete setup guide
    - Step-by-step configuration
    - Server setup instructions
    - Testing procedures
    - Troubleshooting
 
-4. **`.github/IMPLEMENTATION_SUMMARY.md`** - This file
+4. **`docs/architecture/implementation-summary.md`** - This file
 
 ## Workflow Features
 
@@ -342,8 +342,8 @@ docker build -f packages/backend/Dockerfile .
 
 For questions or issues:
 
-1. Review workflow documentation in `.github/WORKFLOWS.md`
-2. Check setup guide in `.github/CI_CD_SETUP.md`
+1. Review workflow documentation in `docs/deployment/workflows.md`
+2. Check setup guide in `docs/deployment/ci-cd-setup.md`
 3. Review GitHub Actions logs
 4. Check deployment server logs
 5. Contact team members

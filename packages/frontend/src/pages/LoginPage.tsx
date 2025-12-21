@@ -16,6 +16,7 @@ import {
   GithubOutlined,
   GoogleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
 import { authClient } from '../lib/auth-client';
@@ -30,6 +31,7 @@ interface LoginFormValues {
 }
 
 const LoginPage: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setAuth, isAuthenticated } = useAuthStore();
@@ -52,13 +54,13 @@ const LoginPage: React.FC = () => {
       // Ensure we have a token
       const token = response.token || response.accessToken;
       if (!token) {
-        throw new Error('未收到认证令牌');
+        throw new Error(t('common.error'));
       }
 
       // Set auth state
       setAuth(response.user, token);
 
-      message.success('登录成功！');
+      message.success(t('auth.login_success'));
 
       // Use setTimeout to ensure state is updated before navigation
       setTimeout(() => {
@@ -70,7 +72,7 @@ const LoginPage: React.FC = () => {
         (err as any)?.response?.data?.message ||
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.message ||
-        '登录失败，请检查邮箱和密码';
+        t('auth.login_failed');
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -92,9 +94,9 @@ const LoginPage: React.FC = () => {
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
             <Title level={2} style={{ margin: 0 }}>
-              AI 简历助手
+              {t('common.app_name')}
             </Title>
-            <Text type="secondary">登录您的账号</Text>
+            <Text type="secondary">{t('auth.title_login')}</Text>
           </div>
 
           {/* Login Form */}
@@ -107,21 +109,21 @@ const LoginPage: React.FC = () => {
             <Form.Item
               name="email"
               rules={[
-                { required: true, message: '请输入邮箱地址！' },
-                { type: 'email', message: '请输入有效的邮箱地址！' },
+                { required: true, message: t('auth.email_required') },
+                { type: 'email', message: t('auth.email_invalid') },
               ]}
             >
-              <Input prefix={<UserOutlined />} placeholder="邮箱地址" />
+              <Input prefix={<UserOutlined />} placeholder={t('auth.email')} />
             </Form.Item>
 
             <Form.Item
               name="password"
               rules={[
-                { required: true, message: '请输入密码！' },
-                { min: 6, message: '密码至少6个字符！' },
+                { required: true, message: t('auth.password_required') },
+                { min: 6, message: t('auth.password_min') },
               ]}
             >
-              <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+              <Input.Password prefix={<LockOutlined />} placeholder={t('auth.password')} />
             </Form.Item>
 
             <Form.Item>
@@ -133,10 +135,10 @@ const LoginPage: React.FC = () => {
                 }}
               >
                 <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox>记住我</Checkbox>
+                  <Checkbox>{t('auth.remember_me')}</Checkbox>
                 </Form.Item>
                 <a href="#" style={{ color: '#667eea' }}>
-                  忘记密码？
+                  {t('auth.forgot_password')}
                 </a>
               </div>
             </Form.Item>
@@ -155,7 +157,7 @@ const LoginPage: React.FC = () => {
                   border: 'none',
                 }}
               >
-                登录
+                {t('auth.login')}
               </Button>
             </Form.Item>
           </Form>
@@ -165,7 +167,7 @@ const LoginPage: React.FC = () => {
             <>
               <Divider plain>
                 <Text type="secondary" style={{ fontSize: '12px' }}>
-                  或使用以下方式登录
+                  {t('auth.or_social')}
                 </Text>
               </Divider>
 
@@ -209,12 +211,12 @@ const LoginPage: React.FC = () => {
           {/* Register Link */}
           <div style={{ textAlign: 'center' }}>
             <Text type="secondary">
-              还没有账号？{' '}
+              {t('auth.no_account')}{' '}
               <Link
                 to="/register"
                 style={{ color: '#667eea', fontWeight: 500 }}
               >
-                立即注册
+                {t('auth.register')}
               </Link>
             </Text>
           </div>

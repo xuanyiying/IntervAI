@@ -13,5 +13,7 @@ export class AuthResponseDto {
     subscriptionTier: SubscriptionTier;
     role: Role;
     emailVerified: boolean;
+    createdAt: Date;
   };
 }
+
