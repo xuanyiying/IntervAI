@@ -404,6 +404,70 @@ export class PromptTemplateManager {
   }
 
   /**
+   * Get a template by ID
+   */
+  async getTemplateById(id: string): Promise<PromptTemplate | null> {
+    try {
+      const template = await this.prisma.promptTemplate.findUnique({
+        where: { id },
+      });
+      return (template as PromptTemplate) || null;
+    } catch (error) {
+      this.logger.error(`Failed to get template by ID ${id}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Update a template
+   */
+  async updateTemplate(
+    id: string,
+    data: Partial<PromptTemplate>
+  ): Promise<PromptTemplate> {
+    try {
+      const updated = await this.prisma.promptTemplate.update({
+        where: { id },
+        data: {
+          ...data,
+          variables: data.template
+            ? this.extractVariables(data.template)
+            : data.variables,
+        },
+      });
+
+      // Clear cache
+      this.templateCache.clear();
+
+      this.logger.log(`Updated template: ${updated.name}`);
+
+      return updated as PromptTemplate;
+    } catch (error) {
+      this.logger.error(`Failed to update template ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a template
+   */
+  async deleteTemplate(id: string): Promise<void> {
+    try {
+      await this.prisma.promptTemplate.delete({
+        where: { id },
+      });
+
+      // Clear cache
+      this.templateCache.clear();
+
+      this.logger.log(`Deleted template: ${id}`);
+    } catch (error) {
+      this.logger.error(`Failed to delete template ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Create a new template
    * Property 15: Multiple template support
    * Validates: Requirements 4.1

@@ -19,6 +19,7 @@ import {
   AlipayCircleOutlined,
   WechatOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { paymentService } from '../services/payment.service';
 import { loadPaddle } from '../utils/paddle-loader';
@@ -27,6 +28,7 @@ import './pricing.css';
 const { Title, Text } = Typography;
 
 const PricingPage: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [isYearly, setIsYearly] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -38,7 +40,7 @@ const PricingPage: React.FC = () => {
 
   const handleUpgrade = (priceId: string) => {
     if (!user) {
-      message.warning('Please log in to upgrade your plan');
+      message.warning(t('pricing.login_required'));
       return;
     }
     setSelectedPriceId(priceId);
@@ -75,7 +77,7 @@ const PricingPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to start checkout session:', error);
-      message.error('Failed to start payment process. Please try again.');
+      message.error(t('pricing.payment_failed'));
     } finally {
       setLoading(false);
     }
@@ -110,50 +112,50 @@ const PricingPage: React.FC = () => {
 
   const tiers = [
     {
-      title: 'Free',
+      title: t('pricing.free_title'),
       price: '$0',
-      period: isYearly ? '/year' : '/month',
+      period: isYearly ? t('pricing.year_suffix') : t('pricing.month_suffix'),
       features: [
-        'Basic Resume Parsing',
-        'Standard Templates',
-        '3 Optimizations / Month',
-        'PDF Export (Watermarked)',
+        t('pricing.features.basic_parsing'),
+        t('pricing.features.standard_templates'),
+        t('pricing.features.limited_optimizations'),
+        t('pricing.features.watermark_export'),
       ],
-      buttonText: 'Current Plan',
+      buttonText: t('pricing.current_plan'),
       isCurrent: user?.subscriptionTier === 'FREE',
       action: null,
     },
     {
-      title: 'Pro',
+      title: t('pricing.pro_title'),
       price: isYearly ? '$190' : '$19',
-      period: isYearly ? '/year' : '/month',
-      save: isYearly ? 'Save 17%' : null,
+      period: isYearly ? t('pricing.year_suffix') : t('pricing.month_suffix'),
+      save: isYearly ? t('pricing.save', { percent: 17 }) : null,
       features: [
-        'Unlimited Parsing',
-        'Premium Templates',
-        'Unlimited Optimizations',
-        'No Watermark',
-        'Cover Letter Generation',
-        'Priority Support',
+        t('pricing.features.unlimited_parsing'),
+        t('pricing.features.premium_templates'),
+        t('pricing.features.unlimited_optimizations'),
+        t('pricing.features.no_watermark'),
+        t('pricing.features.cover_letter'),
+        t('pricing.features.priority_support'),
       ],
-      buttonText: 'Upgrade to Pro',
+      buttonText: t('pricing.upgrade_pro'),
       isCurrent: user?.subscriptionTier === 'PRO',
       action: () => handleUpgrade(getPriceId('Pro')),
       popular: true,
     },
     {
-      title: 'Enterprise',
+      title: t('pricing.enterprise_title'),
       price: isYearly ? '$990' : '$99',
-      period: isYearly ? '/year' : '/month',
-      save: isYearly ? 'Save 17%' : null,
+      period: isYearly ? t('pricing.year_suffix') : t('pricing.month_suffix'),
+      save: isYearly ? t('pricing.save', { percent: 17 }) : null,
       features: [
-        'Everything in Pro',
-        'Custom Templates',
-        'API Access',
-        'Dedicated Account Manager',
-        'SSO Integration',
+        t('pricing.features.everything_pro'),
+        t('pricing.features.custom_templates'),
+        t('pricing.features.api_access'),
+        t('pricing.features.dedicated_manager'),
+        t('pricing.features.sso'),
       ],
-      buttonText: 'Contact Sales', // Or Upgrade if self-serve
+      buttonText: t('pricing.contact_sales'),
       isCurrent: user?.subscriptionTier === 'ENTERPRISE',
       action: () => handleUpgrade(getPriceId('Enterprise')),
     },
@@ -166,14 +168,14 @@ const PricingPage: React.FC = () => {
     >
       <div style={{ textAlign: 'center', marginBottom: 60 }}>
         <Title className="pricing-title" level={1}>
-          Simple, Transparent Pricing
+          {t('pricing.title')}
         </Title>
         <Text
           className="pricing-subtitle"
           type="secondary"
           style={{ fontSize: 18, display: 'block', marginBottom: 24 }}
         >
-          Choose the plan that best fits your career goals.
+          {t('pricing.subtitle')}
         </Text>
 
         <div
@@ -185,10 +187,10 @@ const PricingPage: React.FC = () => {
             gap: 12,
           }}
         >
-          <Text strong={!isYearly}>Monthly</Text>
+          <Text strong={!isYearly}>{t('pricing.monthly')}</Text>
           <Switch checked={isYearly} onChange={setIsYearly} />
           <Text strong={isYearly}>
-            Yearly <Tag color="green">Save ~17%</Tag>
+            {t('pricing.yearly')} <Tag color="green">{t('pricing.save', { percent: 17 })}</Tag>
           </Text>
         </div>
       </div>
@@ -219,7 +221,7 @@ const PricingPage: React.FC = () => {
                     borderBottomRightRadius: 0,
                   }}
                 >
-                  MOST POPULAR
+                  {t('pricing.most_popular')}
                 </Tag>
               )}
 
@@ -254,7 +256,7 @@ const PricingPage: React.FC = () => {
                 disabled={tier.isCurrent || !tier.action}
                 loading={loading && !tier.isCurrent && !!tier.action}
               >
-                {tier.isCurrent ? 'Current Plan' : tier.buttonText}
+                {tier.isCurrent ? t('pricing.current_plan') : tier.buttonText}
               </Button>
             </Card>
           </Col>
@@ -262,12 +264,13 @@ const PricingPage: React.FC = () => {
       </Row>
 
       <Modal
-        title="Select Payment Method"
+        title={t('pricing.select_method')}
         open={isModalVisible}
         onOk={handleConfirmPayment}
         onCancel={() => setIsModalVisible(false)}
         confirmLoading={loading}
-        okText="Proceed to Payment"
+        okText={t('pricing.proceed')}
+        cancelText={t('common.cancel')}
       >
         <div style={{ padding: '20px 0' }}>
           <Radio.Group
@@ -290,9 +293,9 @@ const PricingPage: React.FC = () => {
                     style={{ fontSize: '20px', color: '#1890ff' }}
                   />
                   <div>
-                    <Text strong>Credit Card</Text>
+                    <Text strong>{t('pricing.credit_card')}</Text>
                     <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                      Secure payment via Stripe
+                      {t('pricing.stripe_desc')}
                     </div>
                   </div>
                 </Space>
@@ -314,9 +317,9 @@ const PricingPage: React.FC = () => {
                     style={{ fontSize: '20px', color: '#52c41a' }}
                   />
                   <div>
-                    <Text strong>Alipay / WeChat Pay</Text>
+                    <Text strong>{t('pricing.alipay_wechat')}</Text>
                     <div style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                      Local payment methods via Paddle
+                      {t('pricing.paddle_desc')}
                     </div>
                   </div>
                 </Space>

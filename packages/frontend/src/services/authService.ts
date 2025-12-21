@@ -17,7 +17,9 @@ export interface AuthResponse {
     email: string;
     username?: string;
     subscriptionTier: 'FREE' | 'PRO' | 'ENTERPRISE';
+    createdAt: string;
   };
+
   token?: string;
   accessToken?: string;
 }

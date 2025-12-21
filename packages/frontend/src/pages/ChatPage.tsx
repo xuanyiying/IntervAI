@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import { theme, Upload, Button, message as antMessage } from 'antd';
 import type { UploadProps } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useConversationStore } from '../stores';
 import ResumeUploadDialog from '../components/ResumeUploadDialog';
 import JobInputDialog from '../components/JobInputDialog';
@@ -41,6 +42,7 @@ interface MessageItem {
 }
 
 const ChatPage: React.FC = () => {
+  const { t } = useTranslation();
   const { token } = theme.useToken();
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,8 +52,7 @@ const ChatPage: React.FC = () => {
     {
       key: 'welcome',
       role: 'ai',
-      content:
-        '你好，我是 AI 简历助手。我可以帮你优化简历、进行模拟面试或润色自我介绍。',
+      content: t('chat.welcome'),
       type: 'text',
     },
   ]);
@@ -108,38 +109,37 @@ const ChatPage: React.FC = () => {
         {
           key: 'welcome',
           role: 'ai',
-          content:
-            '你好，我是 AI 简历助手。我可以帮你优化简历、进行模拟面试或润色自我介绍。',
+          content: t('chat.welcome'),
           type: 'text',
         },
         ...mappedItems,
       ]);
     }
-  }, [messages]);
+  }, [messages, t]);
 
   const suggestions: PromptsItemType[] = [
     {
       key: 'resume',
-      label: '简历优化',
-      description: '帮我分析并优化当前简历',
+      label: t('suggestions.resume_label'),
+      description: t('suggestions.resume_desc'),
       icon: <span style={{ fontSize: '16px' }}>📄</span>,
     },
     {
       key: 'job',
-      label: '输入职位',
-      description: '输入目标职位信息进行匹配分析',
+      label: t('suggestions.job_label'),
+      description: t('suggestions.job_desc'),
       icon: <span style={{ fontSize: '16px' }}>💼</span>,
     },
     {
       key: 'pdf',
-      label: '生成 PDF',
-      description: '生成专业格式的 PDF 简历',
+      label: t('suggestions.pdf_label'),
+      description: t('suggestions.pdf_desc'),
       icon: <span style={{ fontSize: '16px' }}>📋</span>,
     },
     {
       key: 'interview',
-      label: '面试解忧',
-      description: '针对职位的模拟面试',
+      label: t('suggestions.interview_label'),
+      description: t('suggestions.interview_desc'),
       icon: <span style={{ fontSize: '16px' }}>🎤</span>,
     },
   ];
@@ -158,18 +158,18 @@ const ChatPage: React.FC = () => {
         try {
           await sendMessage(
             currentConversation.id,
-            '收到！正在为您处理...',
+            t('chat.processing'),
             'assistant'
           );
         } catch (error) {
           console.error('Failed to send AI response:', error);
-          antMessage.error('发送消息失败');
+          antMessage.error(t('common.error'));
         }
         setLoading(false);
       }, 1000);
     } catch (error) {
       console.error('Failed to send message:', error);
-      antMessage.error('发送消息失败');
+      antMessage.error(t('common.error'));
       setLoading(false);
     }
   };
@@ -199,39 +199,41 @@ const ChatPage: React.FC = () => {
       // Add upload confirmation message
       await sendMessage(
         currentConversation.id,
-        `✅ 已成功上传简历: ${uploadData?.resume?.originalFilename || '简历文件'}`,
+        t('chat.upload_success', { filename: uploadData?.resume?.originalFilename || '简历文件' }),
         'assistant'
       );
 
       // Add parsed data summary message
       const parsedData = uploadData?.parsedData;
-      let summaryMessage = '📋 简历解析完成，以下是提取的信息：\n\n';
+      let summaryMessage = t('chat.parsed_resume_title') + '\n\n';
 
       if (parsedData?.personalInfo?.name) {
-        summaryMessage += `👤 **姓名**: ${parsedData.personalInfo.name}\n`;
+        summaryMessage += `${t('chat.parsed_name')}: ${parsedData.personalInfo.name}\n`;
       }
       if (parsedData?.personalInfo?.email) {
-        summaryMessage += `📧 **邮箱**: ${parsedData.personalInfo.email}\n`;
+        summaryMessage += `${t('chat.parsed_email')}: ${parsedData.personalInfo.email}\n`;
       }
       if (parsedData?.skills && parsedData.skills.length > 0) {
-        summaryMessage += `🛠️ **技能**: ${parsedData.skills.slice(0, 5).join(', ')}${parsedData.skills.length > 5 ? ` 等 ${parsedData.skills.length} 项` : ''}\n`;
+        const count = parsedData.skills.length;
+        const skillsString = parsedData.skills.slice(0, 5).join(', ');
+        const extra = count > 5 ? ` ${t('common.total_items', { count: count - 5 })}` : '';
+        summaryMessage += `${t('chat.parsed_skills')}: ${skillsString}${extra}\n`;
       }
       if (parsedData?.experience && parsedData.experience.length > 0) {
-        summaryMessage += `💼 **工作经历**: ${parsedData.experience.length} 项\n`;
+        summaryMessage += `${t('chat.parsed_experience')}: ${t('common.total_items', { count: parsedData.experience.length })}\n`;
       }
       if (parsedData?.education && parsedData.education.length > 0) {
-        summaryMessage += `🎓 **教育背景**: ${parsedData.education.length} 项\n`;
+        summaryMessage += `${t('chat.parsed_education')}: ${t('common.total_items', { count: parsedData.education.length })}\n`;
       }
 
-      summaryMessage +=
-        '\n接下来，您可以：\n1. 输入职位描述进行匹配分析\n2. 请求简历优化建议\n3. 进行面试准备';
+      summaryMessage += t('chat.parsed_next_steps');
 
       await sendMessage(currentConversation.id, summaryMessage, 'assistant');
 
       setUploadDialogVisible(false);
     } catch (error) {
       console.error('Failed to send resume upload messages:', error);
-      antMessage.error('发送消息失败');
+      antMessage.error(t('common.error'));
     }
   };
 
@@ -247,22 +249,22 @@ const ChatPage: React.FC = () => {
       // Add job confirmation message
       await sendMessage(
         currentConversation.id,
-        `✅ 已成功保存职位信息: ${createdJob.title} @ ${createdJob.company}`,
+        t('chat.job_saved_success', { title: createdJob.title, company: createdJob.company }),
         'assistant'
       );
 
       // Add job info card message with metadata
       await sendMessage(
         currentConversation.id,
-        `📋 职位信息已提取，以下是详细信息：`,
+        t('chat.job_extracted_title'),
         'assistant'
       );
 
       setJobInputDialogVisible(false);
-      antMessage.success('职位信息已保存');
+      antMessage.success(t('chat.job_confirmed'));
     } catch (error) {
       console.error('Failed to create job:', error);
-      antMessage.error('保存职位信息失败');
+      antMessage.error(t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -275,12 +277,12 @@ const ChatPage: React.FC = () => {
       // Add PDF generation message with metadata
       await sendMessage(
         currentConversation.id,
-        '📄 PDF 生成工具已准备好',
+        t('chat.pdf_ready'),
         'assistant'
       );
     } catch (error) {
       console.error('Failed to display PDF generation:', error);
-      antMessage.error('显示 PDF 生成工具失败');
+      antMessage.error(t('common.error'));
     }
   };
 
@@ -320,10 +322,10 @@ const ChatPage: React.FC = () => {
                 <JobInfoCard
                   job={item.jobData}
                   onConfirm={() => {
-                    antMessage.success('职位信息已确认');
+                    antMessage.success(t('chat.job_confirmed'));
                   }}
                   onDelete={() => {
-                    antMessage.success('职位信息已删除');
+                    antMessage.success(t('chat.job_deleted'));
                   }}
                 />
               ) : item.type === 'suggestions' &&
@@ -388,7 +390,7 @@ const ChatPage: React.FC = () => {
                 <PDFGenerationCard
                   optimizationId={item.optimizationId}
                   onGenerateSuccess={() => {
-                    antMessage.success('PDF 生成成功！');
+                    antMessage.success(t('chat.pdf_success'));
                   }}
                 />
               ) : item.type === 'interview' &&
@@ -398,7 +400,7 @@ const ChatPage: React.FC = () => {
                   questions={item.interviewQuestions}
                   optimizationId={item.optimizationId}
                   onExportSuccess={() => {
-                    antMessage.success('面试准备清单已导出');
+                    antMessage.success(t('chat.interview_exported'));
                   }}
                 />
               ) : (
@@ -418,7 +420,7 @@ const ChatPage: React.FC = () => {
             }}
           >
             <Prompts
-              title="你可以试着问我："
+              title={t('chat.try_asking')}
               items={suggestions}
               onItemClick={onPromptsItemClick}
             />
@@ -453,28 +455,28 @@ const ChatPage: React.FC = () => {
               style={{ borderRadius: '16px' }}
               onClick={() => setUploadDialogVisible(true)}
             >
-              📄 简历优化
+              📄 {t('suggestions.resume_label')}
             </Button>
             <Button
               size="small"
               style={{ borderRadius: '16px' }}
               onClick={() => setJobInputDialogVisible(true)}
             >
-              💼 输入职位
+              💼 {t('suggestions.job_label')}
             </Button>
             <Button
               size="small"
               style={{ borderRadius: '16px' }}
               onClick={() => displayPDFGeneration('current-optimization-id')}
             >
-              📋 生成 PDF
+              📋 {t('suggestions.pdf_label')}
             </Button>
             <Button
               size="small"
               style={{ borderRadius: '16px' }}
-              onClick={() => handleSubmit('进行模拟面试')}
+              onClick={() => handleSubmit(t('suggestions.interview_label'))}
             >
-              🎤 面试解忧
+              🎤 {t('suggestions.interview_label')}
             </Button>
           </div>
         )}
@@ -484,7 +486,7 @@ const ChatPage: React.FC = () => {
           onChange={setValue}
           onSubmit={handleSubmit}
           loading={loading}
-          placeholder="输入您的问题，或上传简历文件..."
+          placeholder={t('chat.placeholder')}
           prefix={
             <Upload {...uploadProps}>
               <div style={{ cursor: 'pointer', padding: '0 8px' }}>
@@ -506,7 +508,7 @@ const ChatPage: React.FC = () => {
             fontSize: '12px',
           }}
         >
-          AI 生成的内容可能不准确，请核对重要信息。
+          {t('chat.ai_disclaimer')}
         </div>
       </div>
 

@@ -26,7 +26,7 @@ export class AIQueueProcessor {
     try {
       // 1. Update status to PROCESSING (if not already)
       await this.prisma.resume.update({
-        where: { id: resumeId },
+        where: { id: resumeId, userId: userId },
         data: { parseStatus: ParseStatus.PROCESSING },
       });
 
@@ -35,7 +35,7 @@ export class AIQueueProcessor {
 
       // 3. Update resume with results
       await this.prisma.resume.update({
-        where: { id: resumeId },
+        where: { id: resumeId, userId: userId },
         data: {
           parsedData: parsedData as any,
           parseStatus: ParseStatus.COMPLETED,
@@ -49,7 +49,7 @@ export class AIQueueProcessor {
 
       // Update status to FAILED
       await this.prisma.resume.update({
-        where: { id: resumeId },
+        where: { id: resumeId, userId: userId },
         data: { parseStatus: ParseStatus.FAILED },
       });
 

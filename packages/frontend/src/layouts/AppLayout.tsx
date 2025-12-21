@@ -23,10 +23,15 @@ import {
   MessageOutlined,
   EditOutlined,
   DeleteOutlined,
+  ApiOutlined,
+  FileTextOutlined,
+  BarcodeOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
 import { useConversationStore } from '../stores/conversationStore';
 import CookieConsent from '../components/CookieConsent';
+import { useTranslation } from 'react-i18next';
+import { GlobalOutlined } from '@ant-design/icons';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -34,16 +39,17 @@ const { Header, Sider, Content } = Layout;
 const AppLayout: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const { user, clearAuth } = useAuthStore();
-  const { 
-    conversations, 
-    currentConversation, 
-    deleteConversation, 
-    loadConversations, 
+  const {
+    conversations,
+    currentConversation,
+    deleteConversation,
+    loadConversations,
     createConversation,
     setCurrentConversation,
     switchConversation
   } = useConversationStore();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const {
     token: { colorBgContainer, colorBorderSecondary },
   } = theme.useToken();
@@ -54,10 +60,10 @@ const AppLayout: React.FC = () => {
 
   const handleLogout = () => {
     Modal.confirm({
-      title: '确认退出',
-      content: '您确定要退出登录吗？',
-      okText: '确定',
-      cancelText: '取消',
+      title: t('menu.logout'),
+      content: t('auth.logout_confirm', 'Are you sure you want to log out?'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       onOk: () => {
         clearAuth();
         navigate('/login');
@@ -126,27 +132,69 @@ const AppLayout: React.FC = () => {
   const userMenu: MenuProps['items'] = [
     {
       key: 'profile',
-      label: '个人中心',
+      label: t('menu.profile'),
       icon: <UserOutlined />,
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: 'Settings',
+      label: t('menu.settings'),
       onClick: () => navigate('/settings'),
     },
     {
       key: 'pricing',
       icon: <DollarOutlined />,
-      label: 'Pricing',
+      label: t('menu.pricing'),
       onClick: () => navigate('/pricing'),
     },
     {
       type: 'divider',
     },
     {
+      key: 'lang',
+      label: t('common.language', 'Language'),
+      icon: <GlobalOutlined />,
+      children: [
+        {
+          key: 'zh-CN',
+          label: '简体中文',
+          onClick: () => i18n.changeLanguage('zh-CN'),
+        },
+        {
+          key: 'en-US',
+          label: 'English',
+          onClick: () => i18n.changeLanguage('en-US'),
+        },
+      ],
+    },
+    ...(user?.role === 'ADMIN'
+      ? [
+        {
+          key: 'admin-models',
+          label: t('menu.model_management'),
+          icon: <ApiOutlined />,
+          onClick: () => navigate('/admin/models'),
+        },
+        {
+          key: 'admin-prompts',
+          label: t('menu.prompt_management'),
+          icon: <FileTextOutlined />,
+          onClick: () => navigate('/admin/prompts'),
+        },
+        {
+          key: 'admin-invites',
+          label: t('menu.invite_code_management'),
+          icon: <BarcodeOutlined />,
+          onClick: () => navigate('/admin/invite-codes'),
+        },
+        {
+          type: 'divider' as const,
+        },
+      ]
+      : []),
+    {
       key: 'logout',
-      label: '退出登录',
+      label: t('menu.logout'),
       icon: <LogoutOutlined />,
     },
   ];
@@ -168,7 +216,7 @@ const AppLayout: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          新对话
+          {t('menu.new_chat')}
         </Button>
       </div>
 
@@ -183,7 +231,7 @@ const AppLayout: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          历史会话
+          {t('menu.history')}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {conversations.map((item) => (
@@ -235,7 +283,7 @@ const AppLayout: React.FC = () => {
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    {item.title || '新对话'}
+                    {item.title || t('menu.new_chat')}
                   </span>
                 </div>
                 <div
@@ -275,6 +323,73 @@ const AppLayout: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Admin Section */}
+      {user?.role === 'ADMIN' && (
+        <div style={{ padding: '0 12px', marginTop: '24px' }}>
+          <div
+            style={{
+              fontSize: '12px',
+              color: '#888',
+              marginBottom: '12px',
+              paddingLeft: '12px',
+              fontWeight: 500,
+            }}
+          >
+            {t('menu.admin_system')}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <div
+              className="admin-nav-item"
+              onClick={() => navigate('/admin/models')}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+              }}
+            >
+              <ApiOutlined style={{ fontSize: '14px', color: '#666' }} />
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.model_management')}</span>
+            </div>
+            <div
+              className="admin-nav-item"
+              onClick={() => navigate('/admin/prompts')}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+              }}
+            >
+              <FileTextOutlined style={{ fontSize: '14px', color: '#666' }} />
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.prompt_management')}</span>
+            </div>
+            <div
+              className="admin-nav-item"
+              onClick={() => navigate('/admin/invite-codes')}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+              }}
+            >
+              <BarcodeOutlined style={{ fontSize: '14px', color: '#666' }} />
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.invite_code_management')}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* User Profile */}
       <div
@@ -340,7 +455,7 @@ const AppLayout: React.FC = () => {
             height: 44,
           }}
         />
-        <div style={{ fontSize: '16px', fontWeight: 600 }}>AI 简历助手</div>
+        <div style={{ fontSize: '16px', fontWeight: 600 }}>{globalThis.APP_TITLE || t('common.app_name', 'AI Resume Assistant')}</div>
         <Dropdown
           menu={{ items: userMenu, onClick: handleMenuClick }}
           placement="bottomRight"

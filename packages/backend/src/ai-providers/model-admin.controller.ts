@@ -16,6 +16,7 @@ import {
   HttpStatus,
   Logger,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { ModelConfigService, ModelConfig } from './config/model-config.service';
 import { AIProviderFactory } from './factory/ai-provider.factory';
@@ -48,7 +49,7 @@ export class ModelAdminController {
   constructor(
     private readonly modelConfigService: ModelConfigService,
     private readonly providerFactory: AIProviderFactory
-  ) {}
+  ) { }
 
   /**
    * Get all model configurations
@@ -144,9 +145,34 @@ export class ModelAdminController {
   }
 
   /**
+   * Update model configuration
+   */
+  @Put(':name')
+  async updateConfig(
+    @Param('name') name: string,
+    @Body() dto: Partial<UpsertModelConfigDto>
+  ): Promise<ModelConfig> {
+    const existing = await this.modelConfigService.getModelConfig(name);
+    if (!existing) {
+      throw new BadRequestException(`Model ${name} not found`);
+    }
+
+    const config: ModelConfig = {
+      ...existing,
+      ...dto,
+      updatedAt: new Date(),
+    } as ModelConfig;
+
+    const result = await this.modelConfigService.upsertModelConfig(config);
+    await this.providerFactory.reloadProviders();
+    this.logger.log(`Model configuration updated: ${name}`);
+    return result;
+  }
+
+  /**
    * Enable model configuration
    */
-  @Put(':name/enable')
+  @Post(':name/enable')
   @HttpCode(HttpStatus.NO_CONTENT)
   async enableConfig(@Param('name') name: string): Promise<void> {
     await this.modelConfigService.enableModelConfig(name);
@@ -157,7 +183,7 @@ export class ModelAdminController {
   /**
    * Disable model configuration
    */
-  @Put(':name/disable')
+  @Post(':name/disable')
   @HttpCode(HttpStatus.NO_CONTENT)
   async disableConfig(@Param('name') name: string): Promise<void> {
     await this.modelConfigService.disableModelConfig(name);
@@ -201,6 +227,26 @@ export class ModelAdminController {
   @Get('status/:provider')
   async getProviderStatus(@Param('provider') provider: string) {
     return this.providerFactory.getProviderStatus(provider);
+  }
+
+  /**
+   * Trigger health check for a model
+   */
+  @Post(':name/test')
+  async testModel(@Param('name') name: string) {
+    const config = await this.modelConfigService.getModelConfig(name);
+    if (!config) {
+      throw new BadRequestException(`Model ${name} not found`);
+    }
+    const isHealthy = await this.providerFactory.checkProviderHealth(
+      config.provider
+    );
+    return {
+      name,
+      provider: config.provider,
+      status: isHealthy ? 'valid' : 'error',
+      message: isHealthy ? 'Connection successful' : 'Connection failed',
+    };
   }
 
   /**

@@ -8,6 +8,7 @@ import {
   GithubOutlined,
   GoogleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/authService';
 import './auth.css';
@@ -22,6 +23,7 @@ interface RegisterFormValues {
 }
 
 const RegisterPage: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setAuth, isAuthenticated } = useAuthStore();
@@ -45,13 +47,13 @@ const RegisterPage: React.FC = () => {
       // Ensure we have a token
       const token = response.token || response.accessToken;
       if (!token) {
-        throw new Error('未收到认证令牌');
+        throw new Error(t('common.error'));
       }
 
       // Set auth state
       setAuth(response.user, token);
 
-      message.success('注册成功！');
+      message.success(t('auth.register_success'));
 
       // Use setTimeout to ensure state is updated before navigation
       setTimeout(() => {
@@ -63,7 +65,7 @@ const RegisterPage: React.FC = () => {
         (err as any)?.response?.data?.message ||
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.message ||
-        '注册失败，请稍后重试';
+        t('auth.register_failed');
       message.error(errorMessage);
     } finally {
       setLoading(false);
@@ -78,9 +80,9 @@ const RegisterPage: React.FC = () => {
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
             <Title level={2} style={{ margin: 0 }}>
-              创建账号
+              {t('auth.register')}
             </Title>
-            <Text type="secondary">开始您的AI简历优化之旅</Text>
+            <Text type="secondary">{t('auth.title_register_sub')}</Text>
           </div>
 
           {/* Register Form */}
@@ -93,51 +95,51 @@ const RegisterPage: React.FC = () => {
             <Form.Item
               name="username"
               rules={[
-                { required: true, message: '请输入用户名！' },
-                { min: 3, message: '用户名至少3个字符！' },
+                { required: true, message: t('auth.username_required') },
+                { min: 3, message: t('auth.username_min') },
               ]}
             >
-              <Input prefix={<UserOutlined />} placeholder="用户名" />
+              <Input prefix={<UserOutlined />} placeholder={t('auth.username')} />
             </Form.Item>
 
             <Form.Item
               name="email"
               rules={[
-                { required: true, message: '请输入邮箱地址！' },
-                { type: 'email', message: '请输入有效的邮箱地址！' },
+                { required: true, message: t('auth.email_required') },
+                { type: 'email', message: t('auth.email_invalid') },
               ]}
             >
-              <Input prefix={<MailOutlined />} placeholder="邮箱地址" />
+              <Input prefix={<MailOutlined />} placeholder={t('auth.email')} />
             </Form.Item>
 
             <Form.Item
               name="password"
               rules={[
-                { required: true, message: '请输入密码！' },
-                { min: 6, message: '密码至少6个字符！' },
+                { required: true, message: t('auth.password_required') },
+                { min: 6, message: t('auth.password_min') },
               ]}
             >
-              <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+              <Input.Password prefix={<LockOutlined />} placeholder={t('auth.password')} />
             </Form.Item>
 
             <Form.Item
               name="confirmPassword"
               dependencies={['password']}
               rules={[
-                { required: true, message: '请确认密码！' },
+                { required: true, message: t('auth.password_required') },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || getFieldValue('password') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error('两次输入的密码不一致！'));
+                    return Promise.reject(new Error(t('auth.password_mismatch')));
                   },
                 }),
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="确认密码"
+                placeholder={t('auth.confirm_password')}
               />
             </Form.Item>
 
@@ -155,7 +157,7 @@ const RegisterPage: React.FC = () => {
                   border: 'none',
                 }}
               >
-                注册
+                {t('auth.register')}
               </Button>
             </Form.Item>
           </Form>
@@ -163,7 +165,7 @@ const RegisterPage: React.FC = () => {
           {/* Divider */}
           <Divider plain>
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              或使用以下方式注册
+              {t('auth.or_social')}
             </Text>
           </Divider>
 
@@ -189,9 +191,9 @@ const RegisterPage: React.FC = () => {
           {/* Login Link */}
           <div style={{ textAlign: 'center' }}>
             <Text type="secondary">
-              已有账号？{' '}
+              {t('auth.have_account')}{' '}
               <Link to="/login" style={{ color: '#667eea', fontWeight: 500 }}>
-                立即登录
+                {t('auth.login')}
               </Link>
             </Text>
           </div>

@@ -55,11 +55,6 @@ const SettingsPage: React.FC = () => {
 
           <Divider />
 
-          <Title level={4}>API 设置</Title>
-          <Form.Item name="apiKey" label="API Key" extra="用于连接 AI 服务">
-            <Input.Password placeholder="输入您的 API Key" />
-          </Form.Item>
-
           <Form.Item>
             <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
               保存设置
