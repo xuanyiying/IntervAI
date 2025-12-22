@@ -57,7 +57,9 @@ const InterviewPage: React.FC = () => {
       setLoading(true);
 
       // Try to get existing active session first
-      const activeSession = await interviewService.getActiveSession(optimizationId!);
+      const activeSession = await interviewService.getActiveSession(
+        optimizationId!
+      );
 
       if (activeSession) {
         // Resume existing session

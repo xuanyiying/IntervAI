@@ -26,7 +26,11 @@ import {
   PhoneOutlined,
 } from '@ant-design/icons';
 import { useAuthStore } from '../stores/authStore';
-import { userService, UserActivity, UserNotification } from '../services/userService';
+import {
+  userService,
+  UserActivity,
+  UserNotification,
+} from '../services/userService';
 import './common.css';
 
 const { Title, Text } = Typography;
@@ -93,7 +97,9 @@ const ProfilePage: React.FC = () => {
     try {
       // setLoading(true); // Don't block whole page, maybe just avatar spinner
       const avatarUrl = await userService.uploadAvatar(file);
-      const updatedUser = await userService.updateProfile({ avatar: avatarUrl });
+      const updatedUser = await userService.updateProfile({
+        avatar: avatarUrl,
+      });
       updateUser(updatedUser);
       message.success('Avatar uploaded successfully');
       onSuccess(avatarUrl);
@@ -114,7 +120,9 @@ const ProfilePage: React.FC = () => {
   const handleMarkAsRead = async (id: string) => {
     try {
       await userService.markNotificationAsRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      );
       message.success('Marked as read');
     } catch (error) {
       message.error('Failed to mark as read');
@@ -130,8 +138,18 @@ const ProfilePage: React.FC = () => {
       // message.error('Failed to load history');
       // Mock data for now if API fails (since backend might not be ready)
       setActivities([
-        { id: '1', action: 'LOGIN', description: 'Logged in from Chrome on MacOS', createdAt: new Date().toISOString() },
-        { id: '2', action: 'UPDATE_PROFILE', description: 'Updated profile information', createdAt: new Date(Date.now() - 86400000).toISOString() },
+        {
+          id: '1',
+          action: 'LOGIN',
+          description: 'Logged in from Chrome on MacOS',
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: '2',
+          action: 'UPDATE_PROFILE',
+          description: 'Updated profile information',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+        },
       ]);
     } finally {
       setHistoryLoading(false);
@@ -179,18 +197,25 @@ const ProfilePage: React.FC = () => {
 
   const ProfileTab = () => (
     <div style={{ maxWidth: 600 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: 24 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '24px',
+          marginBottom: 24,
+        }}
+      >
         <Avatar size={80} icon={<UserOutlined />} src={user?.avatar} />
         <div>
-           {editing && (
-             <Upload 
-                showUploadList={false} 
-                customRequest={handleAvatarUpload}
-                accept="image/*"
-             >
-                <Button icon={<UploadOutlined />}>Change Avatar</Button>
-             </Upload>
-           )}
+          {editing && (
+            <Upload
+              showUploadList={false}
+              customRequest={handleAvatarUpload}
+              accept="image/*"
+            >
+              <Button icon={<UploadOutlined />}>Change Avatar</Button>
+            </Upload>
+          )}
         </div>
       </div>
 
@@ -200,7 +225,11 @@ const ProfilePage: React.FC = () => {
         disabled={!editing}
         onFinish={handleUpdateProfile}
       >
-        <Form.Item name="username" label="Username" rules={[{ required: true }]}>
+        <Form.Item
+          name="username"
+          label="Username"
+          rules={[{ required: true }]}
+        >
           <Input />
         </Form.Item>
         <Form.Item name="email" label="Email">
@@ -262,7 +291,9 @@ const ProfilePage: React.FC = () => {
                 if (!value || getFieldValue('newPassword') === value) {
                   return Promise.resolve();
                 }
-                return Promise.reject(new Error('The two passwords do not match!'));
+                return Promise.reject(
+                  new Error('The two passwords do not match!')
+                );
               },
             }),
           ]}
@@ -297,10 +328,19 @@ const ProfilePage: React.FC = () => {
           ]}
           renderItem={(item) => (
             <List.Item
-              actions={[<Button type="link" onClick={item.action}>{item.buttonText}</Button>]}
+              actions={[
+                <Button type="link" onClick={item.action}>
+                  {item.buttonText}
+                </Button>,
+              ]}
             >
               <List.Item.Meta
-                avatar={<Avatar icon={item.icon} style={{ backgroundColor: '#f0f2f5', color: '#1890ff' }} />}
+                avatar={
+                  <Avatar
+                    icon={item.icon}
+                    style={{ backgroundColor: '#f0f2f5', color: '#1890ff' }}
+                  />
+                }
                 title={item.title}
                 description={item.description}
               />
@@ -319,7 +359,12 @@ const ProfilePage: React.FC = () => {
       renderItem={(item) => (
         <List.Item>
           <List.Item.Meta
-            avatar={<Avatar icon={<HistoryOutlined />} style={{ backgroundColor: '#1890ff' }} />}
+            avatar={
+              <Avatar
+                icon={<HistoryOutlined />}
+                style={{ backgroundColor: '#1890ff' }}
+              />
+            }
             title={item.action}
             description={
               <Space direction="vertical" size={0}>
@@ -344,9 +389,9 @@ const ProfilePage: React.FC = () => {
         <List.Item
           actions={[
             !item.read && (
-              <Button 
-                type="link" 
-                size="small" 
+              <Button
+                type="link"
+                size="small"
                 icon={<CheckOutlined />}
                 onClick={() => handleMarkAsRead(item.id)}
               >
@@ -364,7 +409,15 @@ const ProfilePage: React.FC = () => {
             title={
               <Space>
                 <Text strong={!item.read}>{item.title}</Text>
-                <Tag color={item.type === 'ERROR' ? 'red' : item.type === 'WARNING' ? 'orange' : 'blue'}>
+                <Tag
+                  color={
+                    item.type === 'ERROR'
+                      ? 'red'
+                      : item.type === 'WARNING'
+                        ? 'orange'
+                        : 'blue'
+                  }
+                >
                   {item.type}
                 </Tag>
               </Space>
@@ -413,7 +466,9 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="profile-container">
       <Card>
-        <Title level={2} style={{ marginBottom: 24 }}>Personal Center</Title>
+        <Title level={2} style={{ marginBottom: 24 }}>
+          Personal Center
+        </Title>
         <Tabs items={items} onChange={handleTabChange} />
       </Card>
     </div>

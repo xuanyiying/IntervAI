@@ -5,25 +5,33 @@ import zhCN from './locales/zh-CN.json';
 import enUS from './locales/en-US.json';
 
 i18n
-    .use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        resources: {
-            'zh-CN': {
-                translation: zhCN,
-            },
-            'en-US': {
-                translation: enUS,
-            },
-        },
-        fallbackLng: 'zh-CN',
-        interpolation: {
-            escapeValue: false,
-        },
-        detection: {
-            order: ['querystring', 'cookie', 'localStorage', 'navigator', 'htmlTag', 'path', 'subdomain'],
-            caches: ['localStorage', 'cookie'],
-        },
-    });
+  .use(LanguageDetector)
+  .use(initReactI18next)
+  .init({
+    resources: {
+      'zh-CN': {
+        translation: zhCN,
+      },
+      'en-US': {
+        translation: enUS,
+      },
+    },
+    fallbackLng: 'zh-CN',
+    interpolation: {
+      escapeValue: false,
+    },
+    detection: {
+      order: [
+        'querystring',
+        'cookie',
+        'localStorage',
+        'navigator',
+        'htmlTag',
+        'path',
+        'subdomain',
+      ],
+      caches: ['localStorage', 'cookie'],
+    },
+  });
 
 export default i18n;

@@ -24,7 +24,7 @@ export class UserService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly invitationService: InvitationService
-  ) { }
+  ) {}
 
   /**
    * Register a new user
@@ -109,7 +109,6 @@ export class UserService {
         createdAt: user.createdAt,
       },
     };
-
   }
 
   /**
@@ -160,7 +159,6 @@ export class UserService {
         createdAt: user.createdAt,
       },
     };
-
   }
 
   /**

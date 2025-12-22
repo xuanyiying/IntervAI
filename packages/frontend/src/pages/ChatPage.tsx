@@ -199,7 +199,9 @@ const ChatPage: React.FC = () => {
       // Add upload confirmation message
       await sendMessage(
         currentConversation.id,
-        t('chat.upload_success', { filename: uploadData?.resume?.originalFilename || '简历文件' }),
+        t('chat.upload_success', {
+          filename: uploadData?.resume?.originalFilename || '简历文件',
+        }),
         'assistant'
       );
 
@@ -216,7 +218,8 @@ const ChatPage: React.FC = () => {
       if (parsedData?.skills && parsedData.skills.length > 0) {
         const count = parsedData.skills.length;
         const skillsString = parsedData.skills.slice(0, 5).join(', ');
-        const extra = count > 5 ? ` ${t('common.total_items', { count: count - 5 })}` : '';
+        const extra =
+          count > 5 ? ` ${t('common.total_items', { count: count - 5 })}` : '';
         summaryMessage += `${t('chat.parsed_skills')}: ${skillsString}${extra}\n`;
       }
       if (parsedData?.experience && parsedData.experience.length > 0) {
@@ -249,7 +252,10 @@ const ChatPage: React.FC = () => {
       // Add job confirmation message
       await sendMessage(
         currentConversation.id,
-        t('chat.job_saved_success', { title: createdJob.title, company: createdJob.company }),
+        t('chat.job_saved_success', {
+          title: createdJob.title,
+          company: createdJob.company,
+        }),
         'assistant'
       );
 

@@ -20,10 +20,7 @@ export const pitchPerfectService = {
     return response.data;
   },
 
-  refinePitch: async (
-    currentIntroduction: string,
-    feedback: string
-  ) => {
+  refinePitch: async (currentIntroduction: string, feedback: string) => {
     const response = await axios.post('/api/agents/pitch-perfect/refine', {
       currentIntroduction,
       feedback,
@@ -93,7 +90,9 @@ export const rolePlayService = {
   },
 
   getFeedback: async (sessionId: string) => {
-    const response = await axios.get(`/api/agents/role-play/feedback/${sessionId}`);
+    const response = await axios.get(
+      `/api/agents/role-play/feedback/${sessionId}`
+    );
     return response.data;
   },
 };
@@ -141,13 +140,16 @@ export const agentMetricsService = {
     endDate: string,
     agentType?: string
   ) => {
-    const response = await axios.get('/api/agents/metrics/optimization-savings', {
-      params: {
-        startDate,
-        endDate,
-        ...(agentType && { agentType }),
-      },
-    });
+    const response = await axios.get(
+      '/api/agents/metrics/optimization-savings',
+      {
+        params: {
+          startDate,
+          endDate,
+          ...(agentType && { agentType }),
+        },
+      }
+    );
     return response.data;
   },
 };

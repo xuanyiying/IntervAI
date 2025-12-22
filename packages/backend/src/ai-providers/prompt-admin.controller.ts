@@ -56,7 +56,7 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN)
 export class PromptAdminController {
-  constructor(private promptTemplateManager: PromptTemplateManager) { }
+  constructor(private promptTemplateManager: PromptTemplateManager) {}
 
   /**
    * List all prompt templates

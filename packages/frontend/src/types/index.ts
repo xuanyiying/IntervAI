@@ -7,7 +7,13 @@ export interface User {
   bio?: string;
   phone?: string;
   role?: 'USER' | 'ADMIN';
-  subscriptionTier: 'FREE' | 'PRO' | 'ENTERPRISE' | 'free' | 'pro' | 'enterprise';
+  subscriptionTier:
+    | 'FREE'
+    | 'PRO'
+    | 'ENTERPRISE'
+    | 'free'
+    | 'pro'
+    | 'enterprise';
   createdAt: string;
   updatedAt?: string;
 }
