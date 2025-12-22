@@ -190,7 +190,8 @@ const PricingPage: React.FC = () => {
           <Text strong={!isYearly}>{t('pricing.monthly')}</Text>
           <Switch checked={isYearly} onChange={setIsYearly} />
           <Text strong={isYearly}>
-            {t('pricing.yearly')} <Tag color="green">{t('pricing.save', { percent: 17 })}</Tag>
+            {t('pricing.yearly')}{' '}
+            <Tag color="green">{t('pricing.save', { percent: 17 })}</Tag>
           </Text>
         </div>
       </div>

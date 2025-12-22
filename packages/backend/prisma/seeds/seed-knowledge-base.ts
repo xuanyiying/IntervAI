@@ -79,8 +79,7 @@ const commonInterviewQuestions = [
     },
   },
   {
-    content:
-      'How would you optimize the performance of a React application?',
+    content: 'How would you optimize the performance of a React application?',
     metadata: {
       role: 'Frontend Developer',
       type: 'technical',
@@ -114,8 +113,7 @@ const commonInterviewQuestions = [
     },
   },
   {
-    content:
-      'Explain the concept of database normalization and its benefits.',
+    content: 'Explain the concept of database normalization and its benefits.',
     metadata: {
       role: 'Backend Developer',
       type: 'technical',
@@ -169,8 +167,7 @@ const commonInterviewQuestions = [
     },
   },
   {
-    content:
-      'What is caching and what are the different caching strategies?',
+    content: 'What is caching and what are the different caching strategies?',
     metadata: {
       role: 'Backend Developer',
       type: 'technical',
@@ -193,8 +190,7 @@ const commonInterviewQuestions = [
 
   // Full Stack Developer Questions
   {
-    content:
-      'Explain the MVC (Model-View-Controller) architecture pattern.',
+    content: 'Explain the MVC (Model-View-Controller) architecture pattern.',
     metadata: {
       role: 'Full Stack Developer',
       type: 'technical',
@@ -272,8 +268,7 @@ const commonInterviewQuestions = [
     },
   },
   {
-    content:
-      'Tell me about your greatest achievement in your career so far.',
+    content: 'Tell me about your greatest achievement in your career so far.',
     metadata: {
       role: 'All',
       type: 'behavioral',
@@ -340,8 +335,7 @@ const commonInterviewQuestions = [
     },
   },
   {
-    content:
-      'How would you approach refactoring a large legacy codebase?',
+    content: 'How would you approach refactoring a large legacy codebase?',
     metadata: {
       role: 'All',
       type: 'scenario',
@@ -432,29 +426,38 @@ export async function seedKnowledgeBase(prisma: PrismaClient) {
   // Check for DashScope Key first
   const apiKey = process.env.QWEN_API_KEY;
   if (!apiKey) {
-      console.warn('⚠️  QWEN_API_KEY not found. Skipping knowledge base seeding.');
-      return { created: 0, skipped: 0, failed: 0 };
+    console.warn(
+      '⚠️  QWEN_API_KEY not found. Skipping knowledge base seeding.'
+    );
+    return { created: 0, skipped: 0, failed: 0 };
   }
 
   const chromaUrl = process.env.CHROMA_DB_URL || 'http://150.158.20.143:8000';
   const client = new ChromaClient({ path: chromaUrl });
   const collectionName = 'resume-optimizer-vectors';
-  
-  const embedder = new QwenEmbeddings({ apiKey, modelName: 'text-embedding-v2' });
+
+  const embedder = new QwenEmbeddings({
+    apiKey,
+    modelName: 'text-embedding-v2',
+  });
 
   let collection;
   try {
-    collection = await client.getOrCreateCollection({ 
-        name: collectionName,
-        embeddingFunction: embedder
+    collection = await client.getOrCreateCollection({
+      name: collectionName,
+      embeddingFunction: embedder,
     });
-    console.log(`✅ Connected to ChromaDB at ${chromaUrl}, collection: ${collectionName}`);
+    console.log(
+      `✅ Connected to ChromaDB at ${chromaUrl}, collection: ${collectionName}`
+    );
   } catch (error) {
     console.error(
       '❌ Failed to connect to ChromaDB:',
       error instanceof Error ? error.message : String(error)
     );
-    console.log('⚠️  Make sure ChromaDB is running. Skipping knowledge base seeding.');
+    console.log(
+      '⚠️  Make sure ChromaDB is running. Skipping knowledge base seeding.'
+    );
     return {
       created: 0,
       skipped: commonInterviewQuestions.length + starExamples.length,
@@ -467,8 +470,11 @@ export async function seedKnowledgeBase(prisma: PrismaClient) {
   let failed = 0;
 
   const allItems = [
-    ...commonInterviewQuestions.map(q => ({ ...q, source: 'common-interview-questions' })),
-    ...starExamples.map(e => ({ ...e, source: 'star-examples' }))
+    ...commonInterviewQuestions.map((q) => ({
+      ...q,
+      source: 'common-interview-questions',
+    })),
+    ...starExamples.map((e) => ({ ...e, source: 'star-examples' })),
   ];
 
   console.log(`📚 Processing ${allItems.length} items...`);
@@ -476,34 +482,38 @@ export async function seedKnowledgeBase(prisma: PrismaClient) {
   for (const item of allItems) {
     try {
       const id = hashContent(item.content);
-      
+
       // Check if document already exists
       try {
-          const existing = await collection.get({ ids: [id] });
-          if (existing.ids && existing.ids.length > 0) {
-            console.log(`⏭️  Skipped: ${item.content.substring(0, 50)}...`);
-            skipped++;
-            continue;
-          }
+        const existing = await collection.get({ ids: [id] });
+        if (existing.ids && existing.ids.length > 0) {
+          console.log(`⏭️  Skipped: ${item.content.substring(0, 50)}...`);
+          skipped++;
+          continue;
+        }
       } catch (e) {
-          // Ignore error if get fails
+        // Ignore error if get fails
       }
 
       const now = new Date().toISOString();
       // Ensure metadata values are compatible with Chroma
       const safeMetadata: Record<string, string | number | boolean> = {};
-      const metadataSource = { ...item.metadata, source: item.source, contentHash: id };
-      
+      const metadataSource = {
+        ...item.metadata,
+        source: item.source,
+        contentHash: id,
+      };
+
       for (const [key, value] of Object.entries(metadataSource)) {
-          if (Array.isArray(value)) {
-              safeMetadata[key] = value.join(', ');
-          } else if (typeof value === 'object' && value !== null) {
-               safeMetadata[key] = JSON.stringify(value);
-          } else {
-              safeMetadata[key] = value as string | number | boolean;
-          }
+        if (Array.isArray(value)) {
+          safeMetadata[key] = value.join(', ');
+        } else if (typeof value === 'object' && value !== null) {
+          safeMetadata[key] = JSON.stringify(value);
+        } else {
+          safeMetadata[key] = value as string | number | boolean;
+        }
       }
-      
+
       // Add timestamps
       safeMetadata['createdAt'] = now;
       safeMetadata['updatedAt'] = now;
@@ -568,7 +578,7 @@ class QwenEmbeddings {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
         }
@@ -579,8 +589,10 @@ class QwenEmbeddings {
           .sort((a: any, b: any) => a.text_index - b.text_index)
           .map((e: any) => e.embedding);
       }
-      
-      throw new Error(`Invalid response structure: ${JSON.stringify(response.data)}`);
+
+      throw new Error(
+        `Invalid response structure: ${JSON.stringify(response.data)}`
+      );
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;

@@ -43,7 +43,10 @@ describe('adminService', () => {
 
       const result = await adminService.generateInviteCodes(mockDto);
 
-      expect(axios.post).toHaveBeenCalledWith('/admin/invite-codes/generate', mockDto);
+      expect(axios.post).toHaveBeenCalledWith(
+        '/admin/invite-codes/generate',
+        mockDto
+      );
       expect(result).toEqual(mockResponse);
     });
   });

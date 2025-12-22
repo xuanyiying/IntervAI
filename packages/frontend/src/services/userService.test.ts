@@ -18,9 +18,11 @@ describe('userService', () => {
 
   describe('uploadAvatar', () => {
     it('should upload avatar and return url', async () => {
-      const mockFile = new File(['avatar content'], 'avatar.png', { type: 'image/png' });
+      const mockFile = new File(['avatar content'], 'avatar.png', {
+        type: 'image/png',
+      });
       const mockUrl = 'https://example.com/avatar.png';
-      
+
       (axios.post as any).mockResolvedValueOnce({ data: { url: mockUrl } });
 
       const result = await userService.uploadAvatar(mockFile);
@@ -41,7 +43,9 @@ describe('userService', () => {
 
       await userService.markNotificationAsRead(notificationId);
 
-      expect(axios.put).toHaveBeenCalledWith(`/user/notifications/${notificationId}/read`);
+      expect(axios.put).toHaveBeenCalledWith(
+        `/user/notifications/${notificationId}/read`
+      );
     });
   });
 

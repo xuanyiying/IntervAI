@@ -122,7 +122,8 @@ const InviteCodeManagementPage: React.FC = () => {
       title: 'Valid Until',
       dataIndex: 'validUntil',
       key: 'validUntil',
-      render: (date) => (date ? new Date(date).toLocaleDateString() : 'Permanent'),
+      render: (date) =>
+        date ? new Date(date).toLocaleDateString() : 'Permanent',
     },
     {
       title: 'Used By',

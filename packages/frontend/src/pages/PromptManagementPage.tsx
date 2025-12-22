@@ -158,7 +158,11 @@ const PromptManagementPage: React.FC = () => {
       key: 'scenario',
       width: 180,
       render: (scenario: string) => (
-        <Tag color="blue">{t(`scenario.${scenario}`, { defaultValue: scenario.replace(/_/g, ' ') })}</Tag>
+        <Tag color="blue">
+          {t(`scenario.${scenario}`, {
+            defaultValue: scenario.replace(/_/g, ' '),
+          })}
+        </Tag>
       ),
     },
     {
@@ -262,13 +266,18 @@ const PromptManagementPage: React.FC = () => {
             </Title>
             <Space>
               <Select
-                placeholder={t('prompts.scenario_placeholder', 'Filter Scenario')}
+                placeholder={t(
+                  'prompts.scenario_placeholder',
+                  'Filter Scenario'
+                )}
                 style={{ width: 200 }}
                 allowClear
                 value={selectedScenario}
                 onChange={setSelectedScenario}
               >
-                <Select.Option value="resume_parsing">{t('scenario.resume_parsing', 'Resume Parsing')}</Select.Option>
+                <Select.Option value="resume_parsing">
+                  {t('scenario.resume_parsing', 'Resume Parsing')}
+                </Select.Option>
                 <Select.Option value="job_description_parsing">
                   {t('scenario.job_description_parsing', 'JD Parsing')}
                 </Select.Option>
@@ -276,7 +285,10 @@ const PromptManagementPage: React.FC = () => {
                   {t('scenario.resume_optimization', 'Resume Optimization')}
                 </Select.Option>
                 <Select.Option value="interview_question_generation">
-                  {t('scenario.interview_question_generation', 'Interview Questions')}
+                  {t(
+                    'scenario.interview_question_generation',
+                    'Interview Questions'
+                  )}
                 </Select.Option>
                 <Select.Option value="match_score_calculation">
                   {t('scenario.match_score_calculation', 'Match Score')}
@@ -310,13 +322,16 @@ const PromptManagementPage: React.FC = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => t('common.total_items', { total, count: total }),
+            showTotal: (total) =>
+              t('common.total_items', { total, count: total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingPrompt ? t('prompts.edit_prompt') : t('prompts.new_prompt')}
+        title={
+          editingPrompt ? t('prompts.edit_prompt') : t('prompts.new_prompt')
+        }
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         width={800}
@@ -331,7 +346,9 @@ const PromptManagementPage: React.FC = () => {
           <Form.Item
             name="name"
             label={t('models.name')}
-            rules={[{ required: true, message: t('common.required', 'Required') }]}
+            rules={[
+              { required: true, message: t('common.required', 'Required') },
+            ]}
           >
             <Input placeholder="e.g. resume_parsing_default" />
           </Form.Item>
@@ -339,10 +356,14 @@ const PromptManagementPage: React.FC = () => {
           <Form.Item
             name="scenario"
             label={t('prompts.scenario')}
-            rules={[{ required: true, message: t('common.required', 'Required') }]}
+            rules={[
+              { required: true, message: t('common.required', 'Required') },
+            ]}
           >
             <Select placeholder={t('prompts.scenario_placeholder')}>
-              <Select.Option value="resume_parsing">{t('scenario.resume_parsing')}</Select.Option>
+              <Select.Option value="resume_parsing">
+                {t('scenario.resume_parsing')}
+              </Select.Option>
               <Select.Option value="job_description_parsing">
                 {t('scenario.job_description_parsing')}
               </Select.Option>
@@ -361,23 +382,32 @@ const PromptManagementPage: React.FC = () => {
           <Form.Item
             name="language"
             label={t('prompts.language')}
-            rules={[{ required: true, message: t('common.required', 'Required') }]}
+            rules={[
+              { required: true, message: t('common.required', 'Required') },
+            ]}
           >
             <Select>
               <Select.Option value="en">{t('prompts.lang_en')}</Select.Option>
-              <Select.Option value="zh-CN">{t('prompts.lang_cn')}</Select.Option>
+              <Select.Option value="zh-CN">
+                {t('prompts.lang_cn')}
+              </Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="template"
             label={t('prompts.template')}
-            rules={[{ required: true, message: t('common.required', 'Required') }]}
+            rules={[
+              { required: true, message: t('common.required', 'Required') },
+            ]}
             extra={t('prompts.template_extra', 'Use {variable_name} format')}
           >
             <TextArea
               rows={10}
-              placeholder={t('prompts.template_placeholder', 'Enter prompt template...')}
+              placeholder={t(
+                'prompts.template_placeholder',
+                'Enter prompt template...'
+              )}
               onChange={(e) => {
                 const vars = extractVariables(e.target.value);
                 form.setFieldsValue({ variables: vars });
@@ -386,7 +416,11 @@ const PromptManagementPage: React.FC = () => {
           </Form.Item>
 
           <Form.Item name="variables" label={t('prompts.variables')}>
-            <Select mode="tags" placeholder={t('prompts.variables_placeholder', 'Auto-extracted')} disabled />
+            <Select
+              mode="tags"
+              placeholder={t('prompts.variables_placeholder', 'Auto-extracted')}
+              disabled
+            />
           </Form.Item>
 
           <Form.Item name="provider" label={t('models.provider')}>
@@ -398,7 +432,9 @@ const PromptManagementPage: React.FC = () => {
               <Button type="primary" htmlType="submit">
                 {editingPrompt ? t('common.save') : t('common.confirm')}
               </Button>
-              <Button onClick={() => setModalVisible(false)}>{t('common.cancel')}</Button>
+              <Button onClick={() => setModalVisible(false)}>
+                {t('common.cancel')}
+              </Button>
             </Space>
           </Form.Item>
         </Form>
@@ -445,7 +481,10 @@ const PromptManagementPage: React.FC = () => {
               width: 100,
               render: (_, record) => (
                 <Popconfirm
-                  title={t('prompts.rollback_confirm', 'Are you sure to rollback?')}
+                  title={t(
+                    'prompts.rollback_confirm',
+                    'Are you sure to rollback?'
+                  )}
                   onConfirm={() => handleRollback(record.version)}
                   okText={t('common.confirm')}
                   cancelText={t('common.cancel')}

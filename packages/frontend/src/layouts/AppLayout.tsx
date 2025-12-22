@@ -27,8 +27,8 @@ import {
   FileTextOutlined,
   BarcodeOutlined,
 } from '@ant-design/icons';
-import { useAuthStore } from '../stores/authStore';
-import { useConversationStore } from '../stores/conversationStore';
+import { useAuthStore } from '@/stores';
+import { useConversationStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
 import { useTranslation } from 'react-i18next';
 import { GlobalOutlined } from '@ant-design/icons';
@@ -118,7 +118,6 @@ const AppLayout: React.FC = () => {
     }
   };
 
-
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
     if (key === 'profile') {
       navigate('/profile');
@@ -169,28 +168,28 @@ const AppLayout: React.FC = () => {
     },
     ...(user?.role === 'ADMIN'
       ? [
-        {
-          key: 'admin-models',
-          label: t('menu.model_management'),
-          icon: <ApiOutlined />,
-          onClick: () => navigate('/admin/models'),
-        },
-        {
-          key: 'admin-prompts',
-          label: t('menu.prompt_management'),
-          icon: <FileTextOutlined />,
-          onClick: () => navigate('/admin/prompts'),
-        },
-        {
-          key: 'admin-invites',
-          label: t('menu.invite_code_management'),
-          icon: <BarcodeOutlined />,
-          onClick: () => navigate('/admin/invite-codes'),
-        },
-        {
-          type: 'divider' as const,
-        },
-      ]
+          {
+            key: 'admin-models',
+            label: t('menu.model_management'),
+            icon: <ApiOutlined />,
+            onClick: () => navigate('/admin/models'),
+          },
+          {
+            key: 'admin-prompts',
+            label: t('menu.prompt_management'),
+            icon: <FileTextOutlined />,
+            onClick: () => navigate('/admin/prompts'),
+          },
+          {
+            key: 'admin-invites',
+            label: t('menu.invite_code_management'),
+            icon: <BarcodeOutlined />,
+            onClick: () => navigate('/admin/invite-codes'),
+          },
+          {
+            type: 'divider' as const,
+          },
+        ]
       : []),
     {
       key: 'logout',
@@ -243,7 +242,9 @@ const AppLayout: React.FC = () => {
                 borderRadius: '8px',
                 cursor: 'pointer',
                 background:
-                  currentConversation?.id === item.id ? '#f0f0f0' : 'transparent',
+                  currentConversation?.id === item.id
+                    ? '#f0f0f0'
+                    : 'transparent',
                 transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
@@ -353,7 +354,9 @@ const AppLayout: React.FC = () => {
               }}
             >
               <ApiOutlined style={{ fontSize: '14px', color: '#666' }} />
-              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.model_management')}</span>
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                {t('menu.model_management')}
+              </span>
             </div>
             <div
               className="admin-nav-item"
@@ -369,7 +372,9 @@ const AppLayout: React.FC = () => {
               }}
             >
               <FileTextOutlined style={{ fontSize: '14px', color: '#666' }} />
-              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.prompt_management')}</span>
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                {t('menu.prompt_management')}
+              </span>
             </div>
             <div
               className="admin-nav-item"
@@ -385,7 +390,9 @@ const AppLayout: React.FC = () => {
               }}
             >
               <BarcodeOutlined style={{ fontSize: '14px', color: '#666' }} />
-              <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('menu.invite_code_management')}</span>
+              <span style={{ fontSize: '14px', fontWeight: 500 }}>
+                {t('menu.invite_code_management')}
+              </span>
             </div>
           </div>
         </div>
@@ -455,7 +462,9 @@ const AppLayout: React.FC = () => {
             height: 44,
           }}
         />
-        <div style={{ fontSize: '16px', fontWeight: 600 }}>{globalThis.APP_TITLE || t('common.app_name', 'AI Resume Assistant')}</div>
+        <div style={{ fontSize: '16px', fontWeight: 600 }}>
+          {globalThis.APP_TITLE || t('common.app_name', 'AI Resume Assistant')}
+        </div>
         <Dropdown
           menu={{ items: userMenu, onClick: handleMenuClick }}
           placement="bottomRight"

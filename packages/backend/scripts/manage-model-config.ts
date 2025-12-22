@@ -14,7 +14,8 @@ import { PrismaClient } from '@prisma/client';
 import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+const ENCRYPTION_KEY =
+  process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
 
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(16);
@@ -61,7 +62,12 @@ async function listConfigs() {
   });
 
   console.log('\n📋 Model Configurations:\n');
-  console.log('Name'.padEnd(25), 'Provider'.padEnd(15), 'Active'.padEnd(10), 'Endpoint');
+  console.log(
+    'Name'.padEnd(25),
+    'Provider'.padEnd(15),
+    'Active'.padEnd(10),
+    'Endpoint'
+  );
   console.log('─'.repeat(80));
 
   for (const config of configs) {
@@ -126,10 +132,10 @@ async function deleteConfig(name: string) {
 
 async function showStatus() {
   const configs = await prisma.modelConfig.findMany();
-  const activeCount = configs.filter(c => c.isActive).length;
+  const activeCount = configs.filter((c) => c.isActive).length;
   const inactiveCount = configs.length - activeCount;
 
-  const providers = [...new Set(configs.map(c => c.provider))];
+  const providers = [...new Set(configs.map((c) => c.provider))];
 
   console.log('\n📊 Configuration Status:\n');
   console.log(`Total Configurations: ${configs.length}`);
@@ -139,9 +145,11 @@ async function showStatus() {
 
   console.log('\n📈 By Provider:\n');
   for (const provider of providers) {
-    const providerConfigs = configs.filter(c => c.provider === provider);
-    const activeProviderConfigs = providerConfigs.filter(c => c.isActive);
-    console.log(`  ${provider}: ${activeProviderConfigs.length}/${providerConfigs.length} active`);
+    const providerConfigs = configs.filter((c) => c.provider === provider);
+    const activeProviderConfigs = providerConfigs.filter((c) => c.isActive);
+    console.log(
+      `  ${provider}: ${activeProviderConfigs.length}/${providerConfigs.length} active`
+    );
   }
   console.log();
 }
@@ -164,22 +172,25 @@ async function showConfig(name: string) {
   console.log(`Max Tokens: ${config.defaultMaxTokens}`);
   console.log(`Cost (Input): $${config.costPerInputToken}/1K tokens`);
   console.log(`Cost (Output): $${config.costPerOutputToken}/1K tokens`);
-  console.log(`Rate Limit: ${config.rateLimitPerMinute}/min, ${config.rateLimitPerDay}/day`);
+  console.log(
+    `Rate Limit: ${config.rateLimitPerMinute}/min, ${config.rateLimitPerDay}/day`
+  );
   console.log(`Active: ${config.isActive ? '✅ Yes' : '❌ No'}`);
   console.log(`Created: ${config.createdAt.toISOString()}`);
   console.log(`Updated: ${config.updatedAt.toISOString()}`);
-  
+
   // Show masked API key
   try {
     const decryptedKey = decrypt(config.apiKey);
-    const maskedKey = decryptedKey.length > 8 
-      ? `${decryptedKey.slice(0, 4)}...${decryptedKey.slice(-4)}`
-      : '****';
+    const maskedKey =
+      decryptedKey.length > 8
+        ? `${decryptedKey.slice(0, 4)}...${decryptedKey.slice(-4)}`
+        : '****';
     console.log(`API Key: ${maskedKey}`);
   } catch {
     console.log(`API Key: [encrypted]`);
   }
-  
+
   console.log();
 }
 
@@ -195,7 +206,9 @@ async function main() {
 
       case 'add':
         if (args.length < 4) {
-          console.error('Usage: npm run model-config add <name> <provider> <apiKey>');
+          console.error(
+            'Usage: npm run model-config add <name> <provider> <apiKey>'
+          );
           process.exit(1);
         }
         await addConfig(args[1], args[2], args[3]);
@@ -240,18 +253,35 @@ async function main() {
       default:
         console.log('Model Configuration Management CLI\n');
         console.log('Usage:');
-        console.log('  npm run model-config list                          - List all configurations');
-        console.log('  npm run model-config show <name>                   - Show configuration details');
-        console.log('  npm run model-config add <name> <provider> <key>   - Add new configuration');
-        console.log('  npm run model-config enable <name>                 - Enable configuration');
-        console.log('  npm run model-config disable <name>                - Disable configuration');
-        console.log('  npm run model-config delete <name>                 - Delete configuration');
-        console.log('  npm run model-config status                        - Show status summary');
+        console.log(
+          '  npm run model-config list                          - List all configurations'
+        );
+        console.log(
+          '  npm run model-config show <name>                   - Show configuration details'
+        );
+        console.log(
+          '  npm run model-config add <name> <provider> <key>   - Add new configuration'
+        );
+        console.log(
+          '  npm run model-config enable <name>                 - Enable configuration'
+        );
+        console.log(
+          '  npm run model-config disable <name>                - Disable configuration'
+        );
+        console.log(
+          '  npm run model-config delete <name>                 - Delete configuration'
+        );
+        console.log(
+          '  npm run model-config status                        - Show status summary'
+        );
         console.log();
         break;
     }
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      'Error:',
+      error instanceof Error ? error.message : String(error)
+    );
     process.exit(1);
   } finally {
     await prisma.$disconnect();

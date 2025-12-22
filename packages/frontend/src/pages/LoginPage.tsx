@@ -123,7 +123,10 @@ const LoginPage: React.FC = () => {
                 { min: 6, message: t('auth.password_min') },
               ]}
             >
-              <Input.Password prefix={<LockOutlined />} placeholder={t('auth.password')} />
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={t('auth.password')}
+              />
             </Form.Item>
 
             <Form.Item>

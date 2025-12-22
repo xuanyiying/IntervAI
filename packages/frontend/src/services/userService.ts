@@ -48,12 +48,18 @@ export const userService = {
     await axios.post('/user/change-password', data);
   },
 
-  getHistory: async (params?: { page: number; limit: number }): Promise<{ data: UserActivity[]; total: number }> => {
+  getHistory: async (params?: {
+    page: number;
+    limit: number;
+  }): Promise<{ data: UserActivity[]; total: number }> => {
     const response = await axios.get('/user/history', { params });
     return response.data;
   },
 
-  getNotifications: async (params?: { page: number; limit: number }): Promise<{ data: UserNotification[]; total: number }> => {
+  getNotifications: async (params?: {
+    page: number;
+    limit: number;
+  }): Promise<{ data: UserNotification[]; total: number }> => {
     const response = await axios.get('/user/notifications', { params });
     return response.data;
   },
@@ -61,7 +67,7 @@ export const userService = {
   markNotificationAsRead: async (id: string): Promise<void> => {
     await axios.put(`/user/notifications/${id}/read`);
   },
-  
+
   markAllNotificationsAsRead: async (): Promise<void> => {
     await axios.put(`/user/notifications/read-all`);
   },

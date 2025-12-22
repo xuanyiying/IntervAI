@@ -99,7 +99,10 @@ const RegisterPage: React.FC = () => {
                 { min: 3, message: t('auth.username_min') },
               ]}
             >
-              <Input prefix={<UserOutlined />} placeholder={t('auth.username')} />
+              <Input
+                prefix={<UserOutlined />}
+                placeholder={t('auth.username')}
+              />
             </Form.Item>
 
             <Form.Item
@@ -119,7 +122,10 @@ const RegisterPage: React.FC = () => {
                 { min: 6, message: t('auth.password_min') },
               ]}
             >
-              <Input.Password prefix={<LockOutlined />} placeholder={t('auth.password')} />
+              <Input.Password
+                prefix={<LockOutlined />}
+                placeholder={t('auth.password')}
+              />
             </Form.Item>
 
             <Form.Item
@@ -132,7 +138,9 @@ const RegisterPage: React.FC = () => {
                     if (!value || getFieldValue('password') === value) {
                       return Promise.resolve();
                     }
-                    return Promise.reject(new Error(t('auth.password_mismatch')));
+                    return Promise.reject(
+                      new Error(t('auth.password_mismatch'))
+                    );
                   },
                 }),
               ]}
