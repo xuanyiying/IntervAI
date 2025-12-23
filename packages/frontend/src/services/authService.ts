@@ -40,6 +40,7 @@ export const authService = {
     if (response.data.accessToken && !response.data.token) {
       response.data.token = response.data.accessToken;
     }
+    console.info('Login successful', response.data);
     return response.data;
   },
 
@@ -49,6 +50,7 @@ export const authService = {
 
   getCurrentUser: async () => {
     const response = await axios.get('/auth/me');
+    console.info('Current user info', response.data);
     return response.data;
   },
 
@@ -70,6 +72,7 @@ export const authService = {
     try {
       // Get current user info to verify the token
       const response = await axios.get('/auth/me');
+      console.info('Token verified successfully', response.data);
       return response.data;
     } finally {
       // Clean up the authorization header
