@@ -1,4 +1,4 @@
-import { Tool } from '@langchain/core/tools';
+import { Tool } from 'langchain';
 import { AIEngine } from '../../ai/ai.engine';
 import { ParsedResumeData } from '@/types';
 

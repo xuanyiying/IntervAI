@@ -12,6 +12,7 @@ export interface WorkflowStep {
   tokenUsage?: number;
   latency?: number;
   error?: string;
+  fallback?: any;
 }
 
 export interface WorkflowContext {

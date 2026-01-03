@@ -1,4 +1,4 @@
-import { Tool } from '@langchain/core/tools';
+import { Tool } from 'langchain';
 
 export interface KeywordMatchInput {
   resumeHighlights: string[];
