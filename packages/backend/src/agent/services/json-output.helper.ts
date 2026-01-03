@@ -6,7 +6,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { AIEngineService } from '../../ai-providers/ai-engine.service';
-import { AIRequest } from '../../ai-providers/interfaces';
+import { StructuredOutputService } from './structured-output.service';
 
 export interface JSONSchema {
   type: 'object' | 'array' | 'string' | 'number' | 'boolean';
@@ -36,60 +36,33 @@ export interface StructuredOutputResponse<T = unknown> {
 export class JSONOutputHelper {
   private readonly logger = new Logger(JSONOutputHelper.name);
 
-  constructor(private aiEngineService: AIEngineService) {}
+  constructor(
+    private aiEngineService: AIEngineService,
+    private structuredOutputService: StructuredOutputService
+  ) {}
 
   /**
-   * Call LLM with JSON output constraint
-   * Property 24: JSON Output Constraint
-   * Validates: Requirements 6.3, 6.4
+   * Call LLM with JSON output constraint using the improved StructuredOutputService
    */
   async callWithJSONOutput<T = unknown>(
     request: StructuredOutputRequest
   ): Promise<StructuredOutputResponse<T>> {
     try {
-      // Build schema description for the prompt
-      const schemaDescription = this.buildSchemaDescription(request.schema);
-
-      // Create constrained prompt
-      const constrainedPrompt = `${request.prompt}
-
-IMPORTANT: You MUST respond with ONLY valid JSON that matches this schema:
-${schemaDescription}
-
-Do not include any explanation, markdown formatting, or text outside the JSON.
-Respond with the JSON object directly.`;
-
-      // Call LLM with constraints
-      const response = await this.aiEngineService.call(
-        {
-          model: '',
-          prompt: constrainedPrompt,
-          temperature: request.temperature ?? 0.3, // Lower temperature for structured output
-          maxTokens: request.maxTokens ?? 2000,
-          metadata: {
-            outputFormat: 'json',
-            schema: request.schema,
-          },
-        } as AIRequest,
+      this.logger.debug('Calling LLM with JSON output via StructuredOutputService');
+      
+      const zodSchema = this.structuredOutputService.translateToZod(request.schema);
+      const data = await this.structuredOutputService.callWithZod<T>(
+        request.prompt,
+        zodSchema as any,
         request.userId,
-        request.scenario ?? 'json-output'
-      );
-
-      // Parse and validate JSON
-      const parsed = this.parseAndValidateJSON<T>(
-        response.content,
-        request.schema
-      );
-
-      this.logger.debug(
-        `Generated structured JSON output: ${response.usage.outputTokens} tokens`
+        request.scenario
       );
 
       return {
-        data: parsed,
-        inputTokens: response.usage.inputTokens,
-        outputTokens: response.usage.outputTokens,
-        raw: response.content,
+        data,
+        inputTokens: 0, // Simplified for now
+        outputTokens: 0,
+        raw: JSON.stringify(data),
       };
     } catch (error) {
       this.logger.error(
@@ -98,107 +71,7 @@ Respond with the JSON object directly.`;
       throw error;
     }
   }
-
-  /**
-   * Build human-readable schema description
-   */
-  private buildSchemaDescription(schema: JSONSchema): string {
-    if (schema.type === 'object' && schema.properties) {
-      const properties = Object.entries(schema.properties)
-        .map(([key, prop]) => {
-          const required = schema.required?.includes(key) ? ' (required)' : '';
-          const description = prop.description ? ` - ${prop.description}` : '';
-          return `  "${key}": ${prop.type}${required}${description}`;
-        })
-        .join('\n');
-
-      return `{\n${properties}\n}`;
-    }
-
-    if (schema.type === 'array' && schema.items) {
-      return `[${this.buildSchemaDescription(schema.items)}]`;
-    }
-
-    return schema.type;
-  }
-
-  /**
-   * Parse and validate JSON response
-   */
-  private parseAndValidateJSON<T = unknown>(
-    content: string,
-    schema: JSONSchema
-  ): T {
-    try {
-      // Extract JSON from response (handle markdown code blocks)
-      let jsonStr = content.trim();
-
-      // Remove markdown code blocks if present
-      if (jsonStr.startsWith('```json')) {
-        jsonStr = jsonStr.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-      } else if (jsonStr.startsWith('```')) {
-        jsonStr = jsonStr.replace(/^```\n?/, '').replace(/\n?```$/, '');
-      }
-
-      // Parse JSON
-      const parsed = JSON.parse(jsonStr) as T;
-
-      // Validate against schema
-      this.validateAgainstSchema(parsed, schema);
-
-      return parsed;
-    } catch (error) {
-      this.logger.error(
-        `Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`
-      );
-      throw new Error(
-        `Invalid JSON output from LLM: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  /**
-   * Validate parsed object against schema
-   */
-  private validateAgainstSchema(data: unknown, schema: JSONSchema): void {
-    if (schema.type === 'object' && schema.properties) {
-      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-        throw new Error(`Expected object, got ${typeof data}`);
-      }
-
-      const obj = data as Record<string, unknown>;
-
-      // Check required fields
-      if (schema.required) {
-        for (const field of schema.required) {
-          if (!(field in obj)) {
-            throw new Error(`Missing required field: ${field}`);
-          }
-        }
-      }
-
-      // Validate each property
-      for (const [key, prop] of Object.entries(schema.properties)) {
-        if (key in obj) {
-          this.validateAgainstSchema(obj[key], prop);
-        }
-      }
-    } else if (schema.type === 'array' && schema.items) {
-      if (!Array.isArray(data)) {
-        throw new Error(`Expected array, got ${typeof data}`);
-      }
-
-      for (const item of data) {
-        this.validateAgainstSchema(item, schema.items);
-      }
-    } else if (schema.type === 'string' && typeof data !== 'string') {
-      throw new Error(`Expected string, got ${typeof data}`);
-    } else if (schema.type === 'number' && typeof data !== 'number') {
-      throw new Error(`Expected number, got ${typeof data}`);
-    } else if (schema.type === 'boolean' && typeof data !== 'boolean') {
-      throw new Error(`Expected boolean, got ${typeof data}`);
-    }
-  }
+}
 
   /**
    * Create a schema for common structures

@@ -6,3 +6,5 @@ export { AgentCacheManagerService } from './agent-cache-manager.service';
 export { JSONOutputHelper } from './json-output.helper';
 export { BatchProcessorService } from './batch-processor.service';
 export { OptimizationMetricsCalculator } from './optimization-metrics.calculator';
+export { StructuredOutputService } from './structured-output.service';
+export { AgentOrchestrator } from './agent-orchestrator.service';
