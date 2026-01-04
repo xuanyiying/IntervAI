@@ -8,28 +8,35 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import { IsString, IsEnum, IsObject } from 'class-validator';
+import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
 import {
   StrategistAgent,
   StrategistAgentInput,
   StrategistAgentOutput,
   InterviewPerformance,
 } from './strategist.agent';
-import { ParsedResumeData } from '../../types';
+import { ParsedResumeData } from '@/types';
 
 /**
  * Request DTO for question bank generation
  */
-export interface GenerateQuestionBankRequest {
+export class GenerateQuestionBankRequest {
+  @IsObject()
   resumeData: ParsedResumeData;
+
+  @IsString()
   jobDescription: string;
+
+  @IsEnum(['junior', 'mid', 'senior'])
   experienceLevel: 'junior' | 'mid' | 'senior';
 }
 
 /**
  * Request DTO for performance-based updates
  */
-export interface UpdateQuestionBankRequest {
+export class UpdateQuestionBankRequest {
+  @IsObject()
   performance: InterviewPerformance;
 }
 
