@@ -112,7 +112,28 @@ export class ModelConfigService implements OnModuleInit {
       }
     } catch (error) {
       this.logger.error(
-        `Failed to get model config: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to get model config by name: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
+    return null;
+  }
+
+  /**
+   * Get model configuration by ID
+   */
+  async getModelConfigById(id: string): Promise<ModelConfig | null> {
+    try {
+      const config = await this.prisma.modelConfig.findUnique({
+        where: { id },
+      });
+
+      if (config) {
+        return this.decryptConfig(config);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to get model config by ID: ${error instanceof Error ? error.message : String(error)}`
       );
     }
 
@@ -191,18 +212,87 @@ export class ModelConfigService implements OnModuleInit {
   }
 
   /**
-   * Delete model configuration
+   * Update model configuration by ID
    */
-  async deleteModelConfig(name: string): Promise<void> {
+  async updateModelConfig(
+    id: string,
+    updates: Partial<ModelConfig>
+  ): Promise<ModelConfig> {
     try {
-      await this.prisma.modelConfig.delete({
-        where: { name },
+      const existing = await this.prisma.modelConfig.findUnique({
+        where: { id },
       });
 
-      this.configCache.delete(name);
-      this.cacheTimestamps.delete(name);
+      if (!existing) {
+        throw new Error(`Model config with ID ${id} not found`);
+      }
 
-      this.logger.log(`Deleted model configuration: ${name}`);
+      // If apiKey is provided, encrypt it
+      const dataToUpdate: any = { ...updates };
+      if (updates.apiKey) {
+        dataToUpdate.apiKey = this.encrypt(updates.apiKey);
+      }
+
+      // Remove fields that shouldn't be updated directly via this method or are handled separately
+      delete dataToUpdate.id;
+      delete dataToUpdate.createdAt;
+      dataToUpdate.updatedAt = new Date();
+
+      const result = await this.prisma.modelConfig.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+
+      const decrypted = this.decryptConfig(result);
+
+      // Update cache
+      if (existing.name !== decrypted.name) {
+        this.configCache.delete(existing.name);
+        this.cacheTimestamps.delete(existing.name);
+      }
+      this.configCache.set(decrypted.name, decrypted);
+      this.cacheTimestamps.set(decrypted.name, Date.now());
+
+      this.logger.log(
+        `Updated model configuration: ${decrypted.name} (ID: ${id})`
+      );
+      return decrypted;
+    } catch (error) {
+      this.logger.error(
+        `Failed to update model config: ${error instanceof Error ? error.message : String(error)}`
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Delete model configuration by ID
+   */
+  async deleteModelConfig(id: string): Promise<void> {
+    try {
+      // Find the config first to get the name for cache removal
+      const config = await this.prisma.modelConfig.findUnique({
+        where: { id },
+      });
+
+      if (!config) {
+        this.logger.warn(
+          `Attempted to delete non-existent model config: ${id}`
+        );
+        return;
+      }
+
+      await this.prisma.modelConfig.delete({
+        where: { id },
+      });
+
+      // Remove from cache
+      this.configCache.delete(config.name);
+      this.cacheTimestamps.delete(config.name);
+
+      this.logger.log(
+        `Deleted model configuration: ${config.name} (ID: ${id})`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to delete model config: ${error instanceof Error ? error.message : String(error)}`
@@ -212,21 +302,35 @@ export class ModelConfigService implements OnModuleInit {
   }
 
   /**
-   * Disable model configuration
+   * Disable model configuration by ID
    */
-  async disableModelConfig(name: string): Promise<void> {
+  async disableModelConfig(id: string): Promise<void> {
     try {
-      await this.prisma.modelConfig.update({
-        where: { name },
+      const existing = await this.prisma.modelConfig.findUnique({
+        where: { id },
+      });
+
+      if (!existing) {
+        this.logger.warn(
+          `Attempted to disable non-existent model config: ${id}`
+        );
+        return;
+      }
+
+      const config = await this.prisma.modelConfig.update({
+        where: { id },
         data: { isActive: false },
       });
 
-      const config = this.configCache.get(name);
-      if (config) {
-        config.isActive = false;
+      // Update cache if present
+      const cached = this.configCache.get(config.name);
+      if (cached) {
+        cached.isActive = false;
       }
 
-      this.logger.log(`Disabled model configuration: ${name}`);
+      this.logger.log(
+        `Disabled model configuration: ${config.name} (ID: ${id})`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to disable model config: ${error instanceof Error ? error.message : String(error)}`
@@ -236,21 +340,35 @@ export class ModelConfigService implements OnModuleInit {
   }
 
   /**
-   * Enable model configuration
+   * Enable model configuration by ID
    */
-  async enableModelConfig(name: string): Promise<void> {
+  async enableModelConfig(id: string): Promise<void> {
     try {
-      await this.prisma.modelConfig.update({
-        where: { name },
+      const existing = await this.prisma.modelConfig.findUnique({
+        where: { id },
+      });
+
+      if (!existing) {
+        this.logger.warn(
+          `Attempted to enable non-existent model config: ${id}`
+        );
+        return;
+      }
+
+      const config = await this.prisma.modelConfig.update({
+        where: { id },
         data: { isActive: true },
       });
 
-      const config = this.configCache.get(name);
-      if (config) {
-        config.isActive = true;
+      // Update cache if present
+      const cached = this.configCache.get(config.name);
+      if (cached) {
+        cached.isActive = true;
       }
 
-      this.logger.log(`Enabled model configuration: ${name}`);
+      this.logger.log(
+        `Enabled model configuration: ${config.name} (ID: ${id})`
+      );
     } catch (error) {
       this.logger.error(
         `Failed to enable model config: ${error instanceof Error ? error.message : String(error)}`

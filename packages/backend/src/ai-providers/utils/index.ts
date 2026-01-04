@@ -3,4 +3,4 @@
  */
 export * from './ai-error';
 export * from './retry-handler';
-export * from './http-client';
+export * from './base-openai.provider';

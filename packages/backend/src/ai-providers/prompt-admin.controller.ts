@@ -12,35 +12,70 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
+import { IsString, IsOptional, IsArray, IsBoolean, IsNumber, Min } from 'class-validator';
 import { PromptTemplateManager } from './config/prompt-template.manager';
 import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
 
 /**
  * DTO for creating/updating prompt templates
  */
-interface CreatePromptDto {
+class CreatePromptDto {
+  @IsString()
   name: string;
+
+  @IsString()
   scenario: string;
+
+  @IsOptional()
+  @IsString()
   language?: string;
+
+  @IsString()
   template: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   variables?: string[];
+
+  @IsOptional()
+  @IsString()
   provider?: string;
+
+  @IsOptional()
+  @IsBoolean()
   isEncrypted?: boolean;
 }
 
-interface UpdatePromptDto {
+class UpdatePromptDto {
+  @IsOptional()
+  @IsString()
   template?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   variables?: string[];
+
+  @IsOptional()
+  @IsBoolean()
   isActive?: boolean;
 }
 
-interface CreateVersionDto {
+class CreateVersionDto {
+  @IsString()
   templateContent: string;
+
+  @IsString()
   reason: string;
+
+  @IsString()
   author: string;
 }
 
-interface RollbackDto {
+class RollbackDto {
+  @IsNumber()
+  @Min(1)
   version: number;
 }
 

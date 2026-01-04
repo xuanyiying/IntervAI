@@ -83,9 +83,9 @@ const ModelManagementPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleDelete = async (name: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      await modelAdminService.deleteModel(name);
+      await modelAdminService.deleteModel(id);
       message.success('删除成功');
       loadModels();
     } catch (error) {
@@ -93,13 +93,13 @@ const ModelManagementPage: React.FC = () => {
     }
   };
 
-  const handleToggleActive = async (name: string, isActive: boolean) => {
+  const handleToggleActive = async (id: string, isActive: boolean) => {
     try {
       if (isActive) {
-        await modelAdminService.enableModel(name);
+        await modelAdminService.enableModel(id);
         message.success('已启用');
       } else {
-        await modelAdminService.disableModel(name);
+        await modelAdminService.disableModel(id);
         message.success('已禁用');
       }
       loadModels();
@@ -108,10 +108,10 @@ const ModelManagementPage: React.FC = () => {
     }
   };
 
-  const handleTestConnection = async (name: string) => {
-    setTestingModel(name);
+  const handleTestConnection = async (id: string) => {
+    setTestingModel(id);
     try {
-      const result = await modelAdminService.testModel(name);
+      const result = await modelAdminService.testModel(id);
       if (result.status === 'valid') {
         message.success(`连接测试成功: ${result.message}`);
       } else {
@@ -133,7 +133,7 @@ const ModelManagementPage: React.FC = () => {
           : values;
 
       if (editingModel) {
-        await modelAdminService.updateModel(editingModel.name, submitData);
+        await modelAdminService.updateModel(editingModel.id, submitData);
         message.success('更新成功');
       } else {
         await modelAdminService.createModel(values);
@@ -237,7 +237,7 @@ const ModelManagementPage: React.FC = () => {
       render: (isActive: boolean, record) => (
         <Switch
           checked={isActive}
-          onChange={(checked) => handleToggleActive(record.name, checked)}
+          onChange={(checked) => handleToggleActive(record.id, checked)}
           checkedChildren="启用"
           unCheckedChildren="禁用"
         />
@@ -254,8 +254,8 @@ const ModelManagementPage: React.FC = () => {
             <Button
               type="text"
               icon={<ApiOutlined />}
-              loading={testingModel === record.name}
-              onClick={() => handleTestConnection(record.name)}
+              loading={testingModel === record.id}
+              onClick={() => handleTestConnection(record.id)}
             />
           </Tooltip>
           <Tooltip title="编辑">
@@ -267,7 +267,7 @@ const ModelManagementPage: React.FC = () => {
           </Tooltip>
           <Popconfirm
             title="确定删除此模型配置？"
-            onConfirm={() => handleDelete(record.name)}
+            onConfirm={() => handleDelete(record.id)}
             okText="确定"
             cancelText="取消"
           >

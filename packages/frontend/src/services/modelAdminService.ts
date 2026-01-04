@@ -56,10 +56,10 @@ export const modelAdminService = {
   },
 
   /**
-   * Get a specific model config by name
+   * Get a specific model config by ID
    */
-  async getModel(name: string): Promise<ModelConfig> {
-    const response = await axios.get(`/admin/models/${name}`);
+  async getModel(id: string): Promise<ModelConfig> {
+    const response = await axios.get(`/admin/models/${id}`);
     return response.data;
   },
 
@@ -75,44 +75,45 @@ export const modelAdminService = {
    * Update an existing model configuration
    */
   async updateModel(
-    name: string,
+    id: string,
     data: Partial<CreateModelConfigDto>
   ): Promise<ModelConfig> {
-    const response = await axios.put(`/admin/models/${name}`, data);
+    const response = await axios.put(`/admin/models/${id}`, data);
     return response.data;
   },
 
   /**
    * Delete a model configuration
    */
-  async deleteModel(name: string): Promise<void> {
-    await axios.delete(`/admin/models/${name}`);
+  async deleteModel(id: string): Promise<void> {
+    await axios.delete(`/admin/models/${id}`);
   },
 
   /**
    * Enable a model configuration
    */
-  async enableModel(name: string): Promise<void> {
-    await axios.post(`/admin/models/${name}/enable`);
+  async enableModel(id: string): Promise<void> {
+    await axios.post(`/admin/models/${id}/enable`);
   },
 
   /**
    * Disable a model configuration
    */
-  async disableModel(name: string): Promise<void> {
-    await axios.post(`/admin/models/${name}/disable`);
+  async disableModel(id: string): Promise<void> {
+    await axios.post(`/admin/models/${id}/disable`);
   },
 
   /**
    * Test model connection
    */
-  async testModel(name: string): Promise<{
+  async testModel(id: string): Promise<{
+    id: string;
     name: string;
     provider: string;
     status: string;
     message: string;
   }> {
-    const response = await axios.post(`/admin/models/${name}/test`);
+    const response = await axios.post(`/admin/models/${id}/test`);
     return response.data;
   },
 

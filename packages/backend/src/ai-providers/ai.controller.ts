@@ -17,7 +17,8 @@ import { PromptTemplateManager } from '@/ai-providers/config/prompt-template.man
 import { UsageTrackerService } from '@/ai-providers/tracking/usage-tracker.service';
 import { PerformanceMonitorService } from '@/ai-providers/monitoring/performance-monitor.service';
 import { AILogger } from '@/ai-providers/logging/ai-logger';
-import { AIRequest, AIResponse } from '@/ai-providers/interfaces';
+import { AIResponse } from '@/ai-providers/interfaces';
+import { CallAiDto } from './dto/call-ai.dto';
 
 interface AuthRequest {
   user?: { id: string };
@@ -38,7 +39,7 @@ export class AIController {
 
   @Post('call')
   async callAI(
-    @Body() request: AIRequest & { scenario?: string },
+    @Body() request: CallAiDto,
     @Request() req: AuthRequest
   ): Promise<AIResponse> {
     try {
@@ -58,7 +59,7 @@ export class AIController {
 
   @Post('stream')
   async streamAI(
-    @Body() request: AIRequest & { scenario?: string },
+    @Body() request: CallAiDto,
     @Request() req: AuthRequest
   ): Promise<{ message: string }> {
     try {

@@ -10,37 +10,57 @@ import {
   Get,
   Param,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsEnum,
+  IsObject,
+} from 'class-validator';
+import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
 import {
   RolePlayAgent,
   RolePlayAgentConfig,
   RolePlayAgentState,
   InterviewFeedback,
-} from './role-play.agent';
-import { ParsedResumeData } from '../../types';
+} from '@/agent';
+import { ParsedResumeData } from '@/types';
 
 /**
  * Request DTO for starting interview
  */
-export interface StartInterviewRequest {
+export class StartInterviewRequest {
+  @IsString()
   jobDescription: string;
+
+  @IsEnum(['strict', 'friendly', 'stress-test'])
   interviewerStyle: 'strict' | 'friendly' | 'stress-test';
+
+  @IsArray()
+  @IsString({ each: true })
   focusAreas: string[];
+
+  @IsOptional()
+  @IsObject()
   resumeData?: ParsedResumeData;
 }
 
 /**
  * Request DTO for processing user response
  */
-export interface ProcessResponseRequest {
+export class ProcessResponseRequest {
+  @IsString()
   sessionId: string;
+
+  @IsString()
   userResponse: string;
 }
 
 /**
  * Request DTO for concluding interview
  */
-export interface ConcludeInterviewRequest {
+export class ConcludeInterviewRequest {
+  @IsString()
   sessionId: string;
 }
 
