@@ -12,6 +12,7 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { EmailModule } from '@/email/email.module';
 import { InvitationModule } from '@/invitation/invitation.module';
+import { RedisModule } from '@/redis/redis.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { InvitationModule } from '@/invitation/invitation.module';
     PassportModule,
     EmailModule,
     InvitationModule,
+    RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -48,7 +48,7 @@ const AppLayout: React.FC = () => {
     loadConversations,
     createConversation,
     setCurrentConversation,
-    switchConversation
+    switchConversation,
   } = useConversationStore();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
@@ -78,8 +78,7 @@ const AppLayout: React.FC = () => {
     try {
       const conversation = await createConversation();
       navigate('/chat');
-      // If we are already on chat page, we might need to handle state update there
-      // but store should handle it
+      setCurrentConversation(conversation);
     } catch (error) {
       message.error('创建新对话失败');
     }

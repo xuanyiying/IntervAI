@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -15,6 +14,10 @@ import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { EmailService } from '@/email/email.service';
 import { InvitationService } from '@/invitation/invitation.service';
+import { RedisService } from '@/redis/redis.service';
+import { Cacheable } from '@/common/decorators/cache.decorator';
+import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
+import { ErrorCode } from '@/common/exceptions/error-codes';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -23,7 +26,8 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
-    private readonly invitationService: InvitationService
+    private readonly invitationService: InvitationService,
+    private readonly redisService: RedisService
   ) {}
 
   /**
@@ -126,15 +130,6 @@ export class UserService {
       where: { email: sanitizedEmail },
     });
 
-    // 🔍 DEBUG LOG: 检查从数据库查询到的原始用户数据
-    console.log('🔍 [LOGIN] User from database:', {
-      userId: user?.id,
-      email: user?.email,
-      role: user?.role,
-      roleType: typeof user?.role,
-      rawUser: user,
-    });
-
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -156,14 +151,6 @@ export class UserService {
     // Generate JWT token
     const accessToken = this.generateToken(user);
 
-    // 🔍 DEBUG LOG: 检查数据库中的用户角色
-    console.log('🔍 [LOGIN] Database user role:', {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      roleType: typeof user.role,
-    });
-
     const responseData = {
       accessToken,
       user: {
@@ -176,14 +163,6 @@ export class UserService {
         createdAt: user.createdAt,
       },
     };
-
-    // 🔍 DEBUG LOG: 检查返回给前端的数据
-    console.log('🔍 [LOGIN] Response data to frontend:', {
-      userId: responseData.user.id,
-      email: responseData.user.email,
-      role: responseData.user.role,
-      roleType: typeof responseData.user.role,
-    });
 
     return responseData;
   }
@@ -219,7 +198,10 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     // Cascade delete will handle related records
@@ -240,7 +222,10 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     return this.prisma.user.update({
@@ -271,13 +256,21 @@ export class UserService {
   /**
    * Find user by ID
    */
+  @Cacheable({
+    ttl: 300, // 5 minutes
+    keyPrefix: 'user:profile',
+    keyGenerator: (userId: string) => `user:profile:${userId}`,
+  })
   async findById(userId: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     return user;
@@ -293,7 +286,10 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     // Fetch all user-related data
@@ -374,7 +370,10 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundException('Invalid verification token');
+      throw new ResourceNotFoundException(
+        ErrorCode.NOT_FOUND,
+        'Invalid verification token'
+      );
     }
 
     await this.prisma.user.update({

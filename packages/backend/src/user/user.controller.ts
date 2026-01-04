@@ -28,6 +28,7 @@ import { UserDataExportDto } from './dto/user-data-export.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GithubAuthGuard } from './guards/github-auth.guard';
@@ -100,11 +101,19 @@ export class UserController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({ status: 200, description: 'User successfully logged out' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged out',
+    schema: { example: { message: 'Successfully logged out' } },
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(): Promise<{ message: string }> {
-    // JWT is stateless, so logout is handled on the client side
-    // This endpoint exists for API consistency and future token blacklist implementation
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async logout(@Request() req: any): Promise<{ message: string }> {
+    // Verify user exists in database before logging out
+    await this.userService.findById(req.user.id);
+
+    // JWT is stateless, so logout is primarily handled on the client side by removing the token
+    // This endpoint can be used to perform server-side cleanup or token blacklisting if implemented
     return { message: 'Successfully logged out' };
   }
 
@@ -112,37 +121,27 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user' })
-  @ApiResponse({ status: 200, description: 'Current user information' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user information retrieved from database',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getCurrentUser(@Request() req: any) {
-    // 🔍 DEBUG LOG: 检查 JWT Guard 解析出的用户数据
-    console.log('🔍 [GET /auth/me] User from JWT:', {
-      userId: req.user.id,
-      email: req.user.email,
-      role: req.user.role,
-      roleType: typeof req.user.role,
-      fullUser: req.user,
-    });
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getCurrentUser(@Request() req: any): Promise<UserResponseDto> {
+    const user = await this.userService.findById(req.user.id);
 
-    const response = {
-      id: req.user.id,
-      email: req.user.email,
-      username: req.user.username,
-      role: req.user.role, // ✅ 添加 role 字段
-      subscriptionTier: req.user.subscriptionTier,
-      emailVerified: req.user.emailVerified,
-      createdAt: req.user.createdAt,
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username ?? undefined,
+      role: user.role,
+      subscriptionTier: user.subscriptionTier,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      lastLoginAt: user.lastLoginAt,
     };
-
-    // 🔍 DEBUG LOG: 检查返回的响应数据
-    console.log('🔍 [GET /auth/me] Response data:', {
-      userId: response.id,
-      email: response.email,
-      role: response.role,
-      roleType: typeof response.role,
-    });
-
-    return response;
   }
 
   @Delete('account')
