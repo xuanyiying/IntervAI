@@ -31,8 +31,10 @@ export class AIEngine {
     fileType: string
   ): Promise<string> {
     try {
-      this.logger.log(`Extracting text from ${fileType} file (${fileBuffer.length} bytes)`);
-      
+      this.logger.log(
+        `Extracting text from ${fileType} file (${fileBuffer.length} bytes)`
+      );
+
       let text = '';
       switch (fileType.toLowerCase()) {
         case 'pdf':

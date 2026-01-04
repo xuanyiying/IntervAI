@@ -1,5 +1,3 @@
-// Prisma Schema for Resume Optimizer MVP
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,35 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum SubscriptionTier {
-  FREE
-  PRO
-  ENTERPRISE
-}
-
-enum Role {
-  USER
-  ADMIN
-}
-
-// User model
 model User {
-  id                    String           @id @default(uuid())
-  email                 String           @unique
-  passwordHash          String? // Made optional for OAuth users
+  id                    String             @id @default(uuid())
+  email                 String             @unique
+  passwordHash          String?
   username              String?
-  name                  String? // Added for BetterAuth
-  image                 String? // Added for BetterAuth
-  role                  Role             @default(USER)
+  name                  String?
+  image                 String?
+  role                  Role               @default(USER)
   phone                 String?
   avatarUrl             String?
-  subscriptionTier      SubscriptionTier @default(FREE)
+  subscriptionTier      SubscriptionTier   @default(FREE)
   subscriptionExpiresAt DateTime?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
   lastLoginAt           DateTime?
-  isActive              Boolean          @default(true)
-  emailVerified         Boolean          @default(false)
+  isActive              Boolean            @default(true)
+  emailVerified         Boolean            @default(false)
   verificationToken     String?
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
@@ -45,23 +31,19 @@ model User {
   stripeSubscriptionId  String?
   paddleCustomerId      String?
   paddleSubscriptionId  String?
-  subscriptionProvider  String? // 'stripe' | 'paddle'
-
-  // Relations
-  resumes           Resume[]
-  jobs              Job[]
-  optimizations     Optimization[]
-  generatedPdfs     GeneratedPDF[]
-  conversations     Conversation[]
-  messages          Message[]
-  invitationCode    InvitationCode?
-  storages          Storage[]
-  interviewSessions InterviewSession[]
-
-  // BetterAuth Relations
-  sessions      Session[]
-  accounts      Account[]
-  agentSessions AgentSession[]
+  subscriptionProvider  String?
+  accounts              Account[]
+  agentSessions         AgentSession[]
+  conversations         Conversation[]
+  generatedPdfs         GeneratedPDF[]
+  interviewSessions     InterviewSession[]
+  invitationCode        InvitationCode?
+  jobs                  Job[]
+  messages              Message[]
+  optimizations         Optimization[]
+  resumes               Resume[]
+  sessions              Session[]
+  storages              Storage[]
 
   @@index([email])
   @@map("users")
@@ -71,15 +53,13 @@ model Session {
   id        String   @id
   userId    String
   expiresAt DateTime
-  token     String
+  token     String   @unique
   ipAddress String?
   userAgent String?
   createdAt DateTime
   updatedAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([token])
   @@map("sessions")
 }
 
@@ -88,7 +68,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -98,6 +77,7 @@ model Account {
   password              String?
   createdAt             DateTime
   updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("accounts")
 }
@@ -113,9 +93,8 @@ model Verification {
   @@map("verification")
 }
 
-// Resume model
 model Resume {
-  id               String      @id @default(uuid())
+  id               String         @id @default(uuid())
   userId           String
   title            String
   originalFilename String?
@@ -123,72 +102,57 @@ model Resume {
   fileType         String?
   fileSize         Int?
   parsedData       Json?
-  version          Int         @default(1)
-  isPrimary        Boolean     @default(false)
-  parseStatus      ParseStatus @default(PENDING)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-
-  // Relations
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  optimizations Optimization[]
+  version          Int            @default(1)
+  isPrimary        Boolean        @default(false)
+  parseStatus      ParseStatus    @default(PENDING)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  optimizations    Optimization[]
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isPrimary])
   @@map("resumes")
 }
 
-enum ParseStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-// Job model
 model Job {
-  id                 String   @id @default(uuid())
+  id                 String         @id @default(uuid())
   userId             String
   title              String
   company            String
   location           String?
   jobType            String?
   salaryRange        String?
-  jobDescription     String   @db.Text
-  requirements       String   @db.Text
+  jobDescription     String
+  requirements       String
   parsedRequirements Json?
   sourceUrl          String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relations
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  optimizations Optimization[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  user               User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimizations      Optimization[]
 
   @@index([userId])
   @@map("jobs")
 }
 
-// Optimization model
 model Optimization {
-  id               String             @id @default(uuid())
-  userId           String
-  resumeId         String
-  jobId            String
-  matchScore       Json?
-  suggestions      Json[]
-  optimizedContent Json?
-  status           OptimizationStatus @default(PENDING)
-  createdAt        DateTime           @default(now())
-  completedAt      DateTime?
-
-  // Relations
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  resume             Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
-  job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  id                 String              @id @default(uuid())
+  userId             String
+  resumeId           String
+  jobId              String
+  matchScore         Json?
+  suggestions        Json[]
+  optimizedContent   Json?
+  status             OptimizationStatus  @default(PENDING)
+  createdAt          DateTime            @default(now())
+  completedAt        DateTime?
   generatedPdfs      GeneratedPDF[]
   interviewQuestions InterviewQuestion[]
   interviewSessions  InterviewSession[]
+  job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resume             Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([resumeId])
@@ -196,49 +160,36 @@ model Optimization {
   @@map("optimizations")
 }
 
-enum OptimizationStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-
-// Generated PDF model
 model GeneratedPDF {
-  id             String    @id @default(uuid())
+  id             String       @id @default(uuid())
   userId         String
   optimizationId String
   templateId     String
   fileUrl        String
   fileSize       Int
-  downloadCount  Int       @default(0)
-  createdAt      DateTime  @default(now())
+  downloadCount  Int          @default(0)
+  createdAt      DateTime     @default(now())
   expiresAt      DateTime?
-
-  // Relations
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
-  template     Template     @relation(fields: [templateId], references: [id])
+  optimization   Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  template       Template     @relation(fields: [templateId], references: [id])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([optimizationId])
   @@map("generated_pdfs")
 }
 
-// Template model
 model Template {
-  id            String   @id @default(uuid())
-  name          String   @unique
+  id            String         @id @default(uuid())
+  name          String         @unique
   category      String
   description   String
   previewUrl    String
-  isPremium     Boolean  @default(false)
-  isActive      Boolean  @default(true)
+  isPremium     Boolean        @default(false)
+  isActive      Boolean        @default(true)
   configuration Json
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   generatedPdfs GeneratedPDF[]
 
   @@index([category])
@@ -246,30 +197,26 @@ model Template {
   @@map("templates")
 }
 
-// Interview Question model
 model InterviewQuestion {
   id              String       @id @default(uuid())
   optimizationId  String
   questionType    QuestionType
-  question        String       @db.Text
-  suggestedAnswer String       @db.Text
+  question        String
+  suggestedAnswer String
   tips            String[]
   difficulty      Difficulty
   createdAt       DateTime     @default(now())
-
-  // Relations
-  optimization Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  optimization    Optimization @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
 
   @@index([optimizationId])
   @@map("interview_questions")
 }
 
-// Model Configuration model
 model ModelConfig {
   id                 String   @id @default(uuid())
   name               String   @unique
   provider           String
-  apiKey             String   @db.Text // Encrypted in storage
+  apiKey             String
   endpoint           String?
   defaultTemperature Float    @default(0.7)
   defaultMaxTokens   Int      @default(2000)
@@ -286,25 +233,22 @@ model ModelConfig {
   @@map("model_configs")
 }
 
-// Prompt Template model
 model PromptTemplate {
-  id          String   @id @default(uuid())
+  id          String                  @id @default(uuid())
   name        String
   scenario    String
-  language    String   @default("en") // Language code: 'en', 'zh-CN', etc.
-  template    String   @db.Text
+  language    String                  @default("en")
+  template    String
   variables   String[]
   provider    String?
-  isEncrypted Boolean  @default(false)
-  version     Int      @default(1)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isEncrypted Boolean                 @default(false)
+  version     Int                     @default(1)
+  isActive    Boolean                 @default(true)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  versions    PromptTemplateVersion[]
 
-  // Relations
-  versions PromptTemplateVersion[]
-
-  @@unique([name, language]) // Allow same name in different languages
+  @@unique([name, language])
   @@index([scenario])
   @@index([language])
   @@index([provider])
@@ -312,19 +256,16 @@ model PromptTemplate {
   @@map("prompt_templates")
 }
 
-// Prompt Template Version model
 model PromptTemplateVersion {
-  id         String   @id @default(uuid())
-  templateId String
-  version    Int
-  content    String   @db.Text
-  variables  String[]
-  author     String
-  reason     String?
-  isActive   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-
-  // Relations
+  id             String         @id @default(uuid())
+  templateId     String
+  version        Int
+  content        String
+  variables      String[]
+  author         String
+  reason         String?
+  isActive       Boolean        @default(false)
+  createdAt      DateTime       @default(now())
   promptTemplate PromptTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@unique([templateId, version])
@@ -332,7 +273,6 @@ model PromptTemplateVersion {
   @@map("prompt_template_versions")
 }
 
-// Usage Record model
 model UsageRecord {
   id           String   @id @default(uuid())
   userId       String
@@ -345,8 +285,8 @@ model UsageRecord {
   latency      Int
   success      Boolean
   errorCode    String?
-  agentType    String? // 'pitch-perfect' | 'strategist' | 'role-play'
-  workflowStep String? // Step name in Agent workflow
+  agentType    String?
+  workflowStep String?
   timestamp    DateTime @default(now())
 
   @@index([userId])
@@ -358,7 +298,6 @@ model UsageRecord {
   @@map("usage_records")
 }
 
-// Performance Metrics model
 model PerformanceMetrics {
   id              String   @id @default(uuid())
   model           String   @unique
@@ -377,7 +316,6 @@ model PerformanceMetrics {
   @@map("performance_metrics")
 }
 
-// Audit Log model
 model AuditLog {
   id        String   @id @default(uuid())
   action    String
@@ -393,34 +331,20 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-enum QuestionType {
-  BEHAVIORAL
-  TECHNICAL
-  SITUATIONAL
-  RESUME_BASED
-}
-
-enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
-}
-
-// AI Call Log model
 model AICallLog {
   id              String   @id @default(uuid())
   model           String
   provider        String
   scenario        String?
-  requestContent  String?  @db.Text
-  responseContent String?  @db.Text
+  requestContent  String?
+  responseContent String?
   inputTokens     Int?
   outputTokens    Int?
   latency         Int
   success         Boolean
   errorCode       String?
   errorMessage    String?
-  stackTrace      String?  @db.Text
+  stackTrace      String?
   userId          String?
   timestamp       DateTime @default(now())
 
@@ -433,7 +357,6 @@ model AICallLog {
   @@map("ai_call_logs")
 }
 
-// AI Retry Log model
 model AIRetryLog {
   id           String   @id @default(uuid())
   model        String
@@ -450,7 +373,6 @@ model AIRetryLog {
   @@map("ai_retry_logs")
 }
 
-// AI Degradation Log model
 model AIDegradationLog {
   id               String   @id @default(uuid())
   model            String
@@ -466,7 +388,6 @@ model AIDegradationLog {
   @@map("ai_degradation_logs")
 }
 
-// Conversation model
 model Conversation {
   id            String    @id @default(uuid())
   userId        String
@@ -476,36 +397,25 @@ model Conversation {
   lastMessageAt DateTime?
   messageCount  Int       @default(0)
   isActive      Boolean   @default(true)
-
-  // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  messages Message[]
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      Message[]
 
   @@index([userId])
   @@index([userId, isActive])
   @@map("conversations")
 }
 
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-}
-
-// Message model
 model Message {
-  id             String      @id @default(uuid())
+  id             String       @id @default(uuid())
   conversationId String
   userId         String
   role           MessageRole
-  content        String      @db.Text
+  content        String
   attachments    Json?
   metadata       Json?
-  createdAt      DateTime    @default(now())
-
-  // Relations
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([userId])
@@ -513,23 +423,145 @@ model Message {
   @@map("messages")
 }
 
-// Invitation Code model
 model InvitationCode {
   id        String    @id @default(uuid())
   code      String    @unique
   isUsed    Boolean   @default(false)
-  usedBy    String?   @unique // One code per user
+  usedBy    String?   @unique
   usedAt    DateTime?
-  createdBy String // Admin ID
+  createdBy String
   createdAt DateTime  @default(now())
   expiresAt DateTime?
-
-  // Relations
-  user User? @relation(fields: [usedBy], references: [id])
+  user      User?     @relation(fields: [usedBy], references: [id])
 
   @@index([code])
   @@index([isUsed])
   @@map("invitation_codes")
+}
+
+model Storage {
+  id           String   @id @default(uuid())
+  userId       String
+  filename     String
+  originalName String
+  fileSize     Int
+  mimeType     String
+  fileUrl      String
+  filePath     String
+  hashMd5      String
+  fileType     FileType
+  category     String?
+  thumbnailUrl String?
+  ossType      OssType
+  isPublic     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([fileType])
+  @@index([hashMd5])
+  @@map("storages")
+}
+
+model InterviewSession {
+  id             String             @id @default(uuid())
+  userId         String
+  optimizationId String
+  status         InterviewStatus    @default(IN_PROGRESS)
+  startTime      DateTime           @default(now())
+  endTime        DateTime?
+  score          Int?
+  feedback       String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  messages       InterviewMessage[]
+  optimization   Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([optimizationId])
+  @@map("interview_sessions")
+}
+
+model InterviewMessage {
+  id        String           @id @default(uuid())
+  sessionId String
+  role      MessageRole
+  content   String
+  audioUrl  String?
+  createdAt DateTime         @default(now())
+  session   InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("interview_messages")
+}
+
+model AgentSession {
+  id          String    @id @default(cuid())
+  userId      String
+  agentType   String
+  status      String
+  input       Json?
+  output      Json?
+  tokenUsage  Json?
+  cost        Float     @default(0)
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([agentType])
+  @@index([status])
+  @@index([startedAt])
+  @@map("agent_sessions")
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ParseStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum OptimizationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum QuestionType {
+  BEHAVIORAL
+  TECHNICAL
+  SITUATIONAL
+  RESUME_BASED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
 }
 
 enum FileType {
@@ -548,103 +580,8 @@ enum OssType {
   LOCAL
 }
 
-// Storage model
-model Storage {
-  id           String   @id @default(uuid())
-  userId       String
-  filename     String
-  originalName String
-  fileSize     Int
-  mimeType     String
-  fileUrl      String
-  filePath     String // OSS Key
-  hashMd5      String
-  fileType     FileType
-  category     String?
-  thumbnailUrl String?
-  ossType      OssType
-  isPublic     Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([fileType])
-  @@index([hashMd5])
-  @@map("storages")
-}
-
-// Interview Session model
-model InterviewSession {
-  id             String          @id @default(uuid())
-  userId         String
-  optimizationId String
-  status         InterviewStatus @default(IN_PROGRESS)
-  startTime      DateTime        @default(now())
-  endTime        DateTime?
-  score          Int?
-  feedback       String?         @db.Text
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-
-  // Relations
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  optimization Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
-  messages     InterviewMessage[]
-
-  @@index([userId])
-  @@index([optimizationId])
-  @@map("interview_sessions")
-}
-
-// Interview Message model
-model InterviewMessage {
-  id        String      @id @default(uuid())
-  sessionId String
-  role      MessageRole // USER or ASSISTANT
-  content   String      @db.Text
-  audioUrl  String?
-  createdAt DateTime    @default(now())
-
-  // Relations
-  session InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId])
-  @@map("interview_messages")
-}
-
 enum InterviewStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-
-
-// Agent Session model for tracking Agent executions
-model AgentSession {
-  id          String    @id @default(cuid())
-  userId      String
-  agentType   String // 'pitch-perfect' | 'strategist' | 'role-play'
-  status      String // 'active' | 'completed' | 'failed'
-  input       Json?
-  output      Json?
-  tokenUsage  Json? // { total: number, byStep: Record<string, number> }
-  cost        Float     @default(0)
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  metadata    Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([agentType])
-  @@index([status])
-  @@index([startedAt])
-  @@map("agent_sessions")
 }

@@ -242,8 +242,10 @@ export class ResumeService {
     }
 
     try {
-      this.logger.log(`Starting parsing for resume ${resumeId} (type: ${resume.fileType})`);
-      
+      this.logger.log(
+        `Starting parsing for resume ${resumeId} (type: ${resume.fileType})`
+      );
+
       // Update status to processing
       await this.prisma.resume.update({
         where: { id: resumeId },
@@ -331,8 +333,12 @@ export class ResumeService {
         };
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Error parsing resume ${resumeId}: ${errorMessage}`, error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Error parsing resume ${resumeId}: ${errorMessage}`,
+        error
+      );
 
       // Update status to failed
       await this.prisma.resume.update({

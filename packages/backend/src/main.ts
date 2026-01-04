@@ -140,9 +140,10 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 3000;
+  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  logger.warn(`🚀 [DEBUG] STARTING SERVER ON PORT ${port}`);
   await app.listen(port);
 
-  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
   logger.log(
     `Application is running on: http://localhost:${port}`,
     'Bootstrap'
