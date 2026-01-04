@@ -3,7 +3,6 @@ import { JwtService } from '@nestjs/jwt';
 import {
   ConflictException,
   UnauthorizedException,
-  NotFoundException,
 } from '@nestjs/common';
 import { SubscriptionTier } from '@prisma/client';
 import { UserService } from './user.service';
@@ -11,6 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
 import { EmailService } from '@/email/email.service';
 import { InvitationService } from '@/invitation/invitation.service';
+import { RedisService } from '@/redis/redis.service';
+import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
 
 jest.mock('bcryptjs');
 
@@ -18,6 +19,7 @@ describe('UserService', () => {
   let service: UserService;
   let prismaService: PrismaService;
   let jwtService: JwtService;
+  let redisService: RedisService;
 
   const mockUser = {
     id: 'user-1',
@@ -83,12 +85,21 @@ describe('UserService', () => {
             markAsUsed: jest.fn(),
           },
         },
+        {
+          provide: RedisService,
+          useValue: {
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
     service = module.get<UserService>(UserService);
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
+    redisService = module.get<RedisService>(RedisService);
   });
 
   afterEach(() => {
@@ -237,7 +248,7 @@ describe('UserService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.deleteAccount('nonexistent-user')).rejects.toThrow(
-        NotFoundException
+        ResourceNotFoundException
       );
     });
   });
@@ -288,7 +299,7 @@ describe('UserService', () => {
 
       await expect(
         service.updateSubscription('nonexistent-user', SubscriptionTier.PRO)
-      ).rejects.toThrow(NotFoundException);
+      ).rejects.toThrow(ResourceNotFoundException);
     });
   });
 
@@ -305,7 +316,7 @@ describe('UserService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.findById('nonexistent-user')).rejects.toThrow(
-        NotFoundException
+        ResourceNotFoundException
       );
     });
   });
@@ -386,7 +397,7 @@ describe('UserService', () => {
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
 
       await expect(service.exportUserData('nonexistent-user')).rejects.toThrow(
-        NotFoundException
+        ResourceNotFoundException
       );
     });
 
