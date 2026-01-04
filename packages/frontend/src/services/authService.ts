@@ -38,6 +38,14 @@ export const authService = {
 
   login: async (data: LoginData): Promise<AuthResponse> => {
     const response = await axios.post('/auth/login', data);
+    
+    // 🔍 DEBUG LOG: 检查从后端接收到的原始数据
+    console.log('🔍 [FRONTEND] Raw response from backend:', {
+      user: response.data.user,
+      userRole: response.data.user?.role,
+      roleType: typeof response.data.user?.role,
+    });
+    
     // Map accessToken to token if needed
     if (response.data.accessToken && !response.data.token) {
       response.data.token = response.data.accessToken;

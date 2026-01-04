@@ -1,9 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
-import {
-  ConflictException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { SubscriptionTier } from '@prisma/client';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -19,7 +16,6 @@ describe('UserService', () => {
   let service: UserService;
   let prismaService: PrismaService;
   let jwtService: JwtService;
-  let redisService: RedisService;
 
   const mockUser = {
     id: 'user-1',
@@ -99,7 +95,6 @@ describe('UserService', () => {
     service = module.get<UserService>(UserService);
     prismaService = module.get<PrismaService>(PrismaService);
     jwtService = module.get<JwtService>(JwtService);
-    redisService = module.get<RedisService>(RedisService);
   });
 
   afterEach(() => {

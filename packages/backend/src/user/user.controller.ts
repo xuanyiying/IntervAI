@@ -12,6 +12,7 @@ import {
   Req,
   Res,
   Query,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,6 +37,8 @@ import { GithubAuthGuard } from './guards/github-auth.guard';
 @ApiTags('auth')
 @Controller('auth')
 export class UserController {
+  private readonly logger = new Logger(UserController.name);
+
   constructor(private readonly userService: UserService) {}
 
   @Post('register')
@@ -129,8 +132,14 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getCurrentUser(@Request() req: any): Promise<UserResponseDto> {
+    this.logger.warn('🚀 [DEBUG] HIT GET_CURRENT_USER ENDPOINT');
     const user = await this.userService.findById(req.user.id);
-
+    this.logger.debug(`🔍 [User Controller] User from database: ${JSON.stringify({
+        userId: user?.id,
+        email: user?.email,
+        role: user?.role,
+        roleType: typeof user?.role,
+    })}`);
     return {
       id: user.id,
       email: user.email,

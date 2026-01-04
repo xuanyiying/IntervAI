@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User, SubscriptionTier } from '@prisma/client';
@@ -19,9 +20,10 @@ import { Cacheable } from '@/common/decorators/cache.decorator';
 import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
 import { ErrorCode } from '@/common/exceptions/error-codes';
 import * as crypto from 'crypto';
-
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -94,7 +96,7 @@ export class UserService {
         user.username || undefined
       );
     } catch (error) {
-      console.error('Failed to send verification email:', error);
+      this.logger.debug('Failed to send verification email:', error);
       // Don't fail registration if email fails, user can resend later
     }
 
@@ -256,23 +258,28 @@ export class UserService {
   /**
    * Find user by ID
    */
-  @Cacheable({
-    ttl: 300, // 5 minutes
-    keyPrefix: 'user:profile',
-    keyGenerator: (userId: string) => `user:profile:${userId}`,
-  })
+  // @Cacheable({
+  //   ttl: 300, // 5 minutes
+  //   keyPrefix: 'user:profile',
+  //   keyGenerator: (userId: string) => `user:profile:${userId}`,
+  // })
   async findById(userId: string): Promise<User> {
+    
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-
+   this.logger.debug(`🔍 [User Service] User from database: ${JSON.stringify({
+        userId: user?.id,
+        email: user?.email,
+        role: user?.role,
+        roleType: typeof user?.role,
+      })}`);
     if (!user) {
       throw new ResourceNotFoundException(
         ErrorCode.USER_NOT_FOUND,
         'User not found'
       );
     }
-
     return user;
   }
 
