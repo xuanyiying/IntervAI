@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Card,
   Avatar,
-  Descriptions,
   Button,
   Space,
   Typography,
@@ -25,32 +24,28 @@ import {
   MailOutlined,
   PhoneOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import {
   userService,
   UserActivity,
   UserNotification,
+  ChangePasswordDto,
 } from '../services/userService';
 import './common.css';
 
 const { Title, Text } = Typography;
 
 const ProfilePage: React.FC = () => {
+  const { t } = useTranslation();
   const { user, updateUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
-  // Profile Tab States
   const [profileForm] = Form.useForm();
   const [editing, setEditing] = useState(false);
-
-  // Security Tab States
   const [passwordForm] = Form.useForm();
-
-  // History Tab States
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-
-  // Notifications Tab States
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
 
@@ -65,56 +60,69 @@ const ProfilePage: React.FC = () => {
     }
   }, [user, profileForm]);
 
-  const handleUpdateProfile = async (values: any) => {
+  const handleUpdateProfile = async (values: {
+    username?: string;
+    avatar?: string;
+    bio?: string;
+    phone?: string;
+  }) => {
     try {
       setLoading(true);
       const updatedUser = await userService.updateProfile(values);
       updateUser(updatedUser);
-      message.success('Profile updated successfully');
+      message.success(t('profile.update_success'));
       setEditing(false);
-    } catch (error) {
-      message.error('Failed to update profile');
+    } catch {
+      message.error(t('profile.update_failed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChangePassword = async (values: any) => {
+  const handleChangePassword = async (
+    values: ChangePasswordDto & { confirmPassword: string }
+  ) => {
     try {
       setLoading(true);
-      await userService.changePassword(values);
-      message.success('Password changed successfully');
+      await userService.changePassword({
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
+      });
+      message.success(t('profile.password_changed'));
       passwordForm.resetFields();
-    } catch (error) {
-      message.error('Failed to change password');
+    } catch {
+      message.error(t('profile.password_change_failed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAvatarUpload = async (options: any) => {
+  const handleAvatarUpload = async (options: {
+    file: File;
+    onSuccess: (url: string) => void;
+    onError: (error: unknown) => void;
+  }) => {
     const { file, onSuccess, onError } = options;
     try {
-      // setLoading(true); // Don't block whole page, maybe just avatar spinner
       const avatarUrl = await userService.uploadAvatar(file);
       const updatedUser = await userService.updateProfile({
         avatar: avatarUrl,
       });
       updateUser(updatedUser);
-      message.success('Avatar uploaded successfully');
+      message.success(t('profile.avatar_upload_success'));
       onSuccess(avatarUrl);
     } catch (error) {
-      message.error('Failed to upload avatar');
+      message.error(t('profile.avatar_upload_failed'));
       onError(error);
     }
   };
 
   const handleBindEmail = async () => {
-    message.info('Email binding feature coming soon');
+    message.info(t('profile.feature_coming_soon'));
   };
 
   const handleBindPhone = async () => {
-    message.info('Phone binding feature coming soon');
+    message.info(t('profile.feature_coming_soon'));
   };
 
   const handleMarkAsRead = async (id: string) => {
@@ -123,9 +131,9 @@ const ProfilePage: React.FC = () => {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, read: true } : n))
       );
-      message.success('Marked as read');
-    } catch (error) {
-      message.error('Failed to mark as read');
+      message.success(t('common.success'));
+    } catch {
+      message.error(t('common.error'));
     }
   };
 
@@ -134,20 +142,18 @@ const ProfilePage: React.FC = () => {
       setHistoryLoading(true);
       const res = await userService.getHistory({ page: 1, limit: 20 });
       setActivities(res.data);
-    } catch (error) {
-      // message.error('Failed to load history');
-      // Mock data for now if API fails (since backend might not be ready)
+    } catch {
       setActivities([
         {
           id: '1',
           action: 'LOGIN',
-          description: 'Logged in from Chrome on MacOS',
+          description: 'Logged in',
           createdAt: new Date().toISOString(),
         },
         {
           id: '2',
           action: 'UPDATE_PROFILE',
-          description: 'Updated profile information',
+          description: 'Updated profile',
           createdAt: new Date(Date.now() - 86400000).toISOString(),
         },
       ]);
@@ -161,11 +167,12 @@ const ProfilePage: React.FC = () => {
       setNotifLoading(true);
       const res = await userService.getNotifications({ page: 1, limit: 20 });
       setNotifications(res.data);
-    } catch (error: any) {
-      if (error?.response?.status === 404) {
-        message.warning('通知功能暂未开通，已展示示例通知');
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } };
+      if (err?.response?.status === 404) {
+        message.warning(t('profile.notification_feature_unavailable'));
       } else {
-        message.error('加载通知失败，已展示示例通知');
+        message.error(t('profile.load_notifications_failed'));
       }
       setNotifications([
         {
@@ -179,7 +186,7 @@ const ProfilePage: React.FC = () => {
         {
           id: '2',
           title: 'System Update',
-          content: 'System maintenance scheduled for tomorrow.',
+          content: 'Maintenance scheduled.',
           type: 'WARNING',
           read: true,
           createdAt: new Date(Date.now() - 86400000).toISOString(),
@@ -196,29 +203,21 @@ const ProfilePage: React.FC = () => {
   };
 
   const ProfileTab = () => (
-    <div style={{ maxWidth: 600 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '24px',
-          marginBottom: 24,
-        }}
-      >
+    <div className="tab-content">
+      <div className="avatar-section">
         <Avatar size={80} icon={<UserOutlined />} src={user?.avatar} />
-        <div>
-          {editing && (
-            <Upload
-              showUploadList={false}
-              customRequest={handleAvatarUpload}
-              accept="image/*"
-            >
-              <Button icon={<UploadOutlined />}>Change Avatar</Button>
-            </Upload>
-          )}
-        </div>
+        {editing && (
+          <Upload
+            showUploadList={false}
+            customRequest={handleAvatarUpload as never}
+            accept="image/*"
+          >
+            <Button icon={<UploadOutlined />}>
+              {t('profile.change_avatar')}
+            </Button>
+          </Upload>
+        )}
       </div>
-
       <Form
         form={profileForm}
         layout="vertical"
@@ -227,31 +226,32 @@ const ProfilePage: React.FC = () => {
       >
         <Form.Item
           name="username"
-          label="Username"
+          label={t('profile.username')}
           rules={[{ required: true }]}
         >
           <Input />
         </Form.Item>
-        <Form.Item name="email" label="Email">
+        <Form.Item name="email" label={t('profile.email')}>
           <Input disabled />
         </Form.Item>
-        <Form.Item name="phone" label="Phone">
+        <Form.Item name="phone" label={t('profile.phone')}>
           <Input />
         </Form.Item>
-        <Form.Item name="bio" label="Bio">
+        <Form.Item name="bio" label={t('profile.bio')}>
           <Input.TextArea rows={4} />
         </Form.Item>
-
         {editing ? (
           <Space>
             <Button type="primary" htmlType="submit" loading={loading}>
-              Save Changes
+              {t('profile.save_changes')}
             </Button>
-            <Button onClick={() => setEditing(false)}>Cancel</Button>
+            <Button onClick={() => setEditing(false)}>
+              {t('common.cancel')}
+            </Button>
           </Space>
         ) : (
           <Button type="primary" onClick={() => setEditing(true)}>
-            Edit Profile
+            {t('profile.edit_profile')}
           </Button>
         )}
       </Form>
@@ -259,8 +259,8 @@ const ProfilePage: React.FC = () => {
   );
 
   const SecurityTab = () => (
-    <div style={{ maxWidth: 600 }}>
-      <Title level={5}>Change Password</Title>
+    <div className="tab-content">
+      <Title level={5}>{t('profile.change_password')}</Title>
       <Form
         form={passwordForm}
         layout="vertical"
@@ -268,31 +268,30 @@ const ProfilePage: React.FC = () => {
       >
         <Form.Item
           name="currentPassword"
-          label="Current Password"
+          label={t('profile.current_password')}
           rules={[{ required: true }]}
         >
           <Input.Password prefix={<LockOutlined />} />
         </Form.Item>
         <Form.Item
           name="newPassword"
-          label="New Password"
+          label={t('profile.new_password')}
           rules={[{ required: true, min: 6 }]}
         >
           <Input.Password prefix={<LockOutlined />} />
         </Form.Item>
         <Form.Item
           name="confirmPassword"
-          label="Confirm New Password"
+          label={t('profile.confirm_new_password')}
           dependencies={['newPassword']}
           rules={[
             { required: true },
             ({ getFieldValue }) => ({
               validator(_, value) {
-                if (!value || getFieldValue('newPassword') === value) {
+                if (!value || getFieldValue('newPassword') === value)
                   return Promise.resolve();
-                }
                 return Promise.reject(
-                  new Error('The two passwords do not match!')
+                  new Error(t('profile.password_mismatch'))
                 );
               },
             }),
@@ -300,36 +299,34 @@ const ProfilePage: React.FC = () => {
         >
           <Input.Password prefix={<LockOutlined />} />
         </Form.Item>
-
         <Button type="primary" htmlType="submit" loading={loading}>
-          Update Password
+          {t('profile.change_password')}
         </Button>
       </Form>
-
       <div style={{ marginTop: 40 }}>
-        <Title level={5}>Account Bindings</Title>
+        <Title level={5}>{t('profile.account_bindings')}</Title>
         <List
           itemLayout="horizontal"
           dataSource={[
             {
-              title: 'Email',
-              description: user?.email || 'Not bound',
+              title: t('profile.email'),
+              description: user?.email || t('profile.not_bound'),
               icon: <MailOutlined />,
               action: handleBindEmail,
-              buttonText: user?.email ? 'Change' : 'Bind',
+              buttonText: user?.email ? t('profile.change') : t('profile.bind'),
             },
             {
-              title: 'Phone',
-              description: user?.phone || 'Not bound',
+              title: t('profile.phone'),
+              description: user?.phone || t('profile.not_bound'),
               icon: <PhoneOutlined />,
               action: handleBindPhone,
-              buttonText: user?.phone ? 'Change' : 'Bind',
+              buttonText: user?.phone ? t('profile.change') : t('profile.bind'),
             },
           ]}
           renderItem={(item) => (
             <List.Item
               actions={[
-                <Button type="link" onClick={item.action}>
+                <Button type="link" onClick={item.action} key="action">
                   {item.buttonText}
                 </Button>,
               ]}
@@ -394,8 +391,9 @@ const ProfilePage: React.FC = () => {
                 size="small"
                 icon={<CheckOutlined />}
                 onClick={() => handleMarkAsRead(item.id)}
+                key="mark-read"
               >
-                Mark as read
+                {t('profile.mark_as_read')}
               </Button>
             ),
           ]}
@@ -439,25 +437,25 @@ const ProfilePage: React.FC = () => {
   const items = [
     {
       key: 'profile',
-      label: 'Profile',
+      label: t('profile.tab_profile'),
       children: <ProfileTab />,
       icon: <UserOutlined />,
     },
     {
       key: 'security',
-      label: 'Security',
+      label: t('profile.tab_security'),
       children: <SecurityTab />,
       icon: <LockOutlined />,
     },
     {
       key: 'history',
-      label: 'History',
+      label: t('profile.tab_history'),
       children: <HistoryTab />,
       icon: <HistoryOutlined />,
     },
     {
       key: 'notifications',
-      label: 'Notifications',
+      label: t('profile.tab_notifications'),
       children: <NotificationsTab />,
       icon: <BellOutlined />,
     },
@@ -467,7 +465,7 @@ const ProfilePage: React.FC = () => {
     <div className="profile-container">
       <Card>
         <Title level={2} style={{ marginBottom: 24 }}>
-          Personal Center
+          {t('profile.title')}
         </Title>
         <Tabs items={items} onChange={handleTabChange} />
       </Card>

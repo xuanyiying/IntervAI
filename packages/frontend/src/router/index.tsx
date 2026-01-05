@@ -10,6 +10,8 @@ import SettingsPage from '../pages/SettingsPage';
 import PromptManagementPage from '../pages/PromptManagementPage';
 import ModelManagementPage from '../pages/ModelManagementPage';
 import InviteCodeManagementPage from '../pages/InviteCodeManagementPage';
+import UserManagementPage from '../pages/UserManagementPage';
+import SystemSettingsPage from '../pages/SystemSettingsPage';
 import VerifyEmailPage from '../pages/VerifyEmailPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
@@ -72,6 +74,10 @@ const routes: RouteObject[] = [
         element: <ChatPage />,
       },
       {
+        path: 'chat',
+        element: <ChatPage />,
+      },
+      {
         path: 'profile',
         element: <ProfilePage />,
       },
@@ -114,6 +120,23 @@ const routes: RouteObject[] = [
       {
         path: 'agents/metrics',
         element: <AgentMetricsPage />,
+      },
+      // Admin routes
+      {
+        path: 'admin/users',
+        element: (
+          <ProtectedRoute requiredRole="ADMIN">
+            <UserManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin/system-settings',
+        element: (
+          <ProtectedRoute requiredRole="ADMIN">
+            <SystemSettingsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'admin/prompts',
