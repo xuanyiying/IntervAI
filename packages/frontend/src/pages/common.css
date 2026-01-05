@@ -1,43 +1,231 @@
-/* Mobile responsiveness for Settings and Profile pages */
+/* Common Page Styles */
 
 .settings-container,
-.profile-container {
-    padding: 24px;
-    max-width: 1200px;
-    margin: 0 auto;
+.profile-container,
+.admin-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: 100%;
 }
 
-/* Large screens */
+/* Tab Content */
+.tab-content {
+  max-width: 600px;
+}
+
+/* Avatar Section */
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Table Toolbar */
+.table-toolbar {
+  margin-bottom: 16px;
+}
+
+/* ==================== Responsive Layout ==================== */
+
+/* Extra Large screens (1920px+) */
 @media (min-width: 1920px) {
-    .settings-container,
-    .profile-container {
-        max-width: 1600px;
-        padding: 40px;
-    }
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    max-width: 1600px;
+    padding: 40px;
+  }
+  
+  .tab-content {
+    max-width: 800px;
+  }
 }
 
-/* Mobile devices */
-@media (max-width: 768px) {
-
-    .settings-container,
-    .profile-container {
-        padding: 16px;
-    }
+/* Large screens (1200px - 1919px) */
+@media (min-width: 1200px) and (max-width: 1919px) {
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    max-width: 1200px;
+    padding: 32px;
+  }
 }
 
-/* Small mobile devices */
-@media (max-width: 480px) {
-
-    .settings-container,
-    .profile-container {
-        padding: 12px;
-    }
+/* Medium screens / Tablets (768px - 1199px) */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: 20px;
+    max-width: 100%;
+  }
+  
+  .tab-content {
+    max-width: 100%;
+  }
 }
 
-/* Very small devices (320px) */
+/* Small tablets / Large phones (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: 16px;
+  }
+  
+  .avatar-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .table-toolbar .ant-space {
+    width: 100%;
+  }
+  
+  .table-toolbar .ant-input {
+    width: 100% !important;
+  }
+}
+
+/* Mobile devices (max 575px) */
+@media (max-width: 575px) {
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: 12px;
+  }
+  
+  .avatar-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .table-toolbar {
+    margin-bottom: 12px;
+  }
+  
+  .table-toolbar .ant-space {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .table-toolbar .ant-space-item {
+    width: 100%;
+  }
+  
+  .table-toolbar .ant-input {
+    width: 100% !important;
+  }
+  
+  .table-toolbar .ant-btn {
+    width: 100%;
+  }
+  
+  /* Card padding on mobile */
+  .settings-container .ant-card-body,
+  .profile-container .ant-card-body,
+  .admin-container .ant-card-body {
+    padding: 16px;
+  }
+  
+  /* Tabs on mobile */
+  .ant-tabs-nav {
+    margin-bottom: 16px !important;
+  }
+  
+  .ant-tabs-tab {
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* Small mobile devices (max 375px) */
+@media (max-width: 375px) {
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: 8px;
+  }
+  
+  .settings-container .ant-card-body,
+  .profile-container .ant-card-body,
+  .admin-container .ant-card-body {
+    padding: 12px;
+  }
+  
+  .ant-tabs-tab {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Form items on small screens */
+  .ant-form-item-label {
+    padding-bottom: 4px !important;
+  }
+  
+  .ant-form-item {
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Extra small devices (max 320px) */
 @media (max-width: 320px) {
-    .settings-container,
-    .profile-container {
-        padding: 8px;
-    }
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: 6px;
+  }
+  
+  .settings-container .ant-card-body,
+  .profile-container .ant-card-body,
+  .admin-container .ant-card-body {
+    padding: 8px;
+  }
+  
+  h2.ant-typography {
+    font-size: 18px !important;
+  }
+  
+  h5.ant-typography {
+    font-size: 14px !important;
+  }
+}
+
+/* Table responsive adjustments */
+@media (max-width: 767px) {
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+  
+  .ant-table {
+    min-width: 600px;
+  }
+  
+  .ant-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .ant-pagination-total-text {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 8px;
+  }
+}
+
+/* Modal responsive */
+@media (max-width: 575px) {
+  .ant-modal {
+    max-width: calc(100vw - 32px) !important;
+    margin: 16px auto !important;
+  }
+  
+  .ant-modal-body {
+    padding: 16px !important;
+  }
 }
