@@ -123,6 +123,14 @@ const routes: RouteObject[] = [
       },
       // Admin routes
       {
+        path: 'admin/dashboard',
+        element: (
+          <ProtectedRoute requiredRole="ADMIN">
+            <UserManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: 'admin/users',
         element: (
           <ProtectedRoute requiredRole="ADMIN">

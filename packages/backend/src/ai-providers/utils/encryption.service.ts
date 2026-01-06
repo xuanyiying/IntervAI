@@ -28,7 +28,9 @@ export class EncryptionService {
       if (!text) return text;
       return EncryptionUtils.encrypt(text, this.encryptionKey);
     } catch (error) {
-      this.logger.error(`Encryption failed: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.error(
+        `Encryption failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       throw new Error('Encryption failed');
     }
   }
@@ -43,7 +45,9 @@ export class EncryptionService {
       if (!encryptedText) return encryptedText;
       return EncryptionUtils.decrypt(encryptedText, this.encryptionKey);
     } catch (error) {
-      this.logger.warn(`Decryption failed, returning original text: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `Decryption failed, returning original text: ${error instanceof Error ? error.message : String(error)}`
+      );
       return encryptedText;
     }
   }

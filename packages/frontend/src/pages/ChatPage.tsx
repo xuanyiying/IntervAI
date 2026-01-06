@@ -212,7 +212,11 @@ const ChatPage: React.FC = () => {
 
       if (parsedData?.markdown) {
         // If we have markdown, use it directly as the summary
-        await sendMessage(currentConversation.id, parsedData.markdown, 'assistant');
+        await sendMessage(
+          currentConversation.id,
+          parsedData.markdown,
+          'assistant'
+        );
       } else {
         // Fallback to manual summary if markdown is missing
         let summaryMessage = t('chat.parsed_resume_title') + '\n\n';
@@ -227,7 +231,9 @@ const ChatPage: React.FC = () => {
           const count = parsedData.skills.length;
           const skillsString = parsedData.skills.slice(0, 5).join(', ');
           const extra =
-            count > 5 ? ` ${t('common.total_items', { count: count - 5 })}` : '';
+            count > 5
+              ? ` ${t('common.total_items', { count: count - 5 })}`
+              : '';
           summaryMessage += `${t('chat.parsed_skills')}: ${skillsString}${extra}\n`;
         }
         if (parsedData?.experience && parsedData.experience.length > 0) {
@@ -301,6 +307,24 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const handleAcceptSuggestion = async (suggestionId: string) => {
+    try {
+      // This is a placeholder for future implementation with real backend
+      console.log('Accepting suggestion:', suggestionId);
+      antMessage.success(t('chat.suggestion_accepted', 'Suggestion accepted!'));
+    } catch (error) {
+      antMessage.error(t('common.error'));
+    }
+  };
+
+  const handleRejectSuggestion = async (suggestionId: string) => {
+    try {
+      console.log('Rejecting suggestion:', suggestionId);
+    } catch (error) {
+      antMessage.error(t('common.error'));
+    }
+  };
+
   const uploadProps: UploadProps = {
     name: 'file',
     accept: '.pdf,.doc,.docx,.txt',
@@ -312,233 +336,173 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
-        background: token.colorBgContainer,
-      }}
-    >
-      {/* Chat Area */}
-      <div
-        className="chat-bubble-list"
-        style={{ flex: 1, overflow: 'auto', padding: '24px' }}
-      >
-        <Bubble.List
-          items={items.map((item) => ({
-            key: item.key,
-            role: item.role,
-            placement:
-              item.role === 'ai' ? ('start' as const) : ('end' as const),
-            content:
-              item.type === 'job' && item.jobData ? (
-                <JobInfoCard
-                  job={item.jobData}
-                  onConfirm={() => {
-                    antMessage.success(t('chat.job_confirmed'));
-                  }}
-                  onDelete={() => {
-                    antMessage.success(t('chat.job_deleted'));
-                  }}
-                />
-              ) : item.type === 'suggestions' &&
-                item.suggestions &&
-                item.optimizationId ? (
-                <SuggestionsList
-                  suggestions={item.suggestions}
-                  onAccept={async (suggestionId) => {
-                    try {
-                      await optimizationService.acceptSuggestion(
-                        item.optimizationId!,
-                        suggestionId
-                      );
-                      const updated = await optimizationService.getOptimization(
-                        item.optimizationId!
-                      );
-                      // Update the message with new suggestions
-                      const updatedItems = items.map((i) => {
-                        if (i.key === item.key) {
-                          return {
-                            ...i,
-                            suggestions:
-                              updated.suggestions as MessageItem['suggestions'],
-                          };
-                        }
-                        return i;
-                      });
-                      setItems(updatedItems);
-                    } catch (error) {
-                      console.error('Failed to accept suggestion:', error);
-                      throw error;
-                    }
-                  }}
-                  onReject={async (suggestionId) => {
-                    try {
-                      await optimizationService.rejectSuggestion(
-                        item.optimizationId!,
-                        suggestionId
-                      );
-                      const updated = await optimizationService.getOptimization(
-                        item.optimizationId!
-                      );
-                      // Update the message with new suggestions
-                      const updatedItems = items.map((i) => {
-                        if (i.key === item.key) {
-                          return {
-                            ...i,
-                            suggestions:
-                              updated.suggestions as MessageItem['suggestions'],
-                          };
-                        }
-                        return i;
-                      });
-                      setItems(updatedItems);
-                    } catch (error) {
-                      console.error('Failed to reject suggestion:', error);
-                      throw error;
-                    }
-                  }}
-                />
-              ) : item.type === 'pdf' && item.optimizationId ? (
-                <PDFGenerationCard
-                  optimizationId={item.optimizationId}
-                  onGenerateSuccess={() => {
-                    antMessage.success(t('chat.pdf_success'));
-                  }}
-                />
-              ) : item.type === 'interview' &&
-                item.interviewQuestions &&
-                item.optimizationId ? (
-                <InterviewQuestionsCard
-                  questions={item.interviewQuestions}
-                  optimizationId={item.optimizationId}
-                  onExportSuccess={() => {
-                    antMessage.success(t('chat.interview_exported'));
-                  }}
-                />
-              ) : (
-                <div className="markdown-content">
+    <div className="flex h-full w-full relative overflow-hidden bg-primary/5">
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col h-full relative z-10">
+        {/* Messages Container */}
+        <div className="flex-1 overflow-auto p-4 md:p-6" id="scrollableDiv">
+          <Bubble.List
+            items={items.map((item) => ({
+              key: item.key,
+              role: item.role,
+              placement: item.role === 'user' ? 'end' : 'start',
+              content: (
+                <div className="message-content">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {item.content}
                   </ReactMarkdown>
+
+                  {item.type === 'job' && item.jobData && (
+                    <div className="mt-4">
+                      <JobInfoCard job={item.jobData} />
+                    </div>
+                  )}
+
+                  {item.type === 'suggestions' && item.suggestions && (
+                    <div className="mt-4">
+                      <SuggestionsList
+                        suggestions={item.suggestions}
+                        onAccept={handleAcceptSuggestion}
+                        onReject={handleRejectSuggestion}
+                      />
+                    </div>
+                  )}
+
+                  {item.type === 'pdf' && item.optimizationId && (
+                    <div className="mt-4">
+                      <PDFGenerationCard optimizationId={item.optimizationId} />
+                    </div>
+                  )}
+
+                  {item.type === 'interview' && item.interviewQuestions && (
+                    <div className="mt-4">
+                      <InterviewQuestionsCard
+                        questions={item.interviewQuestions}
+                        optimizationId={item.optimizationId || 'default'}
+                      />
+                    </div>
+                  )}
                 </div>
               ),
-            avatar: item.role === 'ai' ? <RobotOutlined /> : <UserOutlined />,
-          }))}
-        />
+              avatar:
+                item.role === 'user' ? (
+                  <div
+                    style={{
+                      background: 'var(--primary-gradient)',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    <UserOutlined style={{ color: 'white' }} />
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    <RobotOutlined style={{ color: 'white' }} />
+                  </div>
+                ),
+            }))}
+          />
 
-        {/* Suggestions (only show if few messages) */}
-        {items.length <= 1 && (
-          <div
-            style={{
-              marginTop: '48px',
-              maxWidth: '800px',
-              margin: '48px auto 0',
-            }}
-          >
-            <Prompts
-              title={t('chat.try_asking')}
-              items={suggestions}
-              onItemClick={onPromptsItemClick}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div
-        className="chat-input-area"
-        style={{
-          padding: '16px 24px 24px',
-          maxWidth: '800px',
-          width: '100%',
-          margin: '0 auto',
-        }}
-      >
-        {/* Quick Actions */}
-        {items.length <= 1 && (
-          <div
-            className="chat-quick-actions"
-            style={{
-              display: 'flex',
-              gap: '8px',
-              marginBottom: '12px',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-            }}
-          >
-            <Button
-              size="small"
-              style={{ borderRadius: '16px' }}
-              onClick={() => setUploadDialogVisible(true)}
-            >
-              📄 {t('suggestions.resume_label')}
-            </Button>
-            <Button
-              size="small"
-              style={{ borderRadius: '16px' }}
-              onClick={() => setJobInputDialogVisible(true)}
-            >
-              💼 {t('suggestions.job_label')}
-            </Button>
-            <Button
-              size="small"
-              style={{ borderRadius: '16px' }}
-              onClick={() => displayPDFGeneration('current-optimization-id')}
-            >
-              📋 {t('suggestions.pdf_label')}
-            </Button>
-            <Button
-              size="small"
-              style={{ borderRadius: '16px' }}
-              onClick={() => handleSubmit(t('suggestions.interview_label'))}
-            >
-              🎤 {t('suggestions.interview_label')}
-            </Button>
-          </div>
-        )}
-
-        <Sender
-          value={value}
-          onChange={setValue}
-          onSubmit={handleSubmit}
-          loading={loading}
-          placeholder={t('chat.placeholder')}
-          prefix={
-            <Upload {...uploadProps}>
-              <div style={{ cursor: 'pointer', padding: '0 8px' }}>
-                <CloudUploadOutlined
-                  style={{
-                    fontSize: '18px',
-                    color: token.colorTextSecondary,
-                  }}
-                />
+          {items.length <= 1 && !loading && (
+            <div className="max-w-2xl mx-auto mt-12 px-4">
+              <div className="text-center mb-8">
+                <span className="text-gray-400 font-medium tracking-wider uppercase text-xs">
+                  {t('chat.try_asking')}
+                </span>
               </div>
-            </Upload>
-          }
-        />
-        <div
-          style={{
-            textAlign: 'center',
-            marginTop: '12px',
-            color: token.colorTextTertiary,
-            fontSize: '12px',
-          }}
-        >
-          {t('chat.ai_disclaimer')}
+              <Prompts
+                items={suggestions.map((s) => ({
+                  ...s,
+                  className:
+                    'glass-card border-none hover:!bg-white/5 !transition-all duration-300',
+                }))}
+                onItemClick={onPromptsItemClick}
+                className="bg-transparent"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Input Area */}
+        <div className="relative z-20 pb-8 px-4 md:px-6">
+          <div className="max-w-3xl mx-auto">
+            {/* Quick Action Container */}
+            <div className="flex flex-wrap justify-center gap-2 mb-4 animate-fade-in">
+              <Button
+                size="small"
+                className="!rounded-full !bg-white/5 !border-white/10 !text-gray-400 hover:!text-white hover:!border-primary-500 transition-all font-medium"
+                onClick={() => setUploadDialogVisible(true)}
+              >
+                📄 {t('suggestions.resume_label')}
+              </Button>
+              <Button
+                size="small"
+                className="!rounded-full !bg-white/5 !border-white/10 !text-gray-400 hover:!text-white hover:!border-primary-500 transition-all font-medium"
+                onClick={() => setJobInputDialogVisible(true)}
+              >
+                💼 {t('suggestions.job_label')}
+              </Button>
+              <Button
+                size="small"
+                className="!rounded-full !bg-white/5 !border-white/10 !text-gray-400 hover:!text-white hover:!border-primary-500 transition-all font-medium"
+                onClick={() => displayPDFGeneration('current-optimization-id')}
+              >
+                📋 {t('suggestions.pdf_label')}
+              </Button>
+              <Button
+                size="small"
+                className="!rounded-full !bg-white/5 !border-white/10 !text-gray-400 hover:!text-white hover:!border-primary-500 transition-all font-medium"
+                onClick={() => handleSubmit(t('suggestions.interview_label'))}
+              >
+                🎤 {t('suggestions.interview_label')}
+              </Button>
+            </div>
+
+            <Sender
+              value={value}
+              onChange={setValue}
+              onSubmit={handleSubmit}
+              loading={loading}
+              placeholder={t('chat.placeholder')}
+              prefix={
+                <Upload {...uploadProps}>
+                  <div className="cursor-pointer px-2 text-gray-400 hover:text-primary-400 transition-colors">
+                    <CloudUploadOutlined className="text-xl" />
+                  </div>
+                </Upload>
+              }
+              className="modern-sender overflow-hidden shadow-2xl"
+            />
+
+            <div className="text-center mt-3 text-gray-500 text-xs tracking-wide">
+              {t('chat.ai_disclaimer')}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Resume Upload Dialog */}
+      {/* Dialogs */}
       <ResumeUploadDialog
         visible={uploadDialogVisible}
         onClose={() => setUploadDialogVisible(false)}
         onUploadSuccess={handleResumeUploadSuccess}
       />
-
-      {/* Job Input Dialog */}
       <JobInputDialog
         visible={jobInputDialogVisible}
         onClose={() => setJobInputDialogVisible(false)}

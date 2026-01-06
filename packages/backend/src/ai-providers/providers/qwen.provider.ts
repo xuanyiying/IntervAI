@@ -17,7 +17,8 @@ export class QwenProvider extends BaseOpenAIProvider {
   constructor(config: QwenConfig) {
     // DashScope OpenAI compatible endpoint: https://dashscope.aliyuncs.com/compatible-mode/v1
     super('Qwen', {
-      endpoint: config.endpoint || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      endpoint:
+        config.endpoint || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
       apiKey: config.apiKey,
       timeout: config.timeout,
     });

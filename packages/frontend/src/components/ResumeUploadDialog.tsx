@@ -80,7 +80,10 @@ const ResumeUploadDialog: React.FC<ResumeUploadDialogProps> = ({
     const timestamp = Date.now();
     const originalName = file.name;
     const fileExtension = originalName.substring(originalName.lastIndexOf('.'));
-    const baseFileName = originalName.substring(0, originalName.lastIndexOf('.'));
+    const baseFileName = originalName.substring(
+      0,
+      originalName.lastIndexOf('.')
+    );
     const uniqueFileName = `${baseFileName}_${timestamp}${fileExtension}`;
 
     const title = form.getFieldValue('title') || originalName;
@@ -203,7 +206,7 @@ const ResumeUploadDialog: React.FC<ResumeUploadDialogProps> = ({
       const isDoc =
         file.type === 'application/msword' ||
         file.type ===
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
       if (!isPDF && !isDoc) {
         message.error('只能上传 PDF 或 Word 文档！');
@@ -250,7 +253,8 @@ const ResumeUploadDialog: React.FC<ResumeUploadDialogProps> = ({
 
       message.success('简历解析完成');
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : '解析失败，请重试';
+      const errorMsg =
+        error instanceof Error ? error.message : '解析失败，请重试';
       setParseError(errorMsg);
       message.error(`解析失败: ${errorMsg}`);
       console.error('Parse error:', error);
@@ -404,132 +408,133 @@ const ResumeUploadDialog: React.FC<ResumeUploadDialogProps> = ({
             ) : (
               <>
                 {parsedData.personalInfo && (
-                   <Form.Item label="个人信息">
-                     <div
-                       style={{
-                         padding: '12px',
-                         background: token.colorBgElevated,
-                         borderRadius: '4px',
-                       }}
-                     >
-                       {parsedData.personalInfo.name && (
-                         <div>
-                           <strong>姓名:</strong> {parsedData.personalInfo.name}
-                         </div>
-                       )}
-                       {parsedData.personalInfo.email && (
-                         <div>
-                           <strong>邮箱:</strong> {parsedData.personalInfo.email}
-                         </div>
-                       )}
-                       {parsedData.personalInfo.phone && (
-                         <div>
-                           <strong>电话:</strong> {parsedData.personalInfo.phone}
-                         </div>
-                       )}
-                       {parsedData.personalInfo.location && (
-                         <div>
-                           <strong>地点:</strong> {parsedData.personalInfo.location}
-                         </div>
-                       )}
-                     </div>
-                   </Form.Item>
-                 )}
+                  <Form.Item label="个人信息">
+                    <div
+                      style={{
+                        padding: '12px',
+                        background: token.colorBgElevated,
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {parsedData.personalInfo.name && (
+                        <div>
+                          <strong>姓名:</strong> {parsedData.personalInfo.name}
+                        </div>
+                      )}
+                      {parsedData.personalInfo.email && (
+                        <div>
+                          <strong>邮箱:</strong> {parsedData.personalInfo.email}
+                        </div>
+                      )}
+                      {parsedData.personalInfo.phone && (
+                        <div>
+                          <strong>电话:</strong> {parsedData.personalInfo.phone}
+                        </div>
+                      )}
+                      {parsedData.personalInfo.location && (
+                        <div>
+                          <strong>地点:</strong>{' '}
+                          {parsedData.personalInfo.location}
+                        </div>
+                      )}
+                    </div>
+                  </Form.Item>
+                )}
 
-                 {parsedData.skills && parsedData.skills.length > 0 && (
-                   <Form.Item label="技能">
-                     <div
-                       style={{
-                         padding: '12px',
-                         background: token.colorBgElevated,
-                         borderRadius: '4px',
-                       }}
-                     >
-                       {parsedData.skills.slice(0, 5).map((skill, idx) => (
-                         <span
-                           key={idx}
-                           style={{
-                             display: 'inline-block',
-                             marginRight: '8px',
-                             marginBottom: '8px',
-                             padding: '4px 8px',
-                             background: token.colorPrimary,
-                             color: 'white',
-                             borderRadius: '4px',
-                             fontSize: '12px',
-                           }}
-                         >
-                           {skill}
-                         </span>
-                       ))}
-                       {parsedData.skills.length > 5 && (
-                         <span style={{ color: token.colorTextTertiary }}>
-                           +{parsedData.skills.length - 5} 项技能
-                         </span>
-                       )}
-                     </div>
-                   </Form.Item>
-                 )}
+                {parsedData.skills && parsedData.skills.length > 0 && (
+                  <Form.Item label="技能">
+                    <div
+                      style={{
+                        padding: '12px',
+                        background: token.colorBgElevated,
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {parsedData.skills.slice(0, 5).map((skill, idx) => (
+                        <span
+                          key={idx}
+                          style={{
+                            display: 'inline-block',
+                            marginRight: '8px',
+                            marginBottom: '8px',
+                            padding: '4px 8px',
+                            background: token.colorPrimary,
+                            color: 'white',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                          }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                      {parsedData.skills.length > 5 && (
+                        <span style={{ color: token.colorTextTertiary }}>
+                          +{parsedData.skills.length - 5} 项技能
+                        </span>
+                      )}
+                    </div>
+                  </Form.Item>
+                )}
 
-                 {parsedData.education && parsedData.education.length > 0 && (
-                   <Form.Item label="教育背景">
-                     <div
-                       style={{
-                         padding: '12px',
-                         background: token.colorBgElevated,
-                         borderRadius: '4px',
-                       }}
-                     >
-                       {parsedData.education.slice(0, 2).map((edu, idx) => (
-                         <div key={idx} style={{ marginBottom: '8px' }}>
-                           <div>
-                             <strong>{edu.institution}</strong>
-                           </div>
-                           <div style={{ color: token.colorTextSecondary }}>
-                             {edu.degree} - {edu.field}
-                           </div>
-                         </div>
-                       ))}
-                       {parsedData.education.length > 2 && (
-                         <div style={{ color: token.colorTextTertiary }}>
-                           +{parsedData.education.length - 2} 项教育背景
-                         </div>
-                       )}
-                     </div>
-                   </Form.Item>
-                 )}
+                {parsedData.education && parsedData.education.length > 0 && (
+                  <Form.Item label="教育背景">
+                    <div
+                      style={{
+                        padding: '12px',
+                        background: token.colorBgElevated,
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {parsedData.education.slice(0, 2).map((edu, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px' }}>
+                          <div>
+                            <strong>{edu.institution}</strong>
+                          </div>
+                          <div style={{ color: token.colorTextSecondary }}>
+                            {edu.degree} - {edu.field}
+                          </div>
+                        </div>
+                      ))}
+                      {parsedData.education.length > 2 && (
+                        <div style={{ color: token.colorTextTertiary }}>
+                          +{parsedData.education.length - 2} 项教育背景
+                        </div>
+                      )}
+                    </div>
+                  </Form.Item>
+                )}
 
-                 {parsedData.experience && parsedData.experience.length > 0 && (
-                   <Form.Item label="工作经历">
-                     <div
-                       style={{
-                         padding: '12px',
-                         background: token.colorBgElevated,
-                         borderRadius: '4px',
-                       }}
-                     >
-                       {parsedData.experience.slice(0, 2).map((exp, idx) => (
-                         <div key={idx} style={{ marginBottom: '8px' }}>
-                           <div>
-                             <strong>{exp.position}</strong> @ {exp.company}
-                           </div>
-                           <div style={{ color: token.colorTextSecondary }}>
-                             {exp.description[0]}
-                           </div>
-                         </div>
-                       ))}
-                       {parsedData.experience.length > 2 && (
-                         <div style={{ color: token.colorTextTertiary }}>
-                           +{parsedData.experience.length - 2} 项工作经历
-                         </div>
-                       )}
-                     </div>
-                   </Form.Item>
-                 )}
-               </>
-             )}
-           </>
-         )}
+                {parsedData.experience && parsedData.experience.length > 0 && (
+                  <Form.Item label="工作经历">
+                    <div
+                      style={{
+                        padding: '12px',
+                        background: token.colorBgElevated,
+                        borderRadius: '4px',
+                      }}
+                    >
+                      {parsedData.experience.slice(0, 2).map((exp, idx) => (
+                        <div key={idx} style={{ marginBottom: '8px' }}>
+                          <div>
+                            <strong>{exp.position}</strong> @ {exp.company}
+                          </div>
+                          <div style={{ color: token.colorTextSecondary }}>
+                            {exp.description[0]}
+                          </div>
+                        </div>
+                      ))}
+                      {parsedData.experience.length > 2 && (
+                        <div style={{ color: token.colorTextTertiary }}>
+                          +{parsedData.experience.length - 2} 项工作经历
+                        </div>
+                      )}
+                    </div>
+                  </Form.Item>
+                )}
+              </>
+            )}
+          </>
+        )}
       </Form>
     </Modal>
   );

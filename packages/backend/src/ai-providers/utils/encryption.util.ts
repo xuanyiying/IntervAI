@@ -55,7 +55,7 @@ export class EncryptionUtils {
     }
 
     const parts = textToDecrypt.split(':');
-    
+
     // Support legacy format (iv:authTag:encrypted) and new format (v1:iv:authTag:encrypted)
     if (parts.length !== 3) {
       return encryptedText; // Return as-is if not recognized
@@ -67,7 +67,11 @@ export class EncryptionUtils {
       const encrypted = parts[2];
       const formattedKey = this.formatKey(key);
 
-      const decipher = crypto.createDecipheriv(this.ALGORITHM, formattedKey, iv);
+      const decipher = crypto.createDecipheriv(
+        this.ALGORITHM,
+        formattedKey,
+        iv
+      );
       decipher.setAuthTag(authTag);
 
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -88,6 +92,8 @@ export class EncryptionUtils {
   public static isEncrypted(text: string): boolean {
     if (text.startsWith(this.VERSION_PREFIX)) return true;
     const parts = text.split(':');
-    return parts.length === 3 && parts[0].length === 32 && parts[1].length === 32;
+    return (
+      parts.length === 3 && parts[0].length === 32 && parts[1].length === 32
+    );
   }
 }

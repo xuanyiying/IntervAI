@@ -16,7 +16,9 @@ export class GeminiProvider extends BaseOpenAIProvider {
 
   constructor(config: GeminiConfig) {
     super('Gemini', {
-      endpoint: config.endpoint || 'https://generativelanguage.googleapis.com/v1beta/openai',
+      endpoint:
+        config.endpoint ||
+        'https://generativelanguage.googleapis.com/v1beta/openai',
       apiKey: config.apiKey,
       timeout: config.timeout,
     });

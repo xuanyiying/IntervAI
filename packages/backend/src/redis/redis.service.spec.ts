@@ -49,7 +49,7 @@ describe('RedisService', () => {
 
     service = module.get<RedisService>(RedisService);
     configService = module.get<ConfigService>(ConfigService);
-    
+
     // Initialize the service which creates the redis client
     await service.onModuleInit();
     redisClientMock = (service as any).client;
@@ -66,11 +66,13 @@ describe('RedisService', () => {
 
   describe('Connection and Initialization', () => {
     it('should initialize Redis client with config values', async () => {
-      expect(Redis).toHaveBeenCalledWith(expect.objectContaining({
-        host: 'localhost',
-        port: 6379,
-        password: 'test-password',
-      }));
+      expect(Redis).toHaveBeenCalledWith(
+        expect.objectContaining({
+          host: 'localhost',
+          port: 6379,
+          password: 'test-password',
+        })
+      );
     });
 
     it('should use retryStrategy to calculate delay', async () => {
@@ -85,13 +87,21 @@ describe('RedisService', () => {
     });
 
     it('should register connection event listeners', () => {
-      expect(redisClientMock.on).toHaveBeenCalledWith('connect', expect.any(Function));
-      expect(redisClientMock.on).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(redisClientMock.on).toHaveBeenCalledWith(
+        'connect',
+        expect.any(Function)
+      );
+      expect(redisClientMock.on).toHaveBeenCalledWith(
+        'error',
+        expect.any(Function)
+      );
     });
 
     it('should handle connection success log', () => {
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      const connectHandler = redisClientMock.on.mock.calls.find((call: any) => call[0] === 'connect')[1];
+      const connectHandler = redisClientMock.on.mock.calls.find(
+        (call: any) => call[0] === 'connect'
+      )[1];
       connectHandler();
       expect(consoleSpy).toHaveBeenCalledWith('Redis connected successfully');
       consoleSpy.mockRestore();
@@ -99,10 +109,15 @@ describe('RedisService', () => {
 
     it('should handle connection error log', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      const errorHandler = redisClientMock.on.mock.calls.find((call: any) => call[0] === 'error')[1];
+      const errorHandler = redisClientMock.on.mock.calls.find(
+        (call: any) => call[0] === 'error'
+      )[1];
       const testError = new Error('Connection failed');
       errorHandler(testError);
-      expect(consoleSpy).toHaveBeenCalledWith('Redis connection error:', testError);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Redis connection error:',
+        testError
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -119,7 +134,9 @@ describe('RedisService', () => {
 
       expect(redisClientMock.get).toHaveBeenCalledWith(key);
       expect(result).toBe(value);
-      console.log(`⏱️ [BENCHMARK] GET operation took ${(end - start).toFixed(4)}ms`);
+      console.log(
+        `⏱️ [BENCHMARK] GET operation took ${(end - start).toFixed(4)}ms`
+      );
     });
 
     it('should perform SET operation without TTL', async () => {
@@ -132,7 +149,9 @@ describe('RedisService', () => {
       const end = performance.now();
 
       expect(redisClientMock.set).toHaveBeenCalledWith(key, value);
-      console.log(`⏱️ [BENCHMARK] SET operation took ${(end - start).toFixed(4)}ms`);
+      console.log(
+        `⏱️ [BENCHMARK] SET operation took ${(end - start).toFixed(4)}ms`
+      );
     });
 
     it('should perform SET operation with TTL (setex)', async () => {
@@ -229,30 +248,40 @@ describe('RedisService', () => {
 
     it('should handle connection timeout simulated via error event', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      const errorHandler = redisClientMock.on.mock.calls.find((call: any) => call[0] === 'error')[1];
-      
+      const errorHandler = redisClientMock.on.mock.calls.find(
+        (call: any) => call[0] === 'error'
+      )[1];
+
       const timeoutError: any = new Error('Connection timeout');
       timeoutError.code = 'ETIMEDOUT';
-      
+
       errorHandler(timeoutError);
-      
-      expect(consoleSpy).toHaveBeenCalledWith('Redis connection error:', expect.objectContaining({
-        code: 'ETIMEDOUT'
-      }));
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Redis connection error:',
+        expect.objectContaining({
+          code: 'ETIMEDOUT',
+        })
+      );
       consoleSpy.mockRestore();
     });
 
     it('should handle authentication failure simulated via error event', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      const errorHandler = redisClientMock.on.mock.calls.find((call: any) => call[0] === 'error')[1];
-      
+      const errorHandler = redisClientMock.on.mock.calls.find(
+        (call: any) => call[0] === 'error'
+      )[1];
+
       const authError: any = new Error('WRONGPASS invalid password');
-      
+
       errorHandler(authError);
-      
-      expect(consoleSpy).toHaveBeenCalledWith('Redis connection error:', expect.objectContaining({
-        message: expect.stringContaining('WRONGPASS')
-      }));
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Redis connection error:',
+        expect.objectContaining({
+          message: expect.stringContaining('WRONGPASS'),
+        })
+      );
       consoleSpy.mockRestore();
     });
   });
@@ -262,8 +291,10 @@ describe('RedisService', () => {
       const start = performance.now();
       await service.onModuleInit();
       const end = performance.now();
-      
-      console.log(`⏱️ [BENCHMARK] Redis client initialization took ${(end - start).toFixed(4)}ms`);
+
+      console.log(
+        `⏱️ [BENCHMARK] Redis client initialization took ${(end - start).toFixed(4)}ms`
+      );
       expect(end - start).toBeLessThan(100); // Should be very fast for mock
     });
   });

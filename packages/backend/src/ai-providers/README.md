@@ -37,6 +37,7 @@ ai-providers/
 As of January 2026, all AI provider implementations have been unified to use the **OpenAI SDK**. This provides a more robust and standardized way to interact with various LLM providers, as most modern providers (Qwen, DeepSeek, Gemini, Ollama) now offer OpenAI-compatible endpoints.
 
 Key benefits:
+
 - **Unified Logic**: Shared implementation via `BaseOpenAIProvider`.
 - **Better Error Handling**: Leverages OpenAI SDK's built-in error types and retry mechanisms (supplemented by our `RetryHandler`).
 - **Simplified Maintenance**: One library to update for most providers.

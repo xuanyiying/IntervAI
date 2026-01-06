@@ -1,132 +1,114 @@
+/* Agents Pages Styles - Cyber-Tech/Deep Space Theme */
+
 .page-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100%;
   padding: 24px;
 }
 
 .page-header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
+  text-align: center;
 }
 
 .page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #333;
+  color: white;
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
 }
 
 .page-header p {
-  margin: 0;
-  font-size: 16px;
-  color: #666;
+  color: var(--text-secondary);
+  font-size: 18px;
 }
 
 .form-container {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 40px;
   max-width: 800px;
   margin: 0 auto;
+  box-shadow: var(--glass-shadow);
 }
 
 .form-group {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 10px;
 }
 
 .form-group textarea {
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  resize: vertical;
-  transition: border-color 0.2s;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  color: white;
+  padding: 16px;
+  font-family: inherit;
+  font-size: 15px;
+  transition: all var(--duration-normal) ease;
 }
 
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  border-color: var(--primary-color);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 .form-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
+/* Button overrides for agents pages */
 .btn-primary {
-  padding: 12px 24px;
+  width: 100%;
+  height: 48px;
+  background: var(--primary-gradient);
   border: none;
-  border-radius: 4px;
-  font-size: 14px;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  background: #007bff;
-  color: white;
-  transition: all 0.2s;
+  transition: all var(--duration-normal) ease;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.btn-primary:disabled {
-  background: #ccc;
-  cursor: not-allowed;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 .btn-secondary {
-  padding: 12px 24px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 600;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 10px 24px;
+  border-radius: var(--radius-lg);
+  font-weight: 500;
   cursor: pointer;
-  background: white;
-  color: #333;
-  transition: all 0.2s;
+  transition: all var(--duration-normal) ease;
 }
 
 .btn-secondary:hover {
-  background: #f8f9fa;
-  border-color: #999;
-}
-
-.content-container {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  background: var(--glass-bg-hover);
+  color: white;
+  border-color: var(--glass-border-light);
 }
 
 @media (max-width: 768px) {
-  .page-container {
-    padding: 16px;
-  }
-
-  .page-header h1 {
-    font-size: 22px;
-  }
-
-  .page-header p {
-    font-size: 14px;
-  }
-
   .form-container {
-    padding: 16px;
-  }
-
-  .form-group textarea {
-    font-size: 12px;
+    padding: 24px;
   }
 }
