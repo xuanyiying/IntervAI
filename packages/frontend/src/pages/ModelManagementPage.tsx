@@ -281,65 +281,83 @@ const ModelManagementPage: React.FC = () => {
   ];
 
   return (
-    <div style={{ padding: '24px', height: '100%', overflow: 'auto' }}>
-      <Card>
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 16,
-            }}
-          >
-            <Title level={3} style={{ margin: 0 }}>
+    <div className="min-h-full p-6 md:p-8 animate-fade-in relative overflow-hidden bg-primary/5">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="glass-card p-6 md:p-8 relative z-10 border border-white/10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+          <div>
+            <Title
+              level={2}
+              className="!m-0 !text-white !font-bold tracking-tight"
+            >
               模型配置管理
             </Title>
-            <Space>
-              <Select
-                placeholder="筛选提供商"
-                style={{ width: 150 }}
-                allowClear
-                value={selectedProvider}
-                onChange={setSelectedProvider}
-              >
-                <Select.Option value="openai">OpenAI</Select.Option>
-                <Select.Option value="qwen">Qwen</Select.Option>
-                <Select.Option value="deepseek">DeepSeek</Select.Option>
-                <Select.Option value="gemini">Gemini</Select.Option>
-                <Select.Option value="siliconcloud">SiliconCloud</Select.Option>
-                <Select.Option value="ollama">Ollama</Select.Option>
-              </Select>
-              <Button icon={<ReloadOutlined />} onClick={handleRefreshCache}>
-                刷新缓存
-              </Button>
-              <Button icon={<ReloadOutlined />} onClick={loadModels}>
-                刷新列表
-              </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-              >
-                新建模型
-              </Button>
-            </Space>
+            <Text className="!text-gray-400 mt-1 block">
+              管理和监控您的 AI 模型服务配置
+            </Text>
           </div>
+
+          <Space wrap className="flex-shrink-0">
+            <Select
+              placeholder="筛选提供商"
+              className="w-40 !bg-white/5 !border-white/10"
+              allowClear
+              value={selectedProvider}
+              onChange={setSelectedProvider}
+              dropdownClassName="glass-card border-white/10"
+            >
+              <Select.Option value="openai">OpenAI</Select.Option>
+              <Select.Option value="qwen">Qwen</Select.Option>
+              <Select.Option value="deepseek">DeepSeek</Select.Option>
+              <Select.Option value="gemini">Gemini</Select.Option>
+              <Select.Option value="siliconcloud">SiliconCloud</Select.Option>
+              <Select.Option value="ollama">Ollama</Select.Option>
+            </Select>
+
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleRefreshCache}
+              className="!bg-white/5 !border-white/10 !text-gray-300 hover:!text-white"
+            >
+              刷新缓存
+            </Button>
+
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={loadModels}
+              className="!bg-white/5 !border-white/10 !text-gray-300 hover:!text-white"
+            >
+              刷新列表
+            </Button>
+
+            <button
+              onClick={handleCreate}
+              className="gradient-button h-9 px-4 text-sm shadow-lg hover:shadow-primary-500/20 flex items-center gap-2"
+            >
+              <PlusOutlined /> 新建模型
+            </button>
+          </Space>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={models}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 1400 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条`,
-          }}
-        />
-      </Card>
+        <div className="modern-table-container">
+          <Table
+            columns={columns}
+            dataSource={models}
+            rowKey="id"
+            loading={loading}
+            scroll={{ x: 1400 }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              className: 'modern-pagination',
+              showTotal: (total) => `共 ${total} 条`,
+            }}
+            className="modern-table !bg-transparent"
+          />
+        </div>
+      </div>
 
       <Modal
         title={editingModel ? '编辑模型配置' : '新建模型配置'}
@@ -347,6 +365,8 @@ const ModelManagementPage: React.FC = () => {
         onCancel={() => setModalVisible(false)}
         width={700}
         footer={null}
+        className="glass-modal"
+        centered
       >
         <Form
           form={form}
@@ -357,100 +377,149 @@ const ModelManagementPage: React.FC = () => {
             defaultTemperature: 0.7,
             defaultMaxTokens: 2000,
           }}
+          className="mt-4"
         >
-          <Form.Item
-            name="name"
-            label="配置名称"
-            rules={[{ required: true, message: '请输入配置名称' }]}
-          >
-            <Input placeholder="例如: gpt-4-turbo" disabled={!!editingModel} />
-          </Form.Item>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <Form.Item
+              name="name"
+              label={<span className="text-gray-300">配置名称</span>}
+              rules={[{ required: true, message: '请输入配置名称' }]}
+            >
+              <Input
+                placeholder="例如: gpt-4-turbo"
+                disabled={!!editingModel}
+                className="!bg-white/5 !border-white/10 !text-white"
+              />
+            </Form.Item>
 
-          <Form.Item
-            name="provider"
-            label="提供商"
-            rules={[{ required: true, message: '请选择提供商' }]}
-          >
-            <Select placeholder="选择AI提供商">
-              <Select.Option value="openai">OpenAI</Select.Option>
-              <Select.Option value="qwen">Qwen (通义千问)</Select.Option>
-              <Select.Option value="deepseek">DeepSeek</Select.Option>
-              <Select.Option value="gemini">Google Gemini</Select.Option>
-              <Select.Option value="siliconcloud">SiliconCloud (硅基流动)</Select.Option>
-              <Select.Option value="ollama">Ollama (本地)</Select.Option>
-            </Select>
-          </Form.Item>
+            <Form.Item
+              name="provider"
+              label={<span className="text-gray-300">提供商</span>}
+              rules={[{ required: true, message: '请选择提供商' }]}
+            >
+              <Select
+                placeholder="选择AI提供商"
+                className="!bg-white/5 !border-white/10 !text-white"
+              >
+                <Select.Option value="openai">OpenAI</Select.Option>
+                <Select.Option value="qwen">Qwen (通义千问)</Select.Option>
+                <Select.Option value="deepseek">DeepSeek</Select.Option>
+                <Select.Option value="gemini">Google Gemini</Select.Option>
+                <Select.Option value="siliconcloud">
+                  SiliconCloud (硅基流动)
+                </Select.Option>
+                <Select.Option value="ollama">Ollama (本地)</Select.Option>
+              </Select>
+            </Form.Item>
+          </div>
 
           <Form.Item
             name="apiKey"
-            label="API密钥"
+            label={<span className="text-gray-300">API密钥</span>}
             rules={
               editingModel ? [] : [{ required: true, message: '请输入API密钥' }]
             }
-            extra={editingModel ? '留空则不更新密钥' : ''}
+            extra={
+              <span className="text-gray-500 text-xs">
+                {editingModel ? '留空则不更新密钥' : ''}
+              </span>
+            }
           >
             <Input.Password
               placeholder={editingModel ? '留空不更新' : '输入API密钥'}
+              className="!bg-white/5 !border-white/10 !text-white"
             />
           </Form.Item>
 
-          <Form.Item name="endpoint" label="API端点（可选）">
-            <Input placeholder="留空使用默认端点" />
-          </Form.Item>
-
-          <Form.Item name="defaultTemperature" label="默认温度">
-            <InputNumber min={0} max={2} step={0.1} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item name="defaultMaxTokens" label="默认最大Token数">
-            <InputNumber
-              min={1}
-              max={100000}
-              step={100}
-              style={{ width: '100%' }}
+          <Form.Item
+            name="endpoint"
+            label={<span className="text-gray-300">API端点（可选）</span>}
+          >
+            <Input
+              placeholder="留空使用默认端点"
+              className="!bg-white/5 !border-white/10 !text-white"
             />
           </Form.Item>
 
-          <Form.Item name="costPerInputToken" label="输入Token成本（可选）">
-            <InputNumber
-              min={0}
-              step={0.000001}
-              precision={6}
-              style={{ width: '100%' }}
-              addonBefore="$"
-            />
-          </Form.Item>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <Form.Item
+              name="defaultTemperature"
+              label={<span className="text-gray-300">默认温度</span>}
+            >
+              <InputNumber
+                min={0}
+                max={2}
+                step={0.1}
+                className="w-full !bg-white/5 !border-white/10 !text-white"
+              />
+            </Form.Item>
 
-          <Form.Item name="costPerOutputToken" label="输出Token成本（可选）">
-            <InputNumber
-              min={0}
-              step={0.000001}
-              precision={6}
-              style={{ width: '100%' }}
-              addonBefore="$"
-            />
-          </Form.Item>
+            <Form.Item
+              name="defaultMaxTokens"
+              label={<span className="text-gray-300">默认最大Token数</span>}
+            >
+              <InputNumber
+                min={1}
+                max={100000}
+                step={100}
+                className="w-full !bg-white/5 !border-white/10 !text-white"
+              />
+            </Form.Item>
+          </div>
 
-          <Form.Item name="rateLimitPerMinute" label="每分钟速率限制（可选）">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+            <Form.Item
+              name="costPerInputToken"
+              label={<span className="text-gray-300">输入Token成本</span>}
+            >
+              <InputNumber
+                min={0}
+                step={0.000001}
+                precision={6}
+                className="w-full !bg-white/5 !border-white/10 !text-white"
+                prefix="$"
+              />
+            </Form.Item>
 
-          <Form.Item name="rateLimitPerDay" label="每天速率限制（可选）">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
+            <Form.Item
+              name="costPerOutputToken"
+              label={<span className="text-gray-300">输出Token成本</span>}
+            >
+              <InputNumber
+                min={0}
+                step={0.000001}
+                precision={6}
+                className="w-full !bg-white/5 !border-white/10 !text-white"
+                prefix="$"
+              />
+            </Form.Item>
+          </div>
 
-          <Form.Item name="isActive" label="启用状态" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-          </Form.Item>
+          <div className="flex justify-between items-center bg-white/5 p-4 rounded-lg border border-white/5 mb-6">
+            <Form.Item
+              name="isActive"
+              label={<span className="text-gray-300">启用该模型</span>}
+              valuePropName="checked"
+              className="mb-0"
+            >
+              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            </Form.Item>
 
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                {editingModel ? '更新' : '创建'}
+            <Space size="middle">
+              <Button
+                onClick={() => setModalVisible(false)}
+                className="!bg-white/5 !border-white/10 !text-gray-300"
+              >
+                取消
               </Button>
-              <Button onClick={() => setModalVisible(false)}>取消</Button>
+              <button
+                type="submit"
+                className="gradient-button h-9 px-8 text-sm shadow-lg hover:shadow-primary-500/20"
+              >
+                {editingModel ? '更新配置' : '创建配置'}
+              </button>
             </Space>
-          </Form.Item>
+          </div>
         </Form>
       </Modal>
     </div>

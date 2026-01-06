@@ -36,7 +36,7 @@ describe('EncryptionService', () => {
     it('should encrypt and then decrypt back to the original text', () => {
       const originalText = 'sk-1234567890abcdef';
       const encrypted = service.encrypt(originalText);
-      
+
       expect(encrypted).toBeDefined();
       expect(encrypted).not.toBe(originalText);
       expect(encrypted.startsWith('v1:')).toBe(true);
@@ -69,7 +69,7 @@ describe('EncryptionService', () => {
       const authTag = '0123456789abcdef0123456789abcdef';
       const encrypted = 'abcdef';
       const legacyStr = `${iv}:${authTag}:${encrypted}`;
-      
+
       // Decrypting this will fail because data is fake, but it should try to decrypt it
       // if it matches the pattern.
       // For this test, we just check that it doesn't crash and follows the logic.

@@ -8,8 +8,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
-import { AIEngineService } from '../ai-providers/ai-engine.service';
-import { AIRequest } from '../ai-providers/interfaces';
+import { AIEngineService } from '@/ai-providers/ai-engine.service';
+import { AIRequest } from '@/ai-providers';
 import {
   ParsedResumeData,
   ParsedJobDescription,

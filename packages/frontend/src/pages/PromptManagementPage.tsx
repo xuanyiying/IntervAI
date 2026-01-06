@@ -257,23 +257,36 @@ const PromptManagementPage: React.FC = () => {
   ];
 
   return (
-    <div className="admin-container">
-      <Card>
+    <div className="admin-container animate-fade-in relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="glass-card p-6 md:p-8 relative z-10 border border-white/10">
         <div style={{ marginBottom: 24 }}>
-          <div className="admin-header">
-            <Title level={3} style={{ margin: 0 }}>
-              {t('prompts.title')}
-            </Title>
-            <Space>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+            <div>
+              <Title
+                level={2}
+                className="!m-0 !text-white !font-bold tracking-tight"
+              >
+                {t('prompts.title')}
+              </Title>
+              <Text className="!text-gray-400 mt-1 block">
+                管理和优化您的 AI 提示词模板
+              </Text>
+            </div>
+
+            <Space wrap className="flex-shrink-0">
               <Select
                 placeholder={t(
                   'prompts.scenario_placeholder',
                   'Filter Scenario'
                 )}
-                style={{ width: 200 }}
+                className="w-52 !bg-white/5 !border-white/10"
                 allowClear
                 value={selectedScenario}
                 onChange={setSelectedScenario}
+                dropdownClassName="glass-card border-white/10"
               >
                 <Select.Option value="resume_parsing">
                   {t('scenario.resume_parsing', 'Resume Parsing')}
@@ -294,39 +307,55 @@ const PromptManagementPage: React.FC = () => {
                   {t('scenario.match_score_calculation', 'Match Score')}
                 </Select.Option>
               </Select>
-              <Button icon={<ReloadOutlined />} onClick={() => loadPrompts()}>
+
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => loadPrompts()}
+                className="!bg-white/5 !border-white/10 !text-gray-300 hover:!text-white"
+              >
                 {t('common.refresh')}
               </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
+
+              <button
                 onClick={handleCreate}
+                className="gradient-button h-9 px-4 text-sm shadow-lg hover:shadow-primary-500/20 flex items-center gap-2"
               >
-                {t('prompts.new_prompt')}
-              </Button>
+                <PlusOutlined /> {t('prompts.new_prompt')}
+              </button>
             </Space>
           </div>
 
-          <Tabs activeKey={selectedLanguage} onChange={setSelectedLanguage}>
-            <TabPane tab={t('prompts.lang_en', 'English (EN)')} key="en" />
-            <TabPane tab={t('prompts.lang_cn', 'Chinese (CN)')} key="zh-CN" />
+          <Tabs
+            activeKey={selectedLanguage}
+            onChange={setSelectedLanguage}
+            className="modern-tabs"
+          >
+            <Tabs.TabPane tab={t('prompts.lang_en', 'English (EN)')} key="en" />
+            <Tabs.TabPane
+              tab={t('prompts.lang_cn', 'Chinese (CN)')}
+              key="zh-CN"
+            />
           </Tabs>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={prompts}
-          rowKey="id"
-          loading={loading}
-          scroll={{ x: 1200 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) =>
-              t('common.total_items', { total, count: total }),
-          }}
-        />
-      </Card>
+        <div className="modern-table-container">
+          <Table
+            columns={columns}
+            dataSource={prompts}
+            rowKey="id"
+            loading={loading}
+            scroll={{ x: 1200 }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              className: 'modern-pagination',
+              showTotal: (total) =>
+                t('common.total_items', { total, count: total }),
+            }}
+            className="modern-table !bg-transparent"
+          />
+        </div>
+      </div>
 
       <Modal
         title={

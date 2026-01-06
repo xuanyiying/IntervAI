@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Form, Input, Button, Typography, Space, Divider, message } from 'antd';
+import {
+  Form,
+  Input,
+  Button,
+  Typography,
+  Divider,
+  message,
+  Checkbox,
+} from 'antd';
 import {
   UserOutlined,
   LockOutlined,
   MailOutlined,
   GithubOutlined,
   GoogleOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
@@ -15,197 +24,181 @@ import './auth.css';
 
 const { Title, Text } = Typography;
 
-interface RegisterFormValues {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
 const RegisterPage: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setAuth, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const onFinish = async (values: RegisterFormValues) => {
-    setLoading(true);
+  const onFinish = async (values: any) => {
     try {
-      const response = await authService.register({
-        username: values.username,
-        email: values.email,
-        password: values.password,
-      });
-
-      // Ensure we have a token
-      const token = response.token || response.accessToken;
-      if (!token) {
-        throw new Error(t('common.error'));
-      }
-
-      // Set auth state
-      setAuth(response.user, token);
-
-      message.success(t('auth.register_success'));
-
-      // Use setTimeout to ensure state is updated before navigation
-      setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 100);
-    } catch (err: unknown) {
-      const errorMessage =
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.response?.data?.message ||
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (err as any)?.message ||
-        t('auth.register_failed');
-      message.error(errorMessage);
+      setLoading(true);
+      await authService.register(values);
+      message.success(t('auth.register_success', 'Registration successful!'));
+      navigate('/login');
+    } catch (error) {
+      message.error(t('auth.register_failed', 'Registration failed.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          {/* Logo and Title */}
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🤖</div>
-            <Title level={2} style={{ margin: 0 }}>
-              {t('auth.register')}
-            </Title>
-            <Text type="secondary">{t('auth.title_register_sub')}</Text>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-primary/5">
+      {/* Background Decor - Simplified for CSS Polyfill */}
+      <div className="absolute w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-secondary-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-white/10">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-secondary-500/10 border border-secondary-500/20 mb-4">
+            <RocketOutlined className="text-3xl" style={{ color: '#a855f7' }} />
           </div>
+          <Title level={2} className="!text-white !font-bold !mb-2">
+            创建账号
+          </Title>
+          <Text className="!text-gray-400">开启您的 AI 职业助手之旅</Text>
+        </div>
 
-          {/* Register Form */}
-          <Form
-            name="register"
-            onFinish={onFinish}
-            autoComplete="off"
-            size="large"
+        <Form
+          name="register"
+          onFinish={onFinish}
+          layout="vertical"
+          size="large"
+          className="auth-form"
+        >
+          <Form.Item
+            name="username"
+            rules={[
+              {
+                required: true,
+                message: t(
+                  'auth.username_required',
+                  'Please input your username!'
+                ),
+              },
+            ]}
           >
-            <Form.Item
-              name="username"
-              rules={[
-                { required: true, message: t('auth.username_required') },
-                { min: 3, message: t('auth.username_min') },
-              ]}
+            <Input
+              prefix={<UserOutlined className="text-gray-400" />}
+              placeholder={t('auth.username_placeholder', 'Username')}
+              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            rules={[
+              {
+                required: true,
+                message: t('auth.email_required', 'Please input your email!'),
+              },
+              {
+                type: 'email',
+                message: t('auth.email_invalid', 'Invalid email format!'),
+              },
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined className="text-gray-400" />}
+              placeholder={t('auth.email_placeholder', 'Email Address')}
+              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            rules={[
+              {
+                required: true,
+                message: t(
+                  'auth.password_required',
+                  'Please input your password!'
+                ),
+              },
+            ]}
+          >
+            <Input.Password
+              prefix={<LockOutlined className="text-gray-400" />}
+              placeholder={t('auth.password_placeholder', 'Password')}
+              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="agreement"
+            valuePropName="checked"
+            rules={[
+              {
+                validator: (_, value) =>
+                  value
+                    ? Promise.resolve()
+                    : Promise.reject(new Error('Should accept agreement')),
+              },
+            ]}
+          >
+            <Checkbox className="!text-gray-400">
+              我已阅读并同意{' '}
+              <a href="/terms" className="text-primary-400">
+                服务条款
+              </a>{' '}
+              和{' '}
+              <a href="/privacy" className="text-primary-400">
+                隐私政策
+              </a>
+            </Checkbox>
+          </Form.Item>
+
+          <Form.Item className="mb-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="gradient-button w-full h-12 text-base font-bold shadow-lg hover:shadow-secondary-500/20"
             >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder={t('auth.username')}
-              />
-            </Form.Item>
+              {loading ? '注册中...' : '立即注册'}
+            </button>
+          </Form.Item>
 
-            <Form.Item
-              name="email"
-              rules={[
-                { required: true, message: t('auth.email_required') },
-                { type: 'email', message: t('auth.email_invalid') },
-              ]}
-            >
-              <Input prefix={<MailOutlined />} placeholder={t('auth.email')} />
-            </Form.Item>
-
-            <Form.Item
-              name="password"
-              rules={[
-                { required: true, message: t('auth.password_required') },
-                { min: 6, message: t('auth.password_min') },
-              ]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder={t('auth.password')}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="confirmPassword"
-              dependencies={['password']}
-              rules={[
-                { required: true, message: t('auth.password_required') },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue('password') === value) {
-                      return Promise.resolve();
-                    }
-                    return Promise.reject(
-                      new Error(t('auth.password_mismatch'))
-                    );
-                  },
-                }),
-              ]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder={t('auth.confirm_password')}
-              />
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={loading}
-                block
-                style={{
-                  height: '48px',
-                  fontSize: '16px',
-                  background:
-                    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  border: 'none',
-                }}
-              >
-                {t('auth.register')}
-              </Button>
-            </Form.Item>
-          </Form>
-
-          {/* Divider */}
-          <Divider plain>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {t('auth.or_social')}
-            </Text>
+          <Divider className="!border-white/10 !text-gray-500 !text-xs">
+            或使用以下方式
           </Divider>
 
-          {/* Social Login */}
-          <Space
-            style={{ width: '100%', justifyContent: 'center' }}
-            size="large"
-          >
+          <div className="flex justify-center gap-4 mb-6">
             <Button
               shape="circle"
               size="large"
               icon={<GoogleOutlined />}
-              style={{ width: '48px', height: '48px' }}
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 w-12 h-12 flex items-center justify-center transition-all"
             />
             <Button
               shape="circle"
               size="large"
               icon={<GithubOutlined />}
-              style={{ width: '48px', height: '48px' }}
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 w-12 h-12 flex items-center justify-center transition-all"
             />
-          </Space>
+          </div>
 
           {/* Login Link */}
-          <div style={{ textAlign: 'center' }}>
-            <Text type="secondary">
+          <div className="text-center mt-6">
+            <Text className="!text-gray-400">
               {t('auth.have_account')}{' '}
-              <Link to="/login" style={{ color: '#667eea', fontWeight: 500 }}>
+              <Link
+                to="/login"
+                className="text-primary-400 hover:text-primary-300 font-medium hover:underline transition-all"
+              >
                 {t('auth.login')}
               </Link>
             </Text>
           </div>
-        </Space>
+        </Form>
       </div>
     </div>
   );

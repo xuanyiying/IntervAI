@@ -1,21 +1,27 @@
 /* App Layout Base Styles */
-.app-layout {
-  height: 100vh;
+/* Glassmorphism Global Helpers */
+.bg-glass {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(12px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
 }
 
-/* Sidebar Wrapper */
+.border-glass-border {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Sidebar Customizations */
 .sidebar-wrapper {
+  height: 100%;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .sidebar-wrapper.collapsed {
   align-items: center;
 }
 
-/* Sidebar Brand */
 .sidebar-brand {
   padding: 16px 12px 8px;
   display: flex;
@@ -398,6 +404,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -426,6 +433,7 @@
 
 /* Medium screens / Tablets (768px - 991px) */
 @media (max-width: 991px) {
+
   /* Hide desktop sidebar on tablet/mobile */
   .desktop-sider {
     display: none !important;
@@ -442,7 +450,7 @@
   .mobile-header {
     padding: 0 24px !important;
   }
-  
+
   .header-title {
     font-size: 18px !important;
   }
@@ -450,6 +458,7 @@
 
 /* Desktop (992px+) */
 @media (min-width: 992px) {
+
   /* Hide mobile drawer on desktop */
   .mobile-drawer {
     display: none !important;
@@ -474,12 +483,12 @@
     padding: 0 12px !important;
     height: 52px !important;
   }
-  
+
   .menu-toggle-btn {
     width: 40px !important;
     height: 40px !important;
   }
-  
+
   .header-title {
     font-size: 15px !important;
   }
@@ -490,33 +499,33 @@
   .mobile-header {
     padding: 0 8px !important;
   }
-  
+
   .menu-toggle-btn {
     width: 36px !important;
     height: 36px !important;
   }
-  
+
   .header-title {
     font-size: 14px !important;
   }
-  
+
   .sidebar-header {
     padding: 12px 8px;
   }
-  
+
   .new-chat-btn {
     height: 40px;
     font-size: 14px;
   }
-  
+
   .sidebar-content {
     padding: 0 8px;
   }
-  
+
   .chat-item {
     padding: 10px;
   }
-  
+
   .admin-nav-item {
     padding: 10px;
   }
@@ -527,15 +536,15 @@
   .mobile-header {
     padding: 0 6px !important;
   }
-  
+
   .header-title {
     font-size: 13px !important;
   }
-  
+
   .sidebar-header {
     padding: 10px 6px;
   }
-  
+
   .new-chat-btn {
     height: 38px;
     font-size: 13px;

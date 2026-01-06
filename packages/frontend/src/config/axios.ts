@@ -33,12 +33,12 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => {
     // 🔍 DEBUG LOG: 检查 axios 响应拦截器接收到的数据
-      console.log('🔍 [AXIOS INTERCEPTOR] Login response:', {
-        url: response.config.url,
-        data: response.data,
-        status: response.status,
-      });
-    
+    console.log('🔍 [AXIOS INTERCEPTOR] Login response:', {
+      url: response.config.url,
+      data: response.data,
+      status: response.status,
+    });
+
     return response;
   },
   (error) => {

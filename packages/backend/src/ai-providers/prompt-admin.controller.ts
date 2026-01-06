@@ -12,7 +12,14 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { IsString, IsOptional, IsArray, IsBoolean, IsNumber, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { PromptTemplateManager } from './config/prompt-template.manager';
 import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
 

@@ -12,7 +12,6 @@ import {
   Req,
   Res,
   Query,
-  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -37,8 +36,6 @@ import { GithubAuthGuard } from './guards/github-auth.guard';
 @ApiTags('auth')
 @Controller('auth')
 export class UserController {
-  private readonly logger = new Logger(UserController.name);
-
   constructor(private readonly userService: UserService) {}
 
   @Post('register')
@@ -113,7 +110,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: 'User not found' })
   async logout(@Request() req: any): Promise<{ message: string }> {
     // clean redis cache for user
-    await this.userService.cleanUserCache(req.user.id);
+    this.userService.cleanUserCache(req.user.id);
 
     // JWT is stateless, so logout is primarily handled on the client side by removing the token
     // This endpoint can be used to perform server-side cleanup or token blacklisting if implemented

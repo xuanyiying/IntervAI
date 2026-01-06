@@ -18,7 +18,7 @@ async function checkAdminRole() {
     });
 
     console.log('🔍 [DATABASE CHECK] Admin users found:', adminUsers.length);
-    
+
     adminUsers.forEach((user, index) => {
       console.log(`\n🔍 [DATABASE CHECK] Admin User ${index + 1}:`, {
         id: user.id,
@@ -44,7 +44,6 @@ async function checkAdminRole() {
       roleCount[user.role] = (roleCount[user.role] || 0) + 1;
     });
     console.log(roleCount);
-
   } catch (error) {
     console.error('❌ Error checking admin role:', error);
   } finally {

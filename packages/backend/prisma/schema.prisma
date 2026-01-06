@@ -15,8 +15,10 @@ model User {
   name                  String?
   image                 String?
   role                  Role               @default(USER)
+  status                String             @default("ACTIVE")
   phone                 String?
   avatarUrl             String?
+  avatar                String?
   subscriptionTier      SubscriptionTier   @default(FREE)
   subscriptionExpiresAt DateTime?
   createdAt             DateTime           @default(now())
@@ -437,6 +439,29 @@ model InvitationCode {
   @@index([code])
   @@index([isUsed])
   @@map("invitation_codes")
+}
+
+model SystemSettings {
+  id                       String   @id @default(uuid())
+  siteName                 String   @default("AI Resume Assistant")
+  siteDescription          String   @default("AI-powered resume optimization platform")
+  maintenanceMode          Boolean  @default(false)
+  allowRegistration        Boolean  @default(true)
+  requireEmailVerification Boolean  @default(false)
+  requireInviteCode        Boolean  @default(false)
+  sessionTimeout           Int      @default(30)
+  maxLoginAttempts         Int      @default(5)
+  lockoutDuration          Int      @default(15)
+  smtpHost                 String   @default("")
+  smtpPort                 Int      @default(587)
+  smtpUser                 String   @default("")
+  smtpPassword             String   @default("")
+  fromEmail                String   @default("")
+  fromName                 String   @default("AI Resume Assistant")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@map("system_settings")
 }
 
 model Storage {

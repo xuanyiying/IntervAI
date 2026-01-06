@@ -20,8 +20,11 @@ export class OllamaProvider extends BaseOpenAIProvider {
   constructor(config: OllamaConfig) {
     let baseUrl = config.baseUrl || 'http://localhost:11434';
     // Remove trailing slash and /api or /v1 if present to prevent double paths
-    baseUrl = baseUrl.replace(/\/$/, '').replace(/\/api$/, '').replace(/\/v1$/, '');
-    
+    baseUrl = baseUrl
+      .replace(/\/$/, '')
+      .replace(/\/api$/, '')
+      .replace(/\/v1$/, '');
+
     super('Ollama', {
       endpoint: `${baseUrl}/v1`,
       apiKey: config.apiKey || 'ollama', // Ollama doesn't require API key but we need a placeholder

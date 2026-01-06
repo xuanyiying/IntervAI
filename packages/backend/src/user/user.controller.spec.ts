@@ -48,7 +48,7 @@ describe('UserController', () => {
 
   describe('logout', () => {
     it('should return success message', async () => {
-      const req = { user: { id: 'user-1' } }
+      const req = { user: { id: 'user-1' } };
       jest.spyOn(userService, 'findById').mockResolvedValue(mockUser as any);
 
       const result = await controller.logout(req);
@@ -58,20 +58,25 @@ describe('UserController', () => {
     });
 
     it('should throw ResourceNotFoundException if user does not exist', async () => {
-      const req = { user: { id: 'non-existent' } }
+      const req = { user: { id: 'non-existent' } };
       jest
         .spyOn(userService, 'findById')
         .mockRejectedValue(
-          new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found')
+          new ResourceNotFoundException(
+            ErrorCode.USER_NOT_FOUND,
+            'User not found'
+          )
         );
 
-      await expect(controller.logout(req)).rejects.toThrow(ResourceNotFoundException);
+      await expect(controller.logout(req)).rejects.toThrow(
+        ResourceNotFoundException
+      );
     });
   });
 
   describe('getCurrentUser', () => {
     it('should return user info from database', async () => {
-      const req = { user: { id: 'user-1' } } ;
+      const req = { user: { id: 'user-1' } };
       jest.spyOn(userService, 'findById').mockResolvedValue(mockUser as any);
 
       const result = await controller.getCurrentUser(req);
@@ -95,7 +100,10 @@ describe('UserController', () => {
       jest
         .spyOn(userService, 'findById')
         .mockRejectedValue(
-          new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found')
+          new ResourceNotFoundException(
+            ErrorCode.USER_NOT_FOUND,
+            'User not found'
+          )
         );
 
       await expect(controller.getCurrentUser(req)).rejects.toThrow(

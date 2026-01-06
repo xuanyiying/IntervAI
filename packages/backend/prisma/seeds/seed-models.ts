@@ -7,14 +7,18 @@ import { EncryptionUtils } from '../../src/ai-providers/utils/encryption.util';
 export async function seedModelConfigs(prisma: PrismaClient) {
   console.log('🌱 Seeding model configurations...');
 
-  const encryptionKey = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+  const encryptionKey =
+    process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
 
   const models = [
     // OpenAI Models
     {
       name: 'gpt-4-turbo',
       provider: 'openai',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.00001,
@@ -26,7 +30,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'gpt-3.5-turbo',
       provider: 'openai',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.000001,
@@ -39,7 +46,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'qwen-turbo',
       provider: 'qwen',
-      apiKey: EncryptionUtils.encrypt('sk-97b2966462e54facaa1857cf8dae422c', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-97b2966462e54facaa1857cf8dae422c',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 2000,
       costPerInputToken: 0.000002,
@@ -50,7 +60,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'qwen-max',
       provider: 'qwen',
-      apiKey: EncryptionUtils.encrypt('sk-97b2966462e54facaa1857cf8dae422c', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-97b2966462e54facaa1857cf8dae422c',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 6000,
       costPerInputToken: 0.00004,
@@ -62,7 +75,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'deepseek-chat',
       provider: 'deepseek',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.000001,
@@ -73,7 +89,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'deepseek-coder',
       provider: 'deepseek',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.000001,
@@ -85,7 +104,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'gemini-pro',
       provider: 'gemini',
-      apiKey: EncryptionUtils.encrypt('placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 2048,
       costPerInputToken: 0.0000005,
@@ -97,7 +119,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'DeepSeek-V3',
       provider: 'siliconcloud',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.000001,
@@ -108,7 +133,10 @@ export async function seedModelConfigs(prisma: PrismaClient) {
     {
       name: 'Qwen2.5-72B-Instruct',
       provider: 'siliconcloud',
-      apiKey: EncryptionUtils.encrypt('sk-placeholder-please-update', encryptionKey),
+      apiKey: EncryptionUtils.encrypt(
+        'sk-placeholder-please-update',
+        encryptionKey
+      ),
       defaultTemperature: 0.7,
       defaultMaxTokens: 4096,
       costPerInputToken: 0.000001,
