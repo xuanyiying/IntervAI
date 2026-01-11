@@ -29,10 +29,18 @@ export const resumeService = {
   /**
    * Parse an uploaded resume to extract structured data
    * @param resumeId - The ID of the resume to parse
+   * @param conversationId - Optional conversation ID to send optimization results to
    * @returns The parsed resume data
    */
-  parseResume: async (resumeId: string): Promise<ParsedResumeData> => {
-    const response = await axios.get<ParsedResumeData>(`/resumes/${resumeId}/parse`);
+  parseResume: async (
+    resumeId: string,
+    conversationId?: string
+  ): Promise<ParsedResumeData> => {
+    const params = conversationId ? { conversationId } : {};
+    const response = await axios.get<ParsedResumeData>(
+      `/resumes/${resumeId}/parse`,
+      { params }
+    );
     return response.data;
   },
 
@@ -61,7 +69,10 @@ export const resumeService = {
    * @param data - The update data
    * @returns Updated resume details
    */
-  updateResume: async (resumeId: string, data: Partial<Resume>): Promise<Resume> => {
+  updateResume: async (
+    resumeId: string,
+    data: Partial<Resume>
+  ): Promise<Resume> => {
     const response = await axios.put<Resume>(`/resumes/${resumeId}`, data);
     return response.data;
   },

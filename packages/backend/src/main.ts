@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
 import compression from 'compression';
 import * as Sentry from '@sentry/node';
@@ -13,6 +14,9 @@ import { MonitoringGuard } from './monitoring/monitoring.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Enable WebSocket support with Socket.IO adapter
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   // Initialize Sentry for error tracking
   if (process.env.SENTRY_DSN) {

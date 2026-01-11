@@ -130,7 +130,10 @@ export const rolePlayService = {
    * @param userResponse - The user's answer text
    * @returns AI's feedback and the next question
    */
-  processResponse: async (sessionId: string, userResponse: string): Promise<any> => {
+  processResponse: async (
+    sessionId: string,
+    userResponse: string
+  ): Promise<any> => {
     const response = await axios.post('/api/agents/role-play/respond', {
       sessionId,
       userResponse,

@@ -1,8 +1,4 @@
-import {
-  SubscriptionTier,
-  SubscriptionStatus,
-  BillingStatus,
-} from '../types';
+import { SubscriptionTier, SubscriptionStatus, BillingStatus } from '../types';
 import axios from '../config/axios';
 
 export interface SubscriptionDetails {

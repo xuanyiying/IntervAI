@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { MessageRole } from '@prisma/client';
 
 @Controller('conversations')
 @UseGuards(JwtAuthGuard)
@@ -82,7 +83,7 @@ export class ConversationController {
     @Request() req: any,
     @Body()
     body: {
-      role: string;
+      role: MessageRole;
       content: string;
       attachments?: any[];
       metadata?: Record<string, unknown>;

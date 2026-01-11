@@ -28,6 +28,16 @@ export class ConversationService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
+   * Map Prisma message to response object with timestamp
+   */
+  private mapMessage(message: any) {
+    return {
+      ...message,
+      timestamp: message.createdAt.getTime(),
+    };
+  }
+
+  /**
    * Create a new conversation session
    * Requirement 1: Conversation-based user interface
    */
@@ -217,7 +227,7 @@ export class ConversationService {
       },
     });
 
-    return message;
+    return this.mapMessage(message);
   }
 
   /**
@@ -237,12 +247,14 @@ export class ConversationService {
       throw new NotFoundException('Conversation not found');
     }
 
-    return this.prisma.message.findMany({
+    const messages = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: {
         createdAt: 'asc',
       },
     });
+
+    return messages.map((msg) => this.mapMessage(msg));
   }
 
   /**
@@ -265,7 +277,7 @@ export class ConversationService {
       throw new NotFoundException('Conversation not found');
     }
 
-    return this.prisma.message.findMany({
+    const messages = await this.prisma.message.findMany({
       where: { conversationId },
       orderBy: {
         createdAt: 'asc',
@@ -273,6 +285,8 @@ export class ConversationService {
       skip,
       take,
     });
+
+    return messages.map((msg) => this.mapMessage(msg));
   }
 
   /**

@@ -123,6 +123,14 @@ export class ResumeOptimizerService {
       // Build optimization prompt
       const optimizationPrompt = this.buildOptimizationPrompt(content);
 
+      // Yield an initial empty chunk to signal start and keep connection alive
+      // This provides immediate feedback and helps prevent early timeouts
+      yield {
+        type: 'chunk',
+        content: '',
+        timestamp: Date.now(),
+      };
+
       // Create AI request
       const aiRequest: AIRequest = {
         model: '', // Will be selected by AI engine based on scenario
@@ -131,52 +139,83 @@ export class ResumeOptimizerService {
         maxTokens: 4000,
       };
 
-      // Start streaming optimization
-      const stream = this.aiEngineService.stream(
-        aiRequest,
-        userId,
-        PromptScenario.RESUME_CONTENT_OPTIMIZATION,
-        language
-      );
+      const maxRetries = 3;
+      let lastError: any;
 
-      let buffer = '';
-      const CHUNK_SIZE = 300; // Characters per chunk for optimal streaming
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            this.logger.warn(
+              `Retrying resume optimization for user ${userId}, attempt ${attempt}`
+            );
+            // Exponential backoff
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, attempt) * 1000)
+            );
+          }
 
-      // Process stream chunks with semantic segmentation
-      for await (const chunk of stream) {
-        buffer += chunk.content;
+          // Start streaming optimization
+          const stream = this.aiEngineService.stream(
+            aiRequest,
+            userId,
+            PromptScenario.RESUME_CONTENT_OPTIMIZATION,
+            language
+          );
 
-        // Send chunks when buffer reaches threshold using semantic breaks
-        while (buffer.length >= CHUNK_SIZE) {
-          const breakPoint = this.findSemanticBreakPoint(buffer, CHUNK_SIZE);
-          const segment = buffer.slice(0, breakPoint);
-          buffer = buffer.slice(breakPoint);
+          let buffer = '';
+          const CHUNK_SIZE = 300; // Characters per chunk for optimal streaming
 
+          // Process stream chunks with semantic segmentation
+          for await (const chunk of stream) {
+            buffer += chunk.content;
+
+            // Send chunks when buffer reaches threshold using semantic breaks
+            while (buffer.length >= CHUNK_SIZE) {
+              const breakPoint = this.findSemanticBreakPoint(
+                buffer,
+                CHUNK_SIZE
+              );
+              const segment = buffer.slice(0, breakPoint);
+              buffer = buffer.slice(breakPoint);
+
+              yield {
+                type: 'chunk',
+                content: segment,
+                timestamp: Date.now(),
+              };
+            }
+          }
+
+          // Send remaining content if any
+          if (buffer.length > 0) {
+            yield {
+              type: 'chunk',
+              content: buffer,
+              timestamp: Date.now(),
+            };
+          }
+
+          // Send completion signal
           yield {
-            type: 'chunk',
-            content: segment,
+            type: 'done',
+            complete: true,
             timestamp: Date.now(),
           };
+
+          this.logger.debug(`Resume optimization completed for user ${userId}`);
+          return; // Success, exit the retry loop
+        } catch (error) {
+          lastError = error;
+          this.logger.error(
+            `Resume optimization attempt ${attempt} failed for user ${userId}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+          if (attempt === maxRetries) {
+            throw error;
+          }
         }
       }
-
-      // Send remaining content if any
-      if (buffer.length > 0) {
-        yield {
-          type: 'chunk',
-          content: buffer,
-          timestamp: Date.now(),
-        };
-      }
-
-      // Send completion signal
-      yield {
-        type: 'done',
-        complete: true,
-        timestamp: Date.now(),
-      };
-
-      this.logger.debug(`Resume optimization completed for user ${userId}`);
     } catch (error) {
       this.logger.error(
         `Resume optimization failed for user ${userId}: ${

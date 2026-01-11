@@ -75,6 +75,31 @@ export const generateService = {
   },
 
   /**
+   * Generate PDF from Markdown content
+   * @param markdown - The markdown content to convert to PDF
+   * @param options - PDF generation options (fontSize, margin)
+   * @returns Details of the generated PDF with download URL
+   */
+  async generatePDFFromMarkdown(
+    markdown: string,
+    options?: {
+      fontSize?: number;
+      margin?: { top: number; bottom: number; left: number; right: number };
+    }
+  ): Promise<{
+    fileId: string;
+    filePath: string;
+    expiresAt: string;
+    downloadUrl: string;
+  }> {
+    const response = await axios.post('/generate/pdf/from-markdown', {
+      markdown,
+      options,
+    });
+    return response.data;
+  },
+
+  /**
    * Download a generated PDF file
    * @param fileUrl - The URL of the PDF file
    * @param filename - The name to save the file as

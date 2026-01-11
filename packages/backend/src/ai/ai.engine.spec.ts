@@ -107,22 +107,22 @@ describe('AIEngine', () => {
       expect(result.personalInfo.name).toBe('John Doe');
       expect(aiEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
-          prompt: content,
+          prompt: expect.stringContaining(content.trim()),
           metadata: expect.objectContaining({
-            templateName: 'parse_resume',
+            templateName: 'resume_parsing',
           }),
         }),
         'system',
-        'resume-parsing'
+        'resume-parsing',
+        'zh-CN'
       );
     });
 
     it('should parse resume from markdown code block', async () => {
       const content = 'John Doe';
+      // Response with markdown code block but starting with JSON-like content
       const markdownResponse =
-        'Here is the parsed data:\n```json\n' +
-        JSON.stringify(mockResumeData) +
-        '\n```';
+        '```json\n' + JSON.stringify(mockResumeData) + '\n```';
 
       mockAIEngineService.call.mockResolvedValue({
         content: markdownResponse,
@@ -135,6 +135,32 @@ describe('AIEngine', () => {
       const result = await engine.parseResumeContent(content);
 
       expect(result.personalInfo.email).toBe('john.doe@example.com');
+    });
+
+    it('should retry with explicit prompt when AI returns conversational text', async () => {
+      const content = 'John Doe';
+      // First call returns conversational text
+      mockAIEngineService.call
+        .mockResolvedValueOnce({
+          content: '这份简历已经包含了非常完整的信息...',
+          model: 'test-model',
+          provider: 'test-provider',
+          usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+          finishReason: 'stop',
+        })
+        // Second call returns valid JSON
+        .mockResolvedValueOnce({
+          content: JSON.stringify(mockResumeData),
+          model: 'test-model',
+          provider: 'test-provider',
+          usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
+          finishReason: 'stop',
+        });
+
+      const result = await engine.parseResumeContent(content);
+
+      expect(result.personalInfo.email).toBe('john.doe@example.com');
+      expect(aiEngineService.call).toHaveBeenCalledTimes(2);
     });
 
     it('should recover from malformed JSON response', async () => {
@@ -218,13 +244,14 @@ describe('AIEngine', () => {
       expect(result.requiredSkills).toContain('JavaScript');
       expect(aiEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
-          prompt: description,
+          prompt: expect.stringContaining(description),
           metadata: expect.objectContaining({
-            templateName: 'parse_job_description',
+            templateName: 'job_description_parsing',
           }),
         }),
         'system',
-        'job-description-parsing'
+        'job-description-parsing',
+        'zh-CN'
       );
     });
 
@@ -283,11 +310,12 @@ describe('AIEngine', () => {
       expect(aiEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
-            templateName: 'generate_suggestions',
+            templateName: 'resume_optimization',
           }),
         }),
         'system',
-        'resume-optimization'
+        'resume-optimization',
+        'zh-CN'
       );
     });
 
@@ -354,11 +382,12 @@ describe('AIEngine', () => {
       expect(aiEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
-            templateName: 'generate_interview_questions',
+            templateName: 'interview_question_generation',
           }),
         }),
         'system',
-        'interview-question-generation'
+        'interview-question-generation',
+        'zh-CN'
       );
     });
 

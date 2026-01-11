@@ -170,7 +170,9 @@
     "upload_resume_first": "Please upload a resume first",
     "input_job_first": "Please input job information first",
     "default_optimization_prompt": "Please optimize my resume based on the job requirements above",
-    "optimizing": "Optimizing your resume deeply, please wait..."
+    "optimizing": "Optimizing your resume deeply, please wait...",
+    "starting_optimization": "Starting resume optimization...",
+    "use_upload_button": "Please use the upload button to upload your resume"
   },
   "suggestions": {
     "resume_label": "Upload Resume",

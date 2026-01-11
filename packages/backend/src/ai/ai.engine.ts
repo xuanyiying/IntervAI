@@ -10,6 +10,8 @@ import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
 import { AIRequest } from '@/ai-providers';
+import { PromptScenario } from '@/ai-providers/interfaces/prompt-template.interface';
+import { ScenarioType } from '@/ai-providers/interfaces/model.interface';
 import {
   ParsedResumeData,
   ParsedJobDescription,
@@ -30,37 +32,32 @@ export class AIEngine {
     fileBuffer: Buffer,
     fileType: string
   ): Promise<string> {
-    try {
-      this.logger.log(
-        `Extracting text from ${fileType} file (${fileBuffer.length} bytes)`
-      );
+    this.logger.log(
+      `Extracting text from ${fileType} file (${fileBuffer.length} bytes)`
+    );
 
-      let text = '';
-      switch (fileType.toLowerCase()) {
-        case 'pdf':
-          text = await this.extractTextFromPDF(fileBuffer);
-          break;
-        case 'docx':
-          text = await this.extractTextFromDOCX(fileBuffer);
-          break;
-        case 'txt':
-        case 'md':
-        case 'markdown':
-          text = fileBuffer.toString('utf-8');
-          break;
-        default:
-          throw new Error(`Unsupported file type: ${fileType}`);
-      }
-
-      if (!text || text.trim().length === 0) {
-        this.logger.warn(`Extracted text is empty for ${fileType} file`);
-      }
-
-      return text;
-    } catch (error) {
-      // Don't log here if it's an expected rethrow, let the caller handle logging
-      throw error;
+    let text = '';
+    switch (fileType.toLowerCase()) {
+      case 'pdf':
+        text = await this.extractTextFromPDF(fileBuffer);
+        break;
+      case 'docx':
+        text = await this.extractTextFromDOCX(fileBuffer);
+        break;
+      case 'txt':
+      case 'md':
+      case 'markdown':
+        text = fileBuffer.toString('utf-8');
+        break;
+      default:
+        throw new Error(`Unsupported file type: ${fileType}`);
     }
+
+    if (!text || text.trim().length === 0) {
+      this.logger.warn(`Extracted text is empty for ${fileType} file`);
+    }
+
+    return text;
   }
 
   /**
@@ -94,70 +91,299 @@ export class AIEngine {
    * Delegates to AIEngineService with multi-provider support
    */
   async parseResumeContent(content: string): Promise<ParsedResumeData> {
-    try {
-      this.logger.debug('Parsing resume content using AI engine service');
+    const MAX_RETRIES = 2;
+    let lastError: Error | null = null;
 
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: content,
-        metadata: {
-          templateName: 'parse_resume',
-          templateVariables: {
-            resume_content: content,
-          },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        'resume-parsing'
-      );
-
-      let jsonContent = response.content;
-
-      // Clean up markdown code blocks if present
-      if (jsonContent.includes('```')) {
-        const match = jsonContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (match && match[1]) {
-          jsonContent = match[1];
-        }
-      }
-
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const parsedData: ParsedResumeData = JSON.parse(jsonContent);
-        this.logger.debug('Resume parsing completed successfully');
-        return parsedData;
-      } catch (parseError: any) {
-        this.logger.warn(
-          `Failed to parse JSON directly: ${parseError.message}. Attempting recovery...`
+        this.logger.debug(
+          `Parsing resume content using AI engine service (attempt ${attempt + 1}/${MAX_RETRIES + 1})`
         );
 
-        // Try to find the first '{' and last '}'
-        const firstBrace = jsonContent.indexOf('{');
-        const lastBrace = jsonContent.lastIndexOf('}');
+        // Use a more explicit prompt that emphasizes JSON-only output
+        const jsonOnlyPrompt =
+          attempt > 0
+            ? `你是一个JSON生成器。你的输出必须是纯JSON，不能包含任何其他文字。
+不要写"这份简历"、"根据"等任何中文解释。
+不要写任何markdown标记如\`\`\`。
+直接输出JSON对象，以{开头，以}结尾。
 
-        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-          try {
-            const recoveredContent = jsonContent.substring(
-              firstBrace,
-              lastBrace + 1
-            );
-            const parsedData: ParsedResumeData = JSON.parse(recoveredContent);
-            this.logger.log('Recovered JSON parsing successfully');
-            return parsedData;
-          } catch (recoveryError: any) {
-            this.logger.error(`Recovery failed: ${recoveryError.message}`);
+请从以下简历中提取信息，返回JSON格式：
+${content}
+
+必须返回的JSON结构：
+{"personalInfo":{"name":"","email":"","phone":""},"education":[],"experience":[],"skills":[],"projects":[]}`
+            : undefined;
+
+        const request: AIRequest = {
+          model: '', // Will be auto-selected based on scenario
+          prompt:
+            jsonOnlyPrompt ||
+            `Extract structured information from the following resume and return it in valid JSON format.
+CRITICAL: ONLY return the JSON object. Do not include any conversational text or markdown formatting.
+
+Resume Content:
+${content}`,
+          metadata: {
+            templateName:
+              attempt === 0 ? PromptScenario.RESUME_PARSING : undefined,
+            templateVariables: {
+              resume_content: content,
+            },
+            // Attempt to enforce JSON if the provider supports it
+            response_format: { type: 'json_object' },
+          },
+        };
+
+        const response = await this.aiEngineService.call(
+          request,
+          'system',
+          ScenarioType.RESUME_PARSING,
+          'zh-CN'
+        );
+
+        this.logger.debug(`AI raw response length: ${response.content.length}`);
+
+        // Check if response looks like conversational text instead of JSON
+        const trimmedContent = response.content.trim();
+        if (this.isConversationalResponse(trimmedContent)) {
+          this.logger.warn(
+            `AI returned conversational text instead of JSON: "${trimmedContent.substring(0, 100)}..."`
+          );
+          if (attempt < MAX_RETRIES) {
+            this.logger.log(`Retrying with more explicit JSON-only prompt...`);
+            continue;
           }
+          throw new Error(
+            'AI model returned conversational text instead of JSON after all retries'
+          );
         }
 
-        throw parseError;
+        const jsonToParse = this.extractJson(response.content);
+
+        if (!jsonToParse || !jsonToParse.trim().startsWith('{')) {
+          this.logger.warn(
+            `Could not extract valid JSON from response: "${response.content.substring(0, 100)}..."`
+          );
+          if (attempt < MAX_RETRIES) {
+            continue;
+          }
+          throw new Error('Could not extract JSON from AI response');
+        }
+
+        this.logger.debug(
+          `Extracted JSON to parse: ${jsonToParse.substring(0, 200)}...`
+        );
+
+        try {
+          const parsedData: ParsedResumeData = JSON.parse(jsonToParse);
+          this.logger.log('Resume parsing completed successfully');
+          return parsedData;
+        } catch (parseError: any) {
+          this.logger.warn(
+            `Failed to parse JSON directly: ${parseError.message}. Attempting recovery...`
+          );
+
+          // Try to fix common JSON issues
+          const fixedJson = this.attemptJsonFix(jsonToParse);
+          if (fixedJson) {
+            try {
+              const parsedData: ParsedResumeData = JSON.parse(fixedJson);
+              this.logger.log(
+                'Recovered JSON parsing after fixing common issues'
+              );
+              return parsedData;
+            } catch (fixError) {
+              // Continue to retry
+            }
+          }
+
+          lastError = parseError;
+          if (attempt < MAX_RETRIES) {
+            this.logger.log(
+              `JSON parse failed, retrying with explicit prompt...`
+            );
+            continue;
+          }
+
+          this.logger.error(
+            `Failed to parse resume content: ${parseError.message}`,
+            { stack: parseError.stack }
+          );
+          throw parseError;
+        }
+      } catch (error: any) {
+        lastError = error;
+        if (attempt < MAX_RETRIES) {
+          this.logger.warn(
+            `Attempt ${attempt + 1} failed: ${error.message}. Retrying...`
+          );
+          continue;
+        }
       }
-    } catch (error: any) {
-      this.logger.error(`Failed to parse resume content: ${error.message}`);
-      // Return a basic structure on error
-      return this.createEmptyResumeData();
     }
+
+    this.logger.error(
+      `Failed to parse resume content after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`
+    );
+    // Return a basic structure on error
+    return this.createEmptyResumeData();
+  }
+
+  /**
+   * Check if the response is conversational text rather than JSON
+   */
+  private isConversationalResponse(text: string): boolean {
+    // Common patterns that indicate conversational response instead of JSON
+    const conversationalPatterns = [
+      /^这份简历/,
+      /^根据/,
+      /^以下是/,
+      /^好的/,
+      /^我来/,
+      /^让我/,
+      /^首先/,
+      /^简历内容/,
+      /^分析结果/,
+      /^Here is/i,
+      /^Based on/i,
+      /^The resume/i,
+      /^I will/i,
+      /^Let me/i,
+    ];
+
+    const trimmed = text.trim();
+
+    // If it starts with { or [, it's likely JSON
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      return false;
+    }
+
+    // Check for conversational patterns
+    for (const pattern of conversationalPatterns) {
+      if (pattern.test(trimmed)) {
+        return true;
+      }
+    }
+
+    // If first 50 chars don't contain { or [, likely conversational
+    const first50 = trimmed.substring(0, 50);
+    if (!first50.includes('{') && !first50.includes('[')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Attempt to fix common JSON issues
+   */
+  private attemptJsonFix(jsonStr: string): string | null {
+    try {
+      let fixed = jsonStr
+        .replace(/,\s*([\]}])/g, '$1') // Remove trailing commas
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\u0000-\u001F\u007F]/g, ' ') // Remove control characters
+        .replace(/\n/g, '\\n') // Escape newlines in strings
+        .replace(/\r/g, '\\r') // Escape carriage returns
+        .replace(/\t/g, '\\t'); // Escape tabs
+
+      // Try to fix unquoted keys (but be careful with URLs)
+      fixed = fixed.replace(
+        /([{,]\s*)(\w+)(\s*:)/g,
+        (match, prefix, key, suffix) => {
+          if (key === 'http' || key === 'https') return match;
+          return `${prefix}"${key}"${suffix}`;
+        }
+      );
+
+      return fixed;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Helper function to extract JSON from text - more robust
+   */
+  private extractJson(text: string): string {
+    // 1. Try to find JSON in markdown code blocks first
+    const markdownMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (markdownMatch && markdownMatch[1]) {
+      const extracted = markdownMatch[1].trim();
+      this.logger.debug('Extracted JSON from markdown block');
+      return extracted;
+    }
+
+    const trimmed = text.trim();
+
+    // 2. If text starts with [ or {, it's likely already JSON
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      // Find matching closing bracket/brace
+      if (trimmed.startsWith('[')) {
+        const lastBracket = trimmed.lastIndexOf(']');
+        if (lastBracket !== -1) {
+          return trimmed.substring(0, lastBracket + 1);
+        }
+      } else {
+        const lastBrace = trimmed.lastIndexOf('}');
+        if (lastBrace !== -1) {
+          return trimmed.substring(0, lastBrace + 1);
+        }
+      }
+    }
+
+    // 3. Try to find the first { and last } for objects
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+
+    // 4. Try to find the first [ and last ] for arrays
+    const firstBracket = text.indexOf('[');
+    const lastBracket = text.lastIndexOf(']');
+
+    // Determine which comes first and is valid
+    const hasBrace =
+      firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace;
+    const hasBracket =
+      firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket;
+
+    if (hasBrace && hasBracket) {
+      // Both exist, use whichever comes first
+      if (firstBracket < firstBrace) {
+        const extracted = text.substring(firstBracket, lastBracket + 1);
+        this.logger.debug('Extracted JSON array between brackets');
+        return extracted;
+      } else {
+        const extracted = text.substring(firstBrace, lastBrace + 1);
+        this.logger.debug('Extracted JSON object between braces');
+        return extracted;
+      }
+    } else if (hasBrace) {
+      const extracted = text.substring(firstBrace, lastBrace + 1);
+      this.logger.debug('Extracted JSON between braces');
+      return extracted;
+    } else if (hasBracket) {
+      const extracted = text.substring(firstBracket, lastBracket + 1);
+      this.logger.debug('Extracted JSON between brackets');
+      return extracted;
+    }
+
+    // 5. Handle case where AI might use full-width braces or other oddities
+    const cleaned = text.replace(/[\uFF5B]/g, '{').replace(/[\uFF5D]/g, '}');
+    const firstBraceClean = cleaned.indexOf('{');
+    const lastBraceClean = cleaned.lastIndexOf('}');
+    if (
+      firstBraceClean !== -1 &&
+      lastBraceClean !== -1 &&
+      lastBraceClean > firstBraceClean
+    ) {
+      const extracted = cleaned.substring(firstBraceClean, lastBraceClean + 1);
+      this.logger.debug('Extracted JSON between cleaned braces');
+      return extracted;
+    }
+
+    this.logger.warn('Could not find any JSON-like structure in AI response');
+    return text.trim();
   }
 
   /**
@@ -172,29 +398,45 @@ export class AIEngine {
 
       const request: AIRequest = {
         model: '', // Will be auto-selected based on scenario
-        prompt: description,
+        prompt: `Extract structured information from the following job description and return it in valid JSON format.
+CRITICAL: ONLY return the JSON object. Do not include any conversational text or markdown formatting.
+
+Job Description Content:
+${description}`,
         metadata: {
-          templateName: 'parse_job_description',
+          templateName: PromptScenario.JOB_DESCRIPTION_PARSING,
           templateVariables: {
             job_description: description,
           },
+          // Attempt to enforce JSON
+          response_format: { type: 'json_object' },
         },
       };
 
       const response = await this.aiEngineService.call(
         request,
         'system',
-        'job-description-parsing'
+        ScenarioType.JOB_DESCRIPTION_PARSING,
+        'zh-CN'
       );
 
-      const parsedData: ParsedJobDescription = JSON.parse(response.content);
-      this.logger.debug('Job description parsing completed successfully');
+      const jsonToParse = this.extractJson(response.content);
 
-      return parsedData;
-    } catch (error) {
-      this.logger.error('Failed to parse job description:', error);
-      // Return a basic structure on error
+      try {
+        const parsedData: ParsedJobDescription = JSON.parse(jsonToParse);
+        this.logger.log('Job description parsing completed successfully');
+        return parsedData;
+      } catch (parseError: any) {
+        this.logger.warn(
+          `Failed to parse JSON: ${parseError.message}. Content starts with: ${jsonToParse.substring(0, 100)}...`
+        );
+        throw parseError;
+      }
+    } catch (error: any) {
+      this.logger.error(`Failed to parse job description: ${error.message}`);
       return {
+        title: '',
+        company: '',
         requiredSkills: [],
         preferredSkills: [],
         responsibilities: [],
@@ -220,28 +462,36 @@ export class AIEngine {
         model: '', // Will be auto-selected based on scenario
         prompt: '', // Will be filled by template
         metadata: {
-          templateName: 'generate_suggestions',
+          templateName: PromptScenario.RESUME_OPTIMIZATION,
           templateVariables: {
             resume_data: JSON.stringify(resumeData, null, 2),
             job_description: jobDescription,
           },
+          response_format: { type: 'json_object' },
         },
       };
 
       const response = await this.aiEngineService.call(
         request,
         'system',
-        'resume-optimization'
+        ScenarioType.RESUME_OPTIMIZATION,
+        'zh-CN'
       );
 
-      const suggestions: OptimizationSuggestion[] = JSON.parse(
-        response.content
-      );
-      this.logger.debug(
-        `Generated ${suggestions.length} optimization suggestions`
-      );
+      const jsonToParse = this.extractJson(response.content);
 
-      return suggestions;
+      try {
+        const suggestions: OptimizationSuggestion[] = JSON.parse(jsonToParse);
+        this.logger.debug(
+          `Generated ${suggestions.length} optimization suggestions`
+        );
+        return suggestions;
+      } catch (parseError) {
+        this.logger.warn(
+          `Failed to parse optimization suggestions JSON: ${response.content.substring(0, 200)}...`
+        );
+        return [];
+      }
     } catch (error) {
       this.logger.error('Failed to generate optimization suggestions:', error);
       return [];
@@ -265,24 +515,34 @@ export class AIEngine {
         model: '', // Will be auto-selected based on scenario
         prompt: '', // Will be filled by template
         metadata: {
-          templateName: 'generate_interview_questions',
+          templateName: PromptScenario.INTERVIEW_QUESTION_GENERATION,
           templateVariables: {
             resume_data: JSON.stringify(resumeData, null, 2),
             job_description: jobDescription,
           },
+          response_format: { type: 'json_object' },
         },
       };
 
       const response = await this.aiEngineService.call(
         request,
         'system',
-        'interview-question-generation'
+        ScenarioType.INTERVIEW_QUESTION_GENERATION,
+        'zh-CN'
       );
 
-      const questions: InterviewQuestion[] = JSON.parse(response.content);
-      this.logger.debug(`Generated ${questions.length} interview questions`);
+      const jsonToParse = this.extractJson(response.content);
 
-      return questions;
+      try {
+        const questions: InterviewQuestion[] = JSON.parse(jsonToParse);
+        this.logger.debug(`Generated ${questions.length} interview questions`);
+        return questions;
+      } catch (parseError) {
+        this.logger.warn(
+          `Failed to parse interview questions JSON: ${response.content.substring(0, 200)}...`
+        );
+        return [];
+      }
     } catch (error) {
       this.logger.error('Failed to generate interview questions:', error);
       return [];
@@ -388,6 +648,56 @@ export class AIEngine {
       return response.content;
     } catch (error) {
       this.logger.error('Failed to generate content:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Optimize resume content using AI
+   * Returns optimized resume in Markdown format
+   */
+  async optimizeResumeContent(resumeContent: string): Promise<string> {
+    try {
+      this.logger.debug('Optimizing resume content using AI engine service');
+
+      // Validate input
+      if (!resumeContent || resumeContent.trim().length === 0) {
+        throw new Error('Resume content is required for optimization');
+      }
+
+      // Build optimization prompt
+      const prompt = `请优化以下简历内容，保持核心信息不变，优化表达方式和格式，以 Markdown 格式输出：
+
+${resumeContent}
+
+要求：
+1. 保留所有关键信息（姓名、联系方式、工作经历、教育背景等）
+2. 使用专业的表达方式
+3. 突出成就和量化结果
+4. 使用清晰的 Markdown 格式
+5. 适当使用项目符号和标题层级
+6. 确保内容结构清晰，易于阅读
+
+请直接输出优化后的简历内容，不需要额外的说明文字。`;
+
+      const request: AIRequest = {
+        model: '',
+        prompt: prompt,
+        temperature: 0.7,
+        maxTokens: 4000,
+      };
+
+      const response = await this.aiEngineService.call(
+        request,
+        'system',
+        PromptScenario.RESUME_CONTENT_OPTIMIZATION,
+        'zh-CN'
+      );
+
+      this.logger.log('Resume content optimization completed successfully');
+      return response.content;
+    } catch (error) {
+      this.logger.error('Failed to optimize resume content:', error);
       throw error;
     }
   }

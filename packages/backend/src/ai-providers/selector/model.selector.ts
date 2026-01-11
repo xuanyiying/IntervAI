@@ -25,6 +25,7 @@ export enum ScenarioType {
   RESUME_PARSING = 'resume-parsing',
   JOB_DESCRIPTION_PARSING = 'job-description-parsing',
   RESUME_OPTIMIZATION = 'resume-optimization',
+  RESUME_CONTENT_OPTIMIZATION = 'resume-content-optimization',
   INTERVIEW_QUESTION_GENERATION = 'interview-question-generation',
   MATCH_SCORE_CALCULATION = 'match-score-calculation',
   GENERAL = 'general',
@@ -89,6 +90,14 @@ export class ModelSelector {
     // Resume optimization: quality optimized (important output, user-facing)
     this.strategies.set(
       ScenarioType.RESUME_OPTIMIZATION,
+      new QualityOptimizedStrategy({
+        qualityRanking: this.strategyConfig.quality.qualityRanking,
+      })
+    );
+
+    // Resume content optimization: quality optimized (direct content optimization)
+    this.strategies.set(
+      ScenarioType.RESUME_CONTENT_OPTIMIZATION,
       new QualityOptimizedStrategy({
         qualityRanking: this.strategyConfig.quality.qualityRanking,
       })

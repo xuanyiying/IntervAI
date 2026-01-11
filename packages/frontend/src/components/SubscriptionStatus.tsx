@@ -37,7 +37,11 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <Tag
         color={
-          tier === SubscriptionTier.PRO ? 'blue' : tier === SubscriptionTier.ENTERPRISE ? 'purple' : 'default'
+          tier === SubscriptionTier.PRO
+            ? 'blue'
+            : tier === SubscriptionTier.ENTERPRISE
+              ? 'purple'
+              : 'default'
         }
       >
         {tier}

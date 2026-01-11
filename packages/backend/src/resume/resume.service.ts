@@ -253,8 +253,13 @@ export class ResumeService {
    * Parse resume file content
    * Extracts text from file and uses AI engine to parse structured data
    * Uses Queue for rate limiting and resilience
+   * @param conversationId - Optional conversation ID to send optimization results to
    */
-  async parseResume(resumeId: string, userId: string): Promise<any> {
+  async parseResume(
+    resumeId: string,
+    userId: string,
+    conversationId?: string
+  ): Promise<any> {
     const resume = await this.getResume(resumeId, userId);
 
     // Return cached parsed data if already completed
@@ -326,25 +331,26 @@ export class ResumeService {
         fileType
       );
 
-      // Add to queue
+      // Add to queue with optional conversationId
       this.logger.log(`Queueing resume parsing job for resume ${resumeId}`);
       const job = await this.aiQueueService.addResumeParsingJob(
         resumeId,
         userId,
-        textContent
+        textContent,
+        conversationId
       );
 
-      // Wait for job completion with a timeout (up to 60 seconds)
+      // Wait for job completion with a timeout (up to 120 seconds)
       // This preserves the synchronous API feel for fast operations
       try {
         this.logger.debug(`Waiting for job ${job.id} to finish...`);
 
-        // Create a timeout promise
+        // Create a timeout promise - increased to 120s for large resumes or slow AI
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(
             () =>
               reject(new Error('Parsing timeout, processing in background')),
-            60000
+            120000
           )
         );
 

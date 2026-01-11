@@ -8,6 +8,7 @@ import {
   UseInterceptors,
   Body,
   Param,
+  Query,
   Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -71,13 +72,17 @@ export class ResumeController {
 
   /**
    * Parse a resume file
-   * GET /resumes/:id/parse
+   * GET /resumes/:id/parse?conversationId=xxx
    */
   @Get(':id/parse')
   @ApiOperation({ summary: 'Parse a resume file and extract structured data' })
-  async parseResume(@Param('id') resumeId: string, @Request() req: any) {
+  async parseResume(
+    @Param('id') resumeId: string,
+    @Request() req: any,
+    @Query('conversationId') conversationId?: string
+  ) {
     const userId = req.user.id;
-    return this.resumeService.parseResume(resumeId, userId);
+    return this.resumeService.parseResume(resumeId, userId, conversationId);
   }
 
   /**

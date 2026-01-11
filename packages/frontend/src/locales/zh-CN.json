@@ -170,7 +170,9 @@
     "upload_resume_first": "请先上传一份简历",
     "input_job_first": "请先输入目标职位信息",
     "default_optimization_prompt": "请根据以上职位要求优化我的简历",
-    "optimizing": "正在为您深度优化简历，请稍候..."
+    "optimizing": "正在为您深度优化简历，请稍候...",
+    "starting_optimization": "正在开始优化简历...",
+    "use_upload_button": "请使用上传按钮上传简历"
   },
   "suggestions": {
     "resume_label": "上传简历",
