@@ -167,7 +167,13 @@ export const useConversationStore = create<ConversationState>((set) => ({
     try {
       set({ messageError: null, isLoadingMessages: true });
       const messages = await conversationService.getMessages(conversationId);
-      set({ messages, isLoadingMessages: false });
+      // Sort messages by timestamp or createdAt to ensure correct order
+      const sortedMessages = [...messages].sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.createdAt).getTime();
+        const timeB = b.timestamp || new Date(b.createdAt).getTime();
+        return timeA - timeB;
+      });
+      set({ messages: sortedMessages, isLoadingMessages: false });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to load messages';
@@ -189,16 +195,23 @@ export const useConversationStore = create<ConversationState>((set) => ({
         content,
         metadata,
       });
-      set((state) => ({
-        messages: [...state.messages, message],
-        currentConversation: state.currentConversation
-          ? {
-              ...state.currentConversation,
-              messageCount: state.currentConversation.messageCount + 1,
-              lastMessageAt: new Date().toISOString(),
-            }
-          : null,
-      }));
+      set((state) => {
+        const newMessages = [...state.messages, message].sort((a, b) => {
+          const timeA = a.timestamp || new Date(a.createdAt).getTime();
+          const timeB = b.timestamp || new Date(b.createdAt).getTime();
+          return timeA - timeB;
+        });
+        return {
+          messages: newMessages,
+          currentConversation: state.currentConversation
+            ? {
+                ...state.currentConversation,
+                messageCount: state.currentConversation.messageCount + 1,
+                lastMessageAt: new Date().toISOString(),
+              }
+            : null,
+        };
+      });
       return message;
     } catch (error) {
       const errorMessage =
@@ -209,9 +222,20 @@ export const useConversationStore = create<ConversationState>((set) => ({
   },
 
   addMessageToState: (message: Message) => {
-    set((state) => ({
-      messages: [...state.messages, message],
-    }));
+    set((state) => {
+      // Check if message already exists to avoid duplicates
+      if (state.messages.some((m) => m.id === message.id)) {
+        return state;
+      }
+      const newMessages = [...state.messages, message].sort((a, b) => {
+        const timeA = a.timestamp || new Date(a.createdAt).getTime();
+        const timeB = b.timestamp || new Date(b.createdAt).getTime();
+        return timeA - timeB;
+      });
+      return {
+        messages: newMessages,
+      };
+    });
   },
 
   clearMessages: () => {

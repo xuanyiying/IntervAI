@@ -270,8 +270,10 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
                 textAlign: 'right',
               }}
             >
-              {suggestion.status === SuggestionStatus.ACCEPTED && '✓ 已接受此建议'}
-              {suggestion.status === SuggestionStatus.REJECTED && '✗ 已拒绝此建议'}
+              {suggestion.status === SuggestionStatus.ACCEPTED &&
+                '✓ 已接受此建议'}
+              {suggestion.status === SuggestionStatus.REJECTED &&
+                '✗ 已拒绝此建议'}
             </div>
           )}
         </div>

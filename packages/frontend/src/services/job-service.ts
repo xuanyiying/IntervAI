@@ -62,7 +62,9 @@ export const jobService = {
    * @returns Extracted job details
    */
   fetchJobFromUrl: async (url: string): Promise<JobInput> => {
-    const response = await axios.post<JobInput>('/jobs/fetch-from-url', { url });
+    const response = await axios.post<JobInput>('/jobs/fetch-from-url', {
+      url,
+    });
     return response.data;
   },
 
@@ -73,7 +75,9 @@ export const jobService = {
    * @returns Parsed structured job data
    */
   parseJobDescription: async (description: string): Promise<ParsedJobData> => {
-    const response = await axios.post<ParsedJobData>('/jobs/parse', { description });
+    const response = await axios.post<ParsedJobData>('/jobs/parse', {
+      description,
+    });
     return response.data;
   },
 };

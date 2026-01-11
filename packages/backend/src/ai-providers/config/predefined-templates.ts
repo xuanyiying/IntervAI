@@ -17,7 +17,8 @@ export const PREDEFINED_TEMPLATES: Array<{
     name: 'resume_parsing_default',
     scenario: PromptScenario.RESUME_PARSING,
     language: 'en',
-    template: `Please parse the following resume and extract the key information in JSON format:
+    template: `Please parse the following resume and extract the key information in JSON format.
+CRITICAL: ONLY return the JSON object. Do not include any conversational text, explanations, or markdown formatting unless specifically asked.
 
 Resume Content:
 {resume_content}
@@ -31,7 +32,7 @@ Extract the following information:
 6. Certifications and Awards
 7. Languages
 
-Return the result as valid JSON.`,
+Return the result as a single, valid JSON object.`,
     variables: ['resume_content'],
     isEncrypted: false,
   },
@@ -168,73 +169,26 @@ Please output the optimized resume in clean, professional Markdown format that w
     name: 'resume_parsing_default',
     scenario: PromptScenario.RESUME_PARSING,
     language: 'zh-CN',
-    template: `请深入分析以下简历内容，并提取结构化信息。你需要返回一个包含详细信息的 JSON 对象。
+    template: `你是一个JSON数据提取器。请从简历中提取信息并返回JSON。
+
+【严格要求】
+1. 只输出JSON，不要任何其他文字
+2. 不要写"这份简历"、"根据"等解释
+3. 不要使用markdown代码块
+4. 直接以左花括号开始，右花括号结束
 
 简历内容：
 {resume_content}
 
-你需要提取并按以下 JSON 结构返回（如果某项信息缺失，请保持为空数组或空字符串）：
-{{
-  "personalInfo": {{
-    "name": "姓名",
-    "email": "邮箱",
-    "phone": "电话",
-    "location": "城市/地址",
-    "linkedin": "LinkedIn 链接",
-    "github": "GitHub 链接"
-  }},
-  "summary": "专业总结或职业目标",
-  "education": [
-    {{
-      "institution": "学校名称",
-      "degree": "学位",
-      "field": "专业",
-      "startDate": "开始日期",
-      "endDate": "结束日期",
-      "achievements": ["在校成就或荣誉"]
-    }}
-  ],
-  "experience": [
-    {{
-      "company": "公司名称",
-      "position": "职位名称",
-      "startDate": "开始日期",
-      "endDate": "结束日期",
-      "location": "地点",
-      "description": ["主要职责描述"],
-      "achievements": ["核心成就或量化成果"]
-    }}
-  ],
-  "skills": ["技能1", "技能2"],
-  "projects": [
-    {{
-      "name": "项目名称",
-      "description": "项目描述",
-      "technologies": ["使用技术"],
-      "highlights": ["项目亮点或职责"]
-    }}
-  ],
-  "certifications": [
-    {{
-      "name": "证书名称",
-      "issuer": "颁发机构",
-      "date": "获得日期"
-    }}
-  ],
-  "languages": [
-    {{
-      "name": "语言名称",
-      "proficiency": "熟练程度"
-    }}
-  ],
-  "markdown": "请在此处提供整个简历的精美 Markdown 格式展示，包含所有提取的信息，使用合适的标题和列表，使其易于阅读。"
-}}
-
-注意：
-1. 确保返回的是有效的 JSON 格式。
-2. 尽量完整地提取所有信息，特别是工作职责和成就。
-3. 如果内容中有中文，请确保 JSON 中的值也是中文。
-4. markdown 字段应包含一个排版精美的完整简历副本。`,
+返回以下结构的JSON（缺失信息用空字符串或空数组）：
+- personalInfo: 包含 name, email, phone, location, linkedin, github
+- summary: 专业总结字符串
+- education: 数组，每项包含 institution, degree, field, startDate, endDate, achievements
+- experience: 数组，每项包含 company, position, startDate, endDate, responsibilities, technologies  
+- skills: 数组，每项包含 category, items
+- projects: 数组，每项包含 name, description, role, startDate, endDate, highlights, url
+- languages: 数组，每项包含 language, proficiency
+- certifications: 字符串数组`,
     variables: ['resume_content'],
     isEncrypted: false,
   },

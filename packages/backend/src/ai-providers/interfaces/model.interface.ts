@@ -91,6 +91,7 @@ export enum ScenarioType {
   RESUME_PARSING = 'resume-parsing',
   JOB_DESCRIPTION_PARSING = 'job-description-parsing',
   RESUME_OPTIMIZATION = 'resume-optimization',
+  RESUME_CONTENT_OPTIMIZATION = 'resume-content-optimization',
   INTERVIEW_QUESTION_GENERATION = 'interview-question-generation',
   MATCH_SCORE_CALCULATION = 'match-score-calculation',
 

@@ -36,7 +36,7 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     this.client = new OpenAI({
       baseURL: config.endpoint,
       apiKey: config.apiKey,
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 120000, // Default to 120s instead of 30s
       organization: config.organization,
     });
   }
@@ -165,14 +165,30 @@ export abstract class BaseOpenAIProvider implements AIProvider {
 
     const metadata = (request.metadata as Record<string, any>) || {};
 
-    return {
+    // Filter out internal metadata that shouldn't be sent to the AI provider
+    const { templateName, templateVariables, ...providerMetadata } = metadata;
+
+    // Handle response_format if present in metadata
+    let response_format = providerMetadata.response_format;
+
+    // If response_format is 'json_object', we need to make sure the provider supports it
+    // Most modern OpenAI-compatible APIs support it, but some might require specific instructions in the prompt.
+    // The instructions are already in our templates.
+
+    const payload: Record<string, any> = {
       model: request.model,
       messages,
       temperature: request.temperature ?? 0.7,
       max_tokens: request.maxTokens ?? 4096,
       top_p: request.topP ?? 1,
       stop: request.stopSequences ?? null,
-      ...metadata,
+      ...providerMetadata,
     };
+
+    if (response_format) {
+      payload.response_format = response_format;
+    }
+
+    return payload;
   }
 }

@@ -157,6 +157,7 @@ export interface Message {
   attachments?: Record<string, unknown>[];
   metadata?: Record<string, unknown>;
   createdAt: string;
+  timestamp?: number;
 }
 
 // Job types

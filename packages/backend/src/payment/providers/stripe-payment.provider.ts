@@ -184,7 +184,9 @@ export class StripePaymentProvider implements PaymentProvider {
     return mapping[status] || SubscriptionStatus.ACTIVE;
   }
 
-  private mapBillingStatus(status: Stripe.Invoice.Status | null): BillingStatus {
+  private mapBillingStatus(
+    status: Stripe.Invoice.Status | null
+  ): BillingStatus {
     if (!status) return BillingStatus.OPEN;
     const mapping: Record<string, BillingStatus> = {
       paid: BillingStatus.PAID,

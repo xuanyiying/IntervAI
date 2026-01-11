@@ -128,7 +128,9 @@ const SubscriptionManagementPage: React.FC = () => {
                 />
               </Descriptions.Item>
               <Descriptions.Item label="Status">
-                {subscription.status === SubStatus.ACTIVE ? 'Active' : 'Inactive'}
+                {subscription.status === SubStatus.ACTIVE
+                  ? 'Active'
+                  : 'Inactive'}
               </Descriptions.Item>
               {subscription.currentPeriodEnd && (
                 <Descriptions.Item label="Current Period Ends">

@@ -54,14 +54,14 @@ describe('Monitoring Integration', () => {
     });
 
     it('should record AI API call metrics', () => {
-      metricsService.recordAiApiCall('parse_resume', 3000);
+      metricsService.recordAiApiCall('resume_parsing', 3000);
       metricsService.recordAiApiCall('optimize', 10000);
 
       expect(metricsService).toBeDefined();
     });
 
     it('should record AI API errors', () => {
-      metricsService.recordAiApiError('parse_resume', 'timeout');
+      metricsService.recordAiApiError('resume_parsing', 'timeout');
       metricsService.recordAiApiError('optimize', 'rate_limit');
 
       expect(metricsService).toBeDefined();

@@ -1,0 +1,12 @@
+.resume-upload-status {
+  width: 100%;
+  max-width: 400px;
+}
+
+.file-info-card {
+  transition: all 0.3s ease;
+}
+
+.file-info-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}

@@ -1,5 +1,9 @@
 import axios from '../config/axios';
-import type { InterviewQuestion, InterviewSession, InterviewMessage } from '../types';
+import type {
+  InterviewQuestion,
+  InterviewSession,
+  InterviewMessage,
+} from '../types';
 
 /**
  * Service for managing AI-powered interview sessions and question generation
@@ -94,7 +98,9 @@ export const interviewService = {
    * @param optimizationId - The ID of the optimization
    * @returns The active session or null
    */
-  getActiveSession: async (optimizationId: string): Promise<InterviewSession | null> => {
+  getActiveSession: async (
+    optimizationId: string
+  ): Promise<InterviewSession | null> => {
     const response = await axios.get<InterviewSession | null>(
       `/interview/active-session/${optimizationId}`
     );
@@ -106,10 +112,15 @@ export const interviewService = {
    * @param optimizationId - The ID of the optimization
    * @returns A list of generated interview questions
    */
-  generateQuestions: async (optimizationId: string): Promise<InterviewQuestion[]> => {
-    const response = await axios.post<InterviewQuestion[]>('/interview/questions', {
-      optimizationId,
-    });
+  generateQuestions: async (
+    optimizationId: string
+  ): Promise<InterviewQuestion[]> => {
+    const response = await axios.post<InterviewQuestion[]>(
+      '/interview/questions',
+      {
+        optimizationId,
+      }
+    );
     return response.data;
   },
 
@@ -118,7 +129,9 @@ export const interviewService = {
    * @param optimizationId - The ID of the optimization
    * @returns A list of interview questions
    */
-  getQuestions: async (optimizationId: string): Promise<InterviewQuestion[]> => {
+  getQuestions: async (
+    optimizationId: string
+  ): Promise<InterviewQuestion[]> => {
     const response = await axios.get<InterviewQuestion[]>(
       `/interview/questions/${optimizationId}`
     );
@@ -131,10 +144,9 @@ export const interviewService = {
    * @returns The URL of the generated PDF
    */
   exportInterviewPrep: async (optimizationId: string): Promise<string> => {
-    const response = await axios.get(
-      `/interview/export/${optimizationId}`,
-      { responseType: 'blob' }
-    );
+    const response = await axios.get(`/interview/export/${optimizationId}`, {
+      responseType: 'blob',
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;

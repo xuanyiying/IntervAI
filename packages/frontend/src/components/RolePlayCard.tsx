@@ -210,9 +210,14 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
           <div className="chat-area">
             <div className="messages-container">
               {messages.map((msg, idx) => (
-                <div key={idx} className={`message message-${msg.role.toLowerCase()}`}>
+                <div
+                  key={idx}
+                  className={`message message-${msg.role.toLowerCase()}`}
+                >
                   <div className="message-role">
-                    {msg.role === MessageRole.ASSISTANT ? '👤 Interviewer' : '👤 You'}
+                    {msg.role === MessageRole.ASSISTANT
+                      ? '👤 Interviewer'
+                      : '👤 You'}
                   </div>
                   <div className="message-content">{msg.content}</div>
                   <div className="message-time">

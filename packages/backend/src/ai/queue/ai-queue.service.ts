@@ -11,7 +11,12 @@ export class AIQueueService {
   /**
    * Add a resume parsing job to the queue
    */
-  async addResumeParsingJob(resumeId: string, userId: string, content: string) {
+  async addResumeParsingJob(
+    resumeId: string,
+    userId: string,
+    content: string,
+    conversationId?: string
+  ) {
     this.logger.log(`Adding resume parsing job for resume ${resumeId}`);
     return this.aiQueue.add(
       'resume-parsing',
@@ -19,6 +24,7 @@ export class AIQueueService {
         resumeId,
         userId,
         content,
+        conversationId,
       },
       {
         attempts: 3,

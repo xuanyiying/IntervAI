@@ -4,6 +4,7 @@ import { AIQueueService } from './ai-queue.service';
 import { AIQueueProcessor } from './ai-queue.processor';
 import { AIModule } from '../ai.module';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { ChatModule } from '@/chat/chat.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
     }),
     AIModule,
     PrismaModule,
+    ChatModule,
   ],
   providers: [AIQueueService, AIQueueProcessor],
   exports: [AIQueueService],

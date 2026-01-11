@@ -99,6 +99,9 @@ export class PromptTemplateManager {
     provider?: string,
     version?: number
   ): Promise<PromptTemplate | null> {
+    this.logger.debug(
+      `Getting template for scenario: ${scenario}, language: ${language}, provider: ${provider}`
+    );
     try {
       // Try to get provider-specific template first
       if (provider) {

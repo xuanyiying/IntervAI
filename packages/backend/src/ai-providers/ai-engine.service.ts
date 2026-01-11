@@ -591,9 +591,28 @@ export class AIEngineService implements OnModuleInit, OnApplicationBootstrap {
         prompt: finalPrompt,
       };
 
-      // Stream with retry
+      // Stream with timeout and retry
+      const STREAM_TIMEOUT = 120000; // 120s total stream timeout
+      const streamStartTime = Date.now();
+
       try {
-        for await (const chunk of providerInstance.stream(providerRequest)) {
+        const iterator = providerInstance
+          .stream(providerRequest)
+          [Symbol.asyncIterator]();
+
+        while (true) {
+          // Check for total duration timeout
+          if (Date.now() - streamStartTime > STREAM_TIMEOUT) {
+            throw new AIError(
+              AIErrorCode.TIMEOUT,
+              `Streaming timed out after ${STREAM_TIMEOUT}ms`,
+              undefined,
+              true
+            );
+          }
+
+          const { value: chunk, done } = await iterator.next();
+          if (done) break;
           yield chunk;
         }
       } catch (error) {

@@ -11,11 +11,17 @@ export const optimizationService = {
    * @param jobId - The ID of the job
    * @returns The created optimization record
    */
-  createOptimization: async (resumeId: string, jobId: string): Promise<Optimization> => {
-    const response = await axios.post<Optimization>('/resume-optimizer/optimizations', {
-      resumeId,
-      jobId,
-    });
+  createOptimization: async (
+    resumeId: string,
+    jobId: string
+  ): Promise<Optimization> => {
+    const response = await axios.post<Optimization>(
+      '/resume-optimizer/optimizations',
+      {
+        resumeId,
+        jobId,
+      }
+    );
     return response.data;
   },
 
@@ -36,7 +42,9 @@ export const optimizationService = {
    * @returns List of optimization records
    */
   listOptimizations: async (): Promise<Optimization[]> => {
-    const response = await axios.get<Optimization[]>('/resume-optimizer/optimizations');
+    const response = await axios.get<Optimization[]>(
+      '/resume-optimizer/optimizations'
+    );
     return response.data;
   },
 
@@ -46,7 +54,10 @@ export const optimizationService = {
    * @param suggestionId - The ID of the suggestion to accept
    * @returns Updated optimization record or success status
    */
-  acceptSuggestion: async (optimizationId: string, suggestionId: string): Promise<any> => {
+  acceptSuggestion: async (
+    optimizationId: string,
+    suggestionId: string
+  ): Promise<any> => {
     const response = await axios.post(
       `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/accept`
     );
@@ -59,7 +70,10 @@ export const optimizationService = {
    * @param suggestionId - The ID of the suggestion to reject
    * @returns Updated optimization record or success status
    */
-  rejectSuggestion: async (optimizationId: string, suggestionId: string): Promise<any> => {
+  rejectSuggestion: async (
+    optimizationId: string,
+    suggestionId: string
+  ): Promise<any> => {
     const response = await axios.post(
       `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/reject`
     );

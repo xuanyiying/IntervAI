@@ -4,7 +4,6 @@
  */
 
 import { Module } from '@nestjs/common';
-import { ResumeOptimizerGateway } from './resume-optimizer.gateway';
 import { ResumeOptimizerService } from './resume-optimizer.service';
 import { ResumeOptimizerController } from './resume-optimizer.controller';
 import { AIProvidersModule } from '@/ai-providers/ai-providers.module';
@@ -13,7 +12,7 @@ import { QuotaModule } from '@/quota/quota.module';
 
 @Module({
   imports: [AIProvidersModule, PrismaModule, QuotaModule],
-  providers: [ResumeOptimizerService, ResumeOptimizerGateway],
+  providers: [ResumeOptimizerService],
   controllers: [ResumeOptimizerController],
   exports: [ResumeOptimizerService],
 })

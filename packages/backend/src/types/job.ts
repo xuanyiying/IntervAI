@@ -16,11 +16,13 @@ export interface ParsedJobData {
   responsibilities: string[];
   keywords: string[];
   location?: string;
-  salaryRange?: {
-    min: number;
-    max: number;
-    currency: string;
-  } | string;
+  salaryRange?:
+    | {
+        min: number;
+        max: number;
+        currency: string;
+      }
+    | string;
 }
 
 /**
