@@ -1,6 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
 :root {
+  /* Typography - High Quality System Stacks */
+  --font-family-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-family-display: 'Inter var', system-ui, -apple-system, sans-serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, 'SF Pro Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
+
   /* Common variables */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -66,6 +69,11 @@
   --text-accent: #e2e8f0;
 
   --shadow-neon: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(168, 85, 247, 0.1);
+
+  /* Sidebar Session List Variables */
+  --sidebar-item-padding-x: 16px;
+  --sidebar-item-padding-y: 10px;
+  --sidebar-item-margin-y: 8px;
 }
 
 /* Note: Dark theme is default in :root, no separate [data-theme='dark'] selector needed */
@@ -120,15 +128,21 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family-body);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   height: 100vh;
   transition: var(--theme-transition);
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-family-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* Enhanced Dynamic Background */
@@ -162,7 +176,7 @@ body::after {
 }
 
 code {
-  font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: var(--font-family-mono);
   background: rgba(0, 0, 0, 0.3);
   padding: 0.2em 0.4em;
   border-radius: var(--radius-sm);

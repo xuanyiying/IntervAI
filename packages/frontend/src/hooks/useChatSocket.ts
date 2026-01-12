@@ -117,7 +117,6 @@ export const useChatSocket = (
     });
 
     socketRef.current.on('done', (data: ChatMessage) => {
-      setIsStreaming(false);
       options?.onDone?.(data);
       // Note: streaming content will be cleared by the parent component
       // after it has loaded the persisted messages from the database

@@ -233,16 +233,10 @@ export const ResumeBuilder: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 font-['Outfit',_sans-serif] ${isDarkMode ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'}`}
+      className={`min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'}`}
       role="main"
       aria-label="Resume Builder Application"
     >
-      {/* Font Injection */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700;900&family=Syne:wght@700;800&display=swap');
-        .font-display { font-family: 'Syne', sans-serif; }
-      `}</style>
-
       {/* Background Decor */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-30">
         <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-600/20 blur-[150px] rounded-full animate-pulse" />
