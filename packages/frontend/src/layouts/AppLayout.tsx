@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button, Drawer, Avatar } from 'antd';
-import { Outlet } from 'react-router-dom';
+import { Layout, Button, Drawer, Avatar, Dropdown, Tooltip, MenuProps } from 'antd';
+import { useNavigate, Outlet } from 'react-router-dom';
 import {
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   UserOutlined,
+  LogoutOutlined,
+  SettingOutlined,
+  DollarOutlined,
+  GlobalOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useUIStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
 import Sidebar from './components/Sidebar';
 import { useTranslation } from 'react-i18next';
@@ -17,8 +23,70 @@ const { Header, Sider, Content } = Layout;
 const AppLayout: React.FC = () => {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { user } = useAuthStore();
-  const { t } = useTranslation();
+  const { user, clearAuth } = useAuthStore();
+  const { theme, toggleTheme } = useUIStore();
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    clearAuth();
+    navigate('/login');
+  };
+
+  const userMenuItems: MenuProps['items'] = [
+    {
+      key: 'profile',
+      label: t('menu.profile'),
+      icon: <UserOutlined />,
+      onClick: () => navigate('/profile'),
+    },
+    {
+      key: 'settings',
+      label: t('menu.settings'),
+      icon: <SettingOutlined />,
+      onClick: () => navigate('/settings'),
+    },
+    {
+      key: 'pricing',
+      label: t('menu.pricing'),
+      icon: <DollarOutlined />,
+      onClick: () => navigate('/pricing'),
+    },
+    {
+      key: 'theme',
+      icon: theme === 'light' ? <MoonOutlined /> : <SunOutlined />,
+      label:
+        theme === 'light'
+          ? t('menu.dark_mode', '深色模式')
+          : t('menu.light_mode', '浅色模式'),
+      onClick: toggleTheme,
+    },
+    {
+      key: 'lang',
+      label: t('common.language'),
+      icon: <GlobalOutlined />,
+      children: [
+        {
+          key: 'zh-CN',
+          label: '简体中文',
+          onClick: () => i18n.changeLanguage('zh-CN'),
+        },
+        {
+          key: 'en-US',
+          label: 'English',
+          onClick: () => i18n.changeLanguage('en-US'),
+        },
+      ],
+    },
+    { type: 'divider' },
+    {
+      key: 'logout',
+      label: t('menu.logout'),
+      icon: <LogoutOutlined />,
+      danger: true,
+      onClick: handleLogout,
+    },
+  ];
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -33,7 +101,7 @@ const AppLayout: React.FC = () => {
   }, []);
 
   return (
-    <Layout className="app-layout min-h-screen bg-transparent">
+    <Layout className="app-layout min-h-screen bg-transparent relative">
       {/* Mobile Header */}
       <Header className="mobile-header flex md:hidden items-center justify-between px-4 h-16 bg-glass border-b border-glass-border fixed w-full z-50">
         <div className="flex items-center gap-4">
@@ -51,12 +119,40 @@ const AppLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Avatar
-            size="small"
-            src={user?.avatar}
-            icon={<UserOutlined />}
-            className="bg-primary/20 text-primary border border-primary/30"
-          />
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+            trigger={['click']}
+            classNames={{ root: 'user-menu-dropdown' }}
+          >
+            <Avatar
+              size={32}
+              src={user?.avatar}
+              icon={<UserOutlined />}
+              className="cursor-pointer hover:scale-105 transition-transform duration-300 shadow-md"
+            />
+          </Dropdown>
+        </div>
+      </Header>
+
+      {/* Desktop Header/Nav - For User Profile */}
+      <Header className="hidden md:flex items-center justify-end px-6 bg-transparent border-none absolute right-0 top-0 z-50 h-16">
+        <div className="flex items-center gap-4 relative">
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+            trigger={['click']}
+            classNames={{ root: 'user-menu-dropdown' }}
+          >
+            <div className="flex items-center gap-2 cursor-pointer group">
+              <Avatar
+                size={40}
+                src={user?.avatar}
+                icon={<UserOutlined />}
+                className="bg-primary/10 text-primary border border-primary/20 hover:scale-105 transition-transform duration-300 shadow-md"
+              />
+            </div>
+          </Dropdown>
         </div>
       </Header>
 
@@ -74,30 +170,10 @@ const AppLayout: React.FC = () => {
           backdropFilter: 'var(--glass-backdrop)',
         }}
       >
-        <Sidebar isCollapsed={collapsed} />
-
-        {/* Collapse Toggle at bottom, customized */}
-        <div className="absolute bottom-4 right-[-12px] z-50">
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-colors shadow-lg text-xs"
-            style={{
-              backgroundColor: 'var(--bg-tertiary)',
-              border: '1px solid var(--glass-border)',
-              color: 'var(--text-secondary)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--primary-color)';
-              e.currentTarget.style.color = '#fff';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-            onClick={() => setCollapsed(!collapsed)}
-          >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          </div>
-        </div>
+        <Sidebar
+          isCollapsed={collapsed}
+          onToggleCollapse={() => setCollapsed(!collapsed)}
+        />
       </Sider>
 
       {/* Mobile Sidebar Drawer */}
@@ -106,7 +182,7 @@ const AppLayout: React.FC = () => {
         onClose={() => setMobileDrawerOpen(false)}
         open={mobileDrawerOpen}
         styles={{ body: { padding: 0, background: 'transparent' } }}
-        width={280}
+        size="default"
         closable={false}
       >
         <Sidebar

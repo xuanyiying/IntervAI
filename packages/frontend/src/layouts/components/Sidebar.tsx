@@ -12,36 +12,30 @@ import {
   FileTextOutlined,
   BarcodeOutlined,
   ToolOutlined,
-  UserOutlined,
-  LogoutOutlined,
-  SettingOutlined,
-  DollarOutlined,
-  GlobalOutlined,
-  SunOutlined,
-  MoonOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore, useConversationStore, useUIStore } from '@/stores';
+import { useAuthStore, useConversationStore } from '@/stores';
 import { Role } from '@/types';
-import type { MenuProps } from 'antd';
-import { Dropdown } from 'antd';
 
 // Interface for props if needed, though we use stores mostly
 interface SidebarProps {
   isCollapsed: boolean;
+  onToggleCollapse?: () => void;
   setMobileDrawerOpen?: (open: boolean) => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
+  onToggleCollapse,
   setMobileDrawerOpen,
 }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, clearAuth } = useAuthStore();
-  const { theme, toggleTheme } = useUIStore();
+  const { user } = useAuthStore();
   const {
     conversations,
     currentConversation,
@@ -92,21 +86,23 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const handleSelectChat = async (chatId: string) => {
-    if (currentConversation?.id === chatId) return;
-    await switchConversation(chatId);
+    // Close drawer immediately for mobile
     if (setMobileDrawerOpen) setMobileDrawerOpen(false);
-    navigate('/chat');
-  };
 
-  const handleLogout = () => {
-    Modal.confirm({
-      title: t('menu.logout'),
-      content: t('auth.logout_confirm'),
-      onOk: () => {
-        clearAuth();
-        navigate('/login');
-      },
-    });
+    // If it's already the current chat, just navigate to ensure we are on the chat page
+    if (currentConversation?.id === chatId) {
+      navigate('/chat');
+      return;
+    }
+
+    try {
+      // Navigate first to show loading state on ChatPage
+      navigate('/chat');
+      // Then switch the conversation
+      await switchConversation(chatId);
+    } catch (error) {
+      console.error('Failed to switch conversation:', error);
+    }
   };
 
   const adminNavItems = [
@@ -154,62 +150,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  const userMenu: MenuProps['items'] = [
-    {
-      key: 'profile',
-      label: t('menu.profile'),
-      icon: <UserOutlined />,
-      onClick: () => navigate('/profile'),
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: t('menu.settings'),
-      onClick: () => navigate('/settings'),
-    },
-    {
-      key: 'pricing',
-      icon: <DollarOutlined />,
-      label: t('menu.pricing'),
-      onClick: () => navigate('/pricing'),
-    },
-    {
-      key: 'theme',
-      icon: theme === 'light' ? <MoonOutlined /> : <SunOutlined />,
-      label:
-        theme === 'light'
-          ? t('menu.dark_mode', '深色模式')
-          : t('menu.light_mode', '浅色模式'),
-      onClick: toggleTheme,
-    },
-    { type: 'divider' },
-    {
-      key: 'lang',
-      label: t('common.language'),
-      icon: <GlobalOutlined />,
-      children: [
-        {
-          key: 'zh-CN',
-          label: '简体中文',
-          onClick: () => i18n.changeLanguage('zh-CN'),
-        },
-        {
-          key: 'en-US',
-          label: 'English',
-          onClick: () => i18n.changeLanguage('en-US'),
-        },
-      ],
-    },
-    { type: 'divider' },
-    {
-      key: 'logout',
-      label: t('menu.logout'),
-      icon: <LogoutOutlined />,
-      danger: true,
-      onClick: handleLogout,
-    },
-  ];
-
   return (
     <div
       className={`sidebar-wrapper ${isCollapsed ? 'collapsed' : ''}`}
@@ -224,17 +164,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             {t('common.app_name')}
           </span>
         )}
-        <Tooltip
-          title={t(theme === 'light' ? 'menu.dark_mode' : 'menu.light_mode')}
-          placement="right"
-        >
-          <Button
-            type="text"
-            icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
-            onClick={toggleTheme}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          />
-        </Tooltip>
+        {onToggleCollapse && (
+          <Tooltip
+            title={isCollapsed ? t('menu.expand') : t('menu.collapse')}
+            placement="right"
+          >
+            <Button
+              type="text"
+              icon={isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={onToggleCollapse}
+              className={`text-[var(--text-secondary)] hover:text-[var(--text-primary)] ${isCollapsed ? '' : 'ml-auto'}`}
+            />
+          </Tooltip>
+        )}
       </div>
 
       {/* New Chat */}
@@ -293,10 +235,16 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div
               onClick={() => handleSelectChat(item.id)}
               className={`
-                group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 relative
+                group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200 relative
                 ${currentConversation?.id === item.id ? 'text-primary-500 shadow-sm' : 'text-[var(--text-secondary)]'}
               `}
               style={{
+                paddingLeft: 'var(--sidebar-item-padding-x)',
+                paddingRight: 'var(--sidebar-item-padding-x)',
+                paddingTop: 'var(--sidebar-item-padding-y)',
+                paddingBottom: 'var(--sidebar-item-padding-y)',
+                marginTop: 'var(--sidebar-item-margin-y)',
+                marginBottom: 'var(--sidebar-item-margin-y)',
                 backgroundColor:
                   currentConversation?.id === item.id
                     ? 'var(--sidebar-item-active)'
@@ -355,77 +303,32 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Admin Links */}
       {isAdmin && !isCollapsed && (
-        <div className="mt-4 px-2 pb-2 border-t border-[var(--sidebar-item-hover)]">
-          <div className="px-3 py-3 text-xs font-medium text-[var(--text-tertiary)] uppercase">
+        <div className="mt-4 px-4 pb-4 border-t border-[var(--sidebar-item-hover)]">
+          <div className="px-2 py-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-widest text-center">
             {t('menu.admin')}
           </div>
-          {adminNavItems.map((item) => (
-            <div
-              key={item.key}
-              onClick={() => {
-                navigate(item.path);
-                if (setMobileDrawerOpen) setMobileDrawerOpen(false);
-              }}
-              className={`
-                flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer text-sm mb-1 transition-colors
-                ${location.pathname.startsWith(item.path) ? 'bg-[var(--sidebar-item-active)] text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'}
-              `}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </div>
-          ))}
+          <div className="flex flex-col items-center w-full space-y-1">
+            {adminNavItems.map((item) => (
+              <div
+                key={item.key}
+                onClick={() => {
+                  navigate(item.path);
+                  if (setMobileDrawerOpen) setMobileDrawerOpen(false);
+                }}
+                className={`
+                  flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer text-sm transition-all duration-200 w-full
+                  ${location.pathname.startsWith(item.path) ? 'bg-[var(--sidebar-item-active)] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'}
+                `}
+              >
+                <span className="flex items-center justify-center w-5">
+                  {item.icon}
+                </span>
+                <span className="font-medium">{item.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-
-      {/* User Profile */}
-      <div className="p-4 border-t border-[var(--sidebar-item-hover)] mt-auto">
-        <Dropdown
-          menu={{ items: userMenu }}
-          placement="topLeft"
-          trigger={['click']}
-        >
-          <div
-            className="flex items-center gap-3 cursor-pointer p-2 rounded-lg transition-colors"
-            style={{ backgroundColor: 'transparent' }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor =
-                'var(--sidebar-item-hover)')
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = 'transparent')
-            }
-          >
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-500 to-secondary-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-[var(--sidebar-item-hover)]">
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  user?.username?.[0]?.toUpperCase() || 'U'
-                )}
-              </div>
-              {isAdmin && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--bg-primary)]" />
-              )}
-            </div>
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-current truncate">
-                  {user?.username || 'User'}
-                </div>
-                {isAdmin && (
-                  <div className="text-xs text-[var(--primary-color)]">
-                    Administrator
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </Dropdown>
-      </div>
     </div>
   );
 };

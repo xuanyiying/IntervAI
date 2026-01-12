@@ -16,10 +16,14 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
+  padding: 8px 12px 8px 16px; /* 顶部8px，右侧12px，底部8px，左侧16px */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-radius: 6px; /* 柔和的圆角设计 */
 }
 
 .sidebar-wrapper.collapsed {
   align-items: center;
+  padding: 8px;
 }
 
 .sidebar-brand {
@@ -306,6 +310,20 @@
   margin-top: 2px;
 }
 
+/* User Menu Dropdown */
+.user-menu-dropdown {
+  z-index: 1060 !important;
+}
+
+.user-menu-dropdown .ant-dropdown-menu {
+  border-radius: 12px;
+  padding: 8px;
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
 /* Collapse Button */
 .collapse-btn {
   position: absolute;
@@ -361,193 +379,4 @@
 .drawer-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
-}
-
-/* Main Content */
-.main-content {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.main-content.admin-page {
-  background: #f5f7fa;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-/* Animations */
-.fade-in {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ==================== Responsive Layout ==================== */
-
-/* Extra Large screens (1920px+) */
-@media (min-width: 1921px) {
-  .app-layout {
-    max-width: 1920px;
-    margin: 0 auto;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  }
-}
-
-/* Large screens (1200px - 1920px) */
-@media (min-width: 1200px) and (max-width: 1920px) {
-  .desktop-sider {
-    width: 280px !important;
-    min-width: 280px !important;
-    max-width: 280px !important;
-  }
-}
-
-/* Medium screens / Tablets (768px - 991px) */
-@media (max-width: 991px) {
-
-  /* Hide desktop sidebar on tablet/mobile */
-  .desktop-sider {
-    display: none !important;
-  }
-
-  /* Show mobile header */
-  .mobile-header {
-    display: flex !important;
-  }
-}
-
-/* Tablets (768px - 991px) */
-@media (min-width: 768px) and (max-width: 991px) {
-  .mobile-header {
-    padding: 0 24px !important;
-  }
-
-  .header-title {
-    font-size: 18px !important;
-  }
-}
-
-/* Desktop (992px+) */
-@media (min-width: 992px) {
-
-  /* Hide mobile drawer on desktop */
-  .mobile-drawer {
-    display: none !important;
-  }
-
-  /* Ensure desktop sidebar is visible */
-  .desktop-sider {
-    display: flex !important;
-  }
-}
-
-/* Small tablets / Large phones (576px - 767px) */
-@media (min-width: 576px) and (max-width: 767px) {
-  .mobile-header {
-    padding: 0 16px !important;
-  }
-}
-
-/* Mobile devices (max 575px) */
-@media (max-width: 575px) {
-  .mobile-header {
-    padding: 0 12px !important;
-    height: 52px !important;
-  }
-
-  .menu-toggle-btn {
-    width: 40px !important;
-    height: 40px !important;
-  }
-
-  .header-title {
-    font-size: 15px !important;
-  }
-}
-
-/* Small mobile devices (max 375px) */
-@media (max-width: 375px) {
-  .mobile-header {
-    padding: 0 8px !important;
-  }
-
-  .menu-toggle-btn {
-    width: 36px !important;
-    height: 36px !important;
-  }
-
-  .header-title {
-    font-size: 14px !important;
-  }
-
-  .sidebar-header {
-    padding: 12px 8px;
-  }
-
-  .new-chat-btn {
-    height: 40px;
-    font-size: 14px;
-  }
-
-  .sidebar-content {
-    padding: 0 8px;
-  }
-
-  .chat-item {
-    padding: 10px;
-  }
-
-  .admin-nav-item {
-    padding: 10px;
-  }
-}
-
-/* Extra small devices (max 320px) */
-@media (max-width: 320px) {
-  .mobile-header {
-    padding: 0 6px !important;
-  }
-
-  .header-title {
-    font-size: 13px !important;
-  }
-
-  .sidebar-header {
-    padding: 10px 6px;
-  }
-
-  .new-chat-btn {
-    height: 38px;
-    font-size: 13px;
-  }
 }

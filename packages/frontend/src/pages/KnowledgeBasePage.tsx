@@ -463,7 +463,7 @@ const KnowledgeBasePage: React.FC = () => {
       <Drawer
         title={t('knowledge_base.query_drawer_title')}
         placement="right"
-        width={600}
+        size="large"
         open={queryDrawerOpen}
         onClose={() => setQueryDrawerOpen(false)}
       >

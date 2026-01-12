@@ -7,7 +7,7 @@ import {
   FileTextOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
-import { Button, message as antMessage } from 'antd';
+import { Button, message as antMessage, Spin } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
@@ -41,14 +41,14 @@ interface MessageItem {
   role: MessageRole;
   content: string;
   type?:
-  | 'text'
-  | 'job'
-  | 'suggestions'
-  | 'pdf'
-  | 'interview'
-  | 'markdown-pdf'
-  | 'attachment'
-  | 'optimization_result';
+    | 'text'
+    | 'job'
+    | 'suggestions'
+    | 'pdf'
+    | 'interview'
+    | 'markdown-pdf'
+    | 'attachment'
+    | 'optimization_result';
   jobData?: Job;
   optimizationId?: string;
   optimizedMarkdown?: string;
@@ -84,6 +84,7 @@ const ChatPage: React.FC = () => {
   const {
     currentConversation,
     messages,
+    isLoadingMessages,
     createConversation,
     sendMessage,
     loadMessages,
@@ -159,7 +160,11 @@ const ChatPage: React.FC = () => {
   useEffect(() => {
     const initializeConversation = async () => {
       try {
-        if (!currentConversation) {
+        // Only create a new conversation if:
+        // 1. We don't have a current conversation
+        // 2. We are not currently loading messages (which implies we are switching to one)
+        // 3. We are not currently creating one
+        if (!currentConversation && !isLoadingMessages && !loading) {
           await createConversation();
         }
       } catch (error) {
@@ -167,7 +172,7 @@ const ChatPage: React.FC = () => {
       }
     };
     initializeConversation();
-  }, []);
+  }, [currentConversation?.id, isLoadingMessages, loading, createConversation]);
 
   // Join conversation room when conversation changes
   useEffect(() => {
@@ -261,44 +266,62 @@ const ChatPage: React.FC = () => {
     const displayItems: MessageItem[] = Array.from(itemMap.values());
 
     if (isStreaming && streamingContent) {
-      // Detect sections and add tips
-      const sections = [
-        { key: '基本信息', tip: '✅ 已优化基本信息，增强了个人联系方式的排版' },
-        { key: '专业总结', tip: '✅ 已优化专业总结，提升了核心竞争力的表达' },
-        {
-          key: '工作经历',
-          tip: '✅ 已优化工作经历，强化了量化成果和技术关键词',
-        },
-        { key: '教育背景', tip: '✅ 已优化教育背景，整理了学术成就和荣誉' },
-        {
-          key: '项目经验',
-          tip: '✅ 已优化项目经验，突出了个人在项目中的核心贡献',
-        },
-        {
-          key: '技能列表',
-          tip: '✅ 已优化技能列表，按专业类别进行了结构化分类',
-        },
-      ];
+      // Avoid duplication during transition from streaming to persisted
+      // If the last persisted message is from assistant and contains the streaming content,
+      // we don't need to show the streaming bubble anymore.
+      const lastPersistedAssistantMessage = [...mappedItems]
+        .reverse()
+        .find((m) => m.role === MessageRole.ASSISTANT);
 
-      let displayContent = streamingContent;
-      const activeTips: string[] = [];
+      const isAlreadyPersisted =
+        lastPersistedAssistantMessage &&
+        (lastPersistedAssistantMessage.content.includes(streamingContent) ||
+          (lastPersistedAssistantMessage.type === 'optimization_result' &&
+            lastPersistedAssistantMessage.content.length > 0));
 
-      sections.forEach((section) => {
-        if (streamingContent.includes(section.key)) {
-          activeTips.push(section.tip);
+      if (!isAlreadyPersisted) {
+        // Detect sections and add tips
+        const sections = [
+          {
+            key: '基本信息',
+            tip: '✅ 已优化基本信息，增强了个人联系方式的排版',
+          },
+          { key: '专业总结', tip: '✅ 已优化专业总结，提升了核心竞争力的表达' },
+          {
+            key: '工作经历',
+            tip: '✅ 已优化工作经历，强化了量化成果和技术关键词',
+          },
+          { key: '教育背景', tip: '✅ 已优化教育背景，整理了学术成就和荣誉' },
+          {
+            key: '项目经验',
+            tip: '✅ 已优化项目经验，突出了个人在项目中的核心贡献',
+          },
+          {
+            key: '技能列表',
+            tip: '✅ 已优化技能列表，按专业类别进行了结构化分类',
+          },
+        ];
+
+        let displayContent = streamingContent;
+        const activeTips: string[] = [];
+
+        sections.forEach((section) => {
+          if (streamingContent.includes(section.key)) {
+            activeTips.push(section.tip);
+          }
+        });
+
+        if (activeTips.length > 0) {
+          displayContent += '\n\n---\n' + activeTips.join('\n');
         }
-      });
 
-      if (activeTips.length > 0) {
-        displayContent += '\n\n---\n' + activeTips.join('\n');
+        displayItems.push({
+          key: 'streaming-optimization',
+          role: MessageRole.ASSISTANT,
+          content: displayContent,
+          type: 'text',
+        });
       }
-
-      displayItems.push({
-        key: 'streaming-optimization',
-        role: MessageRole.ASSISTANT,
-        content: displayContent,
-        type: 'text',
-      });
     }
 
     setItems(displayItems);
@@ -745,143 +768,164 @@ const ChatPage: React.FC = () => {
       <div className="flex-1 flex flex-col h-full relative z-10">
         {/* Messages Container */}
         <div className="flex-1 overflow-auto p-4 md:p-6" id="scrollableDiv">
-          <Bubble.List
-            items={items.map((item) => ({
-              key: item.key,
-              role: item.role,
-              placement: item.role === MessageRole.USER ? 'end' : 'start',
-              content: (
-                <div className="message-content">
-                  {item.key === 'streaming-optimization' ? (
-                    <StreamingMarkdownBubble
-                      content={item.content}
-                      isStreaming={isStreaming}
-                    />
-                  ) : (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {item.content}
-                    </ReactMarkdown>
-                  )}
-
-                  {item.type === 'attachment' && item.attachmentStatus && (
-                    <AttachmentMessage
-                      status={item.attachmentStatus}
-                      onDelete={() => {
-                        setLocalItems((prev) =>
-                          prev.filter((i) => i.key !== item.key)
-                        );
-                      }}
-                    />
-                  )}
-
-                  {item.type === 'optimization_result' && (
-                    <div className="mt-4 flex gap-2">
-                      <Button
-                        type="primary"
-                        icon={<FileTextOutlined />}
-                        onClick={handleOpenComparison}
-                      >
-                        查看对比
-                      </Button>
-                      <Button
-                        icon={<DownloadOutlined />}
-                        onClick={handleDownloadOptimized}
-                      >
-                        下载简历
-                      </Button>
-                    </div>
-                  )}
-
-                  {item.type === 'job' && item.jobData && (
-                    <div className="mt-4">
-                      <JobInfoCard job={item.jobData} />
-                    </div>
-                  )}
-
-                  {item.type === 'suggestions' && item.suggestions && (
-                    <div className="mt-4">
-                      <SuggestionsList
-                        suggestions={item.suggestions}
-                        onAccept={handleAcceptSuggestion}
-                        onReject={handleRejectSuggestion}
-                      />
-                    </div>
-                  )}
-
-                  {item.type === 'pdf' && item.optimizationId && (
-                    <div className="mt-4">
-                      <PDFGenerationCard optimizationId={item.optimizationId} />
-                    </div>
-                  )}
-
-                  {item.type === 'markdown-pdf' && item.optimizedMarkdown && (
-                    <div className="mt-4">
-                      <MarkdownPDFCard markdown={item.optimizedMarkdown} />
-                    </div>
-                  )}
-
-                  {item.type === 'interview' && item.interviewQuestions && (
-                    <div className="mt-4">
-                      <InterviewQuestionsCard
-                        questions={item.interviewQuestions}
-                        optimizationId={item.optimizationId || 'default'}
-                      />
-                    </div>
-                  )}
-                </div>
-              ),
-              avatar:
-                item.role === MessageRole.USER ? (
-                  <div
-                    style={{
-                      background: 'var(--primary-gradient)',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                    }}
-                  >
-                    <UserOutlined style={{ color: 'white' }} />
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      width: 32,
-                      height: 32,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                    }}
-                  >
-                    <RobotOutlined style={{ color: 'white' }} />
-                  </div>
-                ),
-            }))}
-          />
-
-          {items.length <= 1 && !loading && (
-            <div className="max-w-2xl mx-auto mt-12 px-4">
-              <div className="text-center mb-8">
-                <span className="text-gray-400 font-medium tracking-wider uppercase text-xs">
-                  {t('chat.try_asking')}
-                </span>
-              </div>
-              <Prompts
-                items={suggestions.map((s) => ({
-                  ...s,
-                  className:
-                    'glass-card border-none hover:!bg-white/5 !transition-all duration-300',
-                }))}
-                onItemClick={onPromptsItemClick}
-                className="bg-transparent"
-              />
+          {isLoadingMessages ? (
+            <div className="flex items-center justify-center h-full">
+              <Spin size="large" tip={t('common.loading')} />
             </div>
+          ) : (
+            <>
+              <Bubble.List
+                items={items.map((item) => ({
+                  key: item.key,
+                  role: item.role,
+                  placement: item.role === MessageRole.USER ? 'end' : 'start',
+                  content: (
+                    <div className="message-content">
+                      {item.key === 'streaming-optimization' ? (
+                        <StreamingMarkdownBubble
+                          content={item.content}
+                          isStreaming={isStreaming}
+                        />
+                      ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {item.content}
+                        </ReactMarkdown>
+                      )}
+
+                      {item.type === 'attachment' && item.attachmentStatus && (
+                        <AttachmentMessage
+                          status={item.attachmentStatus}
+                          onDelete={() => {
+                            setLocalItems((prev) =>
+                              prev.filter((i) => i.key !== item.key)
+                            );
+                          }}
+                        />
+                      )}
+
+                      {item.type === 'optimization_result' && (
+                        <div className="mt-4 flex gap-2">
+                          <Button
+                            type="primary"
+                            icon={<FileTextOutlined />}
+                            onClick={handleOpenComparison}
+                          >
+                            查看对比
+                          </Button>
+                          <Button
+                            icon={<DownloadOutlined />}
+                            onClick={handleDownloadOptimized}
+                          >
+                            下载简历
+                          </Button>
+                        </div>
+                      )}
+
+                      {item.type === 'job' && item.jobData && (
+                        <div className="mt-4">
+                          <JobInfoCard job={item.jobData} />
+                        </div>
+                      )}
+
+                      {item.type === 'suggestions' && item.suggestions && (
+                        <div className="mt-4">
+                          <SuggestionsList
+                            suggestions={item.suggestions}
+                            onAccept={handleAcceptSuggestion}
+                            onReject={handleRejectSuggestion}
+                          />
+                        </div>
+                      )}
+
+                      {item.type === 'pdf' && item.optimizationId && (
+                        <div className="mt-4">
+                          <PDFGenerationCard
+                            optimizationId={item.optimizationId}
+                          />
+                        </div>
+                      )}
+
+                      {item.type === 'markdown-pdf' &&
+                        item.optimizedMarkdown && (
+                          <div className="mt-4">
+                            <MarkdownPDFCard
+                              markdown={item.optimizedMarkdown}
+                            />
+                          </div>
+                        )}
+
+                      {item.type === 'interview' && item.interviewQuestions && (
+                        <div className="mt-4">
+                          <InterviewQuestionsCard
+                            questions={item.interviewQuestions}
+                            optimizationId={item.optimizationId || 'default'}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ),
+                  avatar:
+                    item.role === MessageRole.USER ? (
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                        }}
+                      >
+                        <UserOutlined
+                          style={{
+                            color: 'var(--primary-color)',
+                            fontSize: '18px',
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                        }}
+                      >
+                        <RobotOutlined
+                          style={{
+                            color: 'var(--secondary-color)',
+                            fontSize: '18px',
+                          }}
+                        />
+                      </div>
+                    ),
+                }))}
+              />
+
+              {items.length <= 1 && !loading && (
+                <div className="max-w-2xl mx-auto mt-12 px-4">
+                  <div className="text-center mb-8">
+                    <span className="text-gray-400 font-medium tracking-wider uppercase text-xs">
+                      {t('chat.try_asking')}
+                    </span>
+                  </div>
+                  <Prompts
+                    items={suggestions.map((s) => ({
+                      ...s,
+                      className:
+                        'glass-card border-none hover:!bg-white/5 !transition-all duration-300',
+                    }))}
+                    onItemClick={onPromptsItemClick}
+                    className="bg-transparent"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 

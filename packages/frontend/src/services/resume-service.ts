@@ -18,12 +18,16 @@ export const resumeService = {
       formData.append('title', title);
     }
 
-    const response = await axios.post<Resume>('/resumes/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+    const response = await axios.post<{ resume: Resume; isDuplicate: boolean }>(
+      '/resumes/upload',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data.resume;
   },
 
   /**
