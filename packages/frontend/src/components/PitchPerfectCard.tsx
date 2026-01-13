@@ -3,7 +3,7 @@ import { pitchPerfectService } from '../services';
 import { PitchPerfectAgentOutput, type ParsedResumeData } from '../types';
 import { useOptimizationStore } from '../stores';
 import { Select, Button, Space, Typography, Card, Divider, Tag, List, Empty, Alert, Input } from 'antd';
-import { HistoryOutlined, SendOutlined, RedoOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { HistoryOutlined, SendOutlined, RedoOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import './PitchPerfectCard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -12,12 +12,14 @@ interface PitchPerfectCardProps {
   resumeId: string;
   resumeData: ParsedResumeData;
   jobDescription: string;
+  onBack?: () => void;
 }
 
 export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
   resumeId,
   resumeData,
   jobDescription,
+  onBack,
 }) => {
   const [style, setStyle] = useState<'technical' | 'managerial' | 'sales'>('technical');
   const [duration, setDuration] = useState<30 | 60>(30);
@@ -108,7 +110,17 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
     <div className="pitch-perfect-card-container space-y-6">
       <Card className="glass-card !border-white/10">
         <div className="flex justify-between items-center mb-6">
-          <Title level={4} className="!text-white !m-0">个人介绍优化器</Title>
+          <div className="flex items-center gap-4">
+            {onBack && (
+              <Button 
+                type="text" 
+                icon={<ArrowLeftOutlined />} 
+                onClick={onBack}
+                className="integrated-back-btn"
+              />
+            )}
+            <Title level={4} className="!text-white !m-0">个人介绍优化器</Title>
+          </div>
           <Button 
             icon={<HistoryOutlined />} 
             onClick={() => setShowHistory(!showHistory)}

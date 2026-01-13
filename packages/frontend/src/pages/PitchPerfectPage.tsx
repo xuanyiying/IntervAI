@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { PitchPerfectCard } from '../components/PitchPerfectCard';
 import { useResumeStore } from '../stores';
 import { ParsedResumeData } from '../types';
-import { Alert, Button, Space } from 'antd';
-import { FileTextOutlined } from '@ant-design/icons';
+import { Alert, Button, Space, Tooltip } from 'antd';
+import { FileTextOutlined, HighlightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import './agents.css';
 
 export const PitchPerfectPage: React.FC = () => {
@@ -29,6 +29,9 @@ export const PitchPerfectPage: React.FC = () => {
   return (
     <div className="page-container">
       <div className="page-header">
+        <div className="header-icon-wrapper">
+          <HighlightOutlined className="header-icon" />
+        </div>
         <h1>简历优化专家</h1>
         <p>基于目标职位深度优化您的个人简介和简历核心内容</p>
       </div>
@@ -39,15 +42,15 @@ export const PitchPerfectPage: React.FC = () => {
             <div className="form-group">
               <label>当前活跃简历:</label>
               {currentResume ? (
-                <div className="p-4 rounded-lg bg-[var(--bg-secondary)] border border-[var(--glass-border)] flex items-center justify-between">
+                <div className="active-resume-card">
                   <Space>
-                    <FileTextOutlined className="text-xl text-primary" />
-                    <div>
-                      <div className="font-medium">{currentResume.title || currentResume.originalFilename}</div>
-                      <div className="text-xs text-[var(--text-secondary)]">v{currentResume.version} · 已解析</div>
+                    <FileTextOutlined className="resume-icon" />
+                    <div className="resume-info">
+                      <div className="resume-title">{currentResume.title || currentResume.originalFilename}</div>
+                      <div className="resume-meta">v{currentResume.version} · 已解析</div>
                     </div>
                   </Space>
-                  <Button type="link" onClick={() => window.location.href = '/resumes'}>更换</Button>
+                  <Button type="link" className="change-btn" onClick={() => window.location.href = '/resumes'}>更换</Button>
                 </div>
               ) : (
                 <Alert
@@ -92,13 +95,11 @@ export const PitchPerfectPage: React.FC = () => {
           {resumeData && jobDescription && currentResume && (
             <PitchPerfectCard
               resumeId={currentResume.id}
-              resumeData={resumeData}
+              resumeData={resumeData as any as ParsedResumeData}
               jobDescription={jobDescription}
+              onBack={() => setShowForm(true)}
             />
           )}
-          <button onClick={() => setShowForm(true)} className="btn-secondary mt-6">
-            ← 返回调整
-          </button>
         </div>
       )}
     </div>

@@ -69,7 +69,7 @@ export class ConcludeInterviewRequest {
  * Handles HTTP requests for mock interview simulation
  * Requirements: 4.1-4.7
  */
-@Controller('api/agents/role-play')
+@Controller('agents/role-play')
 @UseGuards(JwtAuthGuard)
 export class RolePlayController {
   private readonly logger = new Logger(RolePlayController.name);

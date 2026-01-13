@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { rolePlayService } from '../services';
 import { ParsedResumeData, MessageRole } from '../types';
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import './RolePlayCard.css';
 
 interface RolePlayCardProps {
   resumeData?: ParsedResumeData;
   jobDescription: string;
+  onBack?: () => void;
 }
 
 interface Message {
@@ -36,6 +39,7 @@ interface InterviewFeedback {
 export const RolePlayCard: React.FC<RolePlayCardProps> = ({
   resumeData,
   jobDescription,
+  onBack,
 }) => {
   const [interviewerStyle, setInterviewerStyle] = useState<
     'strict' | 'friendly' | 'stress-test'
@@ -162,7 +166,17 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
 
   return (
     <div className="role-play-card">
-      <h2>模拟面试 - AI 面试官模拟器</h2>
+      <div className="flex items-center gap-4 mb-6">
+        {onBack && (
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={onBack}
+            className="integrated-back-btn"
+          />
+        )}
+        <h2 style={{ margin: 0 }}>模拟面试 - AI 面试官模拟器</h2>
+      </div>
 
       {!interviewActive && !feedback && (
         <div className="interview-setup">

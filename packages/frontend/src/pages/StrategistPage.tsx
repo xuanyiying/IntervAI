@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { StrategistCard } from '../components/StrategistCard';
 import { useResumeStore } from '../stores';
-import { ParsedResumeData } from '../types';
-import { Typography, Space, Input, Button, Card, Alert } from 'antd';
+import { Space, Input, Button, Alert, Tooltip } from 'antd';
 import { RocketOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import './agents.css';
 
-const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export const StrategistPage: React.FC = () => {
@@ -30,107 +28,80 @@ export const StrategistPage: React.FC = () => {
   const resumeData = currentResume?.parsedData;
 
   return (
-    <div className="min-h-full p-6 md:p-10 animate-fade-in relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-secondary-500/5 rounded-full blur-[100px] pointer-events-none" />
-
-      <div className="max-w-5xl mx-auto relative z-10">
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-primary-500/10 border border-primary-500/20 mb-4 animate-bounce-slow">
-            <RocketOutlined className="text-3xl text-primary-400" />
-          </div>
-          <Title
-            level={1}
-            className="!text-white !font-bold tracking-tight !mb-2 mt-2"
-          >
-            面试预测
-          </Title>
-          <Text className="!text-gray-400 text-lg block">
-            基于您的背景和目标职位，智能预测面试问题并提供对策
-          </Text>
+    <div className="page-container">
+      <div className="page-header">
+        <div className="header-icon-wrapper">
+          <RocketOutlined className="header-icon" />
         </div>
-
-        {showForm ? (
-          <div className="glass-card p-8 md:p-10 border border-white/10 max-w-3xl mx-auto">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="space-y-3">
-                <label className="text-gray-300 font-medium text-base ml-1">
-                  当前活跃简历
-                </label>
-                {currentResume ? (
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                    <Space>
-                      <FileTextOutlined className="text-xl text-primary-400" />
-                      <div>
-                        <div className="text-white font-medium">{currentResume.title || currentResume.originalFilename}</div>
-                        <div className="text-xs text-gray-400">v{currentResume.version} · 已解析</div>
-                      </div>
-                    </Space>
-                    <Button type="link" onClick={() => window.location.href = '/resumes'}>更换</Button>
-                  </div>
-                ) : (
-                  <Alert
-                    message={<span className="text-gray-200">未找到活跃简历</span>}
-                    description={<span className="text-gray-400">请先前往'我的简历'模块上传并解析简历。</span>}
-                    type="warning"
-                    showIcon
-                    className="!bg-yellow-500/10 !border-yellow-500/20"
-                    action={
-                      <Button size="small" type="primary" onClick={() => window.location.href = '/resumes'}>
-                        去上传
-                      </Button>
-                    }
-                  />
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-gray-300 font-medium text-base ml-1">
-                  职位描述 (JD)
-                </label>
-                <TextArea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="请粘贴您要申请的职位描述..."
-                  autoSize={{ minRows: 4, maxRows: 12 }}
-                  className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-600 !rounded-xl transition-all"
-                />
-              </div>
-
-              <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={!currentResume || currentResume.parseStatus !== 'COMPLETED' || !jobDescription.trim()}
-                  className="gradient-button w-full h-12 text-lg font-bold shadow-xl hover:shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01] transition-all"
-                >
-                  生成面试策略方案
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : (
-          <div className="space-y-8 animate-fade-in">
-            <Card className="!bg-transparent !border-none">
-              <button
-                onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 text-primary-400 hover:text-primary-300 transition-colors mb-6 font-medium"
-              >
-                <ArrowLeftOutlined /> 返回重新输入
-              </button>
-
-              {resumeData && jobDescription && (
-                <div className="glass-card overflow-hidden border border-white/10">
-                  <StrategistCard
-                    resumeData={resumeData}
-                    jobDescription={jobDescription}
-                  />
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
+        <h1>面试预测</h1>
+        <p>基于您的背景和目标职位，智能预测面试问题并提供对策</p>
       </div>
+
+      {showForm ? (
+        <div className="form-container">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>当前活跃简历:</label>
+              {currentResume ? (
+                <div className="active-resume-card">
+                  <Space>
+                    <FileTextOutlined className="resume-icon" />
+                    <div className="resume-info">
+                      <div className="resume-title">{currentResume.title || currentResume.originalFilename}</div>
+                      <div className="resume-meta">v{currentResume.version} · 已解析</div>
+                    </div>
+                  </Space>
+                  <Button type="link" className="change-btn" onClick={() => window.location.href = '/resumes'}>更换</Button>
+                </div>
+              ) : (
+                <Alert
+                  message="未找到活跃简历"
+                  description="请先前往'我的简历'模块上传并解析简历。"
+                  type="warning"
+                  showIcon
+                  action={
+                    <Button size="small" type="primary" onClick={() => window.location.href = '/resumes'}>
+                      去上传
+                    </Button>
+                  }
+                />
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="jd">职位描述 (JD):</label>
+              <TextArea
+                id="jd"
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="请粘贴您要申请的职位描述..."
+                autoSize={{ minRows: 10, maxRows: 15 }}
+                required
+              />
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="submit"
+                disabled={!currentResume || currentResume.parseStatus !== 'COMPLETED' || !jobDescription.trim()}
+                className="btn-primary"
+              >
+                生成面试策略方案
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="content-container">
+          {resumeData && (
+            <StrategistCard
+              resumeData={resumeData as any}
+              jobDescription={jobDescription}
+              onBack={() => setShowForm(true)}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };

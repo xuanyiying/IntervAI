@@ -39,7 +39,7 @@ export interface RefinePitchRequest {
  * Handles HTTP requests for personal introduction optimization
  * Requirements: 2.1-2.7
  */
-@Controller('api/agents/pitch-perfect')
+@Controller('agents/pitch-perfect')
 @UseGuards(JwtAuthGuard)
 export class PitchPerfectController {
   private readonly logger = new Logger(PitchPerfectController.name);

@@ -42,7 +42,7 @@ export interface AgentMetricsResponse {
  * Handles HTTP requests for Agent management and monitoring
  * Requirements: 10.2
  */
-@Controller('api/agents/management')
+@Controller('agents/management')
 @UseGuards(JwtAuthGuard)
 export class AgentManagementController {
   private readonly logger = new Logger(AgentManagementController.name);

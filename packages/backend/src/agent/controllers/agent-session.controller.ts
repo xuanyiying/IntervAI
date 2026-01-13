@@ -55,7 +55,7 @@ export interface AgentSessionDetails {
  * Handles HTTP requests for Agent session management
  * Requirements: 8.4
  */
-@Controller('api/agents/sessions')
+@Controller('agents/sessions')
 @UseGuards(JwtAuthGuard)
 export class AgentSessionController {
   private readonly logger = new Logger(AgentSessionController.name);
