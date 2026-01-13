@@ -14,5 +14,4 @@ export {
   strategistService,
   rolePlayService,
   agentMetricsService,
-  type PitchPerfectAgentOutput,
 } from './agent-service';

@@ -1,35 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StrategistCard } from '../components/StrategistCard';
+import { useResumeStore } from '../stores';
 import { ParsedResumeData } from '../types';
-import { Typography, Space, Input, Button, Card } from 'antd';
-import { RocketOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Typography, Space, Input, Button, Card, Alert } from 'antd';
+import { RocketOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
 import './agents.css';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 export const StrategistPage: React.FC = () => {
-  const [resumeData, setResumeData] = useState<ParsedResumeData | null>(null);
-  const [resumeJson, setResumeJson] = useState('');
+  const { currentResume, fetchResumes } = useResumeStore();
   const [jobDescription, setJobDescription] = useState('');
   const [showForm, setShowForm] = useState(true);
 
+  useEffect(() => {
+    if (!currentResume) {
+      fetchResumes();
+    }
+  }, [currentResume, fetchResumes]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (resumeData && jobDescription.trim()) {
+    if (currentResume?.parsedData && jobDescription.trim()) {
       setShowForm(false);
     }
   };
 
-  const handleJsonChange = (value: string) => {
-    setResumeJson(value);
-    try {
-      const parsed = JSON.parse(value);
-      setResumeData(parsed);
-    } catch {
-      setResumeData(null);
-    }
-  };
+  const resumeData = currentResume?.parsedData;
 
   return (
     <div className="min-h-full p-6 md:p-10 animate-fade-in relative overflow-hidden">
@@ -58,19 +56,32 @@ export const StrategistPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="space-y-3">
                 <label className="text-gray-300 font-medium text-base ml-1">
-                  简历数据
+                  当前活跃简历
                 </label>
-                <TextArea
-                  value={resumeJson}
-                  onChange={(e) => handleJsonChange(e.target.value)}
-                  placeholder="请粘贴解析后的简历数据..."
-                  autoSize={{ minRows: 6, maxRows: 12 }}
-                  className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-600 !rounded-xl transition-all"
-                />
-                {!resumeData && resumeJson && (
-                  <Text type="danger" className="text-xs ml-1">
-                    无效的 JSON 格式
-                  </Text>
+                {currentResume ? (
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                    <Space>
+                      <FileTextOutlined className="text-xl text-primary-400" />
+                      <div>
+                        <div className="text-white font-medium">{currentResume.title || currentResume.originalFilename}</div>
+                        <div className="text-xs text-gray-400">v{currentResume.version} · 已解析</div>
+                      </div>
+                    </Space>
+                    <Button type="link" onClick={() => window.location.href = '/resumes'}>更换</Button>
+                  </div>
+                ) : (
+                  <Alert
+                    message={<span className="text-gray-200">未找到活跃简历</span>}
+                    description={<span className="text-gray-400">请先前往'我的简历'模块上传并解析简历。</span>}
+                    type="warning"
+                    showIcon
+                    className="!bg-yellow-500/10 !border-yellow-500/20"
+                    action={
+                      <Button size="small" type="primary" onClick={() => window.location.href = '/resumes'}>
+                        去上传
+                      </Button>
+                    }
+                  />
                 )}
               </div>
 
@@ -82,7 +93,7 @@ export const StrategistPage: React.FC = () => {
                   value={jobDescription}
                   onChange={(e) => setJobDescription(e.target.value)}
                   placeholder="请粘贴您要申请的职位描述..."
-                  autoSize={{ minRows: 4, maxRows: 8 }}
+                  autoSize={{ minRows: 4, maxRows: 12 }}
                   className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-600 !rounded-xl transition-all"
                 />
               </div>
@@ -90,7 +101,7 @@ export const StrategistPage: React.FC = () => {
               <div className="pt-4">
                 <button
                   type="submit"
-                  disabled={!resumeData || !jobDescription.trim()}
+                  disabled={!currentResume || currentResume.parseStatus !== 'COMPLETED' || !jobDescription.trim()}
                   className="gradient-button w-full h-12 text-lg font-bold shadow-xl hover:shadow-primary-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.01] transition-all"
                 >
                   生成面试策略方案

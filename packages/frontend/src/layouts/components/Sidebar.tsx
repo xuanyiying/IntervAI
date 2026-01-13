@@ -18,10 +18,11 @@ import {
   LineChartOutlined,
   SolutionOutlined,
   UserOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore, useConversationStore } from '@/stores';
+import { useAuthStore, useConversationStore, useResumeStore } from '@/stores';
 import { Role } from '@/types';
 
 // Interface for props if needed, though we use stores mostly
@@ -40,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
+  const { fetchResumes } = useResumeStore();
   const {
     conversations,
     currentConversation,
@@ -53,7 +55,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isAdmin = user?.role === Role.ADMIN;
 
+  React.useEffect(() => {
+    fetchResumes();
+  }, [fetchResumes]);
+
   const agentNavItems = [
+    {
+      key: 'my-resumes',
+      icon: <FileSearchOutlined />,
+      label: t('menu.my_resumes', '我的简历'),
+      path: '/resumes',
+    },
     {
       key: 'resume-optimization',
       icon: <StarOutlined />,

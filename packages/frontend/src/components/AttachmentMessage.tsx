@@ -6,17 +6,8 @@ import {
   CheckCircleOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
+import { AttachmentStatus } from '@/types';
 
-export interface AttachmentStatus {
-  fileName: string;
-  fileSize: number;
-  uploadProgress: number;
-  parseProgress: number;
-  status: 'uploading' | 'parsing' | 'completed' | 'error';
-  error?: string;
-  mode?: 'upload' | 'parse'; // New field to distinguish between upload and parse view
-  resumeId?: string; // New field to track by resume ID
-}
 
 interface AttachmentMessageProps {
   status: AttachmentStatus;

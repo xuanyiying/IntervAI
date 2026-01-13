@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
 import { Bubble, Sender } from '@ant-design/x';
-import type { PromptsItemType } from '@ant-design/x';
 import {
   FileTextOutlined,
   DownloadOutlined,
@@ -14,7 +14,7 @@ import {
   Briefcase,
   LayoutGrid,
 } from 'lucide-react';
-import { Button, message as antMessage, Spin } from 'antd';
+import { Button, message as antMessage, Spin, Alert } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
@@ -35,41 +35,23 @@ import {
   type InterviewQuestion,
   type Resume,
   type ParsedResumeData,
-  type Suggestion,
+  MessageItem,
+  AttachmentStatus,
 } from '../types';
-import AttachmentMessage, {
-  type AttachmentStatus,
-} from '../components/AttachmentMessage';
+import AttachmentMessage from '../components/AttachmentMessage';
 import { resumeService } from '../services/resume-service';
+import { optimizationService } from '../services/optimization-service';
 import './chat.css';
 
-interface MessageItem {
-  key: string;
-  role: MessageRole;
-  content: string;
-  type?:
-    | 'text'
-    | 'job'
-    | 'suggestions'
-    | 'pdf'
-    | 'interview'
-    | 'markdown-pdf'
-    | 'attachment'
-    | 'optimization_result';
-  jobData?: Job;
-  optimizationId?: string;
-  optimizedMarkdown?: string;
-  suggestions?: Suggestion[];
-  interviewQuestions?: InterviewQuestion[];
-  attachmentStatus?: AttachmentStatus;
-}
 
 const ChatPage: React.FC = () => {
   const { t } = useTranslation();
+  const { id: conversationId } = useParams<{ id: string }>();
 
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [jobInputDialogVisible, setJobInputDialogVisible] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [comparisonVisible, setComparisonVisible] = useState(false);
   const [comparisonData, setComparisonData] = useState<{
     original: string;
@@ -92,10 +74,37 @@ const ChatPage: React.FC = () => {
     currentConversation,
     messages,
     isLoadingMessages,
+    messageError,
+    loadMessages,
+    loadMoreMessages,
     createConversation,
     sendMessage,
-    loadMessages,
+    setCurrentConversation,
+    hasMoreMessages,
   } = useConversationStore();
+
+  // Load more handler
+  const handleLoadMore = async () => {
+    if (currentConversation && hasMoreMessages && !isLoadingMessages) {
+      await loadMoreMessages(currentConversation.id);
+    }
+  };
+
+  // Retry loading messages
+  const [retryCount, setRetryCount] = useState(0);
+  const handleRetryLoadMessages = async () => {
+    if (currentConversation) {
+      try {
+        await loadMessages(currentConversation.id);
+        setRetryCount(0);
+      } catch (error) {
+        if (retryCount < 3) {
+          setRetryCount((prev) => prev + 1);
+          setTimeout(handleRetryLoadMessages, 2000);
+        }
+      }
+    }
+  };
 
   // WebSocket chat hook
   const {
@@ -190,30 +199,56 @@ const ChatPage: React.FC = () => {
     },
   });
 
-  // Initialize conversation on mount
+  // Initialize conversation: either from URL param or by creating a new one
   useEffect(() => {
-    const initializeConversation = async () => {
-      try {
-        // Only create a new conversation if:
-        // 1. We don't have a current conversation
-        // 2. We are not currently loading messages (which implies we are switching to one)
-        // 3. We are not currently creating one
-        if (!currentConversation && !isLoadingMessages && !loading) {
-          await createConversation();
+    const init = async () => {
+      // 1. If we have an ID in URL, load that conversation
+      if (conversationId) {
+        if (currentConversation?.id !== conversationId) {
+          setCurrentConversation({ id: conversationId } as any);
+          await loadMessages(conversationId);
         }
-      } catch (error) {
-        console.error('Failed to initialize conversation:', error);
+        return;
+      }
+
+      // 2. If no ID in URL and no current conversation, create one
+      if (!currentConversation && !isLoadingMessages && !loading) {
+        try {
+          await createConversation();
+        } catch (error) {
+          console.error('Failed to create initial conversation:', error);
+        }
       }
     };
-    initializeConversation();
-  }, [currentConversation?.id, isLoadingMessages, loading, createConversation]);
+
+    init();
+  }, [
+    conversationId,
+    currentConversation?.id,
+    isLoadingMessages,
+    loading,
+    createConversation,
+    loadMessages,
+    setCurrentConversation,
+  ]);
 
   // Join conversation room when conversation changes
   useEffect(() => {
     if (currentConversation && isConnected) {
       joinConversation(currentConversation.id);
     }
-  }, [currentConversation?.id, isConnected]);
+  }, [currentConversation?.id, isConnected, joinConversation]);
+
+  // Scroll to bottom when items change
+  useEffect(() => {
+    const scrollableDiv = document.getElementById('scrollableDiv');
+    if (scrollableDiv) {
+      scrollableDiv.scrollTo({
+        top: scrollableDiv.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [items]);
 
   // Local items state for items not yet in the message store (like upload progress)
   const [localItems, setLocalItems] = useState<MessageItem[]>([]);
@@ -240,6 +275,12 @@ const ChatPage: React.FC = () => {
           messageType = 'optimization_result' as any;
         }
 
+        // Format time
+        const time = new Date(msg.createdAt).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
         return {
           key: msg.id,
           role:
@@ -248,6 +289,7 @@ const ChatPage: React.FC = () => {
               : MessageRole.USER,
           content: msg.content,
           type: messageType,
+          header: time, // Show time in bubble header
           jobData: msg.metadata?.jobData as Job | undefined,
           optimizationId: msg.metadata?.optimizationId as string | undefined,
           optimizedMarkdown: msg.metadata?.optimizedMarkdown as
@@ -366,9 +408,9 @@ const ChatPage: React.FC = () => {
     if (!currentConversation) return;
 
     const messageId = retryMessageId || `msg-upload-${Date.now()}`;
-    
+
     // Store file for potential retry
-    setFailedFiles(prev => {
+    setFailedFiles((prev) => {
       const next = new Map(prev);
       next.set(messageId, file);
       return next;
@@ -396,16 +438,25 @@ const ChatPage: React.FC = () => {
       ]);
     } else {
       // If retrying, reset status to uploading
-      updateAttachmentStatus(messageId, {
-        status: 'uploading',
-        uploadProgress: 0,
-        error: undefined
-      }, 'upload');
+      updateAttachmentStatus(
+        messageId,
+        {
+          status: 'uploading',
+          uploadProgress: 0,
+          error: undefined,
+        },
+        'upload'
+      );
     }
 
     try {
       // Step 1: Upload
-      console.log('Starting resume upload for file:', file.name, 'size:', file.size);
+      console.log(
+        'Starting resume upload for file:',
+        file.name,
+        'size:',
+        file.size
+      );
       const uploadPromise = resumeService.uploadResume(
         file,
         undefined,
@@ -414,7 +465,9 @@ const ChatPage: React.FC = () => {
             const percentCompleted = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-            console.log(`Upload progress for ${file.name}: ${percentCompleted}%`);
+            console.log(
+              `Upload progress for ${file.name}: ${percentCompleted}%`
+            );
             updateAttachmentStatus(
               messageId,
               {
@@ -448,7 +501,7 @@ const ChatPage: React.FC = () => {
 
       // Step 2: Parsing (AI Message for Parsing)
       const parsingMessageId = `msg-ai-parsing-${resume.id}`;
-      
+
       const parsingStatus: AttachmentStatus = {
         fileName: file.name,
         fileSize: file.size,
@@ -460,8 +513,10 @@ const ChatPage: React.FC = () => {
       };
 
       // Check if parsing message already exists (for retry)
-      const existingParsingItem = localItems.find(item => item.key === parsingMessageId);
-      
+      const existingParsingItem = localItems.find(
+        (item) => item.key === parsingMessageId
+      );
+
       if (!existingParsingItem) {
         setLocalItems((prev) => [
           ...prev,
@@ -474,15 +529,19 @@ const ChatPage: React.FC = () => {
           },
         ]);
       } else {
-        updateAttachmentStatus(parsingMessageId, {
-          status: 'parsing',
-          parseProgress: 0,
-          error: undefined
-        }, 'parse');
+        updateAttachmentStatus(
+          parsingMessageId,
+          {
+            status: 'parsing',
+            parseProgress: 0,
+            error: undefined,
+          },
+          'parse'
+        );
       }
 
       // Store file with parsing ID as well for retry
-      setFailedFiles(prev => {
+      setFailedFiles((prev) => {
         const next = new Map(prev);
         next.set(parsingMessageId, file);
         return next;
@@ -495,7 +554,10 @@ const ChatPage: React.FC = () => {
         currentConversation!.id
       );
       const parseTimeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('解析超时，后台正在处理中...')), 120000)
+        setTimeout(
+          () => reject(new Error('解析超时，后台正在处理中...')),
+          120000
+        )
       );
 
       try {
@@ -515,7 +577,7 @@ const ChatPage: React.FC = () => {
         );
 
         // Success - remove from failed files
-        setFailedFiles(prev => {
+        setFailedFiles((prev) => {
           const next = new Map(prev);
           next.delete(messageId);
           return next;
@@ -545,7 +607,11 @@ const ChatPage: React.FC = () => {
           }));
 
           if (currentConversation) {
-            notifyResumeParsed(currentConversation.id, resume.id, resumeMarkdown);
+            notifyResumeParsed(
+              currentConversation.id,
+              resume.id,
+              resumeMarkdown
+            );
             sendSocketMessage(currentConversation.id, '优化简历', {
               action: 'optimize_resume',
               resumeId: resume.id,
@@ -555,17 +621,21 @@ const ChatPage: React.FC = () => {
 
         handleResumeUploadSuccess({ resume, parsedData });
       } catch (parseError: any) {
-        // If it's a timeout, we keep the status as 'parsing' or 'error' 
+        // If it's a timeout, we keep the status as 'parsing' or 'error'
         // but we don't necessarily stop everything because WebSocket might still finish it.
         console.error('Parsing error or timeout:', parseError);
-        
+
         const isTimeout = parseError.message?.includes('超时');
-        
-        updateAttachmentStatus(parsingMessageId, {
-          status: 'error',
-          error: parseError.message || '解析失败',
-        }, 'parse');
-        
+
+        updateAttachmentStatus(
+          parsingMessageId,
+          {
+            status: 'error',
+            error: parseError.message || '解析失败',
+          },
+          'parse'
+        );
+
         if (!isTimeout) {
           antMessage.error(parseError.message || '解析失败');
         } else {
@@ -574,10 +644,14 @@ const ChatPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error('File upload error:', error);
-      updateAttachmentStatus(messageId, {
-        status: 'error',
-        error: error.message || '上传失败',
-      }, 'upload');
+      updateAttachmentStatus(
+        messageId,
+        {
+          status: 'error',
+          error: error.message || '上传失败',
+        },
+        'upload'
+      );
       antMessage.error(error.message || '上传失败');
     }
   };
@@ -722,16 +796,6 @@ const ChatPage: React.FC = () => {
       // Create job in backend
       const createdJob = await jobService.createJob(jobData);
 
-      // Add job confirmation message
-      await sendMessage(
-        currentConversation.id,
-        t('chat.job_saved_success', {
-          title: createdJob.title,
-          company: createdJob.company,
-        }),
-        MessageRole.ASSISTANT
-      );
-
       // Add job info card message with metadata
       await sendMessage(
         currentConversation.id,
@@ -753,7 +817,7 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleJobConfirm = (job: Job) => {
+  const handleJobConfirm = () => {
     antMessage.success(t('chat.job_confirmed'));
     // Start optimization automatically if resume exists
     if (currentResume || lastParsedMarkdown) {
@@ -763,11 +827,20 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleJobEdit = (updatedJob: Job) => {
-    // Refresh messages or local items to show updated job data
-    // The card itself handles local state for editing, but we might want to update the store
+  const handleJobEdit = (job: Job) => {
+    setEditingJob(job);
+    setJobInputDialogVisible(true);
+  };
+
+  const handleJobUpdated = async (_updatedJob: Job) => {
     if (currentConversation) {
-      loadMessages(currentConversation.id);
+      try {
+        await loadMessages(currentConversation.id);
+        setEditingJob(null);
+        setJobInputDialogVisible(false);
+      } catch (error) {
+        console.error('Failed to reload messages after job edit:', error);
+      }
     }
   };
 
@@ -780,40 +853,66 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const displayPDFGeneration = async (optimizationId: string) => {
-    if (!currentConversation) return;
 
+  const handleAcceptSuggestion = async (suggestionId: string, optimizationId?: string) => {
+    if (!optimizationId) {
+      antMessage.warning('无法找到优化记录 ID');
+      return;
+    }
     try {
-      // Add PDF generation message with metadata
-      await sendMessage(
-        currentConversation.id,
-        t('chat.pdf_ready'),
-        MessageRole.ASSISTANT,
-        {
-          type: 'pdf',
-          optimizationId,
-        }
-      );
+      await optimizationService.acceptSuggestion(optimizationId, suggestionId);
+      antMessage.success(t('chat.suggestion_accepted', '建议已接受'));
+      if (currentConversation) {
+        await loadMessages(currentConversation.id);
+      }
     } catch (error) {
-      console.error('Failed to display PDF generation:', error);
+      console.error('Failed to accept suggestion:', error);
       antMessage.error(t('common.error'));
     }
   };
 
-  const handleAcceptSuggestion = async (suggestionId: string) => {
+  const handleRejectSuggestion = async (suggestionId: string, optimizationId?: string) => {
+    if (!optimizationId) {
+      antMessage.warning('无法找到优化记录 ID');
+      return;
+    }
     try {
-      // This is a placeholder for future implementation with real backend
-      console.log('Accepting suggestion:', suggestionId);
-      antMessage.success(t('chat.suggestion_accepted', 'Suggestion accepted!'));
+      await optimizationService.rejectSuggestion(optimizationId, suggestionId);
+      antMessage.success(t('chat.suggestion_rejected', '建议已拒绝'));
+      if (currentConversation) {
+        await loadMessages(currentConversation.id);
+      }
     } catch (error) {
+      console.error('Failed to reject suggestion:', error);
       antMessage.error(t('common.error'));
     }
   };
 
-  const handleRejectSuggestion = async (suggestionId: string) => {
+  const handleAcceptAllSuggestions = async (optimizationId?: string) => {
+    if (!optimizationId) {
+      antMessage.warning('无法找到优化记录 ID');
+      return;
+    }
     try {
-      console.log('Rejecting suggestion:', suggestionId);
+      const { messages } = useConversationStore.getState();
+      const message = messages.find(m => m.metadata?.optimizationId === optimizationId);
+      const suggestions = message?.metadata?.suggestions as any[];
+      
+      if (!suggestions || suggestions.length === 0) return;
+      
+      const pendingIds = suggestions
+        .filter(s => s.status === 'pending')
+        .map(s => s.id);
+        
+      if (pendingIds.length === 0) return;
+      
+      await optimizationService.acceptBatchSuggestions(optimizationId, pendingIds);
+      antMessage.success(t('chat.all_suggestions_accepted', '所有建议已接受'));
+      if (currentConversation) {
+        await loadMessages(currentConversation.id);
+      }
     } catch (error) {
+      console.error('Failed to accept all suggestions:', error);
       antMessage.error(t('common.error'));
     }
   };
@@ -859,7 +958,9 @@ const ChatPage: React.FC = () => {
       if (currentResume || lastParsedMarkdown) {
         handleSubmit('面试预测');
       } else {
-        antMessage.info('请先点击输入框左侧图标上传简历，以便我为您进行更准确的面试预测。');
+        antMessage.info(
+          '请先点击输入框左侧图标上传简历，以便我为您进行更准确的面试预测。'
+        );
       }
     } else if (action.key === 'mock_interview') {
       handleSubmit('开始模拟面试');
@@ -873,15 +974,15 @@ const ChatPage: React.FC = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full relative z-10">
         {/* Messages Container */}
-        <div className="flex-1 overflow-auto p-4 md:p-6" id="scrollableDiv">
-          {isLoadingMessages ? (
-            <div className="flex items-center justify-center h-full">
-              <Spin size="large" tip={t('common.loading')} />
-            </div>
-          ) : items.length <= 1 && !loading ? (
+        <div
+          id="scrollableDiv"
+          className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth"
+          style={{ height: 'calc(100vh - 180px)' }}
+        >
+          {items.length <= 1 && !loading && !isLoadingMessages ? (
             <div className="welcome-container">
               <h1 className="welcome-title">你好，我是简历优化助手</h1>
-              
+
               <div className="w-full max-w-3xl mx-auto px-4">
                 <div className="modern-sender-wrapper">
                   <Sender
@@ -918,161 +1019,220 @@ const ChatPage: React.FC = () => {
             </div>
           ) : (
             <>
-              <Bubble.List
-                items={items.map((item) => ({
-                  key: item.key,
-                  role: item.role,
-                  placement: item.role === MessageRole.USER ? 'end' : 'start',
-                  content: (
-                    <div className="markdown-content">
-                      {item.key === 'streaming-optimization' ? (
-                        <StreamingMarkdownBubble
-                          content={item.content}
-                          isStreaming={isStreaming}
-                        />
-                      ) : (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {item.content}
-                        </ReactMarkdown>
-                      )}
-
-                      {item.type === 'attachment' && item.attachmentStatus && (
-                        <AttachmentMessage
-                          status={item.attachmentStatus}
-                          onDelete={() => {
-                            setLocalItems((prev) =>
-                              prev.filter((i) => i.key !== item.key)
-                            );
-                          }}
-                          onRetry={
-                            item.attachmentStatus.status === 'error'
-                              ? () => {
-                                  const file = failedFiles.get(item.key);
-                                  if (file) {
-                                    handleResumeUpload(file, item.key);
-                                  } else {
-                                    antMessage.info('无法获取原始文件，请重新上传');
-                                  }
-                                }
-                              : undefined
-                          }
-                        />
-                      )}
-
-                      {item.type === 'optimization_result' && (
-                        <div className="mt-4 flex gap-2">
+              {isLoadingMessages && messages.length === 0 ? (
+                <div className="chat-loading-container flex items-center justify-center h-full">
+                  <Spin size="large" tip={t('chat.loading_messages')} />
+                </div>
+              ) : messageError && messages.length === 0 ? (
+                <div className="chat-error-container flex flex-col items-center justify-center h-full gap-4">
+                  <p className="text-red-500">{messageError}</p>
+                  <Button type="primary" onClick={handleRetryLoadMessages}>
+                    {t('common.retry')}
+                  </Button>
+                </div>
+              ) : (
+                <div className="bubble-list-container">
+                  {messageError && (
+                    <div className="mb-4">
+                      <Alert
+                        message={messageError}
+                        type="error"
+                        showIcon
+                        action={
                           <Button
+                            size="small"
                             type="primary"
-                            icon={<FileTextOutlined />}
-                            onClick={handleOpenComparison}
+                            onClick={handleRetryLoadMessages}
                           >
-                            查看对比
+                            {t('common.retry')}
                           </Button>
-                          <Button
-                            icon={<DownloadOutlined />}
-                            onClick={handleDownloadOptimized}
+                        }
+                      />
+                    </div>
+                  )}
+                  {hasMoreMessages && (
+                    <div className="load-more-container flex justify-center mb-4">
+                      <Button
+                        type="link"
+                        onClick={handleLoadMore}
+                        loading={isLoadingMessages}
+                      >
+                        {t('chat.load_more')}
+                      </Button>
+                    </div>
+                  )}
+                  <Bubble.List
+                    items={items.map((item) => ({
+                      key: item.key,
+                      role: item.role,
+                      header: item.header,
+                      placement:
+                        item.role === MessageRole.USER ? 'end' : 'start',
+                      content: (
+                        <div className="markdown-content">
+                          {item.key === 'streaming-optimization' ? (
+                            <StreamingMarkdownBubble
+                              content={item.content}
+                              isStreaming={isStreaming}
+                            />
+                          ) : (
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {item.content}
+                            </ReactMarkdown>
+                          )}
+
+                          {item.type === 'attachment' &&
+                            item.attachmentStatus && (
+                              <AttachmentMessage
+                                status={item.attachmentStatus}
+                                onDelete={() => {
+                                  setLocalItems((prev) =>
+                                    prev.filter((i) => i.key !== item.key)
+                                  );
+                                }}
+                                onRetry={
+                                  item.attachmentStatus.status === 'error'
+                                    ? () => {
+                                        const file = failedFiles.get(item.key);
+                                        if (file) {
+                                          handleResumeUpload(file, item.key);
+                                        } else {
+                                          antMessage.info(
+                                            '无法获取原始文件，请重新上传'
+                                          );
+                                        }
+                                      }
+                                    : undefined
+                                }
+                              />
+                            )}
+
+                          {item.type === 'optimization_result' && (
+                            <div className="mt-4 flex gap-2">
+                              <Button
+                                type="primary"
+                                icon={<FileTextOutlined />}
+                                onClick={handleOpenComparison}
+                              >
+                                查看对比
+                              </Button>
+                              <Button
+                                icon={<DownloadOutlined />}
+                                onClick={handleDownloadOptimized}
+                              >
+                                下载简历
+                              </Button>
+                            </div>
+                          )}
+
+                          {item.type === 'job' && item.jobData && (
+                            <div className="mt-4">
+                              <JobInfoCard
+                                job={item.jobData}
+                                onConfirm={handleJobConfirm}
+                                onEdit={handleJobEdit}
+                                onDelete={handleJobDelete}
+                              />
+                            </div>
+                          )}
+
+                          {item.type === 'suggestions' && item.suggestions && (
+                            <div className="mt-4">
+                              <SuggestionsList
+                                suggestions={item.suggestions}
+                                onAccept={(sId) =>
+                                  handleAcceptSuggestion(sId, item.optimizationId)
+                                }
+                                onReject={(sId) =>
+                                  handleRejectSuggestion(sId, item.optimizationId)
+                                }
+                                onAcceptAll={() =>
+                                  handleAcceptAllSuggestions(item.optimizationId)
+                                }
+                              />
+                            </div>
+                          )}
+
+                          {item.type === 'pdf' && item.optimizationId && (
+                            <div className="mt-4">
+                              <PDFGenerationCard
+                                optimizationId={item.optimizationId}
+                              />
+                            </div>
+                          )}
+
+                          {item.type === 'markdown-pdf' &&
+                            item.optimizedMarkdown && (
+                              <div className="mt-4">
+                                <MarkdownPDFCard
+                                  markdown={item.optimizedMarkdown}
+                                />
+                              </div>
+                            )}
+
+                          {item.type === 'interview' &&
+                            item.interviewQuestions && (
+                              <div className="mt-4">
+                                <InterviewQuestionsCard
+                                  questions={item.interviewQuestions}
+                                  optimizationId={
+                                    item.optimizationId || 'default'
+                                  }
+                                />
+                              </div>
+                            )}
+                        </div>
+                      ),
+                      avatar:
+                        item.role === MessageRole.USER ? (
+                          <div
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'var(--chat-bubble-user-bg)',
+                            }}
                           >
-                            下载简历
-                          </Button>
-                        </div>
-                      )}
-
-                      {item.type === 'job' && item.jobData && (
-                        <div className="mt-4">
-                          <JobInfoCard
-                            job={item.jobData}
-                            onConfirm={handleJobConfirm}
-                            onEdit={handleJobEdit}
-                            onDelete={handleJobDelete}
-                          />
-                        </div>
-                      )}
-
-                      {item.type === 'suggestions' && item.suggestions && (
-                        <div className="mt-4">
-                          <SuggestionsList
-                            suggestions={item.suggestions}
-                            onAccept={handleAcceptSuggestion}
-                            onReject={handleRejectSuggestion}
-                          />
-                        </div>
-                      )}
-
-                      {item.type === 'pdf' && item.optimizationId && (
-                        <div className="mt-4">
-                          <PDFGenerationCard
-                            optimizationId={item.optimizationId}
-                          />
-                        </div>
-                      )}
-
-                      {item.type === 'markdown-pdf' &&
-                        item.optimizedMarkdown && (
-                          <div className="mt-4">
-                            <MarkdownPDFCard
-                              markdown={item.optimizedMarkdown}
+                            <UserOutlined
+                              style={{
+                                color: 'var(--chat-text-secondary)',
+                                fontSize: '18px',
+                              }}
                             />
                           </div>
-                        )}
-
-                      {item.type === 'interview' && item.interviewQuestions && (
-                        <div className="mt-4">
-                          <InterviewQuestionsCard
-                            questions={item.interviewQuestions}
-                            optimizationId={item.optimizationId || 'default'}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ),
-                  avatar:
-                    item.role === MessageRole.USER ? (
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'var(--chat-bubble-user-bg)',
-                        }}
-                      >
-                        <UserOutlined
-                          style={{
-                            color: 'var(--chat-text-secondary)',
-                            fontSize: '18px',
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '50%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: 'rgba(22, 119, 255, 0.1)',
-                        }}
-                      >
-                        <RobotOutlined
-                          style={{
-                            color: 'var(--chat-primary)',
-                            fontSize: '18px',
-                          }}
-                        />
-                      </div>
-                    ),
-                }))}
-              />
+                        ) : (
+                          <div
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: 'rgba(22, 119, 255, 0.1)',
+                            }}
+                          >
+                            <RobotOutlined
+                              style={{
+                                color: 'var(--chat-primary)',
+                                fontSize: '18px',
+                              }}
+                            />
+                          </div>
+                        ),
+                    }))}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
 
         {/* Input Area (Only shown when there are messages) */}
-        {items.length > 1 && (
+        {(items.length > 1 || loading) && (
           <div className="relative z-20 pb-8 px-4 md:px-6">
             <div className="max-w-3xl mx-auto">
               <Sender
@@ -1099,8 +1259,6 @@ const ChatPage: React.FC = () => {
           </div>
         )}
       </div>
-
-
       <ResumeComparisonDialog
         visible={comparisonVisible}
         onClose={() => setComparisonVisible(false)}
@@ -1110,8 +1268,13 @@ const ChatPage: React.FC = () => {
       />
       <JobInputDialog
         visible={jobInputDialogVisible}
-        onClose={() => setJobInputDialogVisible(false)}
+        onClose={() => {
+          setJobInputDialogVisible(false);
+          setEditingJob(null);
+        }}
         onJobCreated={handleJobCreated}
+        onJobUpdated={handleJobUpdated}
+        initialData={editingJob}
       />
     </div>
   );

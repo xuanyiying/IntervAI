@@ -9,21 +9,17 @@ import {
   Input,
   Select,
   Tag,
-  Card,
   Typography,
   Tooltip,
   Popconfirm,
   Switch,
   InputNumber,
-  Badge,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   ReloadOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
   ApiOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';

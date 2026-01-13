@@ -37,6 +37,7 @@
 
   /* Core Colors */
   --primary-color: #6366f1;
+  --primary-rgb: 99, 102, 241;
   --primary-hover: #4f46e5;
   --secondary-color: #a855f7;
   --accent-color: #2dd4bf;
@@ -86,6 +87,7 @@
 
   /* Core Colors */
   --primary-color: #4f46e5;
+  --primary-rgb: 79, 70, 229;
   --primary-hover: #4338ca;
   --secondary-color: #7c3aed;
   --accent-color: #0d9488;
@@ -626,6 +628,14 @@ code {
 
 .text-primary {
   color: var(--primary-color) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-tertiary {
+  color: var(--text-tertiary) !important;
 }
 
 .text-primary-400 {
