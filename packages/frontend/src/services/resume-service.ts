@@ -9,9 +9,14 @@ export const resumeService = {
    * Upload a new resume file
    * @param file - The resume file (PDF, DOCX, etc.)
    * @param title - Optional title for the resume
+   * @param onUploadProgress - Optional callback for upload progress
    * @returns The uploaded resume details
    */
-  uploadResume: async (file: File, title?: string): Promise<Resume> => {
+  uploadResume: async (
+    file: File,
+    title?: string,
+    onUploadProgress?: (progressEvent: any) => void
+  ): Promise<Resume> => {
     const formData = new FormData();
     formData.append('file', file);
     if (title) {
@@ -25,6 +30,7 @@ export const resumeService = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        onUploadProgress,
       }
     );
     return response.data.resume;

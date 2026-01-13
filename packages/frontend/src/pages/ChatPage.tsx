@@ -159,13 +159,20 @@ const ChatPage: React.FC = () => {
         const { resumeId, stage, progress, error } = sys.metadata;
         // Map backend stages to frontend status
         let status: AttachmentStatus['status'] = 'parsing';
-        if (stage === 'finalizing') status = 'completed';
-        if (stage === 'error') status = 'error';
+        let finalProgress = progress;
+
+        if (stage === 'finalizing') {
+          status = 'completed';
+          finalProgress = 100;
+        }
+        if (stage === 'error') {
+          status = 'error';
+        }
 
         updateAttachmentStatus(
           resumeId,
           {
-            parseProgress: progress,
+            parseProgress: finalProgress,
             status: status,
             mode: 'parse',
             error: error,
@@ -210,6 +217,7 @@ const ChatPage: React.FC = () => {
 
   // Local items state for items not yet in the message store (like upload progress)
   const [localItems, setLocalItems] = useState<MessageItem[]>([]);
+  const [failedFiles, setFailedFiles] = useState<Map<string, File>>(new Map());
 
   // Update items when messages change, local items change, or streaming content changes
   useEffect(() => {
@@ -354,76 +362,93 @@ const ChatPage: React.FC = () => {
     setItems(displayItems);
   }, [messages, localItems, streamingContent, isStreaming, t]);
 
-  const handleFileSelect = async (file: File) => {
+  const handleResumeUpload = async (file: File, retryMessageId?: string) => {
     if (!currentConversation) return;
 
-    const initialStatus: AttachmentStatus = {
-      fileName: file.name,
-      fileSize: file.size,
-      uploadProgress: 0,
-      parseProgress: 0,
-      status: 'uploading',
-      mode: 'upload',
-    };
+    const messageId = retryMessageId || `msg-upload-${Date.now()}`;
+    
+    // Store file for potential retry
+    setFailedFiles(prev => {
+      const next = new Map(prev);
+      next.set(messageId, file);
+      return next;
+    });
 
-    // Step 1: Uploading - Send persistent message to conversation
-    let userMessage: any;
-    try {
-      userMessage = await sendMessage(
-        currentConversation.id,
-        `上传简历: ${file.name}`,
-        MessageRole.USER,
+    if (!retryMessageId) {
+      const initialStatus: AttachmentStatus = {
+        fileName: file.name,
+        fileSize: file.size,
+        uploadProgress: 0,
+        parseProgress: 0,
+        status: 'uploading',
+        mode: 'upload',
+      };
+
+      setLocalItems((prev) => [
+        ...prev,
         {
+          key: messageId,
+          role: MessageRole.USER,
+          content: `上传简历: ${file.name}`,
           type: 'attachment',
           attachmentStatus: initialStatus,
-        }
-      );
-    } catch (sendError) {
-      console.error('Failed to send upload start message:', sendError);
-      // Fallback to local item if send fails
+        },
+      ]);
+    } else {
+      // If retrying, reset status to uploading
+      updateAttachmentStatus(messageId, {
+        status: 'uploading',
+        uploadProgress: 0,
+        error: undefined
+      }, 'upload');
     }
 
-    const messageId = userMessage?.id || `msg-user-${Date.now()}`;
-
-    setLocalItems((prev) => [
-      ...prev,
-      {
-        key: messageId,
-        role: MessageRole.USER,
-        content: `上传简历: ${file.name}`,
-        type: 'attachment',
-        attachmentStatus: initialStatus,
-      },
-    ]);
-
     try {
-      // Step 1: Uploading progress
-      let uploadProgress = 0;
-      const uploadInterval = setInterval(() => {
-        uploadProgress += 10;
-        updateAttachmentStatus(
-          messageId,
-          {
-            uploadProgress: Math.min(uploadProgress, 90),
-          },
-          'upload'
-        );
-        if (uploadProgress >= 90) clearInterval(uploadInterval);
-      }, 200);
+      // Step 1: Upload
+      console.log('Starting resume upload for file:', file.name, 'size:', file.size);
+      const uploadPromise = resumeService.uploadResume(
+        file,
+        undefined,
+        (progressEvent) => {
+          if (progressEvent.total) {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            console.log(`Upload progress for ${file.name}: ${percentCompleted}%`);
+            updateAttachmentStatus(
+              messageId,
+              {
+                uploadProgress: Math.min(percentCompleted, 99),
+              },
+              'upload'
+            );
+          }
+        }
+      );
 
-      const resume = await resumeService.uploadResume(file);
-      clearInterval(uploadInterval);
+      // Add 120s timeout for upload (match backend timeout)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('上传超时，请检查网络连接')), 120000)
+      );
+
+      const resume = (await Promise.race([
+        uploadPromise,
+        timeoutPromise,
+      ])) as Resume;
 
       updateAttachmentStatus(
         messageId,
         {
           uploadProgress: 100,
           status: 'completed',
+          resumeId: resume.id,
         },
         'upload'
       );
 
-      // Step 2: Parsing (AI Message for Parsing) - Send persistent message
+      // Step 2: Parsing (AI Message for Parsing)
+      const parsingMessageId = `msg-ai-parsing-${resume.id}`;
+      
       const parsingStatus: AttachmentStatus = {
         fileName: file.name,
         fileSize: file.size,
@@ -431,97 +456,138 @@ const ChatPage: React.FC = () => {
         parseProgress: 0,
         status: 'parsing',
         mode: 'parse',
+        resumeId: resume.id,
       };
 
-      let parsingMessage: any;
-      try {
-        parsingMessage = await sendMessage(
-          currentConversation.id,
-          '正在解析简历，请稍候...',
-          MessageRole.ASSISTANT,
+      // Check if parsing message already exists (for retry)
+      const existingParsingItem = localItems.find(item => item.key === parsingMessageId);
+      
+      if (!existingParsingItem) {
+        setLocalItems((prev) => [
+          ...prev,
           {
+            key: parsingMessageId,
+            role: MessageRole.ASSISTANT,
+            content: '正在解析简历，请稍候...',
             type: 'attachment',
             attachmentStatus: parsingStatus,
-          }
-        );
-      } catch (sendError) {
-        console.error('Failed to send parsing start message:', sendError);
+          },
+        ]);
+      } else {
+        updateAttachmentStatus(parsingMessageId, {
+          status: 'parsing',
+          parseProgress: 0,
+          error: undefined
+        }, 'parse');
       }
 
-      const parsingMessageId =
-        parsingMessage?.id || `msg-ai-parsing-${Date.now()}`;
+      // Store file with parsing ID as well for retry
+      setFailedFiles(prev => {
+        const next = new Map(prev);
+        next.set(parsingMessageId, file);
+        return next;
+      });
 
-      setLocalItems((prev) => [
-        ...prev,
-        {
-          key: parsingMessageId,
-          role: MessageRole.ASSISTANT,
-          content: '正在解析简历，请稍候...',
-          type: 'attachment',
-          attachmentStatus: parsingStatus,
-        },
-      ]);
-
-      // Real parsing progress will be handled by onSystem events from WebSocket
-      const parsedData = await resumeService.parseResume(
+      // Add 120s timeout for parsing
+      console.log('Starting resume parsing for resumeId:', resume.id);
+      const parsePromise = resumeService.parseResume(
         resume.id,
-        currentConversation.id
+        currentConversation!.id
+      );
+      const parseTimeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('解析超时，后台正在处理中...')), 120000)
       );
 
-      updateAttachmentStatus(
-        parsingMessageId,
-        {
-          parseProgress: 100,
-          status: 'completed',
-        },
-        'parse'
-      );
+      try {
+        const parsedData = (await Promise.race([
+          parsePromise,
+          parseTimeoutPromise,
+        ])) as ParsedResumeData;
+        console.log('Resume parsing completed for resumeId:', resume.id);
 
-      // Add a success message after parsing
-      setLocalItems((prev) => [
-        ...prev,
-        {
-          key: `parsing-done-${Date.now()}`,
-          role: MessageRole.ASSISTANT,
-          content: '简历解析完成，正在为您优化内容...',
-          type: 'text',
-        },
-      ]);
+        updateAttachmentStatus(
+          parsingMessageId,
+          {
+            parseProgress: 100,
+            status: 'completed',
+          },
+          'parse'
+        );
 
-      // After successful parse, trigger optimization via WebSocket
-      const resumeMarkdown =
-        parsedData?.markdown ||
-        parsedData?.extractedText ||
-        JSON.stringify(parsedData);
+        // Success - remove from failed files
+        setFailedFiles(prev => {
+          const next = new Map(prev);
+          next.delete(messageId);
+          return next;
+        });
 
-      if (resumeMarkdown) {
-        setComparisonData((prev) => ({
+        // Add a success message after parsing
+        setLocalItems((prev) => [
           ...prev,
-          original: resumeMarkdown,
-        }));
+          {
+            key: `parsing-done-${Date.now()}`,
+            role: MessageRole.ASSISTANT,
+            content: '简历解析完成，正在为您优化内容...',
+            type: 'text',
+          },
+        ]);
 
-        // Notify WebSocket about parsed resume and trigger optimization
-        if (currentConversation) {
-          notifyResumeParsed(currentConversation.id, resume.id, resumeMarkdown);
-          // Send optimization request
-          sendSocketMessage(currentConversation.id, '优化简历', {
-            action: 'optimize_resume',
-            resumeId: resume.id,
-          });
+        // After successful parse, trigger optimization via WebSocket
+        const resumeMarkdown =
+          parsedData?.markdown ||
+          parsedData?.extractedText ||
+          JSON.stringify(parsedData);
+
+        if (resumeMarkdown) {
+          setComparisonData((prev) => ({
+            ...prev,
+            original: resumeMarkdown,
+          }));
+
+          if (currentConversation) {
+            notifyResumeParsed(currentConversation.id, resume.id, resumeMarkdown);
+            sendSocketMessage(currentConversation.id, '优化简历', {
+              action: 'optimize_resume',
+              resumeId: resume.id,
+            });
+          }
+        }
+
+        handleResumeUploadSuccess({ resume, parsedData });
+      } catch (parseError: any) {
+        // If it's a timeout, we keep the status as 'parsing' or 'error' 
+        // but we don't necessarily stop everything because WebSocket might still finish it.
+        console.error('Parsing error or timeout:', parseError);
+        
+        const isTimeout = parseError.message?.includes('超时');
+        
+        updateAttachmentStatus(parsingMessageId, {
+          status: 'error',
+          error: parseError.message || '解析失败',
+        }, 'parse');
+        
+        if (!isTimeout) {
+          antMessage.error(parseError.message || '解析失败');
+        } else {
+          antMessage.warning('解析时间较长，请稍候或重试');
         }
       }
-
-      // Handle success for resume store
-      handleResumeUploadSuccess({ resume, parsedData });
-    } catch (error) {
-      console.error('File upload/parse error:', error);
-      const errorId = messageId || `msg-error-${Date.now()}`;
-      updateAttachmentStatus(errorId, {
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      updateAttachmentStatus(messageId, {
         status: 'error',
-        error: error instanceof Error ? error.message : '上传或解析失败',
-      });
-      antMessage.error('上传或解析失败，请重试');
+        error: error.message || '上传失败',
+      }, 'upload');
+      antMessage.error(error.message || '上传失败');
     }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!currentConversation) {
+      antMessage.warning('请等待会话初始化完成');
+      return;
+    }
+    handleResumeUpload(file);
   };
 
   const updateAttachmentStatus = (
@@ -533,7 +599,9 @@ const ChatPage: React.FC = () => {
       prev.map((item) => {
         if (
           item.type === 'attachment' &&
-          (item.key === key || item.attachmentStatus?.fileName === key) &&
+          (item.key === key ||
+            item.attachmentStatus?.fileName === key ||
+            item.attachmentStatus?.resumeId === key) &&
           (!mode || item.attachmentStatus?.mode === mode)
         ) {
           return {
@@ -876,6 +944,18 @@ const ChatPage: React.FC = () => {
                               prev.filter((i) => i.key !== item.key)
                             );
                           }}
+                          onRetry={
+                            item.attachmentStatus.status === 'error'
+                              ? () => {
+                                  const file = failedFiles.get(item.key);
+                                  if (file) {
+                                    handleResumeUpload(file, item.key);
+                                  } else {
+                                    antMessage.info('无法获取原始文件，请重新上传');
+                                  }
+                                }
+                              : undefined
+                          }
                         />
                       )}
 
