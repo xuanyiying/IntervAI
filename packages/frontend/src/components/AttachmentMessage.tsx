@@ -21,12 +21,14 @@ export interface AttachmentStatus {
 interface AttachmentMessageProps {
   status: AttachmentStatus;
   onDelete?: () => void;
+  onRetry?: () => void; // New prop for retry
   mode?: 'upload' | 'parse'; // Prop to override or set mode
 }
 
 const AttachmentMessage: React.FC<AttachmentMessageProps> = ({
   status,
   onDelete,
+  onRetry,
   mode: propMode,
 }) => {
   const { token } = theme.useToken();
@@ -184,9 +186,21 @@ const AttachmentMessage: React.FC<AttachmentMessageProps> = ({
           )}
 
         {status.status === 'error' && (
-          <div style={{ fontSize: '12px', color: token.colorError }}>
-            {status.error || '处理失败'}
-          </div>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div style={{ fontSize: '12px', color: token.colorError }}>
+              {status.error || '处理失败'}
+            </div>
+            {onRetry && (
+              <Button
+                type="link"
+                size="small"
+                onClick={onRetry}
+                style={{ padding: 0, height: 'auto', fontSize: '12px' }}
+              >
+                重试
+              </Button>
+            )}
+          </Space>
         )}
       </Space>
       <style>{`
