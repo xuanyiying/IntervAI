@@ -82,7 +82,7 @@ export interface OptimizationSavingsReport {
  * Handles HTTP requests for Agent metrics and reporting
  * Requirements: 10.2, 10.3
  */
-@Controller('api/agents/metrics')
+@Controller('agents/metrics')
 @UseGuards(JwtAuthGuard)
 export class AgentMetricsController {
   private readonly logger = new Logger(AgentMetricsController.name);

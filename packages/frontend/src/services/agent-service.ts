@@ -21,7 +21,7 @@ export const pitchPerfectService = {
     style: 'technical' | 'managerial' | 'sales',
     duration: 30 | 60
   ): Promise<PitchPerfectAgentOutput> => {
-    const response = await axios.post('/api/agents/pitch-perfect/generate', {
+    const response = await axios.post('/agents/pitch-perfect/generate', {
       resumeData,
       jobDescription,
       style,
@@ -40,7 +40,7 @@ export const pitchPerfectService = {
     currentIntroduction: string,
     feedback: string
   ): Promise<{ refinedIntroduction: string }> => {
-    const response = await axios.post('/api/agents/pitch-perfect/refine', {
+    const response = await axios.post('/agents/pitch-perfect/refine', {
       currentIntroduction,
       feedback,
     });
@@ -65,7 +65,7 @@ export const strategistService = {
     jobDescription: string,
     experienceLevel: 'junior' | 'mid' | 'senior'
   ): Promise<any> => {
-    const response = await axios.post('/api/agents/strategist/generate', {
+    const response = await axios.post('/agents/strategist/generate', {
       resumeData,
       jobDescription,
       experienceLevel,
@@ -79,7 +79,7 @@ export const strategistService = {
    */
   updateBasedOnPerformance: async (performance: any): Promise<void> => {
     const response = await axios.post(
-      '/api/agents/strategist/update-performance',
+      '/agents/strategist/update-performance',
       { performance }
     );
     return response.data;
@@ -105,7 +105,7 @@ export const rolePlayService = {
     focusAreas: string[],
     resumeData?: ParsedResumeData
   ): Promise<any> => {
-    const response = await axios.post('/api/agents/role-play/start', {
+    const response = await axios.post('/agents/role-play/start', {
       jobDescription,
       interviewerStyle,
       focusAreas,
@@ -124,7 +124,7 @@ export const rolePlayService = {
     sessionId: string,
     userResponse: string
   ): Promise<any> => {
-    const response = await axios.post('/api/agents/role-play/respond', {
+    const response = await axios.post('/agents/role-play/respond', {
       sessionId,
       userResponse,
     });
@@ -137,7 +137,7 @@ export const rolePlayService = {
    * @returns Final summary of the interview
    */
   concludeInterview: async (sessionId: string): Promise<any> => {
-    const response = await axios.post('/api/agents/role-play/conclude', {
+    const response = await axios.post('/agents/role-play/conclude', {
       sessionId,
     });
     return response.data;
@@ -150,7 +150,7 @@ export const rolePlayService = {
    */
   getFeedback: async (sessionId: string): Promise<any> => {
     const response = await axios.get(
-      `/api/agents/role-play/feedback/${sessionId}`
+      `/agents/role-play/feedback/${sessionId}`
     );
     return response.data;
   },
@@ -175,7 +175,7 @@ export const agentMetricsService = {
     groupBy: 'agent-type' | 'workflow-step' | 'model' = 'agent-type',
     agentType?: string
   ): Promise<any> => {
-    const response = await axios.get('/api/agents/metrics/token-usage', {
+    const response = await axios.get('/agents/metrics/token-usage', {
       params: {
         startDate,
         endDate,
@@ -200,7 +200,7 @@ export const agentMetricsService = {
     groupBy: 'agent-type' | 'workflow-step' | 'model' = 'agent-type',
     agentType?: string
   ): Promise<any> => {
-    const response = await axios.get('/api/agents/metrics/cost', {
+    const response = await axios.get('/agents/metrics/cost', {
       params: {
         startDate,
         endDate,
@@ -224,7 +224,7 @@ export const agentMetricsService = {
     agentType?: string
   ): Promise<any> => {
     const response = await axios.get(
-      '/api/agents/metrics/optimization-savings',
+      '/agents/metrics/optimization-savings',
       {
         params: {
           startDate,

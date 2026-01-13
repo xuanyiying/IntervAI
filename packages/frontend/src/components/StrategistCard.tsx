@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { strategistService } from '../services';
 import { ParsedResumeData } from '../types';
+import { ArrowLeftOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
 import './StrategistCard.css';
 
 interface StrategistCardProps {
   resumeData: ParsedResumeData;
   jobDescription: string;
+  onBack?: () => void;
 }
 
 interface InterviewQuestion {
@@ -34,6 +37,7 @@ type FilterCategory = 'all' | 'technical' | 'behavioral' | 'scenario';
 export const StrategistCard: React.FC<StrategistCardProps> = ({
   resumeData,
   jobDescription,
+  onBack,
 }) => {
   const [experienceLevel, setExperienceLevel] = useState<
     'junior' | 'mid' | 'senior'
@@ -119,7 +123,17 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
 
   return (
     <div className="strategist-card">
-      <h2>面试预测 - 问题库生成器</h2>
+      <div className="flex items-center gap-4 mb-6">
+        {onBack && (
+          <Button 
+            type="text" 
+            icon={<ArrowLeftOutlined />} 
+            onClick={onBack}
+            className="integrated-back-btn"
+          />
+        )}
+        <h2 style={{ margin: 0 }}>面试预测 - 问题库生成器</h2>
+      </div>
 
       {/* Configuration Section */}
       <div className="strategist-config">
@@ -199,80 +213,78 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
           <div className="result-section controls-section">
             <div className="controls">
               <div className="control-group">
-                <label htmlFor="filter">Filter by Category:</label>
+                <label htmlFor="filter">分类筛选:</label>
                 <select
                   id="filter"
                   value={filterCategory}
                   onChange={(e) => setFilterCategory(e.target.value as any)}
                 >
-                  <option value="all">All Categories</option>
-                  <option value="technical">Technical</option>
-                  <option value="behavioral">Behavioral</option>
-                  <option value="scenario">Scenario</option>
+                  <option value="all">所有类型</option>
+                  <option value="technical">技术面试</option>
+                  <option value="behavioral">行为面试</option>
+                  <option value="scenario">场景面试</option>
                 </select>
               </div>
 
               <div className="control-group">
-                <label htmlFor="sort">Sort by:</label>
+                <label htmlFor="sort">排序方式:</label>
                 <select
                   id="sort"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                 >
-                  <option value="priority">Priority</option>
-                  <option value="difficulty">Difficulty</option>
-                  <option value="category">Category</option>
+                  <option value="priority">重要程度</option>
+                  <option value="difficulty">难度系数</option>
+                  <option value="category">题目类型</option>
                 </select>
               </div>
             </div>
             <div className="results-count">
-              Showing {filteredQuestions.length} of {result.totalQuestions}{' '}
-              questions
+              显示 {filteredQuestions.length} / {result.totalQuestions} 个预测问题
             </div>
           </div>
 
           {/* Questions List */}
           <div className="result-section questions-section">
-            <h3>Interview Questions</h3>
+            <h3>预测面试题</h3>
             <div className="questions-list">
               {filteredQuestions.length > 0 ? (
                 filteredQuestions.map((question, idx) => (
                   <div key={question.id} className="question-item">
                     <div className="question-header">
-                      <span className="question-number">{idx + 1}.</span>
-                      <span className="question-text">{question.question}</span>
+                      <span className="question-text">
+                        <span className="question-number" style={{ marginRight: '1rem', opacity: 0.5 }}>{idx + 1}.</span>
+                        {question.question}
+                      </span>
                     </div>
-                    <div className="question-meta">
+                    <div className="question-badges">
                       <span
-                        className="badge priority"
+                        className="badge badge-priority"
                         style={{
                           backgroundColor: getPriorityColor(question.priority),
                         }}
                       >
-                        {question.priority}
+                        {question.priority === 'must-prepare' ? '必准备' : question.priority === 'important' ? '重点' : '可选'}
                       </span>
                       <span
-                        className="badge difficulty"
+                        className="badge badge-difficulty"
                         style={{
-                          backgroundColor: getDifficultyColor(
-                            question.difficulty
-                          ),
+                          color: getDifficultyColor(question.difficulty),
+                          border: `1px solid ${getDifficultyColor(question.difficulty)}`,
+                          backgroundColor: 'transparent'
                         }}
                       >
-                        {question.difficulty}
+                        {question.difficulty === 'easy' ? '容易' : question.difficulty === 'medium' ? '中等' : '困难'}
                       </span>
-                      <span className="badge category">
-                        {question.category}
-                      </span>
-                      <span className="badge source">
-                        {question.source === 'knowledge-base' ? 'KB' : 'Custom'}
+                      <span className="badge badge-category">
+                        {question.category === 'technical' ? '技术' : question.category === 'behavioral' ? '行为' : '场景'}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="no-results">
-                  No questions match the selected filters
+                <div className="no-results" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  没有符合筛选条件的题目
                 </div>
               )}
             </div>

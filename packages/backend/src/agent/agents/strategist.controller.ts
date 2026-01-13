@@ -45,7 +45,7 @@ export class UpdateQuestionBankRequest {
  * Handles HTTP requests for interview question bank generation
  * Requirements: 3.1-3.7
  */
-@Controller('api/agents/strategist')
+@Controller('agents/strategist')
 @UseGuards(JwtAuthGuard)
 export class StrategistController {
   private readonly logger = new Logger(StrategistController.name);
