@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   Form,
@@ -11,23 +11,50 @@ import {
   Alert,
 } from 'antd';
 import { LinkOutlined, FileTextOutlined } from '@ant-design/icons';
-import { jobService, type JobInput } from '../services/job-service';
+import { jobService, type JobInput, type Job } from '../services/job-service';
 
 interface JobInputDialogProps {
   visible: boolean;
   onClose: () => void;
   onJobCreated: (jobData: JobInput) => void;
+  onJobUpdated?: (job: Job) => void;
+  initialData?: Job | null;
 }
 
 const JobInputDialog: React.FC<JobInputDialogProps> = ({
   visible,
   onClose,
   onJobCreated,
+  onJobUpdated,
+  initialData,
 }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
   const [urlLoading, setUrlLoading] = useState(false);
+
+  const isEditMode = !!initialData;
+
+  // Set form values when initialData changes or modal becomes visible
+  useEffect(() => {
+    if (visible) {
+      if (initialData) {
+        form.setFieldsValue({
+          title: initialData.title,
+          company: initialData.company,
+          location: initialData.location,
+          jobType: initialData.jobType,
+          salaryRange: initialData.salaryRange,
+          jobDescription: initialData.jobDescription,
+          requirements: initialData.requirements,
+        });
+        setActiveTab('text');
+      } else {
+        form.resetFields();
+        setActiveTab('text');
+      }
+    }
+  }, [visible, initialData, form]);
 
   const handleTextSubmit = async () => {
     try {
@@ -36,9 +63,13 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
         'title',
         'company',
         'jobDescription',
+        'location',
+        'jobType',
+        'salaryRange',
+        'requirements',
       ]);
 
-      const jobData: JobInput = {
+      const jobInput: JobInput = {
         title: values.title,
         company: values.company,
         location: values.location,
@@ -48,12 +79,25 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
         requirements: values.requirements || '',
       };
 
-      onJobCreated(jobData);
+      if (isEditMode && initialData && onJobUpdated) {
+        const updatedJob = await jobService.updateJob(
+          initialData.id,
+          jobInput
+        );
+        onJobUpdated(updatedJob);
+        message.success('职位信息已更新');
+      } else {
+        onJobCreated(jobInput);
+        message.success('职位信息已提交');
+      }
+
       form.resetFields();
       onClose();
-      message.success('职位信息已提交');
     } catch (error) {
-      console.error('Validation failed:', error);
+      console.error('Operation failed:', error);
+      if (error instanceof Error) {
+        message.error(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -100,7 +144,7 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
 
   return (
     <Modal
-      title="输入职位信息"
+      title={isEditMode ? '编辑职位信息' : '输入职位信息'}
       open={visible}
       onCancel={handleCancel}
       width={700}
@@ -176,7 +220,7 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
                         onClick={handleTextSubmit}
                         loading={loading}
                       >
-                        提交
+                        {isEditMode ? '更新' : '提交'}
                       </Button>
                     </Space>
                   </div>

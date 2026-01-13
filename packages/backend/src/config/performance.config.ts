@@ -63,19 +63,19 @@ export const getPerformanceConfig = (env: string): PerformanceConfig => {
 
     database: {
       connectionPoolSize: isProduction ? 20 : 5,
-      queryTimeout: isProduction ? 30000 : 60000, // 30s in prod, 60s in dev
+      queryTimeout: isProduction ? 60000 : 120000, // Increased to 60s in prod, 120s in dev
       enableSlowQueryLogging: true,
       slowQueryThreshold: isProduction ? 1000 : 5000, // 1s in prod, 5s in dev
     },
 
     api: {
-      requestTimeout: isProduction ? 30000 : 60000, // 30s in prod, 60s in dev
+      requestTimeout: 120000, // Unified to 120s for all environments
       maxRequestSize: '10mb',
       enableResponseCaching: isProduction,
     },
 
     externalServices: {
-      requestTimeout: isProduction ? 30000 : 60000,
+      requestTimeout: 120000, // Unified to 120s
       retryAttempts: 3,
       retryDelay: 1000,
       circuitBreakerThreshold: 5,

@@ -49,6 +49,59 @@ export enum ParseStatus {
   FAILED = 'FAILED',
 }
 
+export interface MessageItem {
+  key: string;
+  role: MessageRole;
+  content: string;
+  header?: string;
+  type?:
+    | 'text'
+    | 'job'
+    | 'suggestions'
+    | 'pdf'
+    | 'interview'
+    | 'markdown-pdf'
+    | 'attachment'
+    | 'optimization_result';
+  jobData?: Job;
+  optimizationId?: string;
+  optimizedMarkdown?: string;
+  suggestions?: Suggestion[];
+  interviewQuestions?: InterviewQuestion[];
+  attachmentStatus?: AttachmentStatus;
+}
+
+export interface OptimizationVersion {
+  id: string;
+  resumeId: string;
+  jobDescription: string;
+  timestamp: number;
+  output: PitchPerfectAgentOutput;
+  style: string;
+  duration: number;
+}
+
+
+export interface PitchPerfectAgentOutput {
+  introduction: string;
+  highlights: string[];
+  keywordOverlap: {
+    matched: string[];
+    missing: string[];
+    overlapPercentage: number;
+  };
+  suggestions: string[];
+}
+export interface AttachmentStatus {
+  fileName: string;
+  fileSize: number;
+  uploadProgress: number;
+  parseProgress: number;
+  status: 'uploading' | 'parsing' | 'completed' | 'error';
+  error?: string;
+  mode?: 'upload' | 'parse'; // New field to distinguish between upload and parse view
+  resumeId?: string; // New field to track by resume ID
+}
 export interface Resume {
   id: string;
   userId: string;
@@ -64,12 +117,17 @@ export interface Resume {
   updatedAt: string;
 }
 
+export interface SkillGroup {
+  category: string;
+  items: string[];
+}
+
 export interface ParsedResumeData {
   personalInfo?: PersonalInfo;
   summary?: string;
   education?: Education[];
   experience?: Experience[];
-  skills?: string[];
+  skills?: (string | SkillGroup)[];
   projects?: Project[];
   certifications?: Certification[];
   languages?: Language[];

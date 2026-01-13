@@ -5,8 +5,6 @@ import {
   Space,
   Tag,
   Divider,
-  Form,
-  Input,
   Modal,
   message,
   Spin,
@@ -14,7 +12,6 @@ import {
 import {
   EditOutlined,
   CheckOutlined,
-  CloseOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
 import {
@@ -36,46 +33,19 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
   onConfirm,
   onEdit,
   onDelete,
-  isEditing = false,
 }) => {
-  const [editing, setEditing] = useState(isEditing);
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm();
 
   const handleEdit = () => {
-    form.setFieldsValue({
-      title: job.title,
-      company: job.company,
-      location: job.location,
-      jobType: job.jobType,
-      salaryRange: job.salaryRange,
-      jobDescription: job.jobDescription,
-      requirements: job.requirements,
-    });
-    setEditing(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      setLoading(true);
-      const values = await form.validateFields();
-      const updatedJob = await jobService.updateJob(job.id, values);
-      setEditing(false);
-      message.success('职位信息已更新');
-      if (onEdit) {
-        onEdit(updatedJob);
-      }
-    } catch (error) {
-      console.error('Failed to update job:', error);
-      message.error('更新职位信息失败');
-    } finally {
-      setLoading(false);
+    if (onEdit) {
+      onEdit(job);
     }
   };
 
-  const handleCancel = () => {
-    setEditing(false);
-    form.resetFields();
+  const handleConfirm = () => {
+    if (onConfirm) {
+      onConfirm(job);
+    }
   };
 
   const handleDelete = () => {
@@ -102,80 +72,6 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
       },
     });
   };
-
-  const handleConfirm = () => {
-    if (onConfirm) {
-      onConfirm(job);
-    }
-  };
-
-  if (editing) {
-    return (
-      <Card
-        style={{ marginBottom: '16px' }}
-        title="编辑职位信息"
-        extra={
-          <Space>
-            <Button
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={handleSave}
-              loading={loading}
-            >
-              保存
-            </Button>
-            <Button icon={<CloseOutlined />} onClick={handleCancel}>
-              取消
-            </Button>
-          </Space>
-        }
-      >
-        <Spin spinning={loading}>
-          <Form form={form} layout="vertical">
-            <Form.Item
-              label="职位名称"
-              name="title"
-              rules={[{ required: true, message: '请输入职位名称' }]}
-            >
-              <Input placeholder="例如：Java 后端工程师" />
-            </Form.Item>
-
-            <Form.Item
-              label="公司名称"
-              name="company"
-              rules={[{ required: true, message: '请输入公司名称' }]}
-            >
-              <Input placeholder="例如：阿里巴巴" />
-            </Form.Item>
-
-            <Form.Item label="工作地点" name="location">
-              <Input placeholder="例如：北京" />
-            </Form.Item>
-
-            <Form.Item label="工作类型" name="jobType">
-              <Input placeholder="例如：全职" />
-            </Form.Item>
-
-            <Form.Item label="薪资范围" name="salaryRange">
-              <Input placeholder="例如：15k-25k" />
-            </Form.Item>
-
-            <Form.Item
-              label="职位描述"
-              name="jobDescription"
-              rules={[{ required: true, message: '请输入职位描述' }]}
-            >
-              <Input.TextArea rows={4} placeholder="粘贴职位描述内容..." />
-            </Form.Item>
-
-            <Form.Item label="任职要求" name="requirements">
-              <Input.TextArea rows={4} placeholder="粘贴任职要求内容..." />
-            </Form.Item>
-          </Form>
-        </Spin>
-      </Card>
-    );
-  }
 
   const parsedData = job.parsedRequirements as ParsedJobData | undefined;
 

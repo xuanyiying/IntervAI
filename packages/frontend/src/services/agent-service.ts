@@ -1,16 +1,6 @@
 import axios from '../config/axios';
-import { ParsedResumeData } from '@/types';
+import { ParsedResumeData, PitchPerfectAgentOutput } from '@/types';
 
-export interface PitchPerfectAgentOutput {
-  introduction: string;
-  highlights: string[];
-  keywordOverlap: {
-    matched: string[];
-    missing: string[];
-    overlapPercentage: number;
-  };
-  suggestions: string[];
-}
 
 /**
  * Pitch Perfect Agent Service

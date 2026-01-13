@@ -29,6 +29,7 @@ import RolePlayPage from '../pages/RolePlayPage';
 import AgentMetricsPage from '../pages/AgentMetricsPage';
 import KnowledgeBasePage from '../pages/KnowledgeBasePage';
 import ResumeBuilderPage from '../pages/ResumeBuilderPage';
+import MyResumesPage from '../pages/MyResumesPage';
 
 const routes: RouteObject[] = [
   {
@@ -78,6 +79,10 @@ const routes: RouteObject[] = [
       {
         path: 'chat',
         element: <ChatPage />,
+      },
+      {
+        path: 'resumes',
+        element: <MyResumesPage />,
       },
       {
         path: 'resume-builder',

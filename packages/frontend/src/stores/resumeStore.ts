@@ -9,15 +9,17 @@ interface ResumeState {
   addResume: (resume: Resume) => void;
   updateResume: (id: string, data: Partial<Resume>) => void;
   removeResume: (id: string) => void;
+  fetchResumes: () => Promise<void>;
+  setPrimary: (id: string) => Promise<void>;
 }
 
-export const useResumeStore = create<ResumeState>((set) => ({
+export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
   setResumes: (resumes) => set({ resumes }),
   setCurrentResume: (resume) => set({ currentResume: resume }),
   addResume: (resume) =>
-    set((state) => ({ resumes: [...state.resumes, resume] })),
+    set((state) => ({ resumes: [resume, ...state.resumes] })),
   updateResume: (id, data) =>
     set((state) => ({
       resumes: state.resumes.map((r) => (r.id === id ? { ...r, ...data } : r)),
@@ -32,4 +34,33 @@ export const useResumeStore = create<ResumeState>((set) => ({
       currentResume:
         state.currentResume?.id === id ? null : state.currentResume,
     })),
+  fetchResumes: async () => {
+    try {
+      const { resumeService } = await import('../services/resume-service');
+      const resumes = await resumeService.getResumes();
+      set({ resumes });
+      // Set primary as current if exists
+      const primary = resumes.find(r => r.isPrimary);
+      if (primary && !get().currentResume) {
+        set({ currentResume: primary });
+      }
+    } catch (error) {
+      console.error('Failed to fetch resumes:', error);
+    }
+  },
+  setPrimary: async (id) => {
+    try {
+      const { resumeService } = await import('../services/resume-service');
+      const updated = await resumeService.setPrimaryResume(id);
+      set((state) => ({
+        resumes: state.resumes.map((r) => ({
+          ...r,
+          isPrimary: r.id === id,
+        })),
+        currentResume: state.currentResume?.id === id ? updated : state.currentResume,
+      }));
+    } catch (error) {
+      console.error('Failed to set primary resume:', error);
+    }
+  },
 }));
