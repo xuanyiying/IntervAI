@@ -29,7 +29,11 @@ interface ConversationState {
   setCurrentConversation: (conversation: Conversation | null) => void;
 
   // Actions - Messages
-  loadMessages: (conversationId: string, page?: number, limit?: number) => Promise<void>;
+  loadMessages: (
+    conversationId: string,
+    page?: number,
+    limit?: number
+  ) => Promise<void>;
   loadMoreMessages: (conversationId: string, limit?: number) => Promise<void>;
   sendMessage: (
     conversationId: string,
@@ -69,9 +73,10 @@ export const useConversationStore = create<ConversationState>()(
           }));
           return conversation;
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '创建会话失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '创建会话失败';
           set({ conversationError: errorMessage });
           throw error;
         }
@@ -83,10 +88,14 @@ export const useConversationStore = create<ConversationState>()(
           const conversations = await conversationService.listConversations();
           set({ conversations, isLoadingConversations: false });
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '加载会话列表失败';
-          set({ conversationError: errorMessage, isLoadingConversations: false });
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '加载会话列表失败';
+          set({
+            conversationError: errorMessage,
+            isLoadingConversations: false,
+          });
           throw error;
         }
       },
@@ -96,22 +105,27 @@ export const useConversationStore = create<ConversationState>()(
           set({ messageError: null, isLoadingMessages: true });
           const conversation =
             await conversationService.getConversation(conversationId);
-          const messages = await conversationService.getMessages(conversationId);
+          const messages =
+            await conversationService.getMessages(conversationId);
           set({
             currentConversation: conversation,
             messages,
             isLoadingMessages: false,
           });
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '切换会话失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '切换会话失败';
           set({ messageError: errorMessage, isLoadingMessages: false });
           throw error;
         }
       },
 
-      updateConversationTitle: async (conversationId: string, title: string) => {
+      updateConversationTitle: async (
+        conversationId: string,
+        title: string
+      ) => {
         try {
           set({ conversationError: null });
           const updated = await conversationService.updateConversation(
@@ -128,9 +142,10 @@ export const useConversationStore = create<ConversationState>()(
                 : state.currentConversation,
           }));
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '更新标题失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '更新标题失败';
           set({ conversationError: errorMessage });
           throw error;
         }
@@ -144,20 +159,27 @@ export const useConversationStore = create<ConversationState>()(
             const updatedConversations = state.conversations.filter(
               (c) => c.id !== conversationId
             );
+
+            // Check if the deleted conversation is the currently active one
             const isCurrentDeleted =
               state.currentConversation?.id === conversationId;
+
             return {
               conversations: updatedConversations,
+              // If current was deleted, set to null.
+              // The component calling this (e.g. Sidebar) should handle navigation.
               currentConversation: isCurrentDeleted
                 ? null
                 : state.currentConversation,
+              // Clear messages if the current conversation was deleted
               messages: isCurrentDeleted ? [] : state.messages,
             };
           });
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '删除会话失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '删除会话失败';
           set({ conversationError: errorMessage });
           throw error;
         }
@@ -172,8 +194,12 @@ export const useConversationStore = create<ConversationState>()(
         try {
           set({ messageError: null, isLoadingMessages: true });
           const skip = page * limit;
-          const messages = await conversationService.getMessages(conversationId, skip, limit);
-          
+          const messages = await conversationService.getMessages(
+            conversationId,
+            skip,
+            limit
+          );
+
           // Sort messages by timestamp or createdAt to ensure correct order
           const sortedMessages = [...messages].sort((a, b) => {
             const timeA = a.timestamp || new Date(a.createdAt).getTime();
@@ -181,31 +207,37 @@ export const useConversationStore = create<ConversationState>()(
             return timeA - timeB;
           });
 
-          set({ 
-            messages: sortedMessages, 
+          set({
+            messages: sortedMessages,
             isLoadingMessages: false,
             messagePage: page,
-            hasMoreMessages: messages.length === limit
+            hasMoreMessages: messages.length === limit,
           });
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '加载消息失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '加载消息失败';
           set({ messageError: errorMessage, isLoadingMessages: false });
           throw error;
         }
       },
 
       loadMoreMessages: async (conversationId: string, limit = 20) => {
-        const { messagePage, messages, hasMoreMessages, isLoadingMessages } = get();
+        const { messagePage, messages, hasMoreMessages, isLoadingMessages } =
+          get();
         if (!hasMoreMessages || isLoadingMessages) return;
 
         try {
           set({ isLoadingMessages: true });
           const nextPage = messagePage + 1;
           const skip = nextPage * limit;
-          const newMessages = await conversationService.getMessages(conversationId, skip, limit);
-          
+          const newMessages = await conversationService.getMessages(
+            conversationId,
+            skip,
+            limit
+          );
+
           const allMessages = [...messages, ...newMessages].sort((a, b) => {
             const timeA = a.timestamp || new Date(a.createdAt).getTime();
             const timeB = b.timestamp || new Date(b.createdAt).getTime();
@@ -216,12 +248,13 @@ export const useConversationStore = create<ConversationState>()(
             messages: allMessages,
             isLoadingMessages: false,
             messagePage: nextPage,
-            hasMoreMessages: newMessages.length === limit
+            hasMoreMessages: newMessages.length === limit,
           });
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '加载更多消息失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '加载更多消息失败';
           set({ messageError: errorMessage, isLoadingMessages: false });
           throw error;
         }
@@ -259,9 +292,10 @@ export const useConversationStore = create<ConversationState>()(
           });
           return message;
         } catch (error: any) {
-          const errorMessage = error.response?.status === 401 || error.response?.status === 403
-            ? '登录已过期，请重新登录'
-            : error.message || '发送消息失败';
+          const errorMessage =
+            error.response?.status === 401 || error.response?.status === 403
+              ? '登录已过期，请重新登录'
+              : error.message || '发送消息失败';
           set({ messageError: errorMessage });
           throw error;
         }
@@ -299,4 +333,3 @@ export const useConversationStore = create<ConversationState>()(
     }
   )
 );
-

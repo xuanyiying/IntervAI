@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Button, Space, message, Tag } from 'antd';
+import { Card, Button, Space, message } from 'antd';
 import {
   FileTextOutlined,
   DownloadOutlined,
@@ -128,9 +128,21 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
                 </span>
               </div>
               {isExpired && (
-                <Tag color="error" style={{ margin: 0 }}>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                    fontSize: '12px',
+                    lineHeight: 1,
+                    color: 'rgba(255,255,255,0.92)',
+                    background: 'rgba(255, 77, 79, 0.18)',
+                    border: '1px solid rgba(255, 77, 79, 0.35)',
+                  }}
+                >
                   链接已过期，请重新生成
-                </Tag>
+                </div>
               )}
             </Space>
           </div>

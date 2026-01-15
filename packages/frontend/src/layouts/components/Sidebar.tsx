@@ -16,7 +16,6 @@ import {
   MenuUnfoldOutlined,
   StarOutlined,
   LineChartOutlined,
-  SolutionOutlined,
   UserOutlined,
   FileSearchOutlined,
 } from '@ant-design/icons';
@@ -114,9 +113,37 @@ const Sidebar: React.FC<SidebarProps> = ({
       okType: 'danger',
       cancelText: t('common.cancel'),
       onOk: async () => {
-        await deleteConversation(chatId);
-        if (currentConversation?.id === chatId) {
-          navigate('/chat');
+        try {
+          // Calculate navigation target before deletion
+          const { conversations: currentList, currentConversation: current } =
+            useConversationStore.getState();
+          const isDeletingCurrent = current?.id === chatId;
+          let nextId: string | null = null;
+
+          if (isDeletingCurrent) {
+            const currentIndex = currentList.findIndex((c) => c.id === chatId);
+            // Try next (newer/below) first, then previous (older/above)
+            // Note: conversations are usually sorted desc by date, so index + 1 is older
+            const nextConvo =
+              currentList[currentIndex + 1] || currentList[currentIndex - 1];
+            if (nextConvo) {
+              nextId = nextConvo.id;
+            }
+          }
+
+          await deleteConversation(chatId);
+
+          if (isDeletingCurrent) {
+            navigate('/chat');
+            if (nextId) {
+              await switchConversation(nextId);
+            } else {
+              setCurrentConversation(null);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to delete conversation:', error);
+          // Ideally show a message to user
         }
       },
     });

@@ -104,4 +104,14 @@ export const resumeService = {
     const response = await axios.put<Resume>(`/resumes/${resumeId}/primary`);
     return response.data;
   },
+
+  /**
+   * Analyze a resume
+   * @param resumeId - The ID of the resume to analyze
+   * @returns The analysis result
+   */
+  analyzeResume: async (resumeId: string): Promise<any> => {
+    const response = await axios.get<any>(`/resumes/${resumeId}/analyze`);
+    return response.data;
+  },
 };

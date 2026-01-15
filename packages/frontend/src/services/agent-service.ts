@@ -1,7 +1,6 @@
 import axios from '../config/axios';
 import { ParsedResumeData, PitchPerfectAgentOutput } from '@/types';
 
-
 /**
  * Pitch Perfect Agent Service
  * Handles generation and refinement of elevator pitches
@@ -78,10 +77,9 @@ export const strategistService = {
    * @param performance - Interview performance data
    */
   updateBasedOnPerformance: async (performance: any): Promise<void> => {
-    const response = await axios.post(
-      '/agents/strategist/update-performance',
-      { performance }
-    );
+    const response = await axios.post('/agents/strategist/update-performance', {
+      performance,
+    });
     return response.data;
   },
 };
@@ -149,9 +147,7 @@ export const rolePlayService = {
    * @returns Detailed performance feedback
    */
   getFeedback: async (sessionId: string): Promise<any> => {
-    const response = await axios.get(
-      `/agents/role-play/feedback/${sessionId}`
-    );
+    const response = await axios.get(`/agents/role-play/feedback/${sessionId}`);
     return response.data;
   },
 };
@@ -223,16 +219,13 @@ export const agentMetricsService = {
     endDate: string,
     agentType?: string
   ): Promise<any> => {
-    const response = await axios.get(
-      '/agents/metrics/optimization-savings',
-      {
-        params: {
-          startDate,
-          endDate,
-          ...(agentType && { agentType }),
-        },
-      }
-    );
+    const response = await axios.get('/agents/metrics/optimization-savings', {
+      params: {
+        startDate,
+        endDate,
+        ...(agentType && { agentType }),
+      },
+    });
     return response.data;
   },
 };

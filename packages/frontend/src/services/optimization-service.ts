@@ -57,8 +57,8 @@ export const optimizationService = {
   acceptSuggestion: async (
     optimizationId: string,
     suggestionId: string
-  ): Promise<any> => {
-    const response = await axios.post(
+  ): Promise<Optimization> => {
+    const response = await axios.post<Optimization>(
       `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/accept`
     );
     return response.data;
@@ -73,8 +73,8 @@ export const optimizationService = {
   rejectSuggestion: async (
     optimizationId: string,
     suggestionId: string
-  ): Promise<any> => {
-    const response = await axios.post(
+  ): Promise<Optimization> => {
+    const response = await axios.post<Optimization>(
       `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/reject`
     );
     return response.data;
@@ -89,8 +89,8 @@ export const optimizationService = {
   acceptBatchSuggestions: async (
     optimizationId: string,
     suggestionIds: string[]
-  ): Promise<any> => {
-    const response = await axios.post(
+  ): Promise<Optimization> => {
+    const response = await axios.post<Optimization>(
       `/resume-optimizer/optimizations/${optimizationId}/suggestions/accept-batch`,
       { suggestionIds }
     );

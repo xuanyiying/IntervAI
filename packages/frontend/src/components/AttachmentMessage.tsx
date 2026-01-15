@@ -8,7 +8,6 @@ import {
 } from '@ant-design/icons';
 import { AttachmentStatus } from '@/types';
 
-
 interface AttachmentMessageProps {
   status: AttachmentStatus;
   onDelete?: () => void;

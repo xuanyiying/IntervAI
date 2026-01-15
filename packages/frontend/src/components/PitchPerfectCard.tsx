@@ -2,8 +2,26 @@ import React, { useState } from 'react';
 import { pitchPerfectService } from '../services';
 import { PitchPerfectAgentOutput, type ParsedResumeData } from '../types';
 import { useOptimizationStore } from '../stores';
-import { Select, Button, Space, Typography, Card, Divider, Tag, List, Empty, Alert, Input } from 'antd';
-import { HistoryOutlined, SendOutlined, RedoOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import {
+  Select,
+  Button,
+  Space,
+  Typography,
+  Card,
+  Divider,
+  Tag,
+  List,
+  Empty,
+  Alert,
+  Input,
+} from 'antd';
+import {
+  HistoryOutlined,
+  SendOutlined,
+  RedoOutlined,
+  CheckCircleOutlined,
+  ArrowLeftOutlined,
+} from '@ant-design/icons';
 import './PitchPerfectCard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -21,7 +39,9 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
   jobDescription,
   onBack,
 }) => {
-  const [style, setStyle] = useState<'technical' | 'managerial' | 'sales'>('technical');
+  const [style, setStyle] = useState<'technical' | 'managerial' | 'sales'>(
+    'technical'
+  );
   const [duration, setDuration] = useState<30 | 60>(30);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PitchPerfectAgentOutput | null>(null);
@@ -44,7 +64,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         duration
       );
       setResult(response);
-      
+
       // Save to history
       addVersion({
         id: Date.now().toString(),
@@ -53,7 +73,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         timestamp: Date.now(),
         output: response,
         style,
-        duration
+        duration,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate pitch');
@@ -90,7 +110,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         timestamp: Date.now(),
         output: updatedResult,
         style,
-        duration
+        duration,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refine pitch');
@@ -112,17 +132,19 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             {onBack && (
-              <Button 
-                type="text" 
-                icon={<ArrowLeftOutlined />} 
+              <Button
+                type="text"
+                icon={<ArrowLeftOutlined />}
                 onClick={onBack}
                 className="integrated-back-btn"
               />
             )}
-            <Title level={4} className="!text-white !m-0">履历点睛</Title>
+            <Title level={4} className="!text-white !m-0">
+              履历点睛
+            </Title>
           </div>
-          <Button 
-            icon={<HistoryOutlined />} 
+          <Button
+            icon={<HistoryOutlined />}
             onClick={() => setShowHistory(!showHistory)}
             type={showHistory ? 'primary' : 'default'}
           >
@@ -136,7 +158,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               dataSource={history}
               locale={{ emptyText: <Empty description="暂无历史优化记录" /> }}
               renderItem={(item) => (
-                <List.Item 
+                <List.Item
                   className="cursor-pointer hover:bg-white/5 rounded-lg p-3 transition-colors"
                   onClick={() => selectVersion(item)}
                 >
@@ -151,7 +173,10 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                       </Space>
                     }
                     description={
-                      <Paragraph ellipsis={{ rows: 1 }} className="!text-gray-400 !m-0">
+                      <Paragraph
+                        ellipsis={{ rows: 1 }}
+                        className="!text-gray-400 !m-0"
+                      >
                         {item.output.introduction}
                       </Paragraph>
                     }
@@ -159,7 +184,12 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                 </List.Item>
               )}
             />
-            <Button className="w-full mt-4" onClick={() => setShowHistory(false)}>返回当前</Button>
+            <Button
+              className="w-full mt-4"
+              onClick={() => setShowHistory(false)}
+            >
+              返回当前
+            </Button>
           </div>
         ) : (
           <>
@@ -190,10 +220,10 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                 />
               </div>
               <div className="flex items-end">
-                <Button 
-                  type="primary" 
-                  block 
-                  icon={<RedoOutlined />} 
+                <Button
+                  type="primary"
+                  block
+                  icon={<RedoOutlined />}
                   onClick={handleGenerate}
                   loading={loading}
                 >
@@ -202,12 +232,16 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               </div>
             </div>
 
-            {error && <Alert message={error} type="error" showIcon className="mb-6" />}
+            {error && (
+              <Alert message={error} type="error" showIcon className="mb-6" />
+            )}
 
             {result && (
               <div className="results-display space-y-8 animate-fade-in">
                 <section>
-                  <Title level={5} className="!text-primary-400"><CheckCircleOutlined /> 推荐个人介绍</Title>
+                  <Title level={5} className="!text-primary-400">
+                    <CheckCircleOutlined /> 推荐个人介绍
+                  </Title>
                   <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-gray-200 leading-relaxed italic">
                     "{result.introduction}"
                   </div>
@@ -215,7 +249,9 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <section>
-                    <Title level={5} className="!text-gray-300">关键亮点 (Highlights)</Title>
+                    <Title level={5} className="!text-gray-300">
+                      关键亮点 (Highlights)
+                    </Title>
                     <ul className="space-y-2">
                       {result.highlights.map((h, i) => (
                         <li key={i} className="flex gap-2 text-gray-400">
@@ -226,21 +262,37 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                   </section>
 
                   <section>
-                    <Title level={5} className="!text-gray-300">关键词匹配 ({result.keywordOverlap.overlapPercentage}%)</Title>
+                    <Title level={5} className="!text-gray-300">
+                      关键词匹配 ({result.keywordOverlap.overlapPercentage}%)
+                    </Title>
                     <div className="space-y-4">
                       <div>
-                        <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">已命中</Text>
+                        <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
+                          已命中
+                        </Text>
                         <Space wrap>
-                          {result.keywordOverlap.matched.map(kw => (
-                            <Tag key={kw} className="!bg-green-500/10 !border-green-500/20 !text-green-400 m-0">{kw}</Tag>
+                          {result.keywordOverlap.matched.map((kw) => (
+                            <Tag
+                              key={kw}
+                              className="!bg-green-500/10 !border-green-500/20 !text-green-400 m-0"
+                            >
+                              {kw}
+                            </Tag>
                           ))}
                         </Space>
                       </div>
                       <div>
-                        <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">建议补充</Text>
+                        <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
+                          建议补充
+                        </Text>
                         <Space wrap>
-                          {result.keywordOverlap.missing.map(kw => (
-                            <Tag key={kw} className="!bg-yellow-500/10 !border-yellow-500/20 !text-yellow-400 m-0">{kw}</Tag>
+                          {result.keywordOverlap.missing.map((kw) => (
+                            <Tag
+                              key={kw}
+                              className="!bg-yellow-500/10 !border-yellow-500/20 !text-yellow-400 m-0"
+                            >
+                              {kw}
+                            </Tag>
                           ))}
                         </Space>
                       </div>
@@ -250,12 +302,18 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
                 {result.suggestions.length > 0 && (
                   <section>
-                    <Title level={5} className="!text-gray-300">改进建议</Title>
+                    <Title level={5} className="!text-gray-300">
+                      改进建议
+                    </Title>
                     <div className="p-4 rounded-xl bg-primary-500/5 border border-primary-500/10">
                       <List
                         size="small"
                         dataSource={result.suggestions}
-                        renderItem={item => <List.Item className="!border-none !text-gray-400 !py-1">• {item}</List.Item>}
+                        renderItem={(item) => (
+                          <List.Item className="!border-none !text-gray-400 !py-1">
+                            • {item}
+                          </List.Item>
+                        )}
                       />
                     </div>
                   </section>
@@ -264,19 +322,23 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                 <Divider className="!border-white/5" />
 
                 <section className="refinement-box">
-                  <Title level={5} className="!text-gray-300">继续微调</Title>
+                  <Title level={5} className="!text-gray-300">
+                    继续微调
+                  </Title>
                   <Space.Compact className="w-full">
                     <Input
                       placeholder="例如：'让语气更强硬一些'、'突出我的领导力'..."
                       value={feedback}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFeedback(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setFeedback(e.target.value)
+                      }
                       onPressEnter={handleRefine}
                       className="!bg-white/5 !border-white/10 !text-white"
                       disabled={refining}
                     />
-                    <Button 
-                      type="primary" 
-                      icon={<SendOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<SendOutlined />}
                       onClick={handleRefine}
                       loading={refining}
                     >

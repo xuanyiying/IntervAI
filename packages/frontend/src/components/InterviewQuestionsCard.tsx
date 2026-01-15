@@ -12,11 +12,7 @@ import {
 } from 'antd';
 import { DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { theme } from 'antd';
-import {
-  type InterviewQuestion,
-  QuestionType,
-  Difficulty,
-} from '../types';
+import { type InterviewQuestion, QuestionType, Difficulty } from '../types';
 import { interviewService } from '../services/interview-service';
 
 interface InterviewQuestionsCardProps {
@@ -54,11 +50,12 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
   };
 
   const getDifficultyInfo = (difficulty: Difficulty) => {
-    const difficultyMap: Record<Difficulty, { label: string; color: string }> = {
-      [Difficulty.EASY]: { label: '简单', color: 'green' },
-      [Difficulty.MEDIUM]: { label: '中等', color: 'orange' },
-      [Difficulty.HARD]: { label: '困难', color: 'red' },
-    };
+    const difficultyMap: Record<Difficulty, { label: string; color: string }> =
+      {
+        [Difficulty.EASY]: { label: '简单', color: 'green' },
+        [Difficulty.MEDIUM]: { label: '中等', color: 'orange' },
+        [Difficulty.HARD]: { label: '困难', color: 'red' },
+      };
     return difficultyMap[difficulty] || { label: difficulty, color: 'default' };
   };
 
@@ -256,7 +253,14 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
         </Button>
       }
     >
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          marginBottom: '16px',
+        }}
+      >
         {countByType(QuestionType.BEHAVIORAL) > 0 && (
           <Tag color={getQuestionTypeColor(QuestionType.BEHAVIORAL)}>
             {getQuestionTypeLabel(QuestionType.BEHAVIORAL)}:{' '}
