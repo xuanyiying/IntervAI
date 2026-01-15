@@ -70,7 +70,8 @@ export class CleanupTask {
   async cleanupExpiredFiles(): Promise<void> {
     try {
       this.logger.log('Starting cleanup of expired temporary PDF files...');
-      const deletedCount = await this.pdfGenerationService.cleanupExpiredFiles();
+      const deletedCount =
+        await this.pdfGenerationService.cleanupExpiredFiles();
       this.logger.log(
         `Cleanup completed: ${deletedCount} expired temporary PDF files deleted`
       );

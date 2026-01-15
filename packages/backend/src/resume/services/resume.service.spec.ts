@@ -220,9 +220,9 @@ describe('ResumeService', () => {
     });
 
     it('should throw BadRequestException if no file provided', async () => {
-      await expect(
-        service.uploadResume('user-1', null as any)
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.uploadResume('user-1', null as any)).rejects.toThrow(
+        BadRequestException
+      );
     });
 
     it('should throw BadRequestException if file exceeds size limit', async () => {

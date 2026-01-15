@@ -486,7 +486,17 @@ JSON 结构必须严格包含以下字段：
   - category: 字符串，细分类别（如：Redis - 分布式锁、Java并发 - 线程池）
 
 注意：只需要返回问题列表，不需要包含 questionIndex、referenceAnswer、keyPoints、userAnswer、score、feedback 等字段。`,
-    variables: ['resume_content', 'projectCount', 'mysqlCount', 'redisCount', 'javaBasicCount', 'javaCollectionCount', 'javaConcurrentCount', 'springCount', 'questionCount'],
+    variables: [
+      'resume_content',
+      'projectCount',
+      'mysqlCount',
+      'redisCount',
+      'javaBasicCount',
+      'javaCollectionCount',
+      'javaConcurrentCount',
+      'springCount',
+      'questionCount',
+    ],
     isEncrypted: false,
   },
   {

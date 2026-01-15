@@ -12,7 +12,9 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import PdfGenerationService, { PDFOptions } from '../services/pdf-generation.service';
+import PdfGenerationService, {
+  PDFOptions,
+} from '../services/pdf-generation.service';
 import { ParsedResumeData } from '../../types';
 import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
 import {
@@ -118,7 +120,10 @@ export class PdfGenerationController {
   async getGeneratedPDF(@Request() req: any, @Param('id') pdfId: string) {
     this.logger.log(`Fetching PDF details: ${pdfId}`);
 
-    const pdf = await this.pdfGenerationService.getGeneratedPDF(pdfId, req.user.id);
+    const pdf = await this.pdfGenerationService.getGeneratedPDF(
+      pdfId,
+      req.user.id
+    );
 
     return {
       success: true,
@@ -170,7 +175,10 @@ export class PdfGenerationController {
   ) {
     this.logger.log(`Downloading PDF: ${pdfId}`);
 
-    const buffer = await this.pdfGenerationService.downloadPDF(pdfId, req.user.id);
+    const buffer = await this.pdfGenerationService.downloadPDF(
+      pdfId,
+      req.user.id
+    );
 
     // Set response headers for file download
     res.setHeader('Content-Type', 'application/pdf');

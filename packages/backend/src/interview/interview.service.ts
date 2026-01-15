@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AIEngine } from '@/ai';
+import { QuotaService } from '@/quota/quota.service';
 import {
   InterviewQuestion,
   QuestionType,
@@ -26,7 +27,8 @@ export class InterviewService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private aiEngine: AIEngine,
+    private quotaService: QuotaService
   ) {}
 
   /**
@@ -202,12 +204,16 @@ export class InterviewService {
       'id' | 'createdAt' | 'optimizationId'
     >[] = [];
 
+    const recentRole =
+      resumeData.experience && resumeData.experience.length > 0
+        ? resumeData.experience[0].position
+        : 'your recent role';
+
     // Question 1: Tell me about a challenge you overcame
     if (questions.length < count) {
       questions.push({
         questionType: QuestionType.BEHAVIORAL,
-        question:
-          'Tell me about a time when you faced a significant challenge at work. How did you handle it?',
+        question: `Tell me about a time when you faced a significant challenge as ${recentRole}. How did you handle it?`,
         suggestedAnswer: this.generateSTARAnswer(
           'Describe a specific challenge from your experience',
           'Explain what you needed to accomplish',
@@ -413,12 +419,14 @@ export class InterviewService {
       'id' | 'createdAt' | 'optimizationId'
     >[] = [];
 
+    const jobTitle = jobData.title || 'this role';
+    const companyName = jobData.company || 'the company';
+
     // Question 1: Tight deadline scenario
     if (questions.length < count) {
       questions.push({
         questionType: QuestionType.SITUATIONAL,
-        question:
-          'You have a tight deadline and discover a critical issue that will delay the project. What do you do?',
+        question: `You have a tight deadline at ${companyName} and discover a critical issue that will delay the project. What do you do?`,
         suggestedAnswer: `Your approach should include:
 - Immediately inform stakeholders about the issue
 - Assess the severity and impact
@@ -439,8 +447,7 @@ export class InterviewService {
     if (questions.length < count) {
       questions.push({
         questionType: QuestionType.SITUATIONAL,
-        question:
-          'You receive conflicting priorities from two managers. How do you handle this?',
+        question: `As a ${jobTitle}, you receive conflicting priorities from two managers. How do you handle this?`,
         suggestedAnswer: `Your approach should include:
 - Seek clarification on business impact and urgency
 - Communicate with both managers about the conflict
@@ -769,6 +776,9 @@ Remember to be specific with examples and quantify results when possible.`;
     userId: string,
     createSessionDto: CreateSessionDto
   ): Promise<InterviewSession> {
+    // Check interview quota
+    await this.quotaService.enforceInterviewQuota(userId);
+
     const { optimizationId } = createSessionDto;
 
     // Verify user owns the optimization
@@ -793,13 +803,18 @@ Remember to be specific with examples and quantify results when possible.`;
     }
 
     // Create session
-    return this.prisma.interviewSession.create({
+    const session = await this.prisma.interviewSession.create({
       data: {
         userId,
         optimizationId,
         status: InterviewStatus.IN_PROGRESS,
       },
     });
+
+    // Increment interview count
+    await this.quotaService.incrementInterviewCount(userId);
+
+    return session;
   }
 
   /**
@@ -861,11 +876,17 @@ Remember to be specific with examples and quantify results when possible.`;
     const jobData = session.optimization.job
       .parsedRequirements as unknown as ParsedJobData;
 
+    const requirements = [
+      ...(jobData.requiredSkills || []),
+      ...(jobData.responsibilities || []),
+    ].join('; ');
+
     const context = `
 You are an experienced interviewer conducting a job interview.
 Candidate Name: ${resumeData.personalInfo.name}
 Job Title: ${session.optimization.job.title}
 Company: ${session.optimization.job.company}
+Job Requirements: ${requirements.substring(0, 500)}...
 
 Your goal is to assess the candidate's fit for the role based on their resume and the job description.
 Be professional, encouraging, but thorough. Ask follow-up questions when appropriate.
@@ -964,12 +985,18 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
     const jobTitle = session.optimization.job.title || 'Unknown Role';
     const company = session.optimization.job.company || 'Unknown Company';
 
+    const requirements = [
+      ...(jobData.requiredSkills || []),
+      ...(jobData.responsibilities || []),
+    ].join('; ');
+
     const transcript = session.messages
       .map((m: any) => `${m.role}: ${m.content}`)
       .join('\n');
 
     const prompt = `
 You are an expert interview coach. Review the following interview transcript for a ${jobTitle} position at ${company}.
+Job Requirements: ${requirements.substring(0, 500)}...
 Candidate: ${resumeData.personalInfo.name}
 
 Transcript:
@@ -996,7 +1023,7 @@ Format the output as JSON:
 
       // Parse JSON from result
       // Assuming result is a string that might contain JSON
-      let parsedResult;
+      let parsedResult: { score: number; feedback: string };
       try {
         const jsonMatch = result.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -1096,6 +1123,14 @@ Format the output as JSON:
     });
 
     return session;
+  }
+
+  /**
+   * Transcribe audio file
+   */
+  async transcribeAudio(file: Express.Multer.File): Promise<{ text: string }> {
+    const text = await this.aiEngine.transcribeAudio(file.buffer);
+    return { text };
   }
 
   /**

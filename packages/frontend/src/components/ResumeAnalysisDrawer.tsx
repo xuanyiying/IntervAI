@@ -31,10 +31,10 @@ interface ResumeAnalysisDrawerProps {
   onClose: () => void;
 }
 
-export const ResumeAnalysisDrawer: React.FC<ResumeAnalysisDrawerProps> = ({ 
-  visible, 
-  resumeId, 
-  onClose 
+export const ResumeAnalysisDrawer: React.FC<ResumeAnalysisDrawerProps> = ({
+  visible,
+  resumeId,
+  onClose,
 }) => {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);

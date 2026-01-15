@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Layout,
-  Button,
-  Drawer,
-  Avatar,
-  Dropdown,
-  MenuProps
-} from 'antd';
+import { Layout, Button, Drawer, Avatar, Dropdown, MenuProps } from 'antd';
 import { useNavigate, Outlet } from 'react-router-dom';
 import {
   MenuUnfoldOutlined,

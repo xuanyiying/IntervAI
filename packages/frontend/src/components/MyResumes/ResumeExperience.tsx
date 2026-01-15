@@ -8,7 +8,9 @@ interface ResumeExperienceProps {
   experience?: ParsedResumeData['experience'];
 }
 
-export const ResumeExperience: React.FC<ResumeExperienceProps> = ({ experience }) => {
+export const ResumeExperience: React.FC<ResumeExperienceProps> = ({
+  experience,
+}) => {
   const { t } = useTranslation();
 
   if (!experience || experience.length === 0) return null;
@@ -30,9 +32,7 @@ export const ResumeExperience: React.FC<ResumeExperienceProps> = ({ experience }
                 <div className="experience-company font-bold">
                   {exp.company}
                 </div>
-                <div className="text-primary font-medium">
-                  {exp.position}
-                </div>
+                <div className="text-primary font-medium">{exp.position}</div>
               </div>
               <div className="experience-date">
                 {exp.startDate} - {exp.endDate || t('common.present', '至今')}

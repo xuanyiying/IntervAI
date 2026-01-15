@@ -24,7 +24,6 @@ export interface ResumeUploadResult {
   isDuplicate: boolean;
 }
 
-
 @Injectable()
 export class ResumeService {
   private readonly logger = new Logger(ResumeService.name);

@@ -45,14 +45,18 @@ export const ResumeBuilder: React.FC = () => {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowDown') {
         e.preventDefault();
-        const currentIndex = sections.findIndex((s) => s.id === activeSectionId);
+        const currentIndex = sections.findIndex(
+          (s) => s.id === activeSectionId
+        );
         if (currentIndex < sections.length - 1) {
           setActiveSectionId(sections[currentIndex + 1].id);
         }
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'ArrowUp') {
         e.preventDefault();
-        const currentIndex = sections.findIndex((s) => s.id === activeSectionId);
+        const currentIndex = sections.findIndex(
+          (s) => s.id === activeSectionId
+        );
         if (currentIndex > 0) {
           setActiveSectionId(sections[currentIndex - 1].id);
         }
@@ -91,7 +95,9 @@ export const ResumeBuilder: React.FC = () => {
 
       <main className="max-w-[1600px] mx-auto p-6 lg:p-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className={`lg:col-span-4 ${!isEditView ? 'hidden lg:block opacity-50 pointer-events-none' : ''}`}>
+          <div
+            className={`lg:col-span-4 ${!isEditView ? 'hidden lg:block opacity-50 pointer-events-none' : ''}`}
+          >
             <ResumeSidebar
               sections={sections}
               setSections={setSections}
@@ -103,7 +109,9 @@ export const ResumeBuilder: React.FC = () => {
             />
           </div>
 
-          <div className={`lg:col-span-8 ${isEditView ? '' : 'lg:col-span-12'}`}>
+          <div
+            className={`lg:col-span-8 ${isEditView ? '' : 'lg:col-span-12'}`}
+          >
             <AnimatePresence mode="wait">
               {isEditView ? (
                 <ResumeEditor

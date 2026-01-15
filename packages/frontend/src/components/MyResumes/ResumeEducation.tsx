@@ -8,7 +8,9 @@ interface ResumeEducationProps {
   education?: ParsedResumeData['education'];
 }
 
-export const ResumeEducation: React.FC<ResumeEducationProps> = ({ education }) => {
+export const ResumeEducation: React.FC<ResumeEducationProps> = ({
+  education,
+}) => {
   const { t } = useTranslation();
 
   if (!education || education.length === 0) return null;

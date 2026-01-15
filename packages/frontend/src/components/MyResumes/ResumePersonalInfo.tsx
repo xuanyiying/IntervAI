@@ -14,7 +14,9 @@ interface ResumePersonalInfoProps {
   data: ParsedResumeData['personalInfo'];
 }
 
-export const ResumePersonalInfo: React.FC<ResumePersonalInfoProps> = ({ data }) => {
+export const ResumePersonalInfo: React.FC<ResumePersonalInfoProps> = ({
+  data,
+}) => {
   const { t } = useTranslation();
 
   return (

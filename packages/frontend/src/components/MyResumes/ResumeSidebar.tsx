@@ -24,13 +24,21 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
   const getStatusTag = (status: ParseStatus) => {
     switch (status) {
       case ParseStatus.COMPLETED:
-        return <Tag color="success">{t('resume.status_completed', '已解析')}</Tag>;
+        return (
+          <Tag color="success">{t('resume.status_completed', '已解析')}</Tag>
+        );
       case ParseStatus.PROCESSING:
-        return <Tag color="processing">{t('resume.status_processing', '解析中')}</Tag>;
+        return (
+          <Tag color="processing">
+            {t('resume.status_processing', '解析中')}
+          </Tag>
+        );
       case ParseStatus.FAILED:
         return <Tag color="error">{t('resume.status_failed', '解析失败')}</Tag>;
       default:
-        return <Tag color="default">{t('resume.status_pending', '待处理')}</Tag>;
+        return (
+          <Tag color="default">{t('resume.status_pending', '待处理')}</Tag>
+        );
     }
   };
 
@@ -38,7 +46,9 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
     <aside className="resume-sidebar">
       <div className="resume-list-card">
         <div className="resume-list-header">
-          <span className="font-medium">{t('resume.list_title', '简历记录')}</span>
+          <span className="font-medium">
+            {t('resume.list_title', '简历记录')}
+          </span>
           <Upload
             beforeUpload={(file) => {
               onUpload(file);

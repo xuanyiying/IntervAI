@@ -1517,11 +1517,15 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
       });
 
       if (!session) {
-        throw new NotFoundException(`Interview session with ID ${sessionId} not found`);
+        throw new NotFoundException(
+          `Interview session with ID ${sessionId} not found`
+        );
       }
 
       if (session.userId !== userId) {
-        throw new ForbiddenException('You do not have permission to access this interview session');
+        throw new ForbiddenException(
+          'You do not have permission to access this interview session'
+        );
       }
 
       // 2. Format Markdown
@@ -1557,7 +1561,10 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      this.logger.error(`Error generating interview report: ${errorMessage}`, error);
+      this.logger.error(
+        `Error generating interview report: ${errorMessage}`,
+        error
+      );
       throw error;
     }
   }

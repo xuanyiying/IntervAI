@@ -8,7 +8,9 @@ interface ResumeCertificationsProps {
   certifications?: ParsedResumeData['certifications'];
 }
 
-export const ResumeCertifications: React.FC<ResumeCertificationsProps> = ({ certifications }) => {
+export const ResumeCertifications: React.FC<ResumeCertificationsProps> = ({
+  certifications,
+}) => {
   const { t } = useTranslation();
 
   if (!certifications || certifications.length === 0) return null;

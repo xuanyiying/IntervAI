@@ -15,14 +15,16 @@ vi.mock('framer-motion', async () => {
   const actual = await vi.importActual('framer-motion');
   return {
     ...actual,
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => (
+      <>{children}</>
+    ),
     motion: {
       div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },
     Reorder: {
       Group: ({ children, ...props }: any) => <div {...props}>{children}</div>,
       Item: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    }
+    },
   };
 });
 
@@ -40,28 +42,28 @@ describe('ResumeBuilder', () => {
 
   it('should switch between Build and Preview modes', () => {
     render(<ResumeBuilder />);
-    
+
     // Initially in Build mode
     expect(screen.getByText('Content Editor')).toBeInTheDocument();
-    
+
     // Switch to Preview
     const previewButton = screen.getByRole('tab', { name: /preview/i });
     fireEvent.click(previewButton);
-    
+
     // Should see Preview content
     expect(screen.queryByText('Content Editor')).not.toBeInTheDocument();
   });
 
   it('should add a new section', () => {
     render(<ResumeBuilder />);
-    
+
     // Use regex to match exact text to avoid multiple matches if they exist
     // But since these are titles, they should be unique enough or at least present
     expect(screen.getByText('Personal Information')).toBeInTheDocument();
-    
+
     const addButton = screen.getByLabelText('Add Section');
     fireEvent.click(addButton);
-    
+
     expect(screen.getByText('New Section')).toBeInTheDocument();
   });
 });
