@@ -168,9 +168,9 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
     <div className="role-play-card">
       <div className="flex items-center gap-4 mb-6">
         {onBack && (
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
             onClick={onBack}
             className="integrated-back-btn"
           />
@@ -229,9 +229,7 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
                   className={`message message-${msg.role.toLowerCase()}`}
                 >
                   <div className="message-role">
-                    {msg.role === MessageRole.ASSISTANT
-                      ? '👤 面试官'
-                      : '👤 您'}
+                    {msg.role === MessageRole.ASSISTANT ? '👤 面试官' : '👤 您'}
                   </div>
                   <div className="message-content">{msg.content}</div>
                   <div className="message-time">
@@ -290,10 +288,15 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
                 Object.entries(feedback.scores).map(([key, value]) => (
                   <div key={key} className="score-item">
                     <div className="score-label">
-                      {key === 'clarity' ? '清晰度' : 
-                       key === 'relevance' ? '相关性' : 
-                       key === 'depth' ? '深度' : 
-                       key === 'communication' ? '沟通能力' : key}
+                      {key === 'clarity'
+                        ? '清晰度'
+                        : key === 'relevance'
+                          ? '相关性'
+                          : key === 'depth'
+                            ? '深度'
+                            : key === 'communication'
+                              ? '沟通能力'
+                              : key}
                     </div>
                     <div className="score-bar">
                       <div

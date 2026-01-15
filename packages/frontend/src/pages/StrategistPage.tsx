@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { StrategistCard } from '../components/StrategistCard';
 import { useResumeStore } from '../stores';
 import { Space, Input, Button, Alert, Tooltip } from 'antd';
-import { RocketOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
+import {
+  RocketOutlined,
+  ArrowLeftOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
 import './agents.css';
 
 const { TextArea } = Input;
@@ -47,11 +51,21 @@ export const StrategistPage: React.FC = () => {
                   <Space>
                     <FileTextOutlined className="resume-icon" />
                     <div className="resume-info">
-                      <div className="resume-title">{currentResume.title || currentResume.originalFilename}</div>
-                      <div className="resume-meta">v{currentResume.version} · 已解析</div>
+                      <div className="resume-title">
+                        {currentResume.title || currentResume.originalFilename}
+                      </div>
+                      <div className="resume-meta">
+                        v{currentResume.version} · 已解析
+                      </div>
                     </div>
                   </Space>
-                  <Button type="link" className="change-btn" onClick={() => window.location.href = '/resumes'}>更换</Button>
+                  <Button
+                    type="link"
+                    className="change-btn"
+                    onClick={() => (window.location.href = '/resumes')}
+                  >
+                    更换
+                  </Button>
                 </div>
               ) : (
                 <Alert
@@ -60,7 +74,11 @@ export const StrategistPage: React.FC = () => {
                   type="warning"
                   showIcon
                   action={
-                    <Button size="small" type="primary" onClick={() => window.location.href = '/resumes'}>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => (window.location.href = '/resumes')}
+                    >
                       去上传
                     </Button>
                   }
@@ -83,7 +101,11 @@ export const StrategistPage: React.FC = () => {
             <div className="form-actions">
               <button
                 type="submit"
-                disabled={!currentResume || currentResume.parseStatus !== 'COMPLETED' || !jobDescription.trim()}
+                disabled={
+                  !currentResume ||
+                  currentResume.parseStatus !== 'COMPLETED' ||
+                  !jobDescription.trim()
+                }
                 className="btn-primary"
               >
                 生成面试策略方案

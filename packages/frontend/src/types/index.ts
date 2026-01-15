@@ -81,7 +81,6 @@ export interface OptimizationVersion {
   duration: number;
 }
 
-
 export interface PitchPerfectAgentOutput {
   introduction: string;
   highlights: string[];
@@ -129,7 +128,7 @@ export interface ParsedResumeData {
   experience?: Experience[];
   skills?: (string | SkillGroup)[];
   projects?: Project[];
-  certifications?: Certification[];
+  certifications?: Array<string | Certification>;
   languages?: Language[];
   markdown?: string;
   extractedText?: string;

@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Modal, Input, Button, List, Typography, Space, Tag, message, Divider, Tooltip, Empty, Spin } from 'antd';
+import {
+  Modal,
+  Input,
+  Button,
+  List,
+  Typography,
+  Space,
+  Tag,
+  message,
+  Divider,
+  Tooltip,
+  Empty,
+  Spin,
+} from 'antd';
 import {
   RocketOutlined,
   CheckCircleOutlined,
@@ -7,7 +20,6 @@ import {
   CopyOutlined,
   SaveOutlined,
   BulbOutlined,
-  DiffOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { optimizationService } from '../services/optimization-service';
@@ -16,7 +28,7 @@ import { Optimization, Suggestion, SuggestionStatus } from '../types';
 import './ResumeOptimizationDialog.css';
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
+const { Text, Paragraph } = Typography;
 
 interface ResumeOptimizationDialogProps {
   visible: boolean;
@@ -26,13 +38,9 @@ interface ResumeOptimizationDialogProps {
   initialOptimizationId?: string;
 }
 
-export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> = ({
-  visible,
-  resumeId,
-  onClose,
-  onSuccess,
-  initialOptimizationId,
-}) => {
+export const ResumeOptimizationDialog: React.FC<
+  ResumeOptimizationDialogProps
+> = ({ visible, resumeId, onClose, onSuccess, initialOptimizationId }) => {
   const { t } = useTranslation();
   const [jdText, setJdText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,7 +88,10 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
       });
 
       // 2. Start optimization
-      const result = await optimizationService.createOptimization(resumeId, job.id);
+      const result = await optimizationService.createOptimization(
+        resumeId,
+        job.id
+      );
       setOptimization(result);
       setStep('review');
     } catch (error) {
@@ -94,7 +105,10 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
   const handleAcceptSuggestion = async (suggestionId: string) => {
     if (!optimization) return;
     try {
-      const updated = await optimizationService.acceptSuggestion(optimization.id, suggestionId);
+      const updated = await optimizationService.acceptSuggestion(
+        optimization.id,
+        suggestionId
+      );
       setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
@@ -105,7 +119,10 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
   const handleRejectSuggestion = async (suggestionId: string) => {
     if (!optimization) return;
     try {
-      const updated = await optimizationService.rejectSuggestion(optimization.id, suggestionId);
+      const updated = await optimizationService.rejectSuggestion(
+        optimization.id,
+        suggestionId
+      );
       setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
@@ -116,13 +133,16 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
   const handleAcceptAll = async () => {
     if (!optimization) return;
     const pendingIds = optimization.suggestions
-      .filter(s => s.status === SuggestionStatus.PENDING)
-      .map(s => s.id);
-    
+      .filter((s) => s.status === SuggestionStatus.PENDING)
+      .map((s) => s.id);
+
     if (pendingIds.length === 0) return;
 
     try {
-      const updated = await optimizationService.acceptBatchSuggestions(optimization.id, pendingIds);
+      const updated = await optimizationService.acceptBatchSuggestions(
+        optimization.id,
+        pendingIds
+      );
       setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
@@ -150,25 +170,23 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
           </div>
         </div>
         <div className="diff-section">
-                <span className="diff-label">{t('resume.diff_optimized')}</span>
-                <div className="diff-content diff-optimized group/opt">
-                  {suggestion.optimized}
-                  <Tooltip title={t('common.copy')}>
-                    <Button
-                      size="small"
-                      icon={<CopyOutlined />}
-                      className="absolute top-2 right-2 opacity-0 group-hover/opt:opacity-100 transition-opacity"
-                      onClick={() => handleCopyOptimized(suggestion.optimized)}
-                    />
-                  </Tooltip>
-                </div>
-              </div>
+          <span className="diff-label">{t('resume.diff_optimized')}</span>
+          <div className="diff-content diff-optimized group/opt">
+            {suggestion.optimized}
+            <Tooltip title={t('common.copy')}>
+              <Button
+                size="small"
+                icon={<CopyOutlined />}
+                className="absolute top-2 right-2 opacity-0 group-hover/opt:opacity-100 transition-opacity"
+                onClick={() => handleCopyOptimized(suggestion.optimized)}
+              />
+            </Tooltip>
+          </div>
+        </div>
         {suggestion.reason && (
           <div className="suggestion-reason-box">
             <BulbOutlined className="text-amber-500 mt-1" />
-            <div className="suggestion-reason-text">
-              {suggestion.reason}
-            </div>
+            <div className="suggestion-reason-text">{suggestion.reason}</div>
           </div>
         )}
       </div>
@@ -197,9 +215,9 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
         ) : (
           <Space>
             <Button onClick={onClose}>{t('common.cancel')}</Button>
-            <Button 
-              type="primary" 
-              icon={<RocketOutlined />} 
+            <Button
+              type="primary"
+              icon={<RocketOutlined />}
               loading={loading}
               onClick={handleStartOptimization}
             >
@@ -250,13 +268,15 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
                 <List.Item className="optimization-list-item block">
                   <div className="flex justify-between items-start mb-3">
                     <Space split={<Divider type="vertical" />}>
-                      <Tag className="tag-section">
-                        {suggestion.section}
-                      </Tag>
+                      <Tag className="tag-section">{suggestion.section}</Tag>
                       {suggestion.status === SuggestionStatus.ACCEPTED ? (
-                        <Tag icon={<CheckCircleOutlined />} color="success">已接受</Tag>
+                        <Tag icon={<CheckCircleOutlined />} color="success">
+                          已接受
+                        </Tag>
                       ) : suggestion.status === SuggestionStatus.REJECTED ? (
-                        <Tag icon={<CloseCircleOutlined />} color="error">已拒绝</Tag>
+                        <Tag icon={<CloseCircleOutlined />} color="error">
+                          已拒绝
+                        </Tag>
                       ) : (
                         <Tag color="warning">待处理</Tag>
                       )}
@@ -265,25 +285,33 @@ export const ResumeOptimizationDialog: React.FC<ResumeOptimizationDialogProps> =
                       {suggestion.status === SuggestionStatus.PENDING && (
                         <>
                           <Tooltip title="接受建议">
-                            <Button 
-                              type="text" 
-                              icon={<CheckCircleOutlined className="text-green-500" />} 
-                              onClick={() => handleAcceptSuggestion(suggestion.id)}
+                            <Button
+                              type="text"
+                              icon={
+                                <CheckCircleOutlined className="text-green-500" />
+                              }
+                              onClick={() =>
+                                handleAcceptSuggestion(suggestion.id)
+                              }
                             />
                           </Tooltip>
                           <Tooltip title="拒绝建议">
-                            <Button 
-                              type="text" 
-                              icon={<CloseCircleOutlined className="text-red-400" />} 
-                              onClick={() => handleRejectSuggestion(suggestion.id)}
+                            <Button
+                              type="text"
+                              icon={
+                                <CloseCircleOutlined className="text-red-400" />
+                              }
+                              onClick={() =>
+                                handleRejectSuggestion(suggestion.id)
+                              }
                             />
                           </Tooltip>
                         </>
                       )}
                       <Tooltip title={t('resume.copy_content')}>
-                        <Button 
-                          type="text" 
-                          icon={<CopyOutlined className="text-gray-400" />} 
+                        <Button
+                          type="text"
+                          icon={<CopyOutlined className="text-gray-400" />}
                           onClick={() => handleCopy(suggestion.optimized)}
                         />
                       </Tooltip>

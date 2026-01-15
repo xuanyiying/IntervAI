@@ -1,10 +1,8 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfigProvider } from 'antd';
 import ResumeUploadButton from './ResumeUploadButton';
-import { ParseStatus } from '../types';
-import { resumeService } from '../services/resume-service';
 
 // Mock the resume service
 vi.mock('../services/resume-service', () => ({

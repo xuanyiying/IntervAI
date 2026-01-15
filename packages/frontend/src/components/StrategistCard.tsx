@@ -125,9 +125,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
     <div className="strategist-card">
       <div className="flex items-center gap-4 mb-6">
         {onBack && (
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
             onClick={onBack}
             className="integrated-back-btn"
           />
@@ -240,7 +240,8 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
               </div>
             </div>
             <div className="results-count">
-              显示 {filteredQuestions.length} / {result.totalQuestions} 个预测问题
+              显示 {filteredQuestions.length} / {result.totalQuestions}{' '}
+              个预测问题
             </div>
           </div>
 
@@ -253,7 +254,12 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                   <div key={question.id} className="question-item">
                     <div className="question-header">
                       <span className="question-text">
-                        <span className="question-number" style={{ marginRight: '1rem', opacity: 0.5 }}>{idx + 1}.</span>
+                        <span
+                          className="question-number"
+                          style={{ marginRight: '1rem', opacity: 0.5 }}
+                        >
+                          {idx + 1}.
+                        </span>
                         {question.question}
                       </span>
                     </div>
@@ -264,26 +270,45 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                           backgroundColor: getPriorityColor(question.priority),
                         }}
                       >
-                        {question.priority === 'must-prepare' ? '必准备' : question.priority === 'important' ? '重点' : '可选'}
+                        {question.priority === 'must-prepare'
+                          ? '必准备'
+                          : question.priority === 'important'
+                            ? '重点'
+                            : '可选'}
                       </span>
                       <span
                         className="badge badge-difficulty"
                         style={{
                           color: getDifficultyColor(question.difficulty),
                           border: `1px solid ${getDifficultyColor(question.difficulty)}`,
-                          backgroundColor: 'transparent'
+                          backgroundColor: 'transparent',
                         }}
                       >
-                        {question.difficulty === 'easy' ? '容易' : question.difficulty === 'medium' ? '中等' : '困难'}
+                        {question.difficulty === 'easy'
+                          ? '容易'
+                          : question.difficulty === 'medium'
+                            ? '中等'
+                            : '困难'}
                       </span>
                       <span className="badge badge-category">
-                        {question.category === 'technical' ? '技术' : question.category === 'behavioral' ? '行为' : '场景'}
+                        {question.category === 'technical'
+                          ? '技术'
+                          : question.category === 'behavioral'
+                            ? '行为'
+                            : '场景'}
                       </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="no-results" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                <div
+                  className="no-results"
+                  style={{
+                    textAlign: 'center',
+                    padding: '2rem',
+                    color: 'var(--text-secondary)',
+                  }}
+                >
                   没有符合筛选条件的题目
                 </div>
               )}

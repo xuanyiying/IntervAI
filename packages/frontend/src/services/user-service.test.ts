@@ -28,7 +28,7 @@ describe('userService', () => {
       const result = await userService.uploadAvatar(mockFile);
 
       expect(axios.post).toHaveBeenCalledWith(
-        '/upload/avatar',
+        '/storage/upload',
         expect.any(FormData),
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );

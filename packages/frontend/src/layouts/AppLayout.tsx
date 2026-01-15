@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Button, Drawer, Avatar, Dropdown, Tooltip, MenuProps } from 'antd';
+import {
+  Layout,
+  Button,
+  Drawer,
+  Avatar,
+  Dropdown,
+  MenuProps
+} from 'antd';
 import { useNavigate, Outlet } from 'react-router-dom';
 import {
   MenuUnfoldOutlined,
@@ -194,7 +201,7 @@ const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <Layout
         className={`transition-all duration-300 ease-in-out bg-transparent flex flex-col min-h-screen
-          ${collapsed ? 'md:pl-[80px]' : 'md:pl-[280px]'} 
+          ${collapsed ? 'md:pl-[80px]' : 'md:pl-[280px]'}
           pt-16 md:pt-0
         `}
       >

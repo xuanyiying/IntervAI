@@ -1,19 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  Button,
-  Space,
-  Tag,
-  Divider,
-  Modal,
-  message,
-  Spin,
-} from 'antd';
-import {
-  EditOutlined,
-  CheckOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
+import { Card, Button, Space, Tag, Divider, Modal, message, Spin } from 'antd';
+import { EditOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons';
 import {
   jobService,
   type Job,
@@ -81,11 +68,32 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
       bodyStyle={{ padding: '20px' }}
     >
       <Spin spinning={loading}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: '16px',
+            marginBottom: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
           <div style={{ flex: '1 1 200px' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <h3
+              style={{
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '8px',
+              }}
+            >
               <span>{job.title}</span>
-              <span style={{ color: '#8c8c8c', fontSize: '14px', fontWeight: 400 }}>
+              <span
+                style={{ color: '#8c8c8c', fontSize: '14px', fontWeight: 400 }}
+              >
                 @ {job.company}
               </span>
             </h3>
@@ -99,8 +107,8 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
             >
               确认
             </Button>
-            <Button 
-              icon={<EditOutlined />} 
+            <Button
+              icon={<EditOutlined />}
               onClick={handleEdit}
               style={{ borderRadius: '8px' }}
             >

@@ -12,17 +12,65 @@ export const interviewService = {
   /**
    * Start a new interview session for a given optimization
    * @param optimizationId - The ID of the optimization to base the interview on
-   * @returns The created interview session
+   * @returns The created interview session and the first question
    */
-  startSession: async (optimizationId: string): Promise<InterviewSession> => {
-    const response = await axios.post<InterviewSession>('/interview/session', {
+  startSession: async (
+    optimizationId: string
+  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion }> => {
+    const response = await axios.post<{
+      session: InterviewSession;
+      firstQuestion: InterviewQuestion;
+    }>('/interview/session', {
       optimizationId,
     });
     return response.data;
   },
 
   /**
-   * Send a message in an active interview session
+   * Submit an answer for the current question
+   * @param sessionId - The ID of the active session
+   * @param content - The answer content
+   * @param audioUrl - Optional URL to an audio recording of the answer
+   * @returns The next question (if any) and completion status
+   */
+  submitAnswer: async (
+    sessionId: string,
+    content: string,
+    audioUrl?: string
+  ): Promise<{
+    nextQuestion: InterviewQuestion | null;
+    isCompleted: boolean;
+  }> => {
+    const response = await axios.post<{
+      nextQuestion: InterviewQuestion | null;
+      isCompleted: boolean;
+    }>(`/interview/session/${sessionId}/answer`, {
+      content,
+      audioUrl,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get the current state of the interview session
+   * @param sessionId - The ID of the session
+   * @returns The current question index, question, and status
+   */
+  getCurrentState: async (
+    sessionId: string
+  ): Promise<{
+    currentIndex?: number;
+    currentQuestion?: InterviewQuestion;
+    totalQuestions?: number;
+    status: string;
+    isCompleted?: boolean;
+  }> => {
+    const response = await axios.get(`/interview/session/${sessionId}/current`);
+    return response.data;
+  },
+
+  /**
+   * Send a message in an active interview session (Deprecated - use submitAnswer)
    * @param sessionId - The ID of the active session
    * @param content - The message content
    * @param audioUrl - Optional URL to an audio recording of the message
@@ -71,6 +119,27 @@ export const interviewService = {
 
     const response = await axios.post<{ url: string }>(
       '/storage/upload',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Transcribe audio file
+   * @param file - The audio file blob
+   * @returns The transcribed text
+   */
+  transcribeAudio: async (file: Blob): Promise<{ text: string }> => {
+    const formData = new FormData();
+    formData.append('file', file, 'recording.webm');
+
+    const response = await axios.post<{ text: string }>(
+      '/interview/audio/transcribe',
       formData,
       {
         headers: {

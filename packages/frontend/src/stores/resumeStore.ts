@@ -40,7 +40,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       const resumes = await resumeService.getResumes();
       set({ resumes });
       // Set primary as current if exists
-      const primary = resumes.find(r => r.isPrimary);
+      const primary = resumes.find((r) => r.isPrimary);
       if (primary && !get().currentResume) {
         set({ currentResume: primary });
       }
@@ -57,7 +57,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           ...r,
           isPrimary: r.id === id,
         })),
-        currentResume: state.currentResume?.id === id ? updated : state.currentResume,
+        currentResume:
+          state.currentResume?.id === id ? updated : state.currentResume,
       }));
     } catch (error) {
       console.error('Failed to set primary resume:', error);

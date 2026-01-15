@@ -80,10 +80,7 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
       };
 
       if (isEditMode && initialData && onJobUpdated) {
-        const updatedJob = await jobService.updateJob(
-          initialData.id,
-          jobInput
-        );
+        const updatedJob = await jobService.updateJob(initialData.id, jobInput);
         onJobUpdated(updatedJob);
         message.success('职位信息已更新');
       } else {

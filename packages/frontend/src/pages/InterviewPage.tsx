@@ -3,23 +3,25 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Button,
   Card,
-  List,
   Typography,
   Space,
   Spin,
   message,
-  Avatar,
+  Modal,
+  Progress,
+  Input,
+  Divider,
 } from 'antd';
 import {
   AudioOutlined,
-  UserOutlined,
-  RobotOutlined,
   StopOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 import { interviewService } from '../services/interview-service';
-import { InterviewMessage, InterviewSession } from '@/types';
+import { InterviewQuestion, InterviewSession } from '@/types';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
+const { TextArea } = Input;
 
 const InterviewPage: React.FC = () => {
   const { optimizationId } = useParams<{ optimizationId: string }>();
@@ -28,50 +30,63 @@ const InterviewPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [messages, setMessages] = useState<InterviewMessage[]>([]);
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<{
+    score: number;
+    content: string;
+  } | null>(null);
+
+  // Structured Interview State
+  const [currentQuestion, setCurrentQuestion] = useState<InterviewQuestion | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [answerText, setAnswerText] = useState('');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (optimizationId) {
-      startSession();
+      initializeSession();
     }
   }, [optimizationId]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const startSession = async () => {
+  const initializeSession = async () => {
     try {
       setLoading(true);
 
-      // Try to get existing active session first
-      const activeSession = await interviewService.getActiveSession(
-        optimizationId!
-      );
+      // Try to get active session
+      const activeSession = await interviewService.getActiveSession(optimizationId!);
 
       if (activeSession) {
-        // Resume existing session
         setSession(activeSession);
-        setMessages(activeSession.messages || []);
-        console.log('Resumed existing interview session:', activeSession.id);
+        // Restore state
+        const state = await interviewService.getCurrentState(activeSession.id);
+        if (state.isCompleted || state.status === 'COMPLETED') {
+            handleCompletion(activeSession.id);
+        } else {
+            setCurrentIndex(state.currentIndex || 0);
+            setTotalQuestions(state.totalQuestions || 0);
+            setCurrentQuestion(state.currentQuestion || null);
+        }
       } else {
-        // Create new session if no active session exists
-        const newSession = await interviewService.startSession(optimizationId!);
-        setSession(newSession);
-        setMessages(newSession.messages || []);
-        console.log('Started new interview session:', newSession.id);
+        // Start new session
+        const result = await interviewService.startSession(optimizationId!);
+        setSession(result.session);
+        setCurrentQuestion(result.firstQuestion);
+        // We need to know total questions. The startSession response might need update or we fetch it.
+        // For now, let's assume 10 or fetch from state.
+        // Let's fetch state to be sure or update startSession return type.
+        // Efficient way: startSession returns firstQuestion. We can assume index 0.
+        // To get total, we might need to fetch state or questions list.
+        // Let's call getCurrentState immediately to sync totals.
+        const state = await interviewService.getCurrentState(result.session.id);
+        setTotalQuestions(state.totalQuestions || 10);
+        setCurrentIndex(0);
       }
     } catch (error) {
-      console.error('Failed to start/resume session:', error);
-      message.error('Failed to start interview session');
+      console.error('Failed to initialize session:', error);
+      message.error('Failed to start interview');
     } finally {
       setLoading(false);
     }
@@ -94,7 +109,7 @@ const InterviewPage: React.FC = () => {
         const audioBlob = new Blob(audioChunksRef.current, {
           type: 'audio/webm',
         });
-        await handleAudioUpload(audioBlob);
+        await handleSubmitAnswer(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -113,186 +128,224 @@ const InterviewPage: React.FC = () => {
     }
   };
 
-  const handleAudioUpload = async (audioBlob: Blob) => {
-    if (!session) return;
+  const handleSubmitAnswer = async (audioBlob?: Blob) => {
+    if (!session || (!answerText.trim() && !audioBlob)) {
+        message.warning('Please provide an answer (text or audio)');
+        return;
+    }
 
     try {
       setProcessing(true);
-      // 1. Upload audio
-      const uploadResult = await interviewService.uploadAudio(audioBlob);
+      let audioUrl: string | undefined;
 
-      // 2. Send message with audio URL
-      // We don't have text transcription on frontend, backend handles it?
-      // My backend `handleMessage` takes `content` and `audioUrl`.
-      // It uses `content` for AI context.
-      // If I only send `audioUrl`, backend needs to transcribe it first.
-      // My backend `handleMessage` implementation:
-      // const { content, audioUrl } = sendMessageDto;
-      // It doesn't seem to transcribe audio if content is missing.
-      // Wait, I missed the transcription part in `InterviewService.handleMessage`!
-      // I need to fix backend to transcribe if audioUrl is present and content is empty.
-      // OR I transcribe on frontend (not possible with native API easily without key).
-      // OR I send a placeholder text and backend handles it.
+      if (audioBlob) {
+        const uploadResult = await interviewService.uploadAudio(audioBlob);
+        audioUrl = uploadResult.url;
+        
+        // Optional: Transcribe for display or just send URL
+        if (!answerText) {
+            const transcription = await interviewService.transcribeAudio(audioBlob);
+            setAnswerText(transcription.text); // Just to show what was heard
+        }
+      }
 
-      // Let's assume backend SHOULD handle transcription.
-      // I need to update backend `InterviewService` to use Whisper if audioUrl is provided.
-      // I'll send "[Audio Message]" as content for now.
-
-      const response = await interviewService.sendMessage(
+      const result = await interviewService.submitAnswer(
         session.id,
-        '[Audio Message]',
-        uploadResult.url
+        answerText || '[Audio Answer]',
+        audioUrl
       );
 
-      setMessages((prev) => [
-        ...prev,
-        response.userMessage,
-        response.aiMessage,
-      ]);
+      setAnswerText(''); // Clear input
 
-      // Play AI audio
-      if (response.aiMessage.audioUrl) {
-        const audio = new Audio(response.aiMessage.audioUrl);
-        audio.play();
+      if (result.isCompleted) {
+        handleCompletion(session.id);
+      } else if (result.nextQuestion) {
+        setCurrentQuestion(result.nextQuestion);
+        setCurrentIndex((prev) => prev + 1);
+        message.success('Answer submitted! Next question...');
       }
     } catch (error) {
-      console.error('Failed to process message:', error);
-      message.error('Failed to process message');
+      console.error('Failed to submit answer:', error);
+      message.error('Failed to submit answer');
     } finally {
       setProcessing(false);
     }
   };
 
-  const endSession = async () => {
+  const handleCompletion = (sessionId: string) => {
+      message.success('Interview completed! Generating feedback...');
+      pollFeedback(sessionId);
+  };
+
+  const pollFeedback = (sessionId: string) => {
+      let attempts = 0;
+      const maxAttempts = 60; // 2 minutes (since queue might take time)
+      const pollInterval = setInterval(async () => {
+        try {
+          attempts++;
+          const updatedSession = await interviewService.getSession(sessionId);
+          if (
+            updatedSession.status === 'EVALUATED' || // Check for EVALUATED status from new logic
+            (updatedSession.status === 'COMPLETED' && updatedSession.feedback) // Fallback
+          ) {
+            clearInterval(pollInterval);
+            setFeedbackData({
+              score: updatedSession.score || 0,
+              content: updatedSession.feedback || 'No feedback generated.',
+            });
+            setFeedbackModalVisible(true);
+          } else if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            message.warning(
+              'Feedback generation is taking longer than expected. Check "My Interviews" later.'
+            );
+            navigate('/dashboard');
+          }
+        } catch (e) {
+          clearInterval(pollInterval);
+        }
+      }, 2000);
+  };
+
+  const endSessionEarly = async () => {
     if (!session) return;
-    try {
-      await interviewService.endSession(session.id);
-      message.success('Interview session ended');
-      navigate('/dashboard'); // Or results page
-    } catch (error) {
-      console.error('Failed to end session:', error);
-      message.error('Failed to end session');
-    }
+    Modal.confirm({
+        title: 'End Interview?',
+        content: 'Are you sure you want to end the interview early? You will receive feedback on answered questions.',
+        onOk: async () => {
+            try {
+                await interviewService.endSession(session.id);
+                handleCompletion(session.id);
+            } catch (error) {
+                message.error('Failed to end session');
+            }
+        }
+    });
   };
 
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       <Card
-        title={<Title level={3}>Mock Interview</Title>}
+        title={
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Title level={3} style={{ margin: 0 }}>Mock Interview</Title>
+                <Text type="secondary">Question {currentIndex + 1} of {totalQuestions}</Text>
+            </div>
+        }
         extra={
-          <Button danger onClick={endSession}>
-            End Interview
+          <Button danger onClick={endSessionEarly}>
+            End Early
           </Button>
         }
       >
-        <div
-          style={{
-            height: '500px',
-            overflowY: 'auto',
-            marginBottom: '24px',
-            padding: '16px',
-            border: '1px solid #f0f0f0',
-            borderRadius: '8px',
-          }}
-        >
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Spin size="large" />
-            </div>
-          ) : (
-            <List
-              itemLayout="horizontal"
-              dataSource={messages}
-              renderItem={(msg) => (
-                <List.Item
-                  style={{
-                    justifyContent:
-                      msg.role === 'USER' ? 'flex-end' : 'flex-start',
-                  }}
-                >
-                  <Space
-                    align="start"
-                    style={{
-                      flexDirection:
-                        msg.role === 'USER' ? 'row-reverse' : 'row',
-                    }}
-                  >
-                    <Avatar
-                      icon={
-                        msg.role === 'USER' ? (
-                          <UserOutlined />
-                        ) : (
-                          <RobotOutlined />
-                        )
-                      }
-                      style={{
-                        backgroundColor:
-                          msg.role === 'USER' ? '#1890ff' : '#52c41a',
-                      }}
-                    />
-                    <div
-                      style={{
-                        background: msg.role === 'USER' ? '#e6f7ff' : '#f6ffed',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        maxWidth: '70%',
-                        border:
-                          msg.role === 'USER'
-                            ? '1px solid #91d5ff'
-                            : '1px solid #b7eb8f',
-                      }}
-                    >
-                      <Text>{msg.content}</Text>
-                      {msg.audioUrl && (
-                        <div style={{ marginTop: '8px' }}>
-                          <audio
-                            controls
-                            src={msg.audioUrl}
-                            style={{ height: '30px', maxWidth: '100%' }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+        <Progress percent={Math.round(((currentIndex) / totalQuestions) * 100)} showInfo={false} />
+        
+        <div style={{ marginTop: '24px', minHeight: '300px' }}>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <Spin size="large" />
+                </div>
+            ) : currentQuestion ? (
+                <>
+                    <Card type="inner" title={currentQuestion.questionType} style={{ backgroundColor: '#f9f9f9' }}>
+                        <Title level={4}>{currentQuestion.question}</Title>
+                        {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+                            <div style={{ marginTop: 16 }}>
+                                <Text type="secondary" strong>Tips:</Text>
+                                <ul>
+                                    {currentQuestion.tips.map((tip, idx) => (
+                                        <li key={idx}><Text type="secondary">{tip}</Text></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </Card>
 
-        <div style={{ textAlign: 'center' }}>
-          <Space size="large">
-            {!recording ? (
-              <Button
-                type="primary"
-                shape="circle"
-                icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-                size="large"
-                style={{ width: '64px', height: '64px' }}
-                onClick={startRecording}
-                disabled={loading || processing}
-              />
+                    <Divider>Your Answer</Divider>
+
+                    <TextArea 
+                        rows={6} 
+                        value={answerText}
+                        onChange={(e) => setAnswerText(e.target.value)}
+                        placeholder="Type your answer here or record audio..."
+                        disabled={processing || recording}
+                    />
+
+                    <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                        <Space size="large">
+                            {!recording ? (
+                                <Button
+                                    shape="circle"
+                                    icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+                                    size="large"
+                                    style={{ width: '64px', height: '64px' }}
+                                    onClick={startRecording}
+                                    disabled={processing}
+                                />
+                            ) : (
+                                <Button
+                                    type="primary"
+                                    danger
+                                    shape="circle"
+                                    icon={<StopOutlined style={{ fontSize: '24px' }} />}
+                                    size="large"
+                                    style={{ width: '64px', height: '64px' }}
+                                    onClick={stopRecording}
+                                />
+                            )}
+                            
+                            <Button 
+                                type="primary" 
+                                size="large" 
+                                icon={<SendOutlined />}
+                                onClick={() => handleSubmitAnswer()}
+                                disabled={recording || processing || (!answerText.trim())}
+                                loading={processing}
+                            >
+                                Submit Answer
+                            </Button>
+                        </Space>
+                        <div style={{ marginTop: 8 }}>
+                            <Text type="secondary">
+                                {recording ? 'Recording... Tap to stop' : 'Record audio or type answer'}
+                            </Text>
+                        </div>
+                    </div>
+                </>
             ) : (
-              <Button
-                type="primary"
-                danger
-                shape="circle"
-                icon={<StopOutlined style={{ fontSize: '24px' }} />}
-                size="large"
-                style={{ width: '64px', height: '64px' }}
-                onClick={stopRecording}
-              />
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <Text>Session Completed or Error Loading Question</Text>
+                </div>
             )}
-            {processing && <Spin />}
-            <Text type="secondary" style={{ display: 'block' }}>
-              {recording
-                ? 'Recording... Tap to stop'
-                : 'Tap microphone to speak'}
-            </Text>
-          </Space>
         </div>
       </Card>
+
+      <Modal
+        title="Interview Feedback"
+        open={feedbackModalVisible}
+        onOk={() => navigate('/dashboard')}
+        onCancel={() => navigate('/dashboard')}
+        width={800}
+      >
+        {feedbackData && (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <Title level={4}>Score: {feedbackData.score}/100</Title>
+              <Progress 
+                type="circle" 
+                percent={feedbackData.score} 
+                strokeColor={
+                    feedbackData.score >= 80 ? '#52c41a' : 
+                    feedbackData.score >= 60 ? '#faad14' : '#f5222d'
+                }
+              />
+            </div>
+            <div style={{ whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto' }}>
+              <Paragraph>{feedbackData.content}</Paragraph>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

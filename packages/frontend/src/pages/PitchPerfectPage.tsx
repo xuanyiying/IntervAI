@@ -3,7 +3,11 @@ import { PitchPerfectCard } from '../components/PitchPerfectCard';
 import { useResumeStore } from '../stores';
 import { ParsedResumeData } from '../types';
 import { Alert, Button, Space, Tooltip } from 'antd';
-import { FileTextOutlined, HighlightOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import {
+  FileTextOutlined,
+  HighlightOutlined,
+
+} from '@ant-design/icons';
 import './agents.css';
 
 export const PitchPerfectPage: React.FC = () => {
@@ -46,11 +50,21 @@ export const PitchPerfectPage: React.FC = () => {
                   <Space>
                     <FileTextOutlined className="resume-icon" />
                     <div className="resume-info">
-                      <div className="resume-title">{currentResume.title || currentResume.originalFilename}</div>
-                      <div className="resume-meta">v{currentResume.version} · 已解析</div>
+                      <div className="resume-title">
+                        {currentResume.title || currentResume.originalFilename}
+                      </div>
+                      <div className="resume-meta">
+                        v{currentResume.version} · 已解析
+                      </div>
                     </div>
                   </Space>
-                  <Button type="link" className="change-btn" onClick={() => window.location.href = '/resumes'}>更换</Button>
+                  <Button
+                    type="link"
+                    className="change-btn"
+                    onClick={() => (window.location.href = '/resumes')}
+                  >
+                    更换
+                  </Button>
                 </div>
               ) : (
                 <Alert
@@ -59,7 +73,11 @@ export const PitchPerfectPage: React.FC = () => {
                   type="warning"
                   showIcon
                   action={
-                    <Button size="small" type="primary" onClick={() => window.location.href = '/resumes'}>
+                    <Button
+                      size="small"
+                      type="primary"
+                      onClick={() => (window.location.href = '/resumes')}
+                    >
                       去上传
                     </Button>
                   }
@@ -80,10 +98,12 @@ export const PitchPerfectPage: React.FC = () => {
             </div>
 
             <div className="form-actions">
-              <button 
-                type="submit" 
-                className="btn-primary" 
-                disabled={!currentResume || currentResume.parseStatus !== 'COMPLETED'}
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={
+                  !currentResume || currentResume.parseStatus !== 'COMPLETED'
+                }
               >
                 开始优化
               </button>

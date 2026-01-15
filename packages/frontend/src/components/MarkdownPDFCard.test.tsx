@@ -235,10 +235,12 @@ describe('MarkdownPDFCard', () => {
     const generateButton = screen.getByText('生成 PDF');
     fireEvent.click(generateButton);
 
-    // Wait for download button to appear
     await waitFor(() => {
-      const downloadButton = screen.getByText('下载 PDF');
-      expect(downloadButton).toBeDisabled();
+      expect(screen.getByText('重新生成')).toBeInTheDocument();
+      expect(screen.getByText('链接已过期，请重新生成')).toBeInTheDocument();
     });
+
+    const downloadButton = screen.getByRole('button', { name: /下载\s*PDF/i });
+    expect(downloadButton).toBeDisabled();
   });
 });
