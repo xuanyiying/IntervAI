@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import GenerateService, { PDFOptions } from './generate.service';
-import { ParsedResumeData, ParsedJobData } from '../types';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { QuotaService } from '../quota/quota.service';
+import PdfGenerationService, { PDFOptions } from './pdf-generation.service';
+import { ParsedResumeData, ParsedJobData } from '../../types';
+import { PrismaService } from '../../prisma/prisma.service';
+import { StorageService } from '../../storage/storage.service';
+import { QuotaService } from '../../quota/quota.service';
 import {
   ForbiddenException,
   NotFoundException,
@@ -36,8 +36,8 @@ jest.mock('marked', () => ({
   }),
 }));
 
-describe('GenerateService', () => {
-  let service: GenerateService;
+describe('PdfGenerationService', () => {
+  let service: PdfGenerationService;
 
   const mockPrismaService = {
     optimization: {
@@ -158,7 +158,7 @@ describe('GenerateService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        GenerateService,
+        PdfGenerationService,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -174,7 +174,7 @@ describe('GenerateService', () => {
       ],
     }).compile();
 
-    service = module.get<GenerateService>(GenerateService);
+    service = module.get<PdfGenerationService>(PdfGenerationService);
 
     jest.clearAllMocks();
   });

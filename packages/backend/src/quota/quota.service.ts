@@ -22,25 +22,83 @@ export class QuotaService {
     [SubscriptionTier.FREE]: {
       optimizations: 10, // 10 per hour
       pdfGenerations: 5, // 5 per month
+      interviews: 3, // 3 per month
     },
     [SubscriptionTier.PRO]: {
       optimizations: -1, // Unlimited
       pdfGenerations: -1, // Unlimited
+      interviews: -1, // Unlimited
     },
     [SubscriptionTier.ENTERPRISE]: {
       optimizations: -1, // Unlimited
       pdfGenerations: -1, // Unlimited
+      interviews: -1, // Unlimited
     },
   };
 
   // Time windows
   private readonly OPTIMIZATION_WINDOW = 3600; // 1 hour in seconds
   private readonly PDF_WINDOW = 30 * 24 * 3600; // 30 days in seconds
+  private readonly INTERVIEW_WINDOW = 30 * 24 * 3600; // 30 days in seconds
 
   constructor(
     private readonly redisService: RedisService,
     private readonly prismaService: PrismaService
   ) {}
+
+  /**
+   * Check if user can start an interview session
+   * Requirement: Free users limited to 3 interviews per month
+   */
+  async canStartInterview(userId: string): Promise<boolean> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Pro and Enterprise users have unlimited interviews
+    if (
+      user.subscriptionTier === SubscriptionTier.PRO ||
+      user.subscriptionTier === SubscriptionTier.ENTERPRISE
+    ) {
+      return true;
+    }
+
+    // Free users: check monthly limit
+    const key = `quota:interview:${userId}`;
+    const count = await this.redisService.get(key);
+    const currentCount = count ? parseInt(count, 10) : 0;
+    const limit = this.QUOTA_LIMITS[SubscriptionTier.FREE].interviews;
+
+    return currentCount < limit;
+  }
+
+  /**
+   * Increment interview counter for user
+   */
+  async incrementInterviewCount(userId: string): Promise<void> {
+    const user = await this.prismaService.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Only track for free users
+    if (user.subscriptionTier === SubscriptionTier.FREE) {
+      const key = `quota:interview:${userId}`;
+      const count = await this.redisService.incr(key);
+
+      // Set expiration on first increment
+      if (count === 1) {
+        await this.redisService.expire(key, this.INTERVIEW_WINDOW);
+      }
+    }
+  }
 
   /**
    * Check if user can perform an optimization
@@ -238,6 +296,20 @@ export class QuotaService {
       const quotaInfo = await this.getQuotaInfo(userId);
       throw new ForbiddenException(
         `PDF generation quota exceeded. Limit: ${quotaInfo.pdfGenerationsLimit} per month. Resets at ${quotaInfo.pdfGenerationsResetAt.toISOString()}`
+      );
+    }
+  }
+
+  /**
+   * Enforce interview quota - throws exception if limit exceeded
+   */
+  async enforceInterviewQuota(userId: string): Promise<void> {
+    const canInterview = await this.canStartInterview(userId);
+
+    if (!canInterview) {
+      // Need to extend QuotaInfo to include interview info, but for now just throw
+      throw new ForbiddenException(
+        `Interview quota exceeded. Free tier is limited to 3 interviews per month.`
       );
     }
   }

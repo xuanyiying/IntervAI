@@ -46,6 +46,20 @@ const DEFAULT_SCENARIO_CONFIGS: Record<ScenarioType, ScenarioConfig> = {
     minQualityScore: 8,
   },
 
+  // Resume analysis - quality focused
+  [ScenarioType.RESUME_ANALYSIS]: {
+    scenario: ScenarioType.RESUME_ANALYSIS,
+    strategy: SelectionStrategyType.QUALITY,
+    primaryModels: [
+      'qwen:qwen3-max-preview',
+      'qwen:kimi-k2-thinking',
+      'siliconcloud:deepseek-ai/DeepSeek-R1-0528-Qwen3-8B',
+    ],
+    fallbackModels: ['qwen:deepseek-v3.2', 'qwen:glm-4.7'],
+    weights: { quality: 0.6, cost: 0.2, latency: 0.2 },
+    minQualityScore: 8,
+  },
+
   // Resume content optimization - quality focused
   [ScenarioType.RESUME_CONTENT_OPTIMIZATION]: {
     scenario: ScenarioType.RESUME_CONTENT_OPTIMIZATION,

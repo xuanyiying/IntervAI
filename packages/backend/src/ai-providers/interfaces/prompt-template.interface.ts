@@ -49,6 +49,10 @@ export enum PromptScenario {
   RESUME_CONTENT_OPTIMIZATION = 'resume_content_optimization',
   INTERVIEW_QUESTION_GENERATION = 'interview_question_generation',
   MATCH_SCORE_CALCULATION = 'match_score_calculation',
+  INTERVIEW_EVALUATION = 'interview_evaluation',
+  MOCK_INTERVIEW = 'mock_interview',
+  KNOWLEDGE_BASE_QUERY = 'knowledge_base_query',
+  RESUME_ANALYSIS = 'resume_analysis',
 }
 
 /**

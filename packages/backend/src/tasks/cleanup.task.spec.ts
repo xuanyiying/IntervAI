@@ -12,22 +12,22 @@ jest.mock('@nestjs/schedule', () => ({
 }));
 
 import { CleanupTask } from './cleanup.task';
-import GenerateService from '../generate/generate.service';
+import PdfGenerationService from '../resume/services/pdf-generation.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 
 describe('CleanupTask', () => {
   let cleanupTask: CleanupTask;
-  let generateService: jest.Mocked<GenerateService>;
+  let pdfGenerationService: jest.Mocked<PdfGenerationService>;
   let storageService: jest.Mocked<StorageService>;
   let redisService: jest.Mocked<RedisService>;
 
   beforeEach(() => {
     // Mock services
-    const mockGenerateService = {
+    const mockPdfGenerationService = {
       cleanupExpiredPDFs: jest.fn(),
       cleanupExpiredFiles: jest.fn(),
-    } as any as jest.Mocked<GenerateService>;
+    } as any as jest.Mocked<PdfGenerationService>;
 
     const mockStorageService = {
       cleanupExpiredFiles: jest.fn(),
@@ -46,13 +46,13 @@ describe('CleanupTask', () => {
 
     // Create instance directly without NestJS module
     cleanupTask = new CleanupTask(
-      mockGenerateService,
+      mockPdfGenerationService,
       mockStorageService,
       mockRedisService,
       mockBackupService
     );
 
-    generateService = mockGenerateService;
+    pdfGenerationService = mockPdfGenerationService;
     storageService = mockStorageService;
     redisService = mockRedisService;
 
@@ -68,28 +68,28 @@ describe('CleanupTask', () => {
   });
 
   describe('cleanupExpiredFiles', () => {
-    it('should call generateService.cleanupExpiredFiles', async () => {
-      generateService.cleanupExpiredFiles.mockResolvedValue(5);
+    it('should call pdfGenerationService.cleanupExpiredFiles', async () => {
+      pdfGenerationService.cleanupExpiredFiles.mockResolvedValue(5);
 
       await cleanupTask.cleanupExpiredFiles();
 
-      expect(generateService.cleanupExpiredFiles).toHaveBeenCalledTimes(1);
+      expect(pdfGenerationService.cleanupExpiredFiles).toHaveBeenCalledTimes(1);
     });
 
     it('should handle errors gracefully', async () => {
       const error = new Error('Cleanup failed');
-      generateService.cleanupExpiredFiles.mockRejectedValue(error);
+      pdfGenerationService.cleanupExpiredFiles.mockRejectedValue(error);
 
       // Should not throw
       await expect(cleanupTask.cleanupExpiredFiles()).resolves.toBeUndefined();
     });
 
     it('should return correct count of deleted temporary PDF files', async () => {
-      generateService.cleanupExpiredFiles.mockResolvedValue(10);
+      pdfGenerationService.cleanupExpiredFiles.mockResolvedValue(10);
 
       await cleanupTask.cleanupExpiredFiles();
 
-      expect(generateService.cleanupExpiredFiles).toHaveBeenCalled();
+      expect(pdfGenerationService.cleanupExpiredFiles).toHaveBeenCalled();
     });
   });
 

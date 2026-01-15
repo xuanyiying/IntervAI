@@ -19,6 +19,10 @@ import {
   InterviewQuestion,
 } from '@/types';
 import { z } from 'zod';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
+import OpenAI from 'openai';
 
 // Define Zod schema for ParsedResumeData for validation and potential fixing
 const ParsedResumeDataSchema = z.object({
@@ -577,6 +581,52 @@ ${description}`,
   }
 
   /**
+   * Analyze resume without a specific job description
+   * Provides general scoring and improvement suggestions
+   */
+  async analyzeParsedResume(resumeData: ParsedResumeData): Promise<any> {
+    try {
+      this.logger.debug('Analyzing resume using AI engine service');
+
+      const request: AIRequest = {
+        model: '', // Will be auto-selected based on scenario
+        prompt: '', // Will be filled by template
+        metadata: {
+          templateName: PromptScenario.RESUME_ANALYSIS,
+          templateVariables: {
+            resume_data: JSON.stringify(resumeData, null, 2),
+          },
+          response_format: { type: 'json_object' },
+        },
+      };
+
+      const response = await this.aiEngineService.call(
+        request,
+        'system',
+        ScenarioType.RESUME_ANALYSIS,
+        'zh-CN'
+      );
+
+      const jsonToParse = this.extractJson(response.content);
+
+      try {
+        const analysis = JSON.parse(jsonToParse);
+        this.logger.debug('Resume analysis completed successfully');
+        return analysis;
+      } catch (parseError) {
+        this.logger.warn(
+          `Failed to parse resume analysis JSON: ${response.content.substring(0, 200)}...`
+        );
+        // Return text content if JSON parsing fails
+        return { content: response.content };
+      }
+    } catch (error) {
+      this.logger.error('Failed to analyze resume:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Generate interview questions using AI
    * Delegates to AIEngineService with multi-provider support
    */
@@ -776,6 +826,92 @@ ${resumeContent}
       return response.content;
     } catch (error) {
       this.logger.error('Failed to optimize resume content:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze resume content using AI
+   * Delegates to AIEngineService with multi-provider support
+   */
+  async analyzeResume(content: string): Promise<any> {
+    try {
+      this.logger.debug('Analyzing resume using AI engine service');
+
+      const request: AIRequest = {
+        model: '', // Will be auto-selected based on scenario
+        prompt: '', // Will be filled by template
+        metadata: {
+          templateName: PromptScenario.RESUME_ANALYSIS,
+          templateVariables: {
+            resume_content: content,
+          },
+          response_format: { type: 'json_object' },
+        },
+      };
+
+      const response = await this.aiEngineService.call(
+        request,
+        'system',
+        PromptScenario.RESUME_ANALYSIS,
+        'zh-CN'
+      );
+
+      const jsonToParse = this.extractJson(response.content);
+
+      try {
+        const analysisResult = JSON.parse(jsonToParse);
+        this.logger.debug('Resume analysis completed successfully');
+        return analysisResult;
+      } catch (parseError) {
+        this.logger.warn(
+          `Failed to parse resume analysis JSON: ${response.content.substring(0, 200)}...`
+        );
+        return {
+          error: 'Failed to parse analysis result',
+          raw: response.content,
+        };
+      }
+    } catch (error) {
+      this.logger.error('Failed to analyze resume:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Transcribe audio using OpenAI Whisper
+   */
+  async transcribeAudio(buffer: Buffer): Promise<string> {
+    try {
+      this.logger.debug('Transcribing audio...');
+
+      // Check if API key is available
+      if (!process.env.OPENAI_API_KEY) {
+        throw new Error('OPENAI_API_KEY is not set');
+      }
+
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      // Create a temporary file
+      const tempFilePath = path.join(os.tmpdir(), `audio-${Date.now()}.mp3`);
+      fs.writeFileSync(tempFilePath, buffer);
+
+      try {
+        const transcription = await openai.audio.transcriptions.create({
+          file: fs.createReadStream(tempFilePath),
+          model: 'whisper-1',
+        });
+
+        this.logger.debug('Audio transcription completed');
+        return transcription.text;
+      } finally {
+        // Clean up temp file
+        if (fs.existsSync(tempFilePath)) {
+          fs.unlinkSync(tempFilePath);
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to transcribe audio:', error);
       throw error;
     }
   }

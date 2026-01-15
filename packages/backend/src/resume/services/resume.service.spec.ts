@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { ParseStatus } from '@prisma/client';
 import { ResumeService } from './resume.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { AIEngine } from '../ai/ai.engine';
-import { StorageService } from '../storage/storage.service';
-import { AIQueueService } from '../ai/queue/ai-queue.service';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AIEngine } from '../../ai/ai.engine';
+import { StorageService } from '../../storage/storage.service';
+import { AIQueueService } from '../../ai/queue/ai-queue.service';
 import * as fs from 'fs';
 
 jest.mock('fs');

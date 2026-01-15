@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import GenerateService from '../generate/generate.service';
+import PdfGenerationService from '../resume/services/pdf-generation.service';
 import { StorageService } from '../storage/storage.service';
 import { RedisService } from '../redis/redis.service';
 import { BackupService } from '../backup/backup.service';
@@ -20,7 +20,7 @@ export class CleanupTask {
   private readonly CACHE_SCAN_BATCH_SIZE = 100;
 
   constructor(
-    private generateService: GenerateService,
+    private pdfGenerationService: PdfGenerationService,
     private storageService: StorageService,
     private redisService: RedisService,
     private backupService: BackupService
@@ -70,7 +70,7 @@ export class CleanupTask {
   async cleanupExpiredFiles(): Promise<void> {
     try {
       this.logger.log('Starting cleanup of expired temporary PDF files...');
-      const deletedCount = await this.generateService.cleanupExpiredFiles();
+      const deletedCount = await this.pdfGenerationService.cleanupExpiredFiles();
       this.logger.log(
         `Cleanup completed: ${deletedCount} expired temporary PDF files deleted`
       );
