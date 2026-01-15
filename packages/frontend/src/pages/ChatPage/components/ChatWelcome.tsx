@@ -2,7 +2,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sender } from '@ant-design/x';
 import { PaperClipOutlined } from '@ant-design/icons';
-import { Sparkles, TrendingUp, UserCheck, Briefcase, LayoutGrid } from 'lucide-react';
+import {
+  Sparkles,
+  TrendingUp,
+  UserCheck,
+  Briefcase,
+  LayoutGrid,
+} from 'lucide-react';
 import ResumeUploadButton from '../../../components/ResumeUploadButton';
 
 interface ChatWelcomeProps {

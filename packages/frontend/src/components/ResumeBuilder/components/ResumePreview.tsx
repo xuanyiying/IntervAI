@@ -11,7 +11,11 @@ interface ResumePreviewProps {
   setPreviewMode: (mode: 'desktop' | 'tablet' | 'mobile') => void;
 }
 
-export const ResumePreview: React.FC<ResumePreviewProps> = ({ sections, previewMode, setPreviewMode }) => {
+export const ResumePreview: React.FC<ResumePreviewProps> = ({
+  sections,
+  previewMode,
+  setPreviewMode,
+}) => {
   const getPreviewWidth = () => {
     switch (previewMode) {
       case 'mobile':
@@ -52,7 +56,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ sections, previewM
         </button>
       </div>
 
-      <div className={`w-full transition-all duration-700 ease-in-out ${getPreviewWidth()}`}>
+      <div
+        className={`w-full transition-all duration-700 ease-in-out ${getPreviewWidth()}`}
+      >
         <div
           className="rounded-[3rem] p-16 shadow-[0_40px_100px_rgba(0,0,0,0.4)] min-h-[1100px] prose prose-lg max-w-none selection:bg-blue-100"
           style={{
@@ -70,7 +76,9 @@ export const ResumePreview: React.FC<ResumePreviewProps> = ({ sections, previewM
           `}</style>
           {sections.map((section) => (
             <div key={section.id} className="mb-16 last:mb-0">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {section.content}
+              </ReactMarkdown>
             </div>
           ))}
         </div>

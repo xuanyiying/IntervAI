@@ -166,7 +166,7 @@ export class ChatIntentService {
       const content = this.convertParsedDataToMarkdown(
         resume.parsedData as any
       );
-      
+
       if (!content || content.trim().length === 0) {
         this.logger.warn(
           `Converted resume content is empty for user ${userId}, resumeId: ${resume.id}`
@@ -180,7 +180,7 @@ export class ChatIntentService {
       this.logger.debug(
         `Converted resume to markdown for user ${userId}, content length: ${content.length}`
       );
-      
+
       userResumeCache.set(userId, {
         resumeId: resume.id,
         content,
@@ -419,7 +419,8 @@ export class ChatIntentService {
     if (resumeData) {
       systemPrompt += `\n\n用户的简历内容如下：\n${resumeData.content}`;
     } else {
-      systemPrompt += '\n\n用户尚未上传简历。你可以先建议用户上传简历，或者先进行一些通用的面试准备问题。';
+      systemPrompt +=
+        '\n\n用户尚未上传简历。你可以先建议用户上传简历，或者先进行一些通用的面试准备问题。';
     }
 
     onChunk({
@@ -460,7 +461,8 @@ export class ChatIntentService {
     if (resumeData) {
       systemPrompt += `\n\n用户的简历内容如下：\n${resumeData.content}`;
     } else {
-      systemPrompt += '\n\n用户尚未上传简历。你可以先提供一些常见的通用面试问题预测，并建议用户上传简历以获取更精准的预测。';
+      systemPrompt +=
+        '\n\n用户尚未上传简历。你可以先提供一些常见的通用面试问题预测，并建议用户上传简历以获取更精准的预测。';
     }
 
     onChunk({
@@ -719,7 +721,10 @@ export class ChatIntentService {
       return parsedData.markdown;
     }
 
-    if (parsedData.extractedText && typeof parsedData.extractedText === 'string') {
+    if (
+      parsedData.extractedText &&
+      typeof parsedData.extractedText === 'string'
+    ) {
       return parsedData.extractedText;
     }
 
@@ -784,10 +789,12 @@ export class ChatIntentService {
     }
 
     const result = parts.join('\n');
-    
+
     // If we couldn't extract any content, try to stringify the data
     if (!result || result.trim().length === 0) {
-      this.logger.warn('Could not convert parsedData to markdown, using JSON fallback');
+      this.logger.warn(
+        'Could not convert parsedData to markdown, using JSON fallback'
+      );
       return JSON.stringify(parsedData, null, 2);
     }
 

@@ -220,7 +220,9 @@ export class ConversationService {
 
     return {
       ...conversation,
-      messages: (conversation.messages || []).map((msg: any) => this.mapMessage(msg)),
+      messages: (conversation.messages || []).map((msg: any) =>
+        this.mapMessage(msg)
+      ),
     };
   }
 

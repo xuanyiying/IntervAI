@@ -9,7 +9,9 @@ export const useResumeBuilder = () => {
   );
   const [currentTheme, setCurrentTheme] = useState<ResumeTheme>(THEMES[0]);
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [previewMode, setPreviewMode] = useState<
+    'desktop' | 'tablet' | 'mobile'
+  >('desktop');
   const [isEditView, setIsEditView] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,11 +25,14 @@ export const useResumeBuilder = () => {
     root.style.setProperty('--resume-font', currentTheme.fontFamily);
   }, [currentTheme]);
 
-  const handleUpdateSection = useCallback((id: string, updates: Partial<ResumeSection>) => {
-    setSections((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
-    );
-  }, []);
+  const handleUpdateSection = useCallback(
+    (id: string, updates: Partial<ResumeSection>) => {
+      setSections((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+      );
+    },
+    []
+  );
 
   const handleAddSection = useCallback(() => {
     const newSection: ResumeSection = {
@@ -45,27 +50,27 @@ export const useResumeBuilder = () => {
       if (prev.length <= 1) return prev;
       return prev.filter((s) => s.id !== id);
     });
-    // If the deleted section was active, we need to switch. 
+    // If the deleted section was active, we need to switch.
     // This logic is tricky inside a callback without access to current state.
     // For now, we will handle the selection update in the component or use a separate effect.
     // Or we can check activeSectionId in the component.
     // To keep the hook pure, let's return the logic to update selection.
-    
+
     // Actually, let's do it simply:
     // If we delete the active section, we select the previous one or the first one.
     // Since we don't have access to `activeSectionId` inside the functional update of `setSections`,
     // we might need to rely on the component or change how we update.
   }, []);
-  
+
   // Improved delete handler that also updates active ID
   const deleteSection = (id: string) => {
     if (sections.length <= 1) return;
-    
-    const newSections = sections.filter(s => s.id !== id);
+
+    const newSections = sections.filter((s) => s.id !== id);
     setSections(newSections);
-    
+
     if (activeSectionId === id) {
-       setActiveSectionId(newSections[0]?.id || null);
+      setActiveSectionId(newSections[0]?.id || null);
     }
   };
 
@@ -86,7 +91,11 @@ export const useResumeBuilder = () => {
   };
 
   const resetToDefault = () => {
-    if (window.confirm('Are you sure you want to reset all changes? This cannot be undone.')) {
+    if (
+      window.confirm(
+        'Are you sure you want to reset all changes? This cannot be undone.'
+      )
+    ) {
       setSections(DEFAULT_SECTIONS);
       setActiveSectionId(DEFAULT_SECTIONS[0].id);
     }

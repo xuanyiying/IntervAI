@@ -8,7 +8,9 @@ interface ResumeLanguagesProps {
   languages?: ParsedResumeData['languages'];
 }
 
-export const ResumeLanguages: React.FC<ResumeLanguagesProps> = ({ languages }) => {
+export const ResumeLanguages: React.FC<ResumeLanguagesProps> = ({
+  languages,
+}) => {
   const { t } = useTranslation();
 
   if (!languages || languages.length === 0) return null;

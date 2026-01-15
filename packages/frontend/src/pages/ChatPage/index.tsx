@@ -57,17 +57,17 @@ const ChatPage: React.FC = () => {
   } = useResumeUpload({
     currentConversationId: currentConversation?.id,
     onResumeParsed: (resumeId, markdown) => {
-        // Notify socket about parsed resume
-        if (currentConversation) {
-             notifyResumeParsed(currentConversation.id, resumeId, markdown);
-             sendSocketMessage(currentConversation.id, '优化简历', {
-                 action: 'optimize_resume',
-                 resumeId: resumeId,
-             });
-        }
-        // Also update comparison data
-        setComparisonData(prev => ({ ...prev, original: markdown }));
-    }
+      // Notify socket about parsed resume
+      if (currentConversation) {
+        notifyResumeParsed(currentConversation.id, resumeId, markdown);
+        sendSocketMessage(currentConversation.id, '优化简历', {
+          action: 'optimize_resume',
+          resumeId: resumeId,
+        });
+      }
+      // Also update comparison data
+      setComparisonData((prev) => ({ ...prev, original: markdown }));
+    },
   });
 
   // 2. WebSocket
@@ -81,15 +81,20 @@ const ChatPage: React.FC = () => {
     reset: resetSocket,
   } = useChatSocket({
     onMessage: (msg) => console.log('Message received:', msg),
-    onChunk: (chunk) => console.log('Chunk received:', chunk.content?.substring(0, 50)),
+    onChunk: (chunk) =>
+      console.log('Chunk received:', chunk.content?.substring(0, 50)),
     onDone: async (msg) => {
       if (currentConversation) {
         try {
           await loadMessages(currentConversation.id);
-          if (msg.metadata?.type === 'optimization_result' && msg.metadata?.optimizedContent) {
+          if (
+            msg.metadata?.type === 'optimization_result' &&
+            msg.metadata?.optimizedContent
+          ) {
             setComparisonData((prev) => ({
               ...prev,
-              optimized: (msg.metadata?.optimizedContent as string) || prev.optimized,
+              optimized:
+                (msg.metadata?.optimizedContent as string) || prev.optimized,
             }));
           }
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -148,9 +153,9 @@ const ChatPage: React.FC = () => {
     handleAcceptAllSuggestions,
     handleDownloadOptimized,
     handleStartOptimization,
-  } = useOptimization({ 
-      sendSocketMessage, 
-      setLocalItems: setUploadItems // Reuse upload items for PDF gen status which is similar
+  } = useOptimization({
+    sendSocketMessage,
+    setLocalItems: setUploadItems, // Reuse upload items for PDF gen status which is similar
   });
 
   // 4. Job Actions
@@ -164,7 +169,9 @@ const ChatPage: React.FC = () => {
     handleJobEdit,
     handleJobUpdated,
     handleJobDelete,
-  } = useJobActions(() => handleStartOptimization(!!(currentResume || comparisonData.original)));
+  } = useJobActions(() =>
+    handleStartOptimization(!!(currentResume || comparisonData.original))
+  );
 
   // 5. Chat Items Aggregation
   const items = useChatItems({
@@ -193,7 +200,15 @@ const ChatPage: React.FC = () => {
       }
     };
     init();
-  }, [conversationId, currentConversation?.id, isLoadingMessages, loading, createConversation, loadMessages, setCurrentConversation]);
+  }, [
+    conversationId,
+    currentConversation?.id,
+    isLoadingMessages,
+    loading,
+    createConversation,
+    loadMessages,
+    setCurrentConversation,
+  ]);
 
   useEffect(() => {
     if (currentConversation && isConnected) {
@@ -266,38 +281,38 @@ const ChatPage: React.FC = () => {
           />
         ) : (
           <>
-             <ChatList
-               items={items}
-               isLoading={isLoadingMessages}
-               messageError={messageError}
-               hasMoreMessages={hasMoreMessages}
-               isStreaming={isStreaming}
-               onLoadMore={handleLoadMore}
-               onRetryLoad={handleRetryLoadMessages}
-               contentHandlers={{
-                 onDeleteAttachment: removeUploadItem,
-                 onRetryAttachment: (key) => {
-                    const file = failedFiles.get(key);
-                    if (file) handleResumeUpload(file, key);
-                    else message.info('无法获取原始文件，请重新上传');
-                 },
-                 onOpenComparison: () => setComparisonVisible(true),
-                 onDownloadOptimized: handleDownloadOptimized,
-                 onConfirmJob: handleJobConfirm,
-                 onEditJob: handleJobEdit,
-                 onDeleteJob: handleJobDelete,
-                 onAcceptSuggestion: handleAcceptSuggestion,
-                 onRejectSuggestion: handleRejectSuggestion,
-                 onAcceptAllSuggestions: handleAcceptAllSuggestions,
-               }}
-             />
-             <ChatInput
-               value={value}
-               onChange={setValue}
-               onSubmit={handleSubmit}
-               loading={loading}
-               onFileSelect={handleResumeUpload}
-             />
+            <ChatList
+              items={items}
+              isLoading={isLoadingMessages}
+              messageError={messageError}
+              hasMoreMessages={hasMoreMessages}
+              isStreaming={isStreaming}
+              onLoadMore={handleLoadMore}
+              onRetryLoad={handleRetryLoadMessages}
+              contentHandlers={{
+                onDeleteAttachment: removeUploadItem,
+                onRetryAttachment: (key) => {
+                  const file = failedFiles.get(key);
+                  if (file) handleResumeUpload(file, key);
+                  else message.info('无法获取原始文件，请重新上传');
+                },
+                onOpenComparison: () => setComparisonVisible(true),
+                onDownloadOptimized: handleDownloadOptimized,
+                onConfirmJob: handleJobConfirm,
+                onEditJob: handleJobEdit,
+                onDeleteJob: handleJobDelete,
+                onAcceptSuggestion: handleAcceptSuggestion,
+                onRejectSuggestion: handleRejectSuggestion,
+                onAcceptAllSuggestions: handleAcceptAllSuggestions,
+              }}
+            />
+            <ChatInput
+              value={value}
+              onChange={setValue}
+              onSubmit={handleSubmit}
+              loading={loading}
+              onFileSelect={handleResumeUpload}
+            />
           </>
         )}
       </div>

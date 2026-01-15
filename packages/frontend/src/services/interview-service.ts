@@ -16,7 +16,10 @@ export const interviewService = {
    */
   startSession: async (
     optimizationId: string
-  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion }> => {
+  ): Promise<{
+    session: InterviewSession;
+    firstQuestion: InterviewQuestion;
+  }> => {
     const response = await axios.post<{
       session: InterviewSession;
       firstQuestion: InterviewQuestion;

@@ -41,11 +41,7 @@ export const ResumePreviewModal: React.FC<ResumePreviewModalProps> = ({
         >
           {t('common.download', '下载原文')}
         </Button>,
-        <Button
-          key="close"
-          onClick={onClose}
-          className="rounded-lg"
-        >
+        <Button key="close" onClick={onClose} className="rounded-lg">
           {t('common.close', '关闭')}
         </Button>,
       ]}

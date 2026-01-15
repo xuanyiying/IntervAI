@@ -46,10 +46,12 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
           <ResumeExperience experience={resume.parsedData.experience} />
           <ResumeProjects projects={resume.parsedData.projects} />
           <ResumeSkills skills={resume.parsedData.skills} />
-          
+
           <div className="info-grid mt-8">
             <ResumeLanguages languages={resume.parsedData.languages} />
-            <ResumeCertifications certifications={resume.parsedData.certifications} />
+            <ResumeCertifications
+              certifications={resume.parsedData.certifications}
+            />
           </div>
         </div>
       );

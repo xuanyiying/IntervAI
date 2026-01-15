@@ -1,6 +1,20 @@
 import React from 'react';
-import { Card, Progress, Statistic, Typography, Divider, List, Row, Col, Tag } from 'antd';
-import { CheckCircleOutlined, WarningOutlined, RocketOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Progress,
+  Statistic,
+  Typography,
+  Divider,
+  List,
+  Row,
+  Col,
+  Tag,
+} from 'antd';
+import {
+  CheckCircleOutlined,
+  WarningOutlined,
+  RocketOutlined,
+} from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { AnalysisDimensionCard } from './AnalysisDimensionCard';
 
@@ -29,13 +43,19 @@ interface ResumeAnalysisResultProps {
   result: AnalysisResult;
 }
 
-export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({ result }) => {
+export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
+  result,
+}) => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case '高': return 'red';
-      case '中': return 'orange';
-      case '低': return 'blue';
-      default: return 'default';
+      case '高':
+        return 'red';
+      case '中':
+        return 'orange';
+      case '低':
+        return 'blue';
+      default:
+        return 'default';
     }
   };
 
@@ -56,17 +76,21 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({ resu
     >
       <Row gutter={[24, 24]}>
         <Col xs={24} md={8}>
-          <Card title="综合评分 (Overall Score)" hoverable style={{ height: '100%', textAlign: 'center' }}>
-            <Progress 
-              type="dashboard" 
-              percent={result.overallScore} 
+          <Card
+            title="综合评分 (Overall Score)"
+            hoverable
+            style={{ height: '100%', textAlign: 'center' }}
+          >
+            <Progress
+              type="dashboard"
+              percent={result.overallScore}
               strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
               width={180}
             />
             <div style={{ marginTop: 16 }}>
-              <Statistic 
-                title="简历评级" 
-                value={status.label} 
+              <Statistic
+                title="简历评级"
+                value={status.label}
                 valueStyle={{ color: status.color }}
               />
             </div>
@@ -84,9 +108,14 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({ resu
             <List
               size="small"
               dataSource={result.strengths}
-              renderItem={item => (
+              renderItem={(item) => (
                 <List.Item>
-                  <Text><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} /> {item}</Text>
+                  <Text>
+                    <CheckCircleOutlined
+                      style={{ color: '#52c41a', marginRight: 8 }}
+                    />{' '}
+                    {item}
+                  </Text>
                 </List.Item>
               )}
             />
@@ -98,19 +127,30 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({ resu
             <List
               grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
               dataSource={result.suggestions}
-              renderItem={item => (
+              renderItem={(item) => (
                 <List.Item>
-                  <Card 
-                    type="inner" 
-                    title={<><Tag color={getPriorityColor(item.priority)}>{item.priority}优先级</Tag> {item.category}</>}
+                  <Card
+                    type="inner"
+                    title={
+                      <>
+                        <Tag color={getPriorityColor(item.priority)}>
+                          {item.priority}优先级
+                        </Tag>{' '}
+                        {item.category}
+                      </>
+                    }
                     headStyle={{ backgroundColor: '#fafafa' }}
                   >
                     <Paragraph>
-                      <Text strong><WarningOutlined style={{ color: '#faad14' }} /> 问题：</Text>
+                      <Text strong>
+                        <WarningOutlined style={{ color: '#faad14' }} /> 问题：
+                      </Text>
                       {item.issue}
                     </Paragraph>
                     <Paragraph>
-                      <Text strong><RocketOutlined style={{ color: '#1890ff' }} /> 建议：</Text>
+                      <Text strong>
+                        <RocketOutlined style={{ color: '#1890ff' }} /> 建议：
+                      </Text>
                       {item.recommendation}
                     </Paragraph>
                   </Card>

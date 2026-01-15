@@ -3,11 +3,7 @@ import { PitchPerfectCard } from '../components/PitchPerfectCard';
 import { useResumeStore } from '../stores';
 import { ParsedResumeData } from '../types';
 import { Alert, Button, Space, Tooltip } from 'antd';
-import {
-  FileTextOutlined,
-  HighlightOutlined,
-
-} from '@ant-design/icons';
+import { FileTextOutlined, HighlightOutlined } from '@ant-design/icons';
 import './agents.css';
 
 export const PitchPerfectPage: React.FC = () => {

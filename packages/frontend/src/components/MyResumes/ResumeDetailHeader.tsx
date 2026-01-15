@@ -43,9 +43,7 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
           </div>
           <Space className="text-secondary">
             <HistoryOutlined />
-            <span>
-              上次更新: {new Date(resume.createdAt).toLocaleString()}
-            </span>
+            <span>上次更新: {new Date(resume.createdAt).toLocaleString()}</span>
           </Space>
         </div>
         <Space size="middle">

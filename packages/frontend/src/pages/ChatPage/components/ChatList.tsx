@@ -15,7 +15,10 @@ interface ChatListProps {
   onLoadMore: () => void;
   onRetryLoad: () => void;
   // Handlers passed down to MessageContent
-  contentHandlers: Omit<React.ComponentProps<typeof MessageContent>, 'item' | 'isStreaming'>;
+  contentHandlers: Omit<
+    React.ComponentProps<typeof MessageContent>,
+    'item' | 'isStreaming'
+  >;
 }
 
 export const ChatList: React.FC<ChatListProps> = ({

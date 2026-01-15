@@ -15,8 +15,10 @@ interface ResumeNavbarProps {
   onExportPDF: () => void;
 }
 
-const BUTTON_PRIMARY = 'group relative flex items-center gap-2 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden';
-const BUTTON_SECONDARY = 'flex items-center gap-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all text-xs font-bold uppercase tracking-wider';
+const BUTTON_PRIMARY =
+  'group relative flex items-center gap-2 px-8 py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all overflow-hidden';
+const BUTTON_SECONDARY =
+  'flex items-center gap-2 px-5 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 active:scale-95 transition-all text-xs font-bold uppercase tracking-wider';
 
 export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
   isEditView,
@@ -30,12 +32,22 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
   onExportPDF,
 }) => {
   return (
-    <nav className="sticky top-0 z-50 px-8 py-6 border-b border-white/5 bg-black/60 backdrop-blur-2xl" role="navigation" aria-label="Main Toolbar">
+    <nav
+      className="sticky top-0 z-50 px-8 py-6 border-b border-white/5 bg-black/60 backdrop-blur-2xl"
+      role="navigation"
+      aria-label="Main Toolbar"
+    >
       <div className="max-w-[1800px] mx-auto flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <h1 className="text-3xl font-black tracking-tighter italic font-display leading-none">AI.RESUME</h1>
+          <h1 className="text-3xl font-black tracking-tighter italic font-display leading-none">
+            AI.RESUME
+          </h1>
           <div className="h-6 w-[1px] bg-white/10 mx-2" />
-          <div className="flex items-center gap-1 bg-white/5 rounded-2xl p-1.5 border border-white/5" role="tablist" aria-label="View Mode">
+          <div
+            className="flex items-center gap-1 bg-white/5 rounded-2xl p-1.5 border border-white/5"
+            role="tablist"
+            aria-label="View Mode"
+          >
             <button
               role="tab"
               aria-selected={isEditView}
@@ -67,10 +79,17 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
               />
             ))}
           </div>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className={BUTTON_SECONDARY}>
+          <button
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={BUTTON_SECONDARY}
+          >
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button onClick={onReset} className={BUTTON_SECONDARY} title="Reset to default">
+          <button
+            onClick={onReset}
+            className={BUTTON_SECONDARY}
+            title="Reset to default"
+          >
             <RotateCcw size={18} />
           </button>
           <div className="h-6 w-[1px] bg-white/10 mx-2" />

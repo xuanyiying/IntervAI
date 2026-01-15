@@ -6,13 +6,21 @@ import { useConversationStore } from '../../../stores';
 import { MessageRole, type MessageItem } from '../../../types';
 
 interface UseOptimizationProps {
-  sendSocketMessage: (conversationId: string, content: string, metadata?: any) => void;
+  sendSocketMessage: (
+    conversationId: string,
+    content: string,
+    metadata?: any
+  ) => void;
   setLocalItems: React.Dispatch<React.SetStateAction<MessageItem[]>>;
 }
 
-export const useOptimization = ({ sendSocketMessage, setLocalItems }: UseOptimizationProps) => {
+export const useOptimization = ({
+  sendSocketMessage,
+  setLocalItems,
+}: UseOptimizationProps) => {
   const { t } = useTranslation();
-  const { currentConversation, loadMessages, messages } = useConversationStore();
+  const { currentConversation, loadMessages, messages } =
+    useConversationStore();
 
   const [comparisonVisible, setComparisonVisible] = useState(false);
   const [comparisonData, setComparisonData] = useState<{
@@ -21,67 +29,87 @@ export const useOptimization = ({ sendSocketMessage, setLocalItems }: UseOptimiz
   }>({ original: '', optimized: '' });
   const [isOptimizationLoading, setIsOptimizationLoading] = useState(false);
 
-  const handleAcceptSuggestion = useCallback(async (suggestionId: string, optimizationId?: string) => {
-    if (!optimizationId) {
-      message.warning('无法找到优化记录 ID');
-      return;
-    }
-    try {
-      await optimizationService.acceptSuggestion(optimizationId, suggestionId);
-      message.success(t('chat.suggestion_accepted', '建议已接受'));
-      if (currentConversation) {
-        await loadMessages(currentConversation.id);
+  const handleAcceptSuggestion = useCallback(
+    async (suggestionId: string, optimizationId?: string) => {
+      if (!optimizationId) {
+        message.warning('无法找到优化记录 ID');
+        return;
       }
-    } catch (error) {
-      console.error('Failed to accept suggestion:', error);
-      message.error(t('common.error'));
-    }
-  }, [currentConversation, loadMessages, t]);
+      try {
+        await optimizationService.acceptSuggestion(
+          optimizationId,
+          suggestionId
+        );
+        message.success(t('chat.suggestion_accepted', '建议已接受'));
+        if (currentConversation) {
+          await loadMessages(currentConversation.id);
+        }
+      } catch (error) {
+        console.error('Failed to accept suggestion:', error);
+        message.error(t('common.error'));
+      }
+    },
+    [currentConversation, loadMessages, t]
+  );
 
-  const handleRejectSuggestion = useCallback(async (suggestionId: string, optimizationId?: string) => {
-    if (!optimizationId) {
-      message.warning('无法找到优化记录 ID');
-      return;
-    }
-    try {
-      await optimizationService.rejectSuggestion(optimizationId, suggestionId);
-      message.success(t('chat.suggestion_rejected', '建议已拒绝'));
-      if (currentConversation) {
-        await loadMessages(currentConversation.id);
+  const handleRejectSuggestion = useCallback(
+    async (suggestionId: string, optimizationId?: string) => {
+      if (!optimizationId) {
+        message.warning('无法找到优化记录 ID');
+        return;
       }
-    } catch (error) {
-      console.error('Failed to reject suggestion:', error);
-      message.error(t('common.error'));
-    }
-  }, [currentConversation, loadMessages, t]);
+      try {
+        await optimizationService.rejectSuggestion(
+          optimizationId,
+          suggestionId
+        );
+        message.success(t('chat.suggestion_rejected', '建议已拒绝'));
+        if (currentConversation) {
+          await loadMessages(currentConversation.id);
+        }
+      } catch (error) {
+        console.error('Failed to reject suggestion:', error);
+        message.error(t('common.error'));
+      }
+    },
+    [currentConversation, loadMessages, t]
+  );
 
-  const handleAcceptAllSuggestions = useCallback(async (optimizationId?: string) => {
-    if (!optimizationId) {
-      message.warning('无法找到优化记录 ID');
-      return;
-    }
-    try {
-      const messageItem = messages.find(m => m.metadata?.optimizationId === optimizationId);
-      const suggestions = messageItem?.metadata?.suggestions as any[];
-      
-      if (!suggestions || suggestions.length === 0) return;
-      
-      const pendingIds = suggestions
-        .filter(s => s.status === 'pending')
-        .map(s => s.id);
-        
-      if (pendingIds.length === 0) return;
-      
-      await optimizationService.acceptBatchSuggestions(optimizationId, pendingIds);
-      message.success(t('chat.all_suggestions_accepted', '所有建议已接受'));
-      if (currentConversation) {
-        await loadMessages(currentConversation.id);
+  const handleAcceptAllSuggestions = useCallback(
+    async (optimizationId?: string) => {
+      if (!optimizationId) {
+        message.warning('无法找到优化记录 ID');
+        return;
       }
-    } catch (error) {
-      console.error('Failed to accept all suggestions:', error);
-      message.error(t('common.error'));
-    }
-  }, [messages, currentConversation, loadMessages, t]);
+      try {
+        const messageItem = messages.find(
+          (m) => m.metadata?.optimizationId === optimizationId
+        );
+        const suggestions = messageItem?.metadata?.suggestions as any[];
+
+        if (!suggestions || suggestions.length === 0) return;
+
+        const pendingIds = suggestions
+          .filter((s) => s.status === 'pending')
+          .map((s) => s.id);
+
+        if (pendingIds.length === 0) return;
+
+        await optimizationService.acceptBatchSuggestions(
+          optimizationId,
+          pendingIds
+        );
+        message.success(t('chat.all_suggestions_accepted', '所有建议已接受'));
+        if (currentConversation) {
+          await loadMessages(currentConversation.id);
+        }
+      } catch (error) {
+        console.error('Failed to accept all suggestions:', error);
+        message.error(t('common.error'));
+      }
+    },
+    [messages, currentConversation, loadMessages, t]
+  );
 
   const handleDownloadOptimized = useCallback(async () => {
     if (!comparisonData.optimized) return;
@@ -105,26 +133,31 @@ export const useOptimization = ({ sendSocketMessage, setLocalItems }: UseOptimiz
     }
   }, [comparisonData.optimized, setLocalItems, t]);
 
-  const handleStartOptimization = useCallback(async (hasResume: boolean) => {
-    if (!currentConversation) return;
+  const handleStartOptimization = useCallback(
+    async (hasResume: boolean) => {
+      if (!currentConversation) return;
 
-    if (!hasResume) {
-      message.warning(t('chat.upload_resume_first', 'Please upload a resume first'));
-      return;
-    }
+      if (!hasResume) {
+        message.warning(
+          t('chat.upload_resume_first', 'Please upload a resume first')
+        );
+        return;
+      }
 
-    try {
-      setIsOptimizationLoading(true);
-      sendSocketMessage(currentConversation.id, '优化简历', {
-        action: 'optimize_resume',
-      });
-    } catch (error) {
-      console.error('Failed to start optimization:', error);
-      message.error(t('common.error'));
-    } finally {
-      setIsOptimizationLoading(false);
-    }
-  }, [currentConversation, sendSocketMessage, t]);
+      try {
+        setIsOptimizationLoading(true);
+        sendSocketMessage(currentConversation.id, '优化简历', {
+          action: 'optimize_resume',
+        });
+      } catch (error) {
+        console.error('Failed to start optimization:', error);
+        message.error(t('common.error'));
+      } finally {
+        setIsOptimizationLoading(false);
+      }
+    },
+    [currentConversation, sendSocketMessage, t]
+  );
 
   return {
     comparisonVisible,

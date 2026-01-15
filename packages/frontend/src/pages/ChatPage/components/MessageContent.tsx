@@ -44,22 +44,35 @@ export const MessageContent: React.FC<MessageContentProps> = ({
   return (
     <div className="markdown-content">
       {item.key === 'streaming-optimization' ? (
-        <StreamingMarkdownBubble content={item.content} isStreaming={!!isStreaming} />
+        <StreamingMarkdownBubble
+          content={item.content}
+          isStreaming={!!isStreaming}
+        />
       ) : (
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {item.content}
+        </ReactMarkdown>
       )}
 
       {item.type === 'attachment' && item.attachmentStatus && (
         <AttachmentMessage
           status={item.attachmentStatus}
           onDelete={() => onDeleteAttachment?.(item.key)}
-          onRetry={item.attachmentStatus.status === 'error' ? () => onRetryAttachment?.(item.key) : undefined}
+          onRetry={
+            item.attachmentStatus.status === 'error'
+              ? () => onRetryAttachment?.(item.key)
+              : undefined
+          }
         />
       )}
 
       {item.type === 'optimization_result' && (
         <div className="mt-4 flex gap-2">
-          <Button type="primary" icon={<FileTextOutlined />} onClick={onOpenComparison}>
+          <Button
+            type="primary"
+            icon={<FileTextOutlined />}
+            onClick={onOpenComparison}
+          >
             查看对比
           </Button>
           <Button icon={<DownloadOutlined />} onClick={onDownloadOptimized}>

@@ -155,7 +155,9 @@ export class StrategistAgent {
 
     // Extract relevant skills from resume
     const relevantSkills = Array.isArray(input.resumeData.skills)
-      ? input.resumeData.skills.slice(0, 10).filter((s) => typeof s === 'string')
+      ? input.resumeData.skills
+          .slice(0, 10)
+          .filter((s) => typeof s === 'string')
       : [];
 
     // Use LLM to identify key focus areas
@@ -338,9 +340,12 @@ Format: [{"question": "...", "difficulty": "...", "type": "..."}, ...]`;
 
       // Determine priority based on relevance to focus areas
       const questionText = (question.question || '').toLowerCase();
-      const focusAreas = Array.isArray(analysis.focusAreas) ? analysis.focusAreas : [];
-      const focusAreaMatches = focusAreas.filter((area) =>
-        typeof area === 'string' && questionText.includes(area.toLowerCase())
+      const focusAreas = Array.isArray(analysis.focusAreas)
+        ? analysis.focusAreas
+        : [];
+      const focusAreaMatches = focusAreas.filter(
+        (area) =>
+          typeof area === 'string' && questionText.includes(area.toLowerCase())
       ).length;
 
       if (focusAreaMatches >= 2 || question.source === 'custom') {

@@ -42,7 +42,10 @@ const MyResumesPage: React.FC = () => {
           {t('menu.my_resumes', '我的简历')}
         </Title>
         <Paragraph className="!text-lg text-secondary">
-          {t('resume.my_resumes_desc', '管理您的简历版本，查看解析后的结构化数据')}
+          {t(
+            'resume.my_resumes_desc',
+            '管理您的简历版本，查看解析后的结构化数据'
+          )}
         </Paragraph>
       </div>
 
@@ -60,12 +63,19 @@ const MyResumesPage: React.FC = () => {
             <ResumeDetail
               resume={currentResume}
               onPreview={() => handlePreview(currentResume)}
-              onHistory={() => setState((prev) => ({ ...prev, historyVisible: true }))}
+              onHistory={() =>
+                setState((prev) => ({ ...prev, historyVisible: true }))
+              }
               onAnalyze={() => {
-                setData((prev) => ({ ...prev, selectedAnalysisResumeId: currentResume.id }));
+                setData((prev) => ({
+                  ...prev,
+                  selectedAnalysisResumeId: currentResume.id,
+                }));
                 setState((prev) => ({ ...prev, analysisVisible: true }));
               }}
-              onOptimize={() => setState((prev) => ({ ...prev, optimizationVisible: true }))}
+              onOptimize={() =>
+                setState((prev) => ({ ...prev, optimizationVisible: true }))
+              }
               onSetPrimary={() => handleSetPrimary(currentResume.id)}
               onDelete={() =>
                 handleDelete(
@@ -75,7 +85,10 @@ const MyResumesPage: React.FC = () => {
               }
             />
           ) : (
-            <ResumeEmptyState onUpload={handleUpload} uploading={state.uploading} />
+            <ResumeEmptyState
+              onUpload={handleUpload}
+              uploading={state.uploading}
+            />
           )}
         </main>
       </div>
@@ -92,7 +105,9 @@ const MyResumesPage: React.FC = () => {
           setState((prev) => ({ ...prev, optimizationVisible: false }));
           setData((prev) => ({ ...prev, selectedOptimizationId: undefined }));
           fetchResumes();
-          message.success(t('resume.optimization_success', '简历优化已完成并保存为新版本'));
+          message.success(
+            t('resume.optimization_success', '简历优化已完成并保存为新版本')
+          );
         }}
       />
 
@@ -111,7 +126,11 @@ const MyResumesPage: React.FC = () => {
         onClose={() => setState((prev) => ({ ...prev, historyVisible: false }))}
         onSelectOptimization={(id) => {
           setData((prev) => ({ ...prev, selectedOptimizationId: id }));
-          setState((prev) => ({ ...prev, optimizationVisible: true, historyVisible: false }));
+          setState((prev) => ({
+            ...prev,
+            optimizationVisible: true,
+            historyVisible: false,
+          }));
         }}
       />
 
