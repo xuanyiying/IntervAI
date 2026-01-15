@@ -94,6 +94,7 @@ export enum ScenarioType {
   RESUME_CONTENT_OPTIMIZATION = 'resume-content-optimization',
   INTERVIEW_QUESTION_GENERATION = 'interview-question-generation',
   MATCH_SCORE_CALCULATION = 'match-score-calculation',
+  RESUME_ANALYSIS = 'resume-analysis',
 
   // Agent scenarios
   AGENT_STAR_EXTRACTION = 'agent-star-extraction',

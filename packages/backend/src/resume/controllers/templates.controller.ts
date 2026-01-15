@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards, Logger } from '@nestjs/common';
-import GenerateService from './generate.service';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import PdfGenerationService from '../services/pdf-generation.service';
+import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -15,7 +15,7 @@ import {
 export class TemplatesController {
   private readonly logger = new Logger(TemplatesController.name);
 
-  constructor(private generateService: GenerateService) {}
+  constructor(private pdfGenerationService: PdfGenerationService) {}
 
   /**
    * Get template by ID
@@ -30,7 +30,7 @@ export class TemplatesController {
   async getTemplate(@Param('id') templateId: string) {
     this.logger.log(`Fetching template ${templateId}`);
 
-    const template = await this.generateService.getTemplate(templateId);
+    const template = await this.pdfGenerationService.getTemplate(templateId);
 
     return {
       success: true,
@@ -51,7 +51,7 @@ export class TemplatesController {
   async listTemplates() {
     this.logger.log('Fetching all templates');
 
-    const templates = await this.generateService.listTemplates();
+    const templates = await this.pdfGenerationService.listTemplates();
 
     return {
       success: true,

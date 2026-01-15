@@ -18,11 +18,11 @@ import {
   ApiOperation,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
-import { ValidateFile } from '../common/decorators/validate-file.decorator';
-import { ResumeService } from './resume.service';
-import { UploadResumeDto } from './dto/upload-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
+import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import { ValidateFile } from '../../common/decorators/validate-file.decorator';
+import { ResumeService } from '../services/resume.service';
+import { UploadResumeDto } from '../dto/upload-resume.dto';
+import { UpdateResumeDto } from '../dto/update-resume.dto';
 
 @Controller('resumes')
 @UseGuards(JwtAuthGuard)
@@ -114,6 +114,19 @@ export class ResumeController {
   async setPrimaryResume(@Param('id') resumeId: string, @Request() req: any) {
     const userId = req.user.id;
     return this.resumeService.setPrimaryResume(resumeId, userId);
+  }
+
+  /**
+   * Analyze a resume
+   * GET /resumes/:id/analyze
+   */
+  @Get(':id/analyze')
+  @ApiOperation({
+    summary: 'Analyze a resume and provide scoring and suggestions',
+  })
+  async analyzeResume(@Param('id') resumeId: string, @Request() req: any) {
+    const userId = req.user.id;
+    return this.resumeService.analyzeResume(resumeId, userId);
   }
 
   /**

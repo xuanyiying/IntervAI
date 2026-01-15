@@ -12,9 +12,9 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
-import GenerateService, { PDFOptions } from './generate.service';
-import { ParsedResumeData, ParsedJobData } from '../types';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import PdfGenerationService, { PDFOptions } from '../services/pdf-generation.service';
+import { ParsedResumeData } from '../../types';
+import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -26,10 +26,10 @@ import {
 @ApiBearerAuth()
 @Controller('generate')
 @UseGuards(JwtAuthGuard)
-export class GenerateController {
-  private readonly logger = new Logger(GenerateController.name);
+export class PdfGenerationController {
+  private readonly logger = new Logger(PdfGenerationController.name);
 
-  constructor(private generateService: GenerateService) {}
+  constructor(private pdfGenerationService: PdfGenerationService) {}
 
   /**
    * Generate PDF from resume
@@ -54,7 +54,7 @@ export class GenerateController {
   ) {
     this.logger.log(`Generating PDF for optimization ${body.optimizationId}`);
 
-    const generatedPDF = await this.generateService.generatePDF(
+    const generatedPDF = await this.pdfGenerationService.generatePDF(
       body.optimizationId,
       req.user.id,
       body.templateId,
@@ -91,7 +91,7 @@ export class GenerateController {
   ) {
     this.logger.log(`Previewing PDF for optimization ${body.optimizationId}`);
 
-    const html = await this.generateService.previewPDF(
+    const html = await this.pdfGenerationService.previewPDF(
       body.optimizationId,
       req.user.id,
       body.templateId,
@@ -118,7 +118,7 @@ export class GenerateController {
   async getGeneratedPDF(@Request() req: any, @Param('id') pdfId: string) {
     this.logger.log(`Fetching PDF details: ${pdfId}`);
 
-    const pdf = await this.generateService.getGeneratedPDF(pdfId, req.user.id);
+    const pdf = await this.pdfGenerationService.getGeneratedPDF(pdfId, req.user.id);
 
     return {
       success: true,
@@ -142,7 +142,7 @@ export class GenerateController {
   ) {
     this.logger.log(`Fetching PDFs for optimization: ${optimizationId}`);
 
-    const pdfs = await this.generateService.listGeneratedPDFs(
+    const pdfs = await this.pdfGenerationService.listGeneratedPDFs(
       optimizationId,
       req.user.id
     );
@@ -170,7 +170,7 @@ export class GenerateController {
   ) {
     this.logger.log(`Downloading PDF: ${pdfId}`);
 
-    const buffer = await this.generateService.downloadPDF(pdfId, req.user.id);
+    const buffer = await this.pdfGenerationService.downloadPDF(pdfId, req.user.id);
 
     // Set response headers for file download
     res.setHeader('Content-Type', 'application/pdf');
@@ -197,7 +197,7 @@ export class GenerateController {
   async deleteGeneratedPDF(@Request() req: any, @Param('id') pdfId: string) {
     this.logger.log(`Deleting PDF: ${pdfId}`);
 
-    await this.generateService.deleteGeneratedPDF(pdfId, req.user.id);
+    await this.pdfGenerationService.deleteGeneratedPDF(pdfId, req.user.id);
 
     return {
       success: true,
@@ -229,7 +229,7 @@ export class GenerateController {
   ) {
     this.logger.log(`Generating PDF from Markdown for user ${req.user.id}`);
 
-    const result = await this.generateService.generatePDFFromMarkdown(
+    const result = await this.pdfGenerationService.generatePDFFromMarkdown(
       body.markdown,
       req.user.id,
       body.options

@@ -10,7 +10,6 @@ import { HealthModule } from './health/health.module';
 import { UserModule } from './user/user.module';
 import { ResumeModule } from './resume/resume.module';
 import { JobModule } from './job/job.module';
-import { GenerateModule } from './generate/generate.module';
 import { StorageModule } from './storage/storage.module';
 import { TasksModule } from './tasks/tasks.module';
 import { InterviewModule } from './interview/interview.module';
@@ -23,7 +22,6 @@ import { EmailModule } from './email/email.module';
 import { PaymentModule } from './payment/payment.module';
 import { AIProvidersModule } from './ai-providers/ai-providers.module';
 import { InvitationModule } from './invitation/invitation.module';
-import { ResumeOptimizerModule } from './resume-optimizer/resume-optimizer.module';
 import { ChatModule } from './chat/chat.module';
 import { AgentModule } from './agent/agent.module';
 import { loggerConfig } from './logger/logger.config';
@@ -52,8 +50,6 @@ import { AuthModule } from './auth/auth.module';
     ConversationModule,
     ResumeModule,
     JobModule,
-    ResumeOptimizerModule,
-    GenerateModule,
     StorageModule,
     TasksModule,
     InterviewModule,

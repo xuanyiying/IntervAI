@@ -14,7 +14,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ResumeOptimizerService } from './resume-optimizer.service';
+import { ResumeOptimizerService } from '../services/resume-optimizer.service';
 import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
 import { Optimization } from '@prisma/client';
 

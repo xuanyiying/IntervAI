@@ -6,7 +6,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
-import { ResumeOptimizerService } from '@/resume-optimizer/resume-optimizer.service';
+import { ResumeOptimizerService } from '@/resume/services/resume-optimizer.service';
 import { AIRequest } from '@/ai-providers/interfaces';
 import { PromptScenario } from '@/ai-providers/interfaces/prompt-template.interface';
 import { ChatResponse } from './chat.gateway';

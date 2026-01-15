@@ -28,8 +28,8 @@ export interface PDFOptions {
 }
 
 @Injectable()
-class GenerateService implements OnModuleInit, OnModuleDestroy {
-  private readonly logger = new Logger(GenerateService.name);
+export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(PdfGenerationService.name);
   private browser: puppeteer.Browser | null = null;
 
   constructor(
@@ -1487,6 +1487,81 @@ class GenerateService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /**
+   * Generate interview report PDF
+   * Requirement: Generate PDF report for interview session
+   */
+  async generateInterviewReport(
+    sessionId: string,
+    userId: string
+  ): Promise<{
+    fileId: string;
+    filePath: string;
+    expiresAt: Date;
+    downloadUrl: string;
+  }> {
+    try {
+      // 1. Fetch Session
+      const session = await this.prisma.interviewSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          optimization: {
+            include: {
+              job: true,
+            },
+          },
+          messages: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
+
+      if (!session) {
+        throw new NotFoundException(`Interview session with ID ${sessionId} not found`);
+      }
+
+      if (session.userId !== userId) {
+        throw new ForbiddenException('You do not have permission to access this interview session');
+      }
+
+      // 2. Format Markdown
+      const jobTitle = session.optimization?.job?.title || 'Mock Interview';
+      const date = new Date(session.createdAt).toLocaleDateString();
+      const score = session.score !== null ? session.score : 'N/A';
+      const feedback = session.feedback || 'No feedback provided.';
+
+      let markdown = `# Interview Assessment Report\n\n`;
+      markdown += `**Position**: ${jobTitle}\n`;
+      markdown += `**Date**: ${date}\n`;
+      markdown += `**Overall Score**: ${score}/100\n\n`;
+
+      markdown += `## Performance Summary\n${feedback}\n\n`;
+
+      markdown += `## Interview Transcript\n`;
+      if (session.messages && session.messages.length > 0) {
+        session.messages.forEach((msg) => {
+          const role = msg.role === 'ASSISTANT' ? 'Interviewer' : 'Candidate';
+          // Simple markdown sanitization for message content could be added here
+          markdown += `**${role}**: ${msg.content}\n\n---\n\n`;
+        });
+      } else {
+        markdown += `*(No transcript available)*\n`;
+      }
+
+      // 3. Generate PDF (Reuse existing method)
+      // This will check PDF quota automatically
+      return this.generatePDFFromMarkdown(markdown, userId, {
+        fontSize: 11,
+        margin: { top: 20, bottom: 20, left: 20, right: 20 },
+      });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(`Error generating interview report: ${errorMessage}`, error);
+      throw error;
+    }
+  }
+
   async onModuleDestroy(): Promise<void> {
     if (this.browser) {
       this.logger.log('Closing Puppeteer browser...');
@@ -1496,4 +1571,4 @@ class GenerateService implements OnModuleInit, OnModuleDestroy {
   }
 }
 
-export default GenerateService;
+export default PdfGenerationService;

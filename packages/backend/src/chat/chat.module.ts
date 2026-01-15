@@ -10,13 +10,13 @@ import { ChatGateway } from './chat.gateway';
 import { ChatIntentService } from './chat-intent.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { AIProvidersModule } from '@/ai-providers/ai-providers.module';
-import { ResumeOptimizerModule } from '@/resume-optimizer/resume-optimizer.module';
+import { ResumeModule } from '@/resume/resume.module';
 
 @Module({
   imports: [
     PrismaModule,
     AIProvidersModule,
-    ResumeOptimizerModule,
+    ResumeModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

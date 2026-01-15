@@ -17,11 +17,13 @@ import { FileType } from '@/storage/interfaces/storage.interface';
 import { AIQueueService } from '@/ai/queue/ai-queue.service';
 
 import { FileUploadValidator } from '@/common/validators/file-upload.validator';
+import { ParsedResumeData } from '@/types';
 
 export interface ResumeUploadResult {
   resume: Resume;
   isDuplicate: boolean;
 }
+
 
 @Injectable()
 export class ResumeService {
@@ -547,5 +549,29 @@ export class ResumeService {
         `Failed to parse resume: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * Analyze a resume and provide scoring and suggestions
+   */
+  async analyzeResume(resumeId: string, userId: string): Promise<any> {
+    const resume = await this.prisma.resume.findUnique({
+      where: { id: resumeId },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Resume not found');
+    }
+
+    if (resume.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    if (!resume.parsedData) {
+      throw new BadRequestException('Resume must be parsed before analysis');
+    }
+
+    const parsedData = resume.parsedData as unknown as ParsedResumeData;
+    return this.aiEngine.analyzeParsedResume(parsedData);
   }
 }
