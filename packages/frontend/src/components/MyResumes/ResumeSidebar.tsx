@@ -1,9 +1,6 @@
 import React, { useMemo } from 'react';
 import { Button, Upload, Empty, Tag, Popconfirm, Typography } from 'antd';
-import {
-  PlusOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { Resume, ParseStatus } from '../../types';
 
@@ -30,8 +27,9 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
 
   // Simple sort by date descending
   const sortedResumes = useMemo(() => {
-    return [...(resumes || [])].sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return [...(resumes || [])].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [resumes]);
 
@@ -39,28 +37,46 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
     switch (status) {
       case ParseStatus.COMPLETED:
         return (
-          <Tag color="success" className="mr-0 !text-xs !px-1.5 !leading-5 border-none bg-green-500/10 text-green-600">
+          <Tag
+            color="success"
+            className="mr-0 !text-xs !px-1.5 !leading-5 border-none bg-green-500/10 text-green-600"
+          >
             {t('resume.status_completed', '已解析')}
           </Tag>
         );
       case ParseStatus.PROCESSING:
         return (
-          <Tag color="processing" className="mr-0 !text-xs !px-1.5 !leading-5 border-none">
+          <Tag
+            color="processing"
+            className="mr-0 !text-xs !px-1.5 !leading-5 border-none"
+          >
             {t('resume.status_processing', '解析中')}
           </Tag>
         );
       case ParseStatus.FAILED:
-        return <Tag color="error" className="mr-0 !text-xs !px-1.5 !leading-5 border-none">{t('resume.status_failed', '失败')}</Tag>;
+        return (
+          <Tag
+            color="error"
+            className="mr-0 !text-xs !px-1.5 !leading-5 border-none"
+          >
+            {t('resume.status_failed', '失败')}
+          </Tag>
+        );
       default:
         return (
-          <Tag color="default" className="mr-0 !text-xs !px-1.5 !leading-5 border-none">{t('resume.status_pending', '待处理')}</Tag>
+          <Tag
+            color="default"
+            className="mr-0 !text-xs !px-1.5 !leading-5 border-none"
+          >
+            {t('resume.status_pending', '待处理')}
+          </Tag>
         );
     }
   };
 
   return (
     <aside className="resume-sidebar h-full flex flex-col">
-      <div className="resume-list-card flex-1 flex flex-col min-h-0 bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl border-0 rounded-2xl overflow-hidden shadow-lg">
+      <div className="resume-list-card flex-1 flex flex-col min-h-0 border-0 rounded-2xl overflow-hidden shadow-lg">
         {/* Header Section - Simplified */}
         <div className="p-4 border-none flex justify-end">
           <Upload
@@ -97,11 +113,8 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
               <div
                 key={item.id}
                 className={`
-                  group relative flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200
-                  ${item.id === currentResume?.id 
-                    ? 'bg-white dark:bg-white/10 shadow-sm ring-1 ring-black/5 dark:ring-white/10' 
-                    : 'hover:bg-white/60 dark:hover:bg-white/5'
-                  }
+                  resume-list-item group relative flex items-center gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200
+                  ${item.id === currentResume?.id ? 'selected' : ''}
                 `}
                 onClick={() => onSelect(item)}
               >
@@ -113,33 +126,38 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
                 {/* Content */}
                 <div className="flex-1 min-w-0 flex flex-col gap-1.5 pl-2">
                   <div className="flex justify-between items-start">
-                    <Text 
+                    <Text
                       className={`
-                        block truncate text-sm font-medium leading-tight
-                        ${item.id === currentResume?.id ? 'text-primary' : 'text-gray-700 dark:text-gray-200'}
+                        resume-list-item-title block truncate text-sm font-medium leading-tight
+                        ${item.id === currentResume?.id ? 'selected' : ''}
                       `}
                       ellipsis={{ tooltip: true }}
                     >
                       {item.title || item.originalFilename}
                     </Text>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 text-xs text-gray-400">
                     <span className="flex items-center gap-2">
-                      <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                      <span>
+                        {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
                     </span>
                     {getStatusTag(item.parseStatus)}
                   </div>
                 </div>
 
                 {/* Delete Action - Flex Item */}
-                <div 
+                <div
                   className="flex-shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <Popconfirm
                     title={t('resume.delete_confirm_title', '确认删除')}
-                    description={t('resume.delete_confirm_content', '确定要删除这份简历吗？')}
+                    description={t(
+                      'resume.delete_confirm_content',
+                      '确定要删除这份简历吗？'
+                    )}
                     onConfirm={() => onDelete(item.id)}
                     okText={t('common.yes', '是')}
                     cancelText={t('common.no', '否')}

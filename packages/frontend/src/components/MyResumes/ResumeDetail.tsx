@@ -112,23 +112,23 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
         );
       case 'preview':
         return (
-          <div 
-            className="bg-slate-50 rounded-xl overflow-hidden relative"
+          <div
+            className="bg-[#F5F5F5] dark:bg-gray-800 rounded-xl overflow-hidden relative"
             style={{ minHeight: '800px', height: 'calc(100vh - 200px)' }}
           >
             {resume.fileUrl ? (
               <>
-                 <div className="absolute top-4 right-4 z-10">
-                    <Button
-                      icon={<CloudDownloadOutlined />}
-                      href={resume.fileUrl}
-                      target="_blank"
-                      type="primary"
-                      className="shadow-lg"
-                    >
-                      {t('common.download', '下载原文')}
-                    </Button>
-                 </div>
+                <div className="absolute top-4 right-4 z-10">
+                  <Button
+                    icon={<CloudDownloadOutlined />}
+                    href={resume.fileUrl}
+                    target="_blank"
+                    type="primary"
+                    className="shadow-lg"
+                  >
+                    {t('common.download', '下载原文')}
+                  </Button>
+                </div>
                 <iframe
                   src={resume.fileUrl}
                   className="w-full h-full border-none"
@@ -157,8 +157,8 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
         onViewChange={onViewChange}
         onSetPrimary={onSetPrimary}
       />
-      <div 
-        key={viewMode} 
+      <div
+        key={viewMode}
         className={`resume-detail-body mt-6 animate-fade-in ${viewMode === 'preview' ? '!p-0 !overflow-hidden' : ''}`}
         style={viewMode === 'preview' ? { padding: 0 } : undefined}
       >

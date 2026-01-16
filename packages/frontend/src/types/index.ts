@@ -332,6 +332,7 @@ export enum InterviewStatus {
   IN_PROGRESS = 'IN_PROGRESS',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
+  EVALUATED = 'EVALUATED',
 }
 
 export interface InterviewSession {

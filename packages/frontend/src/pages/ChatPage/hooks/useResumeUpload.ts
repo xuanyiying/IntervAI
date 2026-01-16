@@ -61,7 +61,8 @@ export const useResumeUpload = ({
       retryMessageId?: string,
       overrideConversationId?: string
     ) => {
-      const targetConversationId = overrideConversationId || currentConversationId;
+      const targetConversationId =
+        overrideConversationId || currentConversationId;
 
       if (!targetConversationId) {
         message.warning('请等待会话初始化完成');

@@ -25,7 +25,9 @@ const MyResumesPage: React.FC = () => {
   } = useResumePage();
 
   const [viewMode, setViewMode] = useState<ResumeViewMode>('analysis');
-  const [initialOptimizationId, setInitialOptimizationId] = useState<string | undefined>(undefined);
+  const [initialOptimizationId, setInitialOptimizationId] = useState<
+    string | undefined
+  >(undefined);
 
   // Reset view mode when resume changes
   useEffect(() => {
@@ -37,8 +39,10 @@ const MyResumesPage: React.FC = () => {
 
   const handleOptimizationSuccess = () => {
     fetchResumes();
-    message.success(t('resume.optimization_success', '简历优化已完成并保存为新版本'));
-    // Optionally switch to history or detail view? 
+    message.success(
+      t('resume.optimization_success', '简历优化已完成并保存为新版本')
+    );
+    // Optionally switch to history or detail view?
     // User didn't specify, but maybe stay on optimization view or go to history?
     // Let's keep it on optimization view for now so they can see the result if the component supports it.
     // Or maybe switch to history to see the new version.
@@ -73,12 +77,6 @@ const MyResumesPage: React.FC = () => {
           <FileTextOutlined className="text-primary" />
           {t('menu.my_resumes', '我的简历')}
         </Title>
-        <Paragraph className="!text-lg text-secondary">
-          {t(
-            'resume.my_resumes_desc',
-            '管理您的简历版本，查看解析后的结构化数据'
-          )}
-        </Paragraph>
       </div>
 
       <div className="resumes-layout">
