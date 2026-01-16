@@ -35,13 +35,19 @@ export const useResumePage = () => {
 
   useEffect(() => {
     fetchResumes();
-    const pollInterval = setInterval(() => {
-      const hasProcessing = resumes.some(
-        (r) => r.parseStatus === ParseStatus.PROCESSING
-      );
-      if (hasProcessing) fetchResumes();
-    }, 5000);
-    return () => clearInterval(pollInterval);
+  }, [fetchResumes]);
+
+  useEffect(() => {
+    const hasProcessing = resumes.some(
+      (r) => r.parseStatus === ParseStatus.PROCESSING
+    );
+    
+    if (hasProcessing) {
+      const pollInterval = setInterval(() => {
+        fetchResumes();
+      }, 5000);
+      return () => clearInterval(pollInterval);
+    }
   }, [fetchResumes, resumes]);
 
   useEffect(() => {
