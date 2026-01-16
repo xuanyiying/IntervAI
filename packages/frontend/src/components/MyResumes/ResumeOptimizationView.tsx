@@ -198,15 +198,17 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
       <div className="mb-6 flex items-center justify-between">
         <Space>
           <RocketOutlined className="text-primary text-xl" />
-          <h2 className="text-xl font-bold m-0">{t('resume.optimization_title')}</h2>
+          <h2 className="text-xl font-bold m-0">
+            {t('resume.optimization_title')}
+          </h2>
         </Space>
         {step === 'review' && (
-           <Space>
-             <Button onClick={() => setStep('input')}>{t('common.back')}</Button>
-             <Button type="primary" icon={<SaveOutlined />} onClick={onSuccess}>
-               {t('resume.apply_changes')}
-             </Button>
-           </Space>
+          <Space>
+            <Button onClick={() => setStep('input')}>{t('common.back')}</Button>
+            <Button type="primary" icon={<SaveOutlined />} onClick={onSuccess}>
+              {t('resume.apply_changes')}
+            </Button>
+          </Space>
         )}
       </div>
 
@@ -223,15 +225,15 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             className="jd-textarea mb-6"
           />
           <Button
-              type="primary"
-              icon={<RocketOutlined />}
-              loading={loading}
-              onClick={handleStartOptimization}
-              block
-              size="large"
-            >
-              {t('common.submit')}
-            </Button>
+            type="primary"
+            icon={<RocketOutlined />}
+            loading={loading}
+            onClick={handleStartOptimization}
+            block
+            size="large"
+          >
+            {t('common.submit')}
+          </Button>
         </div>
       ) : (
         <div className="optimization-content custom-scrollbar">

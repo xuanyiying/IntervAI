@@ -20,7 +20,9 @@ export const ResumeHistoryView: React.FC<ResumeHistoryViewProps> = ({
       <div className="mb-6">
         <Space>
           <HistoryOutlined className="text-primary text-xl" />
-          <h2 className="text-xl font-bold m-0">{t('resume.optimization_history', '优化历史')}</h2>
+          <h2 className="text-xl font-bold m-0">
+            {t('resume.optimization_history', '优化历史')}
+          </h2>
         </Space>
       </div>
 

@@ -105,7 +105,7 @@ export class AIEngine {
 
   constructor(
     private aiEngineService: AIEngineService,
-    private promptTemplateManager: PromptTemplateManager,
+    private promptTemplateManager: PromptTemplateManager
   ) {}
 
   /**

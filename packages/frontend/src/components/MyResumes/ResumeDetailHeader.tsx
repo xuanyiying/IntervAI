@@ -10,7 +10,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Resume, ParseStatus } from '../../types';
 
-export type ResumeViewMode = 'detail' | 'preview' | 'history' | 'analysis' | 'optimization';
+export type ResumeViewMode =
+  | 'detail'
+  | 'preview'
+  | 'history'
+  | 'analysis'
+  | 'optimization';
 
 interface ResumeDetailHeaderProps {
   resume: Resume;
@@ -29,7 +34,8 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
 
   const getButtonClass = (view: ResumeViewMode) => {
     const isActive = activeView === view;
-    const baseClass = "transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0";
+    const baseClass =
+      'transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0';
     if (isActive) {
       return `${baseClass} bg-primary text-white border-primary shadow-lg shadow-primary/30 hover:!bg-primary hover:!text-white hover:scale-105`;
     }
@@ -40,12 +46,12 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
     title,
     mouseEnterDelay: 0.3,
     mouseLeaveDelay: 0.5,
-    overlayInnerStyle: { 
-      backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+    overlayInnerStyle: {
+      backgroundColor: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(4px)',
       borderRadius: '8px',
-      padding: '6px 12px'
-    }
+      padding: '6px 12px',
+    },
   });
 
   return (
@@ -66,12 +72,12 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
         <Space size="middle" wrap>
           {resume.parseStatus === ParseStatus.COMPLETED && (
             <Tooltip {...getTooltipProps('简历详情')}>
-               <Button
-                  icon={<FileTextOutlined />}
-                  onClick={() => onViewChange('detail')}
-                  className={getButtonClass('detail')}
-                  shape="circle"
-                />
+              <Button
+                icon={<FileTextOutlined />}
+                onClick={() => onViewChange('detail')}
+                className={getButtonClass('detail')}
+                shape="circle"
+              />
             </Tooltip>
           )}
 
@@ -84,7 +90,9 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
             />
           </Tooltip>
 
-          <Tooltip {...getTooltipProps(t('resume.optimization_history', '优化历史'))}>
+          <Tooltip
+            {...getTooltipProps(t('resume.optimization_history', '优化历史'))}
+          >
             <Button
               icon={<HistoryOutlined />}
               onClick={() => onViewChange('history')}
@@ -99,28 +107,34 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
                 <Button
                   icon={<ThunderboltOutlined />}
                   onClick={() => onViewChange('analysis')}
-                  className={activeView === 'analysis' 
-                    ? "!bg-purple-600 !text-white !border-purple-600 shadow-lg shadow-purple-500/30 hover:!bg-purple-600 hover:!text-white hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0"
-                    : "glass-button !border-purple-500/30 !text-purple-600 hover:!text-purple-700 hover:bg-purple-500/10 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0"}
+                  className={
+                    activeView === 'analysis'
+                      ? '!bg-purple-600 !text-white !border-purple-600 shadow-lg shadow-purple-500/30 hover:!bg-purple-600 hover:!text-white hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
+                      : 'glass-button !border-purple-500/30 !text-purple-600 hover:!text-purple-700 hover:bg-purple-500/10 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
+                  }
                   shape="circle"
                 />
               </Tooltip>
-              
+
               <Tooltip {...getTooltipProps(t('resume.optimize', '优化简历'))}>
                 <Button
                   icon={<RocketOutlined />}
                   onClick={() => onViewChange('optimization')}
-                  className={activeView === 'optimization'
-                    ? "bg-gradient-to-r from-primary to-blue-600 !text-white border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0"
-                    : "bg-gradient-to-r from-primary/80 to-blue-600/80 !text-white/90 border-none hover:from-primary hover:to-blue-600 hover:!text-white hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0"}
+                  className={
+                    activeView === 'optimization'
+                      ? 'bg-gradient-to-r from-primary to-blue-600 !text-white border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
+                      : 'bg-gradient-to-r from-primary/80 to-blue-600/80 !text-white/90 border-none hover:from-primary hover:to-blue-600 hover:!text-white hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
+                  }
                   shape="circle"
                 />
               </Tooltip>
             </>
           )}
-          
+
           {!resume.isPrimary && (
-            <Tooltip {...getTooltipProps(t('resume.set_as_active', '设为当前活跃'))}>
+            <Tooltip
+              {...getTooltipProps(t('resume.set_as_active', '设为当前活跃'))}
+            >
               <Button
                 onClick={onSetPrimary}
                 className="glass-button hover:bg-primary/10 hover:!text-primary hover:!border-primary/50"

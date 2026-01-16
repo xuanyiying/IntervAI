@@ -4,6 +4,7 @@ import { Resume } from '../types';
 interface ResumeState {
   resumes: Resume[];
   currentResume: Resume | null;
+  isLoading: boolean;
   setResumes: (resumes: Resume[]) => void;
   setCurrentResume: (resume: Resume | null) => void;
   addResume: (resume: Resume) => void;
@@ -16,6 +17,7 @@ interface ResumeState {
 export const useResumeStore = create<ResumeState>((set, get) => ({
   resumes: [],
   currentResume: null,
+  isLoading: false,
   setResumes: (resumes) => set({ resumes }),
   setCurrentResume: (resume) => set({ currentResume: resume }),
   addResume: (resume) =>
@@ -35,6 +37,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         state.currentResume?.id === id ? null : state.currentResume,
     })),
   fetchResumes: async () => {
+    if (get().isLoading) return;
+    set({ isLoading: true });
     try {
       const { resumeService } = await import('../services/resume-service');
       const resumes = await resumeService.getResumes();
@@ -46,6 +50,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
+    } finally {
+      set({ isLoading: false });
     }
   },
   setPrimary: async (id) => {

@@ -41,7 +41,7 @@ export const useResumePage = () => {
     const hasProcessing = resumes.some(
       (r) => r.parseStatus === ParseStatus.PROCESSING
     );
-    
+
     if (hasProcessing) {
       const pollInterval = setInterval(() => {
         fetchResumes();
