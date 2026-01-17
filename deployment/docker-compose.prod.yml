@@ -10,7 +10,7 @@ services:
   # PostgreSQL Database - Production Configuration
   postgres:
     image: postgres:15-alpine
-    container_name: resume-optimizer-postgres-prod
+    container_name: postgres-prod
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -64,7 +64,7 @@ services:
   # Redis Cache - Production Configuration with Persistence
   redis:
     image: redis:7-alpine
-    container_name: resume-optimizer-redis-prod
+    container_name: redis-prod
     command: >
       redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --appendfsync everysec --maxmemory 512mb --maxmemory-policy allkeys-lru --save 900 1 --save 300 10 --save 60 10000 --tcp-backlog 511 --timeout 300 --tcp-keepalive 300 --loglevel notice
     ports:
@@ -95,6 +95,42 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # Vector Database (ChromaDB)
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: chromadb-prod
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - chroma_data:/chroma/chroma
+    networks:
+      - backend-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+
+  # Object Storage (MinIO)
+  minio:
+    image: minio/minio:latest
+    container_name: minio-prod
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend-network
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+
   # Backend API Service - Production
   backend:
     build:
@@ -108,6 +144,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      chromadb:
+        condition: service_started
+      minio:
+        condition: service_started
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -206,7 +246,7 @@ services:
   # Nginx Load Balancer with SSL/TLS Termination
   nginx:
     image: nginx:alpine
-    container_name: resume-optimizer-nginx-prod
+    container_name: nginx-prod
     depends_on:
       - backend
       - frontend
@@ -245,7 +285,7 @@ services:
   # Certbot for SSL Certificate Management
   certbot:
     image: certbot/certbot:latest
-    container_name: resume-optimizer-certbot
+    container_name: certbot
     volumes:
       - certbot_data:/var/www/certbot
       - certbot_conf:/etc/letsencrypt
@@ -262,7 +302,7 @@ services:
   # Database Backup Service
   postgres-backup:
     image: postgres:15-alpine
-    container_name: resume-optimizer-backup
+    container_name: backup
     depends_on:
       - postgres
     environment:
@@ -287,6 +327,10 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  chroma_data:
+    driver: local
+  minio_data:
     driver: local
   certbot_data:
     driver: local

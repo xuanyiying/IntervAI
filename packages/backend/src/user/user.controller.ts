@@ -12,7 +12,9 @@ import {
   Req,
   Res,
   Query,
+  Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -36,7 +38,25 @@ import { GithubAuthGuard } from './guards/github-auth.guard';
 @ApiTags('auth')
 @Controller('auth')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  private readonly logger = new Logger(UserController.name);
+
+  constructor(
+    private readonly userService: UserService,
+    private readonly configService: ConfigService
+  ) {}
+
+  private getFrontendUrl(): string {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    if (frontendUrl) return frontendUrl;
+
+    const corsOrigin = this.configService.get<string>('CORS_ORIGIN');
+    if (corsOrigin) {
+      const origins = corsOrigin.split(',');
+      return origins[0].trim();
+    }
+
+    return 'http://localhost:5173';
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -218,17 +238,17 @@ export class UserController {
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthRedirect(@Req() req: any, @Res() res: any) {
+    const frontendUrl = this.getFrontendUrl();
     try {
-      const { accessToken } = await this.userService.login({
-        email: req.user.email,
-        password: '', // Password not needed for OAuth login response generation
-      } as LoginDto);
+      const { accessToken } = this.userService.generateAuthResponse(req.user);
 
       // Redirect to frontend with token
-      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
       res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
     } catch (error: any) {
-      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      this.logger.error(
+        `Google OAuth login failed: ${error.message}`,
+        error.stack
+      );
       res.redirect(
         `${frontendUrl}/oauth/callback?error=${encodeURIComponent(error.message)}`
       );
@@ -246,16 +266,16 @@ export class UserController {
   @UseGuards(GithubAuthGuard)
   @ApiOperation({ summary: 'GitHub OAuth callback' })
   async githubAuthRedirect(@Req() req: any, @Res() res: any) {
+    const frontendUrl = this.getFrontendUrl();
     try {
-      const { accessToken } = await this.userService.login({
-        email: req.user.email,
-        password: '', // Password not needed for OAuth login response generation
-      } as LoginDto);
+      const { accessToken } = this.userService.generateAuthResponse(req.user);
 
-      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
       res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
     } catch (error: any) {
-      const frontendUrl = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      this.logger.error(
+        `GitHub OAuth login failed: ${error.message}`,
+        error.stack
+      );
       res.redirect(
         `${frontendUrl}/oauth/callback?error=${encodeURIComponent(error.message)}`
       );

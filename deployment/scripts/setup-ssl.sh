@@ -1,113 +1,88 @@
 #!/bin/bash
-# SSL Certificate Setup Script
-# Requirement 9.1 - SSL/TLS Configuration
+# ==============================================================================
+# SSL 证书配置脚本 - Resume Optimizer
+# ==============================================================================
 
-set -e
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/utils.sh"
 
-# Configuration
-DOMAIN=${DOMAIN:-yourdomain.com}
-EMAIL=${LETSENCRYPT_EMAIL:-admin@yourdomain.com}
-STAGING=${LETSENCRYPT_STAGING:-false}
+# 配置
+detect_env_config() {
+    if [ -f ".env.production" ]; then
+        load_env ".env.production"
+        COMPOSE_FILE="deployment/docker-compose.prod.yml"
+    else
+        log_error "SSL 配置仅适用于生产环境，未找到 .env.production"
+        exit 1
+    fi
+}
 
-echo "=========================================="
-echo "SSL Certificate Setup for Resume Optimizer"
-echo "=========================================="
-echo "Domain: ${DOMAIN}"
-echo "Email: ${EMAIL}"
-echo "Staging: ${STAGING}"
-echo ""
-
-# Check if domain is configured
-if [ "${DOMAIN}" = "yourdomain.com" ]; then
-    echo "ERROR: Please configure your domain in .env.production"
-    echo "Set DOMAIN=your-actual-domain.com"
-    exit 1
-fi
-
-# Check if email is configured
-if [ "${EMAIL}" = "admin@yourdomain.com" ]; then
-    echo "WARNING: Using default email. Please configure LETSENCRYPT_EMAIL in .env.production"
-fi
-
-# Create directories
-mkdir -p config/ssl
-mkdir -p certbot/www
-mkdir -p certbot/conf
-
-echo ""
-echo "Step 1: Generating self-signed certificate for initial setup..."
-echo "This will be replaced by Let's Encrypt certificate."
-
-# Generate self-signed certificate for initial setup
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout config/ssl/key.pem \
-    -out config/ssl/cert.pem \
-    -subj "/C=US/ST=State/L=City/O=Organization/CN=${DOMAIN}"
-
-echo "✓ Self-signed certificate generated"
-
-echo ""
-echo "Step 2: Starting Nginx with self-signed certificate..."
-docker-compose -f docker-compose.prod.yml up -d nginx
-
-echo "✓ Nginx started"
-
-echo ""
-echo "Step 3: Obtaining Let's Encrypt certificate..."
-
-# Determine staging flag
-STAGING_FLAG=""
-if [ "${STAGING}" = "true" ]; then
-    STAGING_FLAG="--staging"
-    echo "Using Let's Encrypt staging environment (for testing)"
-fi
-
-# Request certificate
-docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
-    --webroot \
-    --webroot-path=/var/www/certbot \
-    --email ${EMAIL} \
-    --agree-tos \
-    --no-eff-email \
-    ${STAGING_FLAG} \
-    -d ${DOMAIN} \
-    -d www.${DOMAIN}
-
-if [ $? -eq 0 ]; then
-    echo "✓ Let's Encrypt certificate obtained successfully"
+setup_ssl() {
+    detect_env_config
     
-    echo ""
-    echo "Step 4: Updating Nginx configuration..."
+    local domain=${DOMAIN:-yourdomain.com}
+    local email=${LETSENCRYPT_EMAIL:-admin@yourdomain.com}
+    local staging=${LETSENCRYPT_STAGING:-false}
     
-    # Update nginx configuration with actual domain
-    sed -i.bak "s/yourdomain.com/${DOMAIN}/g" config/nginx/conf.d/default.conf
+    log_info "SSL 配置信息:"
+    echo "  域名: ${domain}"
+    echo "  邮箱: ${email}"
+    echo "  测试模式: ${staging}"
     
-    echo "✓ Nginx configuration updated"
+    if [[ "${domain}" == "yourdomain.com" ]]; then
+        log_error "请在 .env.production 中配置正确的 DOMAIN"
+        exit 1
+    fi
     
-    echo ""
-    echo "Step 5: Reloading Nginx..."
-    docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+    # 创建目录
+    mkdir -p config/ssl
+    mkdir -p certbot/www
+    mkdir -p certbot/conf
     
-    echo "✓ Nginx reloaded"
+    # 1. 生成自签名证书（用于首次启动 Nginx）
+    if [ ! -f "config/ssl/cert.pem" ]; then
+        log_step "生成初始自签名证书..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout config/ssl/key.pem \
+            -out config/ssl/cert.pem \
+            -subj "/C=CN/ST=State/L=City/O=Organization/CN=${domain}"
+    fi
     
-    echo ""
-    echo "=========================================="
-    echo "SSL Setup Complete!"
-    echo "=========================================="
-    echo "Your site is now accessible at:"
-    echo "  https://${DOMAIN}"
-    echo "  https://www.${DOMAIN}"
-    echo ""
-    echo "Certificate will auto-renew via certbot container."
-else
-    echo "ERROR: Failed to obtain Let's Encrypt certificate"
-    echo ""
-    echo "Troubleshooting:"
-    echo "1. Ensure your domain DNS is pointing to this server"
-    echo "2. Ensure ports 80 and 443 are open"
-    echo "3. Check certbot logs: docker-compose -f docker-compose.prod.yml logs certbot"
-    echo ""
-    echo "For testing, you can use staging certificates:"
-    echo "  LETSENCRYPT_STAGING=true ./scripts/setup-ssl.sh"
-    exit 1
-fi
+    # 2. 启动 Nginx
+    log_step "启动 Nginx..."
+    docker compose -f $COMPOSE_FILE up -d nginx
+    
+    # 3. 申请 Let's Encrypt 证书
+    log_step "申请 Let's Encrypt 证书..."
+    
+    local staging_arg=""
+    if [ "${staging}" = "true" ]; then
+        staging_arg="--staging"
+    fi
+    
+    docker compose -f $COMPOSE_FILE run --rm certbot certonly \
+        --webroot \
+        --webroot-path=/var/www/certbot \
+        --email "${email}" \
+        --agree-tos \
+        --no-eff-email \
+        --force-renewal \
+        ${staging_arg} \
+        -d "${domain}" \
+        -d "www.${domain}"
+        
+    if [ $? -eq 0 ]; then
+        log_info "✓ 证书申请成功"
+        
+        # 4. 更新 Nginx 配置并重载
+        log_step "重载 Nginx..."
+        docker compose -f $COMPOSE_FILE exec nginx nginx -s reload
+        
+        log_info "SSL 配置完成! 访问: https://${domain}"
+    else
+        log_error "证书申请失败，请检查日志"
+        exit 1
+    fi
+}
+
+setup_ssl

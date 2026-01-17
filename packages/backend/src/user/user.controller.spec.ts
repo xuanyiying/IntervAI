@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -30,6 +31,18 @@ describe('UserController', () => {
           provide: UserService,
           useValue: {
             findById: jest.fn(),
+            generateAuthResponse: jest.fn(),
+            cleanUserCache: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) => {
+              if (key === 'FRONTEND_URL') return 'http://localhost:5173';
+              if (key === 'CORS_ORIGIN') return 'http://localhost:5173';
+              return null;
+            }),
           },
         },
       ],
@@ -49,28 +62,11 @@ describe('UserController', () => {
   describe('logout', () => {
     it('should return success message', async () => {
       const req = { user: { id: 'user-1' } };
-      jest.spyOn(userService, 'findById').mockResolvedValue(mockUser as any);
 
       const result = await controller.logout(req);
 
-      expect(userService.findById).toHaveBeenCalledWith('user-1');
+      expect(userService.cleanUserCache).toHaveBeenCalledWith('user-1');
       expect(result).toEqual({ message: 'Successfully logged out' });
-    });
-
-    it('should throw ResourceNotFoundException if user does not exist', async () => {
-      const req = { user: { id: 'non-existent' } };
-      jest
-        .spyOn(userService, 'findById')
-        .mockRejectedValue(
-          new ResourceNotFoundException(
-            ErrorCode.USER_NOT_FOUND,
-            'User not found'
-          )
-        );
-
-      await expect(controller.logout(req)).rejects.toThrow(
-        ResourceNotFoundException
-      );
     });
   });
 
@@ -108,6 +104,40 @@ describe('UserController', () => {
 
       await expect(controller.getCurrentUser(req)).rejects.toThrow(
         ResourceNotFoundException
+      );
+    });
+  });
+
+  describe('googleAuthRedirect', () => {
+    it('should redirect to frontend with token on success', async () => {
+      const req = { user: mockUser };
+      const res = { redirect: jest.fn() };
+      const mockAuthResponse = { accessToken: 'mock-token', user: mockUser };
+
+      jest
+        .spyOn(userService, 'generateAuthResponse')
+        .mockReturnValue(mockAuthResponse as any);
+
+      await controller.googleAuthRedirect(req, res);
+
+      expect(userService.generateAuthResponse).toHaveBeenCalledWith(mockUser);
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?token=mock-token'
+      );
+    });
+
+    it('should redirect to frontend with error on failure', async () => {
+      const req = { user: mockUser };
+      const res = { redirect: jest.fn() };
+
+      jest.spyOn(userService, 'generateAuthResponse').mockImplementation(() => {
+        throw new Error('Auth failed');
+      });
+
+      await controller.googleAuthRedirect(req, res);
+
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/oauth/callback?error=Auth%20failed'
       );
     });
   });
