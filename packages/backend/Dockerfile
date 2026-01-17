@@ -1,7 +1,8 @@
 # Stage 1: Prune
-FROM node:18-alpine AS pruner
+FROM node:20-alpine AS pruner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm install -g pnpm@9
 COPY . .
 RUN pnpm dlx turbo prune --scope=@resume-optimizer/backend --docker
@@ -11,13 +12,15 @@ RUN pnpm dlx turbo prune --scope=@resume-optimizer/backend --docker
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++ openssl
 WORKDIR /app
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm config set fetch-retries 5 && \
     npm config set fetch-retry-factor 2 && \
     npm config set fetch-retry-mintimeout 10000 && \
     npm install -g pnpm@9
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm config set fetch-retries 10 && \
+RUN pnpm config set registry https://registry.npmmirror.com && \
+    pnpm config set fetch-retries 10 && \
     pnpm config set fetch-retry-factor 2 && \
     pnpm config set fetch-retry-mintimeout 20000 && \
     pnpm config set fetch-retry-maxtimeout 120000 && \
