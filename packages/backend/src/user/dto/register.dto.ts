@@ -6,6 +6,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PASSWORD_POLICY } from '@/auth/auth.constants';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -16,7 +17,7 @@ export class RegisterDto {
   @ApiProperty({ example: 'SecurePassword123!' })
   @IsString()
   @IsNotEmpty()
-  @MinLength(8)
+  @MinLength(PASSWORD_POLICY.minLength)
   password!: string;
 
   @ApiProperty({ example: 'John Doe', required: false })

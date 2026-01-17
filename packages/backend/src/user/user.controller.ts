@@ -15,6 +15,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -22,6 +23,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
+import { AuthService } from '@/auth/auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -31,9 +33,9 @@ import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserResponseDto } from './dto/user-response.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
-import { GithubAuthGuard } from './guards/github-auth.guard';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { GoogleAuthGuard } from '@/auth/guards/google-auth.guard';
+import { GithubAuthGuard } from '@/auth/guards/github-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -42,6 +44,7 @@ export class UserController {
 
   constructor(
     private readonly userService: UserService,
+    private readonly authService: AuthService,
     private readonly configService: ConfigService
   ) {}
 
@@ -67,10 +70,12 @@ export class UserController {
   })
   @ApiResponse({ status: 409, description: 'User already exists' })
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return this.userService.register(registerDto);
+    return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({
@@ -80,7 +85,7 @@ export class UserController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.userService.login(loginDto);
+    return this.authService.login(loginDto);
   }
 
   @Post('verify-email')
@@ -89,7 +94,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Email successfully verified' })
   @ApiResponse({ status: 404, description: 'Invalid token' })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
-    return this.userService.verifyEmail(verifyEmailDto.token);
+    return this.authService.verifyEmail(verifyEmailDto.token);
   }
 
   @Post('forgot-password')
@@ -99,7 +104,7 @@ export class UserController {
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto
   ): Promise<void> {
-    return this.userService.forgotPassword(forgotPasswordDto.email);
+    return this.authService.forgotPassword(forgotPasswordDto.email);
   }
 
   @Post('reset-password')
@@ -110,7 +115,7 @@ export class UserController {
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto
   ): Promise<void> {
-    return this.userService.resetPassword(
+    return this.authService.resetPassword(
       resetPasswordDto.token,
       resetPasswordDto.newPassword
     );
@@ -240,7 +245,7 @@ export class UserController {
   async googleAuthRedirect(@Req() req: any, @Res() res: any) {
     const frontendUrl = this.getFrontendUrl();
     try {
-      const { accessToken } = this.userService.generateAuthResponse(req.user);
+      const { accessToken } = this.authService.generateAuthResponse(req.user);
 
       // Redirect to frontend with token
       res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
@@ -268,7 +273,7 @@ export class UserController {
   async githubAuthRedirect(@Req() req: any, @Res() res: any) {
     const frontendUrl = this.getFrontendUrl();
     try {
-      const { accessToken } = this.userService.generateAuthResponse(req.user);
+      const { accessToken } = this.authService.generateAuthResponse(req.user);
 
       res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
     } catch (error: any) {

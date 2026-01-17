@@ -33,7 +33,7 @@ export class InterviewController {
     private interviewService: InterviewService,
     private questionService: InterviewQuestionService,
     private sessionService: InterviewSessionService
-  ) {}
+  ) { }
 
   /**
    * Generate interview questions for an optimization
@@ -98,7 +98,7 @@ export class InterviewController {
   async startSession(
     @Request() req: any,
     @Body() createSessionDto: CreateSessionDto
-  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion }> {
+  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion | null }> {
     const userId = req.user.id;
     return this.sessionService.startSession(userId, createSessionDto);
   }

@@ -27,4 +27,19 @@ export interface PaymentProvider {
   getUserSubscription(userId: string): Promise<SubscriptionDetails>;
   cancelSubscription(userId: string): Promise<any>;
   getBillingHistory(userId: string): Promise<BillingRecord[]>;
+
+  // New optional methods for enhanced subscription management
+  updateSubscription?(userId: string, newPriceId: string): Promise<{ success: boolean; message?: string }>;
+  processRefund?(userId: string, transactionId: string, amount?: number): Promise<{ success: boolean; refundId?: string }>;
+  getPaymentMethods?(userId: string): Promise<PaymentMethod[]>;
+}
+
+export interface PaymentMethod {
+  id: string;
+  type: 'card' | 'bank' | 'paypal' | 'other';
+  last4?: string;
+  brand?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  isDefault: boolean;
 }

@@ -16,6 +16,9 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   name = 'project_callback_handler';
   private readonly logger = new Logger('LangChainMiddleware');
   private readonly runStartTimes: Map<string, number> = new Map();
+  private readonly chainStartTimes: Map<string, number> = new Map();
+  private readonly toolExecutionCount: Map<string, number> = new Map();
+  private rootChainRunId: string | null = null;
 
   constructor(
     private readonly userId: string,
@@ -34,14 +37,14 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
     _llm: Serialized,
     _prompts: string[],
     runId: string,
-    _parentRunId?: string,
+    parentRunId?: string,
     _extraParams?: Record<string, any>,
     _tags?: string[],
     metadata?: Record<string, any>
   ): Promise<void> {
     this.runStartTimes.set(runId, Date.now());
     this.logger.debug(
-      `[LLM Start] RunID: ${runId}, Model: ${metadata?.model_name || 'unknown'}`
+      `[LLM Start] RunID: ${runId}, ParentID: ${parentRunId || 'root'}, Model: ${metadata?.model_name || 'unknown'}`
     );
   }
 
@@ -51,7 +54,7 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   async handleLLMEnd(
     output: LLMResult,
     runId: string,
-    _parentRunId?: string,
+    parentRunId?: string,
     _tags?: string[]
   ): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();
@@ -105,7 +108,7 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   async handleLLMError(
     err: Error,
     runId: string,
-    _parentRunId?: string,
+    parentRunId?: string,
     _tags?: string[]
   ): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();
@@ -126,11 +129,20 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
    * Called when a chain starts
    */
   async handleChainStart(
-    _chain: Serialized,
+    chain: Serialized,
     _inputs: Record<string, any>,
-    runId: string
+    runId: string,
+    parentRunId?: string
   ): Promise<void> {
-    this.logger.debug(`[Chain Start] RunID: ${runId}`);
+    this.chainStartTimes.set(runId, Date.now());
+
+    // Track root chain for agent duration calculation
+    if (!parentRunId) {
+      this.rootChainRunId = runId;
+    }
+
+    const chainName = chain.id?.[chain.id.length - 1] || 'unknown';
+    this.logger.debug(`[Chain Start] Chain: ${chainName}, RunID: ${runId}`);
   }
 
   /**
@@ -140,7 +152,28 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
     _outputs: Record<string, any>,
     runId: string
   ): Promise<void> {
-    this.logger.debug(`[Chain End] RunID: ${runId}`);
+    const startTime = this.chainStartTimes.get(runId);
+    const duration = startTime ? Date.now() - startTime : 0;
+    this.chainStartTimes.delete(runId);
+
+    this.logger.debug(`[Chain End] RunID: ${runId}, Duration: ${duration}ms`);
+
+    // Record chain performance metrics
+    if (duration > 0) {
+      try {
+        await this.performanceMonitor.recordMetrics(
+          'chain-execution',
+          'langchain',
+          duration,
+          true
+        );
+      } catch (error) {
+        this.logger.error('Failed to record chain performance', {
+          runId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
   }
 
   /**
@@ -160,34 +193,59 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   /**
    * Called when a tool ends running
    */
-  async handleToolEnd(_output: string, runId: string): Promise<void> {
+  async handleToolEnd(output: string, runId: string): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();
     const duration = Date.now() - startTime;
     this.runStartTimes.delete(runId);
 
+    // Increment tool execution count
+    const currentCount = this.toolExecutionCount.get(runId) || 0;
+    this.toolExecutionCount.set(runId, currentCount + 1);
+
     this.logger.debug(`[Tool End] RunID: ${runId}, Duration: ${duration}ms`);
 
     try {
+      // Record performance metrics
       await this.performanceMonitor.recordMetrics(
         'tool-execution',
         'langchain',
         duration,
         true
       );
+
+      // Record tool usage for tracking
+      await this.usageTracker.recordUsage({
+        userId: this.userId,
+        model: 'tool-execution',
+        provider: 'langchain-adapter',
+        scenario: this.scenario,
+        inputTokens: 0,
+        outputTokens: output?.length || 0,
+        cost: 0,
+        latency: duration,
+        success: true,
+        agentType: this.metadata?.agentType || null,
+        workflowStep: `tool-${runId}`,
+        errorCode: null,
+      });
     } catch (error) {
-      this.logger.error(`Failed to record tool performance: ${error}`);
+      this.logger.error('Failed to record tool performance', {
+        runId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
-  /**
-   * Called when a tool errors
-   */
   async handleToolError(err: Error, runId: string): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();
     const duration = Date.now() - startTime;
     this.runStartTimes.delete(runId);
 
-    this.logger.error(`[Tool Error] RunID: ${runId}, Error: ${err.message}`);
+    this.logger.error('[Tool Error]', {
+      runId,
+      error: err.message,
+      duration,
+    });
 
     try {
       await this.performanceMonitor.recordMetrics(
@@ -196,8 +254,27 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
         duration,
         false
       );
+
+      // Record failed tool usage for error tracking
+      await this.usageTracker.recordUsage({
+        userId: this.userId,
+        model: 'tool-execution',
+        provider: 'langchain-adapter',
+        scenario: this.scenario,
+        inputTokens: 0,
+        outputTokens: 0,
+        cost: 0,
+        latency: duration,
+        success: false,
+        agentType: this.metadata?.agentType || null,
+        workflowStep: `tool-error-${runId}`,
+        errorCode: err.name || 'TOOL_ERROR',
+      });
     } catch (error) {
-      this.logger.error(`Failed to record tool error performance: ${error}`);
+      this.logger.error('Failed to record tool error', {
+        runId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -209,17 +286,28 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
     // We could track specific tool usage counts here if needed via UsageTrackerService
   }
 
-  /**
-   * Called when an agent finishes
-   */
   async handleAgentEnd(_finish: any, runId: string): Promise<void> {
-    // For agent end, we don't necessarily have a start time stored by handleAgentStart (which LangChain doesn't usually provide in the same way as LLM/Tool)
-    // unless we track the whole agent lifecycle. But for now, let's assume we want to track something.
-    // If we want to track duration, we'd need handleChainStart or similar to store the root RunID.
-    this.logger.log(`[Agent End] RunID: ${runId}`);
+    // Calculate agent duration from root chain start time
+    let duration = 0;
+    if (this.rootChainRunId) {
+      const chainStartTime = this.chainStartTimes.get(this.rootChainRunId);
+      if (chainStartTime) {
+        duration = Date.now() - chainStartTime;
+      }
+    }
+
+    // Get total tool execution count for this session
+    const totalToolExecutions = Array.from(this.toolExecutionCount.values())
+      .reduce((sum, count) => sum + count, 0);
+
+    this.logger.log('[Agent End]', {
+      runId,
+      duration,
+      toolExecutions: totalToolExecutions,
+    });
 
     try {
-      // Record usage for the final agent result
+      // Record usage for the final agent result with proper duration
       await this.usageTracker.recordUsage({
         userId: this.userId,
         model: 'agent-orchestrator',
@@ -228,14 +316,31 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
         inputTokens: 0,
         outputTokens: 0,
         cost: 0,
-        latency: 0, // Unknown without root tracking
+        latency: duration,
         success: true,
         agentType: this.metadata?.agentType || null,
         workflowStep: 'agent-complete',
         errorCode: null,
       });
+
+      // Record agent performance metrics
+      if (duration > 0) {
+        await this.performanceMonitor.recordMetrics(
+          'agent-orchestrator',
+          'langchain',
+          duration,
+          true
+        );
+      }
     } catch (error) {
-      this.logger.error(`Failed to record agent end usage: ${error}`);
+      this.logger.error('Failed to record agent end usage', {
+        runId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
+
+    // Clean up tracking state for this agent session
+    this.toolExecutionCount.clear();
+    this.rootChainRunId = null;
   }
 }

@@ -45,13 +45,9 @@ describe('JwtStrategy', () => {
   });
 
   describe('validate', () => {
-    it('should return user when valid payload and active user', async () => {
-      const payload = { sub: 'user-id-123' };
-      const user = {
-        id: 'user-id-123',
-        email: 'test@example.com',
-        isActive: true,
-      };
+    it('should return user when payload is valid', async () => {
+      const payload = { sub: 'user-id-123', email: 'test@example.com' };
+      const user = { id: 'user-id-123', email: 'test@example.com' };
 
       mockPrismaService.user.findUnique.mockResolvedValue(user);
 
@@ -64,7 +60,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should throw UnauthorizedException when payload has no sub', async () => {
-      const payload = {};
+      const payload = {} as any;
 
       await expect(strategy.validate(payload)).rejects.toThrow(
         new UnauthorizedException('Invalid token payload')
@@ -72,7 +68,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should throw UnauthorizedException when user not found', async () => {
-      const payload = { sub: 'non-existent-user' };
+      const payload = { sub: 'non-existent-user', email: 'test@example.com' };
 
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
@@ -82,7 +78,7 @@ describe('JwtStrategy', () => {
     });
 
     it('should throw UnauthorizedException when user is inactive', async () => {
-      const payload = { sub: 'user-id-123' };
+      const payload = { sub: 'user-id-123', email: 'test@example.com' };
       const user = {
         id: 'user-id-123',
         email: 'test@example.com',
