@@ -4,17 +4,17 @@ React + Vite 前端应用，为 AI Resume Optimizer 平台提供用户界面。
 
 ## 🛠️ 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| React | 18.x | UI 框架 |
-| TypeScript | 5.x | 类型安全 |
-| Vite | 7.x | 构建工具 |
-| Ant Design | 6.x | UI 组件库 |
-| Zustand | 4.x | 状态管理 |
-| React Router | 6.x | 路由 |
-| Axios | 1.x | HTTP 客户端 |
-| Socket.io | 4.x | 实时通信 |
-| Framer Motion | 12.x | 动画 |
+| 技术          | 版本 | 用途        |
+| ------------- | ---- | ----------- |
+| React         | 18.x | UI 框架     |
+| TypeScript    | 5.x  | 类型安全    |
+| Vite          | 7.x  | 构建工具    |
+| Ant Design    | 6.x  | UI 组件库   |
+| Zustand       | 4.x  | 状态管理    |
+| React Router  | 6.x  | 路由        |
+| Axios         | 1.x  | HTTP 客户端 |
+| Socket.io     | 4.x  | 实时通信    |
+| Framer Motion | 12.x | 动画        |
 
 ## 📁 项目结构
 
@@ -46,40 +46,40 @@ src/
 
 ### Stores 说明
 
-| Store | 文件 | 职责 |
-|-------|------|------|
-| `authStore` | `authStore.ts` | 用户认证状态 |
-| `resumeStore` | `resumeStore.ts` | 简历列表管理 |
-| `jobStore` | `jobStore.ts` | 职位信息 |
-| `optimizationStore` | `optimizationStore.ts` | 优化结果 |
-| `conversationStore` | `conversationStore.ts` | 对话历史 |
-| `interviewStore` | `interviewStore.ts` | 面试会话 |
-| `generateStore` | `generateStore.ts` | PDF 生成 |
-| `uiStore` | `uiStore.ts` | UI 状态 |
+| Store               | 文件                   | 职责         |
+| ------------------- | ---------------------- | ------------ |
+| `authStore`         | `authStore.ts`         | 用户认证状态 |
+| `resumeStore`       | `resumeStore.ts`       | 简历列表管理 |
+| `jobStore`          | `jobStore.ts`          | 职位信息     |
+| `optimizationStore` | `optimizationStore.ts` | 优化结果     |
+| `conversationStore` | `conversationStore.ts` | 对话历史     |
+| `interviewStore`    | `interviewStore.ts`    | 面试会话     |
+| `generateStore`     | `generateStore.ts`     | PDF 生成     |
+| `uiStore`           | `uiStore.ts`           | UI 状态      |
 
 ## 📄 主要页面
 
 ### 用户端
 
-| 页面 | 路径 | 说明 |
-|------|------|------|
-| 登录 | `/login` | 用户登录 |
-| 注册 | `/register` | 用户注册 |
+| 页面 | 路径         | 说明          |
+| ---- | ------------ | ------------- |
+| 登录 | `/login`     | 用户登录      |
+| 注册 | `/register`  | 用户注册      |
 | 对话 | `/chat/:id?` | AI 对话主界面 |
-| 简历 | `/resumes` | 简历管理 |
-| 面试 | `/interview` | 模拟面试 |
-| 定价 | `/pricing` | 订阅方案 |
-| 设置 | `/settings` | 用户设置 |
+| 简历 | `/resumes`   | 简历管理      |
+| 面试 | `/interview` | 模拟面试      |
+| 定价 | `/pricing`   | 订阅方案      |
+| 设置 | `/settings`  | 用户设置      |
 
 ### 管理后台
 
-| 页面 | 路径 | 说明 |
-|------|------|------|
-| 用户管理 | `/admin/users` | 用户列表 |
-| 模型管理 | `/admin/models` | AI 模型配置 |
-| Prompt 管理 | `/admin/prompts` | 提示词模板 |
-| 邀请码 | `/admin/invite-codes` | 邀请码管理 |
-| 系统设置 | `/admin/settings` | 系统配置 |
+| 页面        | 路径                  | 说明        |
+| ----------- | --------------------- | ----------- |
+| 用户管理    | `/admin/users`        | 用户列表    |
+| 模型管理    | `/admin/models`       | AI 模型配置 |
+| Prompt 管理 | `/admin/prompts`      | 提示词模板  |
+| 邀请码      | `/admin/invite-codes` | 邀请码管理  |
+| 系统设置    | `/admin/settings`     | 系统配置    |
 
 ## 🚀 快速开始
 
@@ -153,7 +153,7 @@ AI 对话主界面，使用自定义 Hooks 管理复杂状态：
 ```tsx
 import { useTranslation } from 'react-i18next';
 const { t } = useTranslation();
-<span>{t('common.submit')}</span>
+<span>{t('common.submit')}</span>;
 ```
 
 ## 📱 PWA 支持

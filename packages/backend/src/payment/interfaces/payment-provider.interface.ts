@@ -29,8 +29,15 @@ export interface PaymentProvider {
   getBillingHistory(userId: string): Promise<BillingRecord[]>;
 
   // New optional methods for enhanced subscription management
-  updateSubscription?(userId: string, newPriceId: string): Promise<{ success: boolean; message?: string }>;
-  processRefund?(userId: string, transactionId: string, amount?: number): Promise<{ success: boolean; refundId?: string }>;
+  updateSubscription?(
+    userId: string,
+    newPriceId: string
+  ): Promise<{ success: boolean; message?: string }>;
+  processRefund?(
+    userId: string,
+    transactionId: string,
+    amount?: number
+  ): Promise<{ success: boolean; refundId?: string }>;
   getPaymentMethods?(userId: string): Promise<PaymentMethod[]>;
 }
 

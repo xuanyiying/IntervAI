@@ -12,7 +12,7 @@ export class PaymentService {
     private stripeProvider: StripePaymentProvider,
     private paddleProvider: PaddlePaymentProvider,
     private prisma: PrismaService
-  ) { }
+  ) {}
 
   private getProvider(providerName: string = 'stripe'): PaymentProvider {
     if (providerName === 'paddle') {

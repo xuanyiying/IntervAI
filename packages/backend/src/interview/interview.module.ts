@@ -35,4 +35,4 @@ import { EvaluationProcessor } from './processors/evaluation.processor';
   controllers: [InterviewController],
   exports: [InterviewService],
 })
-export class InterviewModule { }
+export class InterviewModule {}

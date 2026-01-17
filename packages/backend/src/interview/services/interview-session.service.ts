@@ -27,7 +27,7 @@ export class InterviewSessionService {
     private prisma: PrismaService,
     private aiEngine: AIEngine,
     private quotaService: QuotaService
-  ) { }
+  ) {}
 
   /**
    * Start a new interview session
@@ -35,7 +35,10 @@ export class InterviewSessionService {
   async startSession(
     userId: string,
     createSessionDto: CreateSessionDto
-  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion | null }> {
+  ): Promise<{
+    session: InterviewSession;
+    firstQuestion: InterviewQuestion | null;
+  }> {
     // Check interview quota
     await this.quotaService.enforceInterviewQuota(userId);
 
@@ -71,7 +74,7 @@ export class InterviewSessionService {
       },
       include: {
         messages: true,
-      }
+      },
     });
 
     // Increment interview count
@@ -83,7 +86,10 @@ export class InterviewSessionService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return { session, firstQuestion: questions.length > 0 ? questions[0] : null };
+    return {
+      session,
+      firstQuestion: questions.length > 0 ? questions[0] : null,
+    };
   }
 
   /**
@@ -134,7 +140,8 @@ export class InterviewSessionService {
     });
 
     // Count answers (user messages)
-    const answerCount = session.messages.filter(m => m.role === MessageRole.USER).length + 1; // +1 for the one just added? No, session.messages is stale.
+    const answerCount =
+      session.messages.filter((m) => m.role === MessageRole.USER).length + 1; // +1 for the one just added? No, session.messages is stale.
     // Actually session.messages doesn't include the one we just added.
     // So current count is session.messages (user) + 1.
 
@@ -155,7 +162,12 @@ export class InterviewSessionService {
   async getSessionState(
     userId: string,
     sessionId: string
-  ): Promise<{ session: InterviewSession; currentQuestion: InterviewQuestion | null; progress: number; total: number }> {
+  ): Promise<{
+    session: InterviewSession;
+    currentQuestion: InterviewQuestion | null;
+    progress: number;
+    total: number;
+  }> {
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -178,13 +190,16 @@ export class InterviewSessionService {
       orderBy: { createdAt: 'asc' },
     });
 
-    const answerCount = session.messages.filter(m => m.role === MessageRole.USER).length;
+    const answerCount = session.messages.filter(
+      (m) => m.role === MessageRole.USER
+    ).length;
 
     return {
       session,
-      currentQuestion: answerCount < questions.length ? questions[answerCount] : null,
+      currentQuestion:
+        answerCount < questions.length ? questions[answerCount] : null,
       progress: answerCount,
-      total: questions.length
+      total: questions.length,
     };
   }
 

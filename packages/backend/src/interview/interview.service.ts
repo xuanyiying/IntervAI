@@ -21,7 +21,7 @@ export class InterviewService {
     private prisma: PrismaService,
     private questionGenerator: QuestionGeneratorService,
     private sessionService: InterviewSessionService
-  ) { }
+  ) {}
 
   async generateQuestions(
     optimizationId: string,
@@ -117,8 +117,9 @@ export class InterviewService {
       <strong>Suggested Answer:</strong>
       <p>${this.escapeHtml(q.suggestedAnswer).replace(/\n/g, '<br>')}</p>
     </div>
-    ${q.tips && q.tips.length > 0
-            ? `
+    ${
+      q.tips && q.tips.length > 0
+        ? `
     <div class="tips">
       <div class="tips-title">Tips:</div>
       <ul>
@@ -126,8 +127,8 @@ export class InterviewService {
       </ul>
     </div>
     `
-            : ''
-          }
+        : ''
+    }
   </div>
 `;
       });
@@ -144,7 +145,10 @@ export class InterviewService {
   async startSession(
     userId: string,
     createSessionDto: CreateSessionDto
-  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion | null }> {
+  ): Promise<{
+    session: InterviewSession;
+    firstQuestion: InterviewQuestion | null;
+  }> {
     return this.sessionService.startSession(userId, createSessionDto);
   }
 
