@@ -1,21 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { SubscriptionTier } from '@prisma/client';
 import { UserService } from './user.service';
 import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcryptjs';
-import { EmailService } from '@/email/email.service';
-import { InvitationService } from '@/invitation/invitation.service';
 import { RedisService } from '@/redis/redis.service';
 import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
-
-jest.mock('bcryptjs');
 
 describe('UserService', () => {
   let service: UserService;
   let prismaService: PrismaService;
-  let jwtService: JwtService;
 
   const mockUser = {
     id: 'user-1',
@@ -58,27 +50,12 @@ describe('UserService', () => {
             generatedPDF: {
               findMany: jest.fn(),
             },
-          },
-        },
-        {
-          provide: JwtService,
-          useValue: {
-            sign: jest.fn(),
-            verify: jest.fn(),
-          },
-        },
-        {
-          provide: EmailService,
-          useValue: {
-            sendVerificationEmail: jest.fn(),
-            sendPasswordResetEmail: jest.fn(),
-          },
-        },
-        {
-          provide: InvitationService,
-          useValue: {
-            validateCode: jest.fn().mockResolvedValue(true),
-            markAsUsed: jest.fn(),
+            conversation: {
+              findMany: jest.fn(),
+            },
+            interviewSession: {
+              findMany: jest.fn(),
+            },
           },
         },
         {
@@ -94,137 +71,10 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     prismaService = module.get<PrismaService>(PrismaService);
-    jwtService = module.get<JwtService>(JwtService);
   });
 
   afterEach(() => {
     jest.clearAllMocks();
-  });
-
-  describe('register', () => {
-    it('should register a new user successfully', async () => {
-      const registerDto = {
-        email: 'newuser@example.com',
-        password: 'SecurePassword123!',
-        username: 'newuser',
-        phone: '+1234567890',
-        invitationCode: 'INVITE123',
-      };
-
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      (prismaService.user.create as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        email: registerDto.email,
-        username: registerDto.username,
-      });
-      (jwtService.sign as jest.Mock).mockReturnValue('jwt-token');
-
-      const result = await service.register(registerDto);
-
-      expect(result.accessToken).toBe('jwt-token');
-      expect(result.user.email).toBe(registerDto.email);
-      expect(prismaService.user.create).toHaveBeenCalled();
-    });
-
-    it('should throw ConflictException if user already exists', async () => {
-      const registerDto = {
-        email: 'test@example.com',
-        password: 'SecurePassword123!',
-        invitationCode: 'INVITE123',
-      };
-
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-
-      await expect(service.register(registerDto)).rejects.toThrow(
-        ConflictException
-      );
-    });
-  });
-
-  describe('login', () => {
-    it('should login user successfully', async () => {
-      const loginDto = {
-        email: 'test@example.com',
-        password: 'SecurePassword123!',
-      };
-
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
-      (jwtService.sign as jest.Mock).mockReturnValue('jwt-token');
-
-      const result = await service.login(loginDto);
-
-      expect(result.accessToken).toBe('jwt-token');
-      expect(result.user.email).toBe(loginDto.email);
-    });
-
-    it('should throw UnauthorizedException if user not found', async () => {
-      const loginDto = {
-        email: 'nonexistent@example.com',
-        password: 'SecurePassword123!',
-      };
-
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('should throw UnauthorizedException if password is invalid', async () => {
-      const loginDto = {
-        email: 'test@example.com',
-        password: 'WrongPassword123!',
-      };
-
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-      await expect(service.login(loginDto)).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-  });
-
-  describe('verifyToken', () => {
-    it('should verify token and return user', async () => {
-      (jwtService.verify as jest.Mock).mockReturnValue({
-        sub: 'user-1',
-        email: 'test@example.com',
-      });
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-
-      const result = await service.verifyToken('valid-token');
-
-      expect(result).toEqual(mockUser);
-    });
-
-    it('should throw UnauthorizedException if token is invalid', async () => {
-      (jwtService.verify as jest.Mock).mockImplementation(() => {
-        throw new Error('Invalid token');
-      });
-
-      await expect(service.verifyToken('invalid-token')).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
-
-    it('should throw UnauthorizedException if user is inactive', async () => {
-      (jwtService.verify as jest.Mock).mockReturnValue({
-        sub: 'user-1',
-        email: 'test@example.com',
-      });
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        isActive: false,
-      });
-
-      await expect(service.verifyToken('valid-token')).rejects.toThrow(
-        UnauthorizedException
-      );
-    });
   });
 
   describe('deleteAccount', () => {
@@ -409,43 +259,6 @@ describe('UserService', () => {
       expect(result.jobs).toEqual([]);
       expect(result.optimizations).toEqual([]);
       expect(result.generatedPdfs).toEqual([]);
-    });
-  });
-  describe('validateOAuthLogin', () => {
-    const oauthProfile = {
-      email: 'oauth@example.com',
-      username: 'OAuth User',
-      avatarUrl: 'http://example.com/avatar.jpg',
-      provider: 'google',
-      providerId: '123456',
-    };
-
-    it('should return existing user if found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
-      (prismaService.user.update as jest.Mock).mockResolvedValue(mockUser);
-
-      const result = await service.validateOAuthLogin(oauthProfile);
-
-      expect(result).toEqual(mockUser);
-      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
-        where: { email: oauthProfile.email },
-      });
-    });
-
-    it('should create new user if not found', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      (prismaService.user.create as jest.Mock).mockResolvedValue({
-        ...mockUser,
-        email: oauthProfile.email,
-        username: oauthProfile.username,
-        avatarUrl: oauthProfile.avatarUrl,
-      });
-
-      const result = await service.validateOAuthLogin(oauthProfile);
-
-      expect(result.email).toBe(oauthProfile.email);
-      expect(prismaService.user.create).toHaveBeenCalled();
     });
   });
 });

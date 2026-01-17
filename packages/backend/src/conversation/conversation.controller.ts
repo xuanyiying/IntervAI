@@ -13,7 +13,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MessageRole } from '@prisma/client';
 
 @Controller('conversations')

@@ -158,30 +158,26 @@ describe('PaymentService', () => {
       const date1 = new Date('2023-01-01');
       const date2 = new Date('2023-02-01');
 
-      jest
-        .spyOn(stripeProvider, 'getBillingHistory')
-        .mockResolvedValue([
-          {
-            id: '1',
-            date: date1,
-            amount: 10,
-            currency: 'USD',
-            status: BillingStatus.PAID,
-            pdfUrl: 'url',
-          },
-        ]);
-      jest
-        .spyOn(paddleProvider, 'getBillingHistory')
-        .mockResolvedValue([
-          {
-            id: '2',
-            date: date2,
-            amount: 20,
-            currency: 'USD',
-            status: BillingStatus.PAID,
-            pdfUrl: 'url',
-          },
-        ]);
+      jest.spyOn(stripeProvider, 'getBillingHistory').mockResolvedValue([
+        {
+          id: '1',
+          date: date1,
+          amount: 10,
+          currency: 'USD',
+          status: BillingStatus.PAID,
+          pdfUrl: 'url',
+        },
+      ]);
+      jest.spyOn(paddleProvider, 'getBillingHistory').mockResolvedValue([
+        {
+          id: '2',
+          date: date2,
+          amount: 20,
+          currency: 'USD',
+          status: BillingStatus.PAID,
+          pdfUrl: 'url',
+        },
+      ]);
 
       const result = await service.getBillingHistory('user-id');
 

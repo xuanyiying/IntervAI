@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { QuotaService, QuotaInfo } from './quota.service';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('quota')
 @UseGuards(JwtAuthGuard)

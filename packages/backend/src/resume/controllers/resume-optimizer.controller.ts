@@ -15,7 +15,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ResumeOptimizerService } from '../services/resume-optimizer.service';
-import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Optimization } from '@prisma/client';
 
 @Controller('resume-optimizer')
