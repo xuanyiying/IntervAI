@@ -71,7 +71,11 @@ const LoginPage: React.FC = () => {
       message.info(t('auth.feature_disabled', 'Feature not enabled'));
       return;
     }
-    window.location.href = `${import.meta.env.VITE_API_URL}/auth/${provider}`;
+    const apiUrl =
+      import.meta.env.VITE_API_BASE_URL ||
+      import.meta.env.VITE_API_URL ||
+      'http://localhost:3000/api/v1';
+    window.location.href = `${apiUrl}/auth/${provider}`;
   };
 
   return (

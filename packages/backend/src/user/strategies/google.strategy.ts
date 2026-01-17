@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
@@ -6,6 +6,8 @@ import { UserService } from '../user.service';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  private readonly logger = new Logger(GoogleStrategy.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly userService: UserService
@@ -24,6 +26,10 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       callbackURL,
       scope: ['email', 'profile'],
     });
+
+    this.logger.log(
+      `Google Strategy initialized with callbackURL: ${callbackURL}`
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

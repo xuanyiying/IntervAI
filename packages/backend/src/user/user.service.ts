@@ -106,21 +106,7 @@ export class UserService {
       // Don't fail registration if email fails, user can resend later
     }
 
-    // Generate JWT token
-    const accessToken = this.generateToken(user);
-
-    return {
-      accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username ?? undefined,
-        subscriptionTier: user.subscriptionTier,
-        emailVerified: user.emailVerified,
-        role: user.role,
-        createdAt: user.createdAt,
-      },
-    };
+    return this.generateAuthResponse(user);
   }
 
   /**
@@ -156,23 +142,7 @@ export class UserService {
       data: { lastLoginAt: new Date() },
     });
 
-    // Generate JWT token with remember option
-    const accessToken = this.generateToken(user, remember);
-
-    const responseData = {
-      accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username ?? undefined,
-        subscriptionTier: user.subscriptionTier,
-        emailVerified: user.emailVerified,
-        role: user.role,
-        createdAt: user.createdAt,
-      },
-    };
-
-    return responseData;
+    return this.generateAuthResponse(user, remember);
   }
 
   /**
@@ -246,6 +216,26 @@ export class UserService {
             : null,
       },
     });
+  }
+
+  /**
+   * Generate auth response for a user
+   */
+  generateAuthResponse(user: User, remember: boolean = false): AuthResponseDto {
+    const accessToken = this.generateToken(user, remember);
+
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username ?? undefined,
+        subscriptionTier: user.subscriptionTier,
+        emailVerified: user.emailVerified,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
+    };
   }
 
   /**
