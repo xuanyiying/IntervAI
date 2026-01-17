@@ -47,17 +47,17 @@ src/
 
 ## 🗄️ 数据库模型
 
-| 模型 | 说明 |
-|------|------|
-| `User` | 用户账户 |
-| `Session`/`Account` | OAuth 会话 |
-| `Resume` | 简历文件 |
-| `Job` | 职位信息 |
-| `Optimization` | 优化结果 |
-| `InterviewSession`/`InterviewMessage` | 面试模拟 |
-| `Conversation`/`Message` | 对话历史 |
-| `ModelConfig`/`PromptTemplate` | AI 配置 |
-| `UsageRecord`/`PerformanceMetrics` | 使用统计 |
+| 模型                                  | 说明       |
+| ------------------------------------- | ---------- |
+| `User`                                | 用户账户   |
+| `Session`/`Account`                   | OAuth 会话 |
+| `Resume`                              | 简历文件   |
+| `Job`                                 | 职位信息   |
+| `Optimization`                        | 优化结果   |
+| `InterviewSession`/`InterviewMessage` | 面试模拟   |
+| `Conversation`/`Message`              | 对话历史   |
+| `ModelConfig`/`PromptTemplate`        | AI 配置    |
+| `UsageRecord`/`PerformanceMetrics`    | 使用统计   |
 
 ## 🚀 快速开始
 

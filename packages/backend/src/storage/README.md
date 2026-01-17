@@ -19,12 +19,12 @@ storage/
 
 ## 支持的存储后端
 
-| 提供商 | 用途场景 |
-|--------|----------|
-| Local | 本地开发 |
-| AWS S3 | 生产环境 |
+| 提供商     | 用途场景   |
+| ---------- | ---------- |
+| Local      | 本地开发   |
+| AWS S3     | 生产环境   |
 | Aliyun OSS | 中国区部署 |
-| MinIO | 私有化部署 |
+| MinIO      | 私有化部署 |
 
 ## 核心功能
 
@@ -96,7 +96,7 @@ const result = await this.storageService.upload({
   file: buffer,
   filename: 'resume.pdf',
   contentType: 'application/pdf',
-  folder: 'resumes'
+  folder: 'resumes',
 });
 
 // 获取下载URL (有效期1小时)

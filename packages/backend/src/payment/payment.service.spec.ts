@@ -70,12 +70,18 @@ describe('PaymentService', () => {
   describe('createCheckoutSession', () => {
     it('should call stripe provider by default', async () => {
       await service.createCheckoutSession('user-id', 'price-id');
-      expect(stripeProvider.createCheckoutSession).toHaveBeenCalledWith('user-id', 'price-id');
+      expect(stripeProvider.createCheckoutSession).toHaveBeenCalledWith(
+        'user-id',
+        'price-id'
+      );
     });
 
     it('should call paddle provider when specified', async () => {
       await service.createCheckoutSession('user-id', 'price-id', 'paddle');
-      expect(paddleProvider.createCheckoutSession).toHaveBeenCalledWith('user-id', 'price-id');
+      expect(paddleProvider.createCheckoutSession).toHaveBeenCalledWith(
+        'user-id',
+        'price-id'
+      );
     });
   });
 
@@ -87,7 +93,9 @@ describe('PaymentService', () => {
       } as any);
 
       await service.getUserSubscription('user-id');
-      expect(paddleProvider.getUserSubscription).toHaveBeenCalledWith('user-id');
+      expect(paddleProvider.getUserSubscription).toHaveBeenCalledWith(
+        'user-id'
+      );
     });
 
     it('should return subscription from stripe if provider is stripe', async () => {
@@ -97,7 +105,9 @@ describe('PaymentService', () => {
       } as any);
 
       await service.getUserSubscription('user-id');
-      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith('user-id');
+      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith(
+        'user-id'
+      );
     });
 
     it('should default to stripe if no provider set', async () => {
@@ -108,12 +118,16 @@ describe('PaymentService', () => {
       } as any);
 
       await service.getUserSubscription('user-id');
-      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith('user-id');
+      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith(
+        'user-id'
+      );
     });
 
     it('should throw BadRequestException if user not found', async () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
-      await expect(service.getUserSubscription('user-id')).rejects.toThrow(BadRequestException);
+      await expect(service.getUserSubscription('user-id')).rejects.toThrow(
+        BadRequestException
+      );
     });
   });
 
@@ -143,12 +157,34 @@ describe('PaymentService', () => {
     it('should aggregate history from both providers', async () => {
       const date1 = new Date('2023-01-01');
       const date2 = new Date('2023-02-01');
-      
-      jest.spyOn(stripeProvider, 'getBillingHistory').mockResolvedValue([{ id: '1', date: date1, amount: 10, currency: 'USD', status: BillingStatus.PAID, pdfUrl: 'url' }]);
-      jest.spyOn(paddleProvider, 'getBillingHistory').mockResolvedValue([{ id: '2', date: date2, amount: 20, currency: 'USD', status: BillingStatus.PAID, pdfUrl: 'url' }]);
+
+      jest
+        .spyOn(stripeProvider, 'getBillingHistory')
+        .mockResolvedValue([
+          {
+            id: '1',
+            date: date1,
+            amount: 10,
+            currency: 'USD',
+            status: BillingStatus.PAID,
+            pdfUrl: 'url',
+          },
+        ]);
+      jest
+        .spyOn(paddleProvider, 'getBillingHistory')
+        .mockResolvedValue([
+          {
+            id: '2',
+            date: date2,
+            amount: 20,
+            currency: 'USD',
+            status: BillingStatus.PAID,
+            pdfUrl: 'url',
+          },
+        ]);
 
       const result = await service.getBillingHistory('user-id');
-      
+
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('2'); // Newer date first
       expect(result[1].id).toBe('1');
@@ -181,7 +217,10 @@ describe('PaymentService', () => {
       } as any);
 
       await service.updateSubscription('user-id', 'new-price');
-      expect((stripeProvider as any).updateSubscription).toHaveBeenCalledWith('user-id', 'new-price');
+      expect((stripeProvider as any).updateSubscription).toHaveBeenCalledWith(
+        'user-id',
+        'new-price'
+      );
       expect(prisma.$transaction).toHaveBeenCalled();
     });
 
@@ -190,13 +229,15 @@ describe('PaymentService', () => {
         ...mockUser,
         subscriptionProvider: 'stripe',
       } as any);
-      
+
       // Temporarily remove updateSubscription from mock
       const originalUpdate = (stripeProvider as any).updateSubscription;
       (stripeProvider as any).updateSubscription = undefined;
 
-      await expect(service.updateSubscription('user-id', 'new-price')).rejects.toThrow(BadRequestException);
-      
+      await expect(
+        service.updateSubscription('user-id', 'new-price')
+      ).rejects.toThrow(BadRequestException);
+
       // Restore
       (stripeProvider as any).updateSubscription = originalUpdate;
     });
@@ -204,40 +245,46 @@ describe('PaymentService', () => {
 
   describe('processRefund', () => {
     it('should call processRefund on provider', async () => {
-       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
         ...mockUser,
         subscriptionProvider: 'stripe',
       } as any);
 
       await service.processRefund('user-id', 'tx-id');
-      expect((stripeProvider as any).processRefund).toHaveBeenCalledWith('user-id', 'tx-id', undefined);
+      expect((stripeProvider as any).processRefund).toHaveBeenCalledWith(
+        'user-id',
+        'tx-id',
+        undefined
+      );
     });
   });
 
   describe('getPaymentMethods', () => {
     it('should call getPaymentMethods on provider', async () => {
-       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
         ...mockUser,
         subscriptionProvider: 'stripe',
       } as any);
 
       await service.getPaymentMethods('user-id');
-      expect((stripeProvider as any).getPaymentMethods).toHaveBeenCalledWith('user-id');
+      expect((stripeProvider as any).getPaymentMethods).toHaveBeenCalledWith(
+        'user-id'
+      );
     });
 
-     it('should return empty array if provider does not support getPaymentMethods', async () => {
+    it('should return empty array if provider does not support getPaymentMethods', async () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
         ...mockUser,
         subscriptionProvider: 'stripe',
       } as any);
-      
+
       // Temporarily remove getPaymentMethods from mock
       const originalMethod = (stripeProvider as any).getPaymentMethods;
       (stripeProvider as any).getPaymentMethods = undefined;
 
       const result = await service.getPaymentMethods('user-id');
       expect(result).toEqual([]);
-      
+
       // Restore
       (stripeProvider as any).getPaymentMethods = originalMethod;
     });

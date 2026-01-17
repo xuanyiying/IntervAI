@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { User, SubscriptionTier } from '@prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
@@ -23,7 +20,6 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService
   ) {}
-
 
   /**
    * Delete user account

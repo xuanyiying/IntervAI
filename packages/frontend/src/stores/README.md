@@ -49,7 +49,7 @@ import { useAuthStore } from '@/stores/authStore';
 
 const ProfileComponent = () => {
   const { user, logout } = useAuthStore();
-  
+
   return (
     <div>
       <h1>{user.name}</h1>

@@ -21,17 +21,17 @@ agent/
 
 ## 核心服务
 
-| 服务 | 职责 |
-|------|------|
-| `agentic.service.ts` | Agent编排入口 |
-| `rag.service.ts` | 检索增强生成(RAG) |
-| `vector-db.service.ts` | 向量数据库操作 |
-| `embedding.service.ts` | 文本嵌入生成 |
+| 服务                             | 职责                  |
+| -------------------------------- | --------------------- |
+| `agentic.service.ts`             | Agent编排入口         |
+| `rag.service.ts`                 | 检索增强生成(RAG)     |
+| `vector-db.service.ts`           | 向量数据库操作        |
+| `embedding.service.ts`           | 文本嵌入生成          |
 | `langchain-callbacks.service.ts` | LangChain生命周期回调 |
-| `batch-processor.service.ts` | 批量处理任务 |
-| `context-compressor.service.ts` | 上下文压缩 |
-| `document-processor.service.ts` | 文档处理 |
-| `structured-output.service.ts` | 结构化输出解析 |
+| `batch-processor.service.ts`     | 批量处理任务          |
+| `context-compressor.service.ts`  | 上下文压缩            |
+| `document-processor.service.ts`  | 文档处理              |
+| `structured-output.service.ts`   | 结构化输出解析        |
 
 ## 工具函数 (Tools)
 

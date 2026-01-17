@@ -51,7 +51,9 @@ export class AuthService {
       );
     }
     if (PASSWORD_POLICY.requireNumbers && !/\d/.test(password)) {
-      throw new BadRequestException('Password must contain at least one number');
+      throw new BadRequestException(
+        'Password must contain at least one number'
+      );
     }
     if (
       PASSWORD_POLICY.requireSpecialChars &&

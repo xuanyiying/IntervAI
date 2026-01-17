@@ -297,8 +297,9 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
     }
 
     // Get total tool execution count for this session
-    const totalToolExecutions = Array.from(this.toolExecutionCount.values())
-      .reduce((sum, count) => sum + count, 0);
+    const totalToolExecutions = Array.from(
+      this.toolExecutionCount.values()
+    ).reduce((sum, count) => sum + count, 0);
 
     this.logger.log('[Agent End]', {
       runId,

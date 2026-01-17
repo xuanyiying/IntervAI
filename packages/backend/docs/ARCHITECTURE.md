@@ -20,16 +20,16 @@ graph TD
     Gateway --> Resume[Resume Module]
     Gateway --> Interview[Interview Module]
     Gateway --> Agent[Agent Module]
-    
+
     Resume --> Queue[Redis Queue]
     Queue --> Processor[Resume Processor]
     Processor --> AI[AI Providers]
-    
+
     Agent --> AI
     Agent --> Vector[Vector DB]
-    
+
     Interview --> Agent
-    
+
     Auth --> DB[(PostgreSQL)]
     Resume --> DB
     Resume --> Storage[Object Storage]
