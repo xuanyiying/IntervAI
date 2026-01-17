@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { JobService } from './job.service';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { Job } from '@prisma/client';
 
 @Controller('jobs')

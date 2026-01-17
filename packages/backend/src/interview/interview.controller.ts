@@ -16,7 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { InterviewService } from './interview.service';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
-import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import {
   InterviewQuestion,
   InterviewSession,

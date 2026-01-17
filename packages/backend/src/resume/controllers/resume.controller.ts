@@ -18,7 +18,7 @@ import {
   ApiOperation,
   ApiConsumes,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ValidateFile } from '../../common/decorators/validate-file.decorator';
 import { ResumeService } from '../services/resume.service';
 import { UploadResumeDto } from '../dto/upload-resume.dto';

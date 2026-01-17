@@ -16,7 +16,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RawBodyRequest } from '@nestjs/common';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { SubscriptionResponseDto } from './dto/subscription-response.dto';

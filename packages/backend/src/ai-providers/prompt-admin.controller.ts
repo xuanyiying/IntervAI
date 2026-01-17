@@ -21,7 +21,7 @@ import {
   Min,
 } from 'class-validator';
 import { PromptTemplateManager } from './config/prompt-template.manager';
-import { JwtAuthGuard } from '../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 /**
  * DTO for creating/updating prompt templates

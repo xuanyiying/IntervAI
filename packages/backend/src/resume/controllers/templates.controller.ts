@@ -1,6 +1,6 @@
 import { Controller, Get, Param, UseGuards, Logger } from '@nestjs/common';
 import PdfGenerationService from '../services/pdf-generation.service';
-import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
   ApiBearerAuth,

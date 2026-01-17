@@ -11,7 +11,7 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
 import { PromptTemplateManager } from '@/ai-providers/config/prompt-template.manager';
 import { UsageTrackerService } from '@/ai-providers/tracking/usage-tracker.service';

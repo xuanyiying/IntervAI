@@ -16,7 +16,7 @@ import PdfGenerationService, {
   PDFOptions,
 } from '../services/pdf-generation.service';
 import { ParsedResumeData } from '../../types';
-import { JwtAuthGuard } from '../../user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   ApiTags,
   ApiBearerAuth,

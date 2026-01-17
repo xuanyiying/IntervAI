@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { IsString, IsEnum, IsObject } from 'class-validator';
-import { JwtAuthGuard } from '@/user/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import {
   StrategistAgent,
   StrategistAgentInput,
