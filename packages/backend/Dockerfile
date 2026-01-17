@@ -23,13 +23,18 @@ COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 # Set Prisma binary mirror to speed up download
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
+# Add more mirrors for other binaries
+ENV SHARP_BINARY_HOST=https://npmmirror.com/mirrors/sharp
+ENV SHARP_LIBVIPS_BINARY_HOST=https://npmmirror.com/mirrors/sharp-libvips
+ENV SASS_BINARY_SITE=https://npmmirror.com/mirrors/node-sass
+ENV PYTHON_MIRROR=https://npmmirror.com/mirrors/python
+ENV NVM_NODEJS_ORG_MIRROR=https://npmmirror.com/mirrors/node
+ENV PUPPETEER_DOWNLOAD_HOST=https://npmmirror.com/mirrors
+ENV SENTRYCLI_CDNURL=https://npmmirror.com/mirrors/sentry-cli/
+ENV ESBUILD_BINARY_SITE=https://npmmirror.com/mirrors/esbuild
 
 RUN pnpm config set registry https://registry.npmmirror.com && \
-    pnpm config set fetch-retries 10 && \
-    pnpm config set fetch-retry-factor 2 && \
-    pnpm config set fetch-retry-mintimeout 20000 && \
-    pnpm config set fetch-retry-maxtimeout 120000 && \
-    pnpm install --frozen-lockfile
+    pnpm install --frozen-lockfile --ignore-scripts
 
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
