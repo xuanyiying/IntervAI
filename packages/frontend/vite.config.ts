@@ -118,11 +118,11 @@ export default defineConfig({
       output: {
         // Manual chunk splitting for better caching
         manualChunks: {
-          // Vendor chunks
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-ui': ['antd'],
-          'vendor-state': ['zustand'],
-          'vendor-http': ['axios'],
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-antd': ['antd', '@ant-design/icons', '@ant-design/x'],
+          'vendor-framer': ['framer-motion'],
+          'vendor-utils': ['axios', 'dayjs', 'i18next', 'react-i18next', 'socket.io-client', 'zustand'],
+          'vendor-ui': ['@hello-pangea/dnd', 'lucide-react', 'react-markdown', 'remark-gfm'],
         },
         // Asset file naming for CDN caching
         assetFileNames: (assetInfo) => {
@@ -145,7 +145,7 @@ export default defineConfig({
     },
 
     // Increase chunk size warning threshold
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000,
 
     // Source maps for production debugging (optional, disable for smaller bundle)
     sourcemap: false,
@@ -154,7 +154,7 @@ export default defineConfig({
     cssCodeSplit: true,
 
     // Report compressed size
-    reportCompressedSize: true,
+    reportCompressedSize: false,
   },
 
   // Vitest test configuration
