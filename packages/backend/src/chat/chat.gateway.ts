@@ -18,6 +18,7 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ChatIntentService } from './chat-intent.service';
 import { MessageRole } from '@prisma/client';
+import { JwtPayload } from '@/auth/interfaces/jwt-payload.interface';
 
 export interface ChatMessage {
   conversationId: string;
@@ -79,8 +80,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const payload = this.jwtService.verify(token);
-      const userId = payload.sub || payload.userId;
+      const payload = this.jwtService.verify<JwtPayload>(token);
+      const userId = payload.sub;
 
       if (!userId) {
         this.logger.warn(`Client ${client.id} rejected: Invalid token`);

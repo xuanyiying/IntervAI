@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -17,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
+  async validate(payload: JwtPayload) {
     // Validate payload structure
     if (!payload.sub) {
       throw new UnauthorizedException('Invalid token payload');
@@ -29,30 +30,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         where: { id: payload.sub },
       });
 
-      // 🔍 DEBUG LOG: 检查从数据库获取的用户数据
-      console.log('🔍 [JWT STRATEGY] User from database:', {
-        userId: user?.id,
-        email: user?.email,
-        role: user?.role,
-        roleType: typeof user?.role,
-      });
-
-      // Check if user exists and is active
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      if (!user.isActive) {
+      if (user.isActive === false) {
         throw new UnauthorizedException('User account is inactive');
       }
-
-      // 🔍 DEBUG LOG: 检查返回给 req.user 的数据
-      console.log('🔍 [JWT STRATEGY] Returning user to req.user:', {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        roleType: typeof user.role,
-      });
 
       // Return user object (will be attached to request.user)
       return user;

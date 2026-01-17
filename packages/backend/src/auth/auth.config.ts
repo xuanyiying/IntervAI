@@ -18,6 +18,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
     },
   },
+  emailAndPassword: {
+    enabled: true,
+  },
   user: {
     additionalFields: {
       role: {

@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from '@/auth/auth.service';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { SubscriptionTier, Role } from '@prisma/client';
 import { ResourceNotFoundException } from '../common/exceptions/resource-not-found.exception';
 import { ErrorCode } from '../common/exceptions/error-codes';
@@ -10,6 +12,7 @@ import { ErrorCode } from '../common/exceptions/error-codes';
 describe('UserController', () => {
   let controller: UserController;
   let userService: UserService;
+  let authService: AuthService;
 
   const mockUser = {
     id: 'user-1',
@@ -31,8 +34,18 @@ describe('UserController', () => {
           provide: UserService,
           useValue: {
             findById: jest.fn(),
-            generateAuthResponse: jest.fn(),
             cleanUserCache: jest.fn(),
+          },
+        },
+        {
+          provide: AuthService,
+          useValue: {
+            generateAuthResponse: jest.fn(),
+            register: jest.fn(),
+            login: jest.fn(),
+            verifyEmail: jest.fn(),
+            forgotPassword: jest.fn(),
+            resetPassword: jest.fn(),
           },
         },
         {
@@ -49,10 +62,13 @@ describe('UserController', () => {
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<UserController>(UserController);
     userService = module.get<UserService>(UserService);
+    authService = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {
@@ -115,12 +131,12 @@ describe('UserController', () => {
       const mockAuthResponse = { accessToken: 'mock-token', user: mockUser };
 
       jest
-        .spyOn(userService, 'generateAuthResponse')
+        .spyOn(authService, 'generateAuthResponse')
         .mockReturnValue(mockAuthResponse as any);
 
       await controller.googleAuthRedirect(req, res);
 
-      expect(userService.generateAuthResponse).toHaveBeenCalledWith(mockUser);
+      expect(authService.generateAuthResponse).toHaveBeenCalledWith(mockUser);
       expect(res.redirect).toHaveBeenCalledWith(
         'http://localhost:5173/oauth/callback?token=mock-token'
       );
@@ -130,7 +146,7 @@ describe('UserController', () => {
       const req = { user: mockUser };
       const res = { redirect: jest.fn() };
 
-      jest.spyOn(userService, 'generateAuthResponse').mockImplementation(() => {
+      jest.spyOn(authService, 'generateAuthResponse').mockImplementation(() => {
         throw new Error('Auth failed');
       });
 

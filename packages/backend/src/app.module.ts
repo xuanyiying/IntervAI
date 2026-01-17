@@ -30,11 +30,18 @@ import {
   CacheControlMiddleware,
 } from './common/middleware/performance.middleware';
 import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

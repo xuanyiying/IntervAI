@@ -335,4 +335,70 @@ export class StripePaymentProvider implements PaymentProvider {
       this.logger.warn(`Payment failed for user ${user.id}`);
     }
   }
+
+  async updateSubscription(
+    userId: string,
+    newPriceId: string
+  ): Promise<{ success: boolean; message?: string }> {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe is not configured');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.stripeSubscriptionId) {
+      throw new BadRequestException('No active subscription found to update');
+    }
+
+    try {
+      const subscription = await this.stripe.subscriptions.retrieve(
+        user.stripeSubscriptionId
+      );
+
+      await this.stripe.subscriptions.update(user.stripeSubscriptionId, {
+        items: [
+          {
+            id: subscription.items.data[0].id,
+            price: newPriceId,
+          },
+        ],
+        proration_behavior: 'create_prorations',
+      });
+
+      return { success: true, message: 'Subscription updated successfully' };
+    } catch (error: any) {
+      this.logger.error(`Failed to update subscription: ${error.message}`);
+      throw new BadRequestException(
+        `Subscription update failed: ${error.message}`
+      );
+    }
+  }
+
+  async processRefund(
+    userId: string,
+    transactionId: string,
+    amount?: number
+  ): Promise<{ success: boolean; refundId?: string }> {
+    if (!this.stripe) {
+      throw new BadRequestException('Stripe is not configured');
+    }
+
+    try {
+      // transactionId in our system usually maps to PaymentIntent ID or Charge ID for Stripe
+      // Assuming transactionId passed here is a PaymentIntent ID or Charge ID
+      const refundParams: Stripe.RefundCreateParams = {
+        payment_intent: transactionId, // Or charge: transactionId
+      };
+
+      if (amount) {
+        refundParams.amount = Math.floor(amount * 100); // Stripe expects integer cents
+      }
+
+      const refund = await this.stripe.refunds.create(refundParams);
+
+      return { success: true, refundId: refund.id };
+    } catch (error: any) {
+      this.logger.error(`Failed to process refund: ${error.message}`);
+      throw new BadRequestException(`Refund failed: ${error.message}`);
+    }
+  }
 }

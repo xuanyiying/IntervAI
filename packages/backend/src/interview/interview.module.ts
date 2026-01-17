@@ -9,6 +9,7 @@ import { RedisModule } from '../redis/redis.module';
 import { QuotaModule } from '../quota/quota.module';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
+import { QuestionGeneratorService } from './services/question-generator.service';
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
 
@@ -27,10 +28,11 @@ import { EvaluationProcessor } from './processors/evaluation.processor';
     InterviewService,
     InterviewQuestionService,
     InterviewSessionService,
+    QuestionGeneratorService,
     AnswerEvaluationService,
     EvaluationProcessor,
   ],
   controllers: [InterviewController],
   exports: [InterviewService],
 })
-export class InterviewModule {}
+export class InterviewModule { }

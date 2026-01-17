@@ -32,13 +32,18 @@ export class ProjectVectorStore extends VectorStore {
   }
 
   /**
-   * Add vectors directly (not supported by our current VectorDbService easily)
+   * Add vectors directly with pre-computed embeddings
    */
   async addVectors(
     vectors: number[][],
     documents: Document[]
   ): Promise<void | string[]> {
-    throw new Error('addVectors not supported. Use addDocuments.');
+    const docs = documents.map((doc) => ({
+      content: doc.pageContent,
+      metadata: doc.metadata,
+    }));
+    const results = await this.vectorDb.addVectors(vectors, docs);
+    return results.map((r) => r.id);
   }
 
   /**
