@@ -1,19 +1,22 @@
 # Stage 1: Prune
-FROM node:18-alpine AS pruner
+FROM node:20-alpine AS pruner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+RUN npm config set registry https://registry.npmmirror.com
 RUN npm install -g pnpm@9
 COPY . .
 RUN pnpm dlx turbo prune --scope=@resume-optimizer/frontend --docker
 
 # Stage 2: Build
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
-RUN npm install -g pnpm
+RUN npm config set registry https://registry.npmmirror.com
+RUN npm install -g pnpm@9
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-RUN pnpm install --frozen-lockfile
+RUN pnpm config set registry https://registry.npmmirror.com && \
+    pnpm install --frozen-lockfile
 
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
