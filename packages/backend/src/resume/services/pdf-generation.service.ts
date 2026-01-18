@@ -50,7 +50,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
     try {
       if (!this.browser) {
         this.logger.log('Initializing Puppeteer browser...');
-        const launchOptions: puppeteer.PuppeteerLaunchOptions = {
+        const launchOptions: puppeteer.LaunchOptions = {
           headless: 'new',
           pipe: true, // Use pipe instead of WebSocket for better reliability in some environments
           args: [
