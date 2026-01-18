@@ -51,7 +51,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
       if (!this.browser) {
         this.logger.log('Initializing Puppeteer browser...');
         const launchOptions: puppeteer.LaunchOptions = {
-          headless: 'new',
+          headless: true,
           pipe: true, // Use pipe instead of WebSocket for better reliability in some environments
           args: [
             '--no-sandbox',
@@ -73,15 +73,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
           );
         }
 
-        try {
-          this.browser = await puppeteer.launch(launchOptions);
-        } catch (launchError) {
-          this.logger.warn(
-            `Failed to launch Puppeteer with headless: 'new', trying legacy headless mode...`
-          );
-          launchOptions.headless = true;
-          this.browser = await puppeteer.launch(launchOptions);
-        }
+        this.browser = await puppeteer.launch(launchOptions);
         this.logger.log('Puppeteer browser initialized successfully');
       }
     } catch (error) {
@@ -1176,7 +1168,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
       await page.setContent(html, { waitUntil: 'networkidle0' });
 
       // Generate PDF with ATS-friendly settings (Requirement 7.5)
-      return await page.pdf({
+      const pdfUint8Array = await page.pdf({
         format: 'A4',
         margin: {
           top: '10mm',
@@ -1187,6 +1179,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
         printBackground: true,
         preferCSSPageSize: true,
       });
+      return Buffer.from(pdfUint8Array);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
