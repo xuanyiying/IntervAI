@@ -28,7 +28,7 @@ import { optimizationService } from '../../services/optimization-service';
 import { jobService } from '../../services/job-service';
 import { interviewService } from '../../services/interview-service';
 import { Optimization, Suggestion, SuggestionStatus } from '../../types';
-import { StreamingMarkdownBubble } from '../StreamingMarkdownBubble';
+import StreamingMarkdownBubble from '../StreamingMarkdownBubble';
 import '../ResumeOptimizationDialog.css'; // Reuse styles
 
 const { TextArea } = Input;

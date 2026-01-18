@@ -34,7 +34,7 @@ ENV SENTRYCLI_CDNURL=https://npmmirror.com/mirrors/sentry-cli/
 ENV ESBUILD_BINARY_SITE=https://npmmirror.com/mirrors/esbuild
 
 RUN pnpm config set registry https://registry.npmmirror.com && \
-    pnpm install --frozen-lockfile --ignore-scripts
+    pnpm install --no-frozen-lockfile --ignore-scripts
 
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
