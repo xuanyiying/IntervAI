@@ -39,7 +39,7 @@ RUN pnpm config set registry https://registry.npmmirror.com && \
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
 RUN cd packages/backend && pnpm prisma generate
-RUN pnpm run build --filter=@interview-ai/backend...
+RUN cd packages/backend && pnpm run build
 
 # Deploy the package with production dependencies to a specific directory
 ENV PUPPETEER_SKIP_DOWNLOAD=true

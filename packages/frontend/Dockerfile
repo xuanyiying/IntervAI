@@ -35,7 +35,7 @@ RUN pnpm config set registry https://registry.npmmirror.com && \
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN pnpm run build --filter=@interview-ai/frontend...
+RUN cd packages/frontend && pnpm run build
 
 # Stage 3: Runtime
 FROM nginx:alpine
