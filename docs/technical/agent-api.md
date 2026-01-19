@@ -13,7 +13,7 @@ All endpoints require JWT authentication via the `Authorization: Bearer <token>`
 ## Base URL
 
 ```
-http://localhost:3000/api/agents
+http://localhost:3000/api/v1/agents
 ```
 
 ## Authentication

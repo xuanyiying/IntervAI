@@ -1,8 +1,8 @@
-# IntervAI - Monitoring Setup Guide
+# IntervAI - Monitoring Strategy
 
 ## Overview
 
-This guide provides instructions for setting up monitoring and alerting for the IntervAI service.
+This guide provides the strategy for monitoring and alerting for the IntervAI service. For setup instructions, please refer to the **[Agent Monitoring Setup Guide](./agent-monitoring.md)**.
 
 ## Key Metrics to Monitor
 
@@ -91,5 +91,8 @@ const optimizationCounter = new Counter({
 });
 
 const suggestionCounter = new Counter({
-  name: 'resume_optim
+  name: 'resume_suggestions_total',
+  help: 'Total number of suggestions generated',
+  labelNames: ['type']
+});
 ```
