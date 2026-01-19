@@ -15,7 +15,8 @@ const execAsync = promisify(exec);
 @Injectable()
 export class BackupService {
   private readonly logger = new Logger(BackupService.name);
-  private readonly backupDir = path.join(process.cwd(), 'backups');
+  private readonly backupDir =
+    process.env.BACKUP_DIR || path.join(process.cwd(), 'backups');
   private readonly maxBackups = 30; // Keep 30 days of backups
   private readonly backupMetadataKey = 'backup:metadata';
 

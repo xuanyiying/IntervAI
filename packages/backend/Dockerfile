@@ -71,6 +71,9 @@ RUN adduser --system --uid 1001 nestjs
 # Copy the fully prepared deploy directory
 COPY --from=builder --chown=nestjs:nodejs /app/deploy /app
 
+# Create backups directory with correct permissions
+RUN mkdir -p /app/backups && chown nestjs:nodejs /app/backups
+
 USER nestjs
 
 EXPOSE 3000
