@@ -8,7 +8,7 @@ import { ResumeEmptyState } from '../components/MyResumes/ResumeEmptyState';
 import { ResumeViewMode } from '../components/MyResumes/ResumeDetailHeader';
 import './MyResumesPage.css';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
 
 const MyResumesPage: React.FC = () => {
   const {

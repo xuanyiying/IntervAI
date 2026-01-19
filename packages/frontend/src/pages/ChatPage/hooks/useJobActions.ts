@@ -6,14 +6,13 @@ import {
   type JobInput,
   type Job,
 } from '../../../services/job-service';
-import { useConversationStore, useResumeStore } from '../../../stores';
+import { useConversationStore } from '../../../stores';
 import { MessageRole } from '../../../types';
 
 export const useJobActions = (startOptimization: () => void) => {
   const { t } = useTranslation();
   const { currentConversation, sendMessage, loadMessages } =
     useConversationStore();
-  const { currentResume } = useResumeStore();
 
   const [jobInputDialogVisible, setJobInputDialogVisible] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
@@ -79,7 +78,7 @@ export const useJobActions = (startOptimization: () => void) => {
   );
 
   const handleJobDelete = useCallback(
-    (jobId: string) => {
+    (_jobId: string) => {
       // In the original code, this filtered localItems.
       // Here we might need to expose a way to filter local items or just reload messages.
       // For simplicity and correctness, if it's a persisted message, reloading is best.

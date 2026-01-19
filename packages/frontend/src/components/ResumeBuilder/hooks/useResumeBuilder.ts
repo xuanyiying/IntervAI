@@ -45,24 +45,6 @@ export const useResumeBuilder = () => {
     setActiveSectionId(newSection.id);
   }, []);
 
-  const handleDeleteSection = useCallback((id: string) => {
-    setSections((prev) => {
-      if (prev.length <= 1) return prev;
-      return prev.filter((s) => s.id !== id);
-    });
-    // If the deleted section was active, we need to switch.
-    // This logic is tricky inside a callback without access to current state.
-    // For now, we will handle the selection update in the component or use a separate effect.
-    // Or we can check activeSectionId in the component.
-    // To keep the hook pure, let's return the logic to update selection.
-
-    // Actually, let's do it simply:
-    // If we delete the active section, we select the previous one or the first one.
-    // Since we don't have access to `activeSectionId` inside the functional update of `setSections`,
-    // we might need to rely on the component or change how we update.
-  }, []);
-
-  // Improved delete handler that also updates active ID
   const deleteSection = (id: string) => {
     if (sections.length <= 1) return;
 

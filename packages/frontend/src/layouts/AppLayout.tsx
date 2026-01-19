@@ -15,6 +15,7 @@ import {
 import { useAuthStore, useUIStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
 import Sidebar from './components/Sidebar';
+import { Logo } from '../components/Logo';
 import { useTranslation } from 'react-i18next';
 import './AppLayout.css';
 
@@ -113,9 +114,12 @@ const AppLayout: React.FC = () => {
             onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
             className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           />
-          <span className="font-bold text-lg text-[var(--text-primary)]">
-            {t('common.app_name')}
-          </span>
+          <div className="flex items-center gap-2">
+            <Logo width={24} height={24} />
+            <span className="font-bold text-lg text-[var(--text-primary)]">
+              {t('common.app_name')}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">

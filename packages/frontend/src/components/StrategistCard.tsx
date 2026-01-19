@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { strategistService, interviewService } from '../services';
 import { ParsedResumeData } from '../types';
-import { ArrowLeftOutlined, ReadOutlined, AppstoreOutlined } from '@ant-design/icons';
+import {
+  ArrowLeftOutlined,
+  ReadOutlined,
+  AppstoreOutlined,
+} from '@ant-design/icons';
 import { Button, Tabs, Typography } from 'antd';
 import StreamingMarkdownBubble from './StreamingMarkdownBubble';
 import './StrategistCard.css';
@@ -85,7 +89,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
       setGuideContent(response.content);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'Failed to generate preparation guide'
+        err instanceof Error
+          ? err.message
+          : 'Failed to generate preparation guide'
       );
     } finally {
       setLoading(false);
@@ -181,7 +187,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                     <select
                       id="experience"
                       value={experienceLevel}
-                      onChange={(e) => setExperienceLevel(e.target.value as any)}
+                      onChange={(e) =>
+                        setExperienceLevel(e.target.value as any)
+                      }
                       disabled={loading}
                     >
                       <option value="junior">初级 (0-2年)</option>
@@ -210,7 +218,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                       <h3>题库概览</h3>
                       <div className="summary-stats">
                         <div className="stat-card">
-                          <div className="stat-number">{result.totalQuestions}</div>
+                          <div className="stat-number">
+                            {result.totalQuestions}
+                          </div>
                           <div className="stat-label">总题目数</div>
                         </div>
                         <div className="stat-card">
@@ -256,7 +266,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                           <select
                             id="filter"
                             value={filterCategory}
-                            onChange={(e) => setFilterCategory(e.target.value as any)}
+                            onChange={(e) =>
+                              setFilterCategory(e.target.value as any)
+                            }
                           >
                             <option value="all">所有类型</option>
                             <option value="technical">技术面试</option>
@@ -279,8 +291,8 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                         </div>
                       </div>
                       <div className="results-count">
-                        显示 {filteredQuestions.length} / {result.totalQuestions}{' '}
-                        个预测问题
+                        显示 {filteredQuestions.length} /{' '}
+                        {result.totalQuestions} 个预测问题
                       </div>
                     </div>
 
@@ -295,7 +307,10 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                                 <span className="question-text">
                                   <span
                                     className="question-number"
-                                    style={{ marginRight: '1rem', opacity: 0.5 }}
+                                    style={{
+                                      marginRight: '1rem',
+                                      opacity: 0.5,
+                                    }}
                                   >
                                     {idx + 1}.
                                   </span>
@@ -306,7 +321,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                                 <span
                                   className="badge badge-priority"
                                   style={{
-                                    backgroundColor: getPriorityColor(question.priority),
+                                    backgroundColor: getPriorityColor(
+                                      question.priority
+                                    ),
                                   }}
                                 >
                                   {question.priority === 'must-prepare'
@@ -318,7 +335,9 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                                 <span
                                   className="badge badge-difficulty"
                                   style={{
-                                    color: getDifficultyColor(question.difficulty),
+                                    color: getDifficultyColor(
+                                      question.difficulty
+                                    ),
                                     border: `1px solid ${getDifficultyColor(question.difficulty)}`,
                                     backgroundColor: 'transparent',
                                   }}
@@ -386,13 +405,18 @@ export const StrategistCard: React.FC<StrategistCardProps> = ({
                 ) : (
                   <div className="guide-content p-6 bg-white rounded-lg shadow-sm">
                     <div className="flex justify-between items-center mb-4">
-                      <Title level={4} style={{ margin: 0 }}>专属备战指南</Title>
+                      <Title level={4} style={{ margin: 0 }}>
+                        专属备战指南
+                      </Title>
                       <Button onClick={handleGenerateGuide} loading={loading}>
                         重新生成
                       </Button>
                     </div>
                     <div className="markdown-body">
-                      <StreamingMarkdownBubble content={guideContent} isStreaming={true} />
+                      <StreamingMarkdownBubble
+                        content={guideContent}
+                        isStreaming={true}
+                      />
                     </div>
                   </div>
                 )}

@@ -141,7 +141,9 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Interview AI API')
-    .setDescription('AI-powered interview preparation and resume optimization platform API')
+    .setDescription(
+      'AI-powered interview preparation and resume optimization platform API'
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', 'Authentication endpoints')

@@ -14,8 +14,8 @@ const TermsOfServicePage: React.FC = () => {
           1. Acceptance of Terms
         </Title>
         <Paragraph>
-          By accessing and using Interview AI ("Service"), you accept and
-          agree to be bound by the terms and provision of this agreement.
+          By accessing and using Interview AI ("Service"), you accept and agree
+          to be bound by the terms and provision of this agreement.
         </Paragraph>
 
         <Title level={2}>2. Use License</Title>

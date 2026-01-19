@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from 'antd';
 import { FileTextOutlined, DownloadOutlined } from '@ant-design/icons';
-import { MessageItem, AttachmentStatus, Job } from '../../../types';
+import { MessageItem, Job } from '../../../types';
 import StreamingMarkdownBubble from '../../../components/StreamingMarkdownBubble';
 import AttachmentMessage from '../../../components/AttachmentMessage';
 import JobInfoCard from '../../../components/JobInfoCard';
@@ -96,9 +96,15 @@ export const MessageContent: React.FC<MessageContentProps> = ({
         <div className="mt-4">
           <SuggestionsList
             suggestions={item.suggestions}
-            onAccept={(sId) => onAcceptSuggestion?.(sId, item.optimizationId)}
-            onReject={(sId) => onRejectSuggestion?.(sId, item.optimizationId)}
-            onAcceptAll={() => onAcceptAllSuggestions?.(item.optimizationId)}
+            onAccept={async (sId) => {
+              await onAcceptSuggestion?.(sId, item.optimizationId);
+            }}
+            onReject={async (sId) => {
+              await onRejectSuggestion?.(sId, item.optimizationId);
+            }}
+            onAcceptAll={async () => {
+              await onAcceptAllSuggestions?.(item.optimizationId);
+            }}
           />
         </div>
       )}

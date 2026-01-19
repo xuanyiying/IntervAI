@@ -47,7 +47,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
 }) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('job-match');
-  
+
   // Job Match State
   const [jdText, setJdText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -344,10 +344,11 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
         <div className="mb-6">
           <Title level={4}>STAR 法则经历润色</Title>
           <Paragraph className="text-secondary">
-            输入一段您的工作经历描述，AI 将使用 STAR 法则（情境、任务、行动、结果）对其进行重写和润色，使其更具职业竞争力和说服力。
+            输入一段您的工作经历描述，AI 将使用 STAR
+            法则（情境、任务、行动、结果）对其进行重写和润色，使其更具职业竞争力和说服力。
           </Paragraph>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Column */}
           <div className="flex flex-col h-full">
@@ -377,27 +378,35 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             <div className="mb-2 font-medium flex justify-between items-center">
               <span>AI 润色结果</span>
               {starResult && (
-                <Button 
-                  size="small" 
-                  icon={<CopyOutlined />} 
+                <Button
+                  size="small"
+                  icon={<CopyOutlined />}
                   onClick={() => handleCopy(starResult)}
                 >
                   复制
                 </Button>
               )}
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex-grow custom-scrollbar overflow-y-auto" style={{ minHeight: '300px', maxHeight: '500px' }}>
+            <div
+              className="bg-gray-50 rounded-lg p-4 border border-gray-200 flex-grow custom-scrollbar overflow-y-auto"
+              style={{ minHeight: '300px', maxHeight: '500px' }}
+            >
               {starLoading ? (
                 <div className="flex justify-center items-center h-full">
                   <Spin tip="正在润色中..." />
                 </div>
               ) : starResult ? (
                 <div className="markdown-body">
-                  <StreamingMarkdownBubble content={starResult} isStreaming={false} />
+                  <StreamingMarkdownBubble
+                    content={starResult}
+                    isStreaming={false}
+                  />
                 </div>
               ) : (
                 <div className="flex flex-col justify-center items-center h-full text-gray-400">
-                  <StarOutlined style={{ fontSize: '2rem', marginBottom: '1rem' }} />
+                  <StarOutlined
+                    style={{ fontSize: '2rem', marginBottom: '1rem' }}
+                  />
                   <div>润色后的内容将显示在这里</div>
                 </div>
               )}

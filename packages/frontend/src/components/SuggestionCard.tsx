@@ -1,18 +1,8 @@
 import React, { useState } from 'react';
-import {
-  Card,
-  Button,
-  Space,
-  Collapse,
-  Tag,
-  message,
-  Spin,
-  Tooltip,
-} from 'antd';
+import { Card, Button, Tag, message, Spin, Tooltip } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
-  CopyOutlined,
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import { theme } from 'antd';

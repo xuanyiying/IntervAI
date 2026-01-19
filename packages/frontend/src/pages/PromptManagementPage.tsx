@@ -10,7 +10,6 @@ import {
   Select,
   Tag,
   Tabs,
-  Card,
   Typography,
   Tooltip,
   Popconfirm,
@@ -33,7 +32,6 @@ import './admin.css';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 
 const PromptManagementPage: React.FC = () => {
   const { t } = useTranslation();

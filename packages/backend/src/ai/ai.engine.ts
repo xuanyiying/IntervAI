@@ -9,7 +9,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
-import { PromptTemplateManager, PREDEFINED_TEMPLATES } from '@/ai-providers/config';
+import {
+  PromptTemplateManager,
+  PREDEFINED_TEMPLATES,
+} from '@/ai-providers/config';
 import { AIRequest } from '@/ai-providers';
 import { PromptScenario } from '@/ai-providers/interfaces/prompt-template.interface';
 import { ScenarioType } from '@/ai-providers/interfaces/model.interface';
@@ -811,7 +814,7 @@ ${description}`,
       // Default variants per scenario could be defined, but we use 'default' or specific one
       // For new scenarios, we expect a variant or default to concise/strict etc based on logic
       let variant = options.variant;
-      
+
       if (!variant) {
         // Set defaults for new scenarios
         switch (scenario) {
@@ -836,17 +839,17 @@ ${description}`,
       }
 
       const langSuffix = language === 'zh-CN' ? 'zh' : 'en';
-      
+
       // Construct expected template name
       // e.g. general_qa_concise_zh
       let templateName = `${scenario}_${variant}_${langSuffix}`;
-      
+
       // Handle legacy/default templates that don't follow the pattern
       if (variant === 'default') {
-         // Some defaults might be just scenario + '_default'
-         // But wait, my new templates rely on the pattern. 
-         // Legacy ones like 'resume_parsing_default' don't have lang suffix in name but have language field.
-         // Here we focus on the new scenarios.
+        // Some defaults might be just scenario + '_default'
+        // But wait, my new templates rely on the pattern.
+        // Legacy ones like 'resume_parsing_default' don't have lang suffix in name but have language field.
+        // Here we focus on the new scenarios.
       }
 
       this.logger.debug(`Generating content using template: ${templateName}`);
@@ -854,14 +857,18 @@ ${description}`,
       // Find template definition
       // In a real app, this should come from PromptTemplateManager which loads from DB/Cache
       // Here we fallback to PREDEFINED_TEMPLATES if manager doesn't support name lookup
-      
-      const templateDef = PREDEFINED_TEMPLATES.find(t => t.name === templateName);
-      
+
+      const templateDef = PREDEFINED_TEMPLATES.find(
+        (t) => t.name === templateName
+      );
+
       if (!templateDef) {
-        this.logger.warn(`Template ${templateName} not found, falling back to simple generation`);
+        this.logger.warn(
+          `Template ${templateName} not found, falling back to simple generation`
+        );
         return this.generate(variables.question || JSON.stringify(variables));
       }
-      
+
       // Render template
       let prompt = templateDef.template;
       for (const [key, value] of Object.entries(variables)) {
