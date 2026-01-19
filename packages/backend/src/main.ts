@@ -5,7 +5,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import helmet from 'helmet';
-import compression from 'compression';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -52,22 +51,6 @@ async function bootstrap() {
   // Apply global exception filter
   const httpExceptionFilter = app.get(HttpExceptionFilter);
   app.useGlobalFilters(httpExceptionFilter);
-
-  // Performance: Compression middleware for response compression
-  app.use(
-    compression({
-      level: 6, // Balance between compression ratio and CPU usage
-      threshold: 1024, // Only compress responses larger than 1KB
-      filter: (req, res) => {
-        // Don't compress responses with this request header
-        if (req.headers['x-no-compression']) {
-          return false;
-        }
-        // Use compression filter function
-        return compression.filter(req, res);
-      },
-    })
-  );
 
   // Security: Helmet middleware for security headers
   app.use(
