@@ -50,7 +50,7 @@ All endpoints return standardized error responses:
 
 **Endpoint**: `POST /pitch-perfect/generate`
 
-**Description**: Generate optimized personal introductions for a specific job position.
+**Description**: Generate an optimized personal introduction for a specific job position.
 
 **Request Body**:
 

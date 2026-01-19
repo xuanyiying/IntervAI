@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>基于大模型驱动的智能化面试准备与简历优化 SaaS 平台，助力求职者精准匹配，大幅提升面试率。</strong>
+  <strong>基于大模型驱动的智能化面试准备与简历优化 SaaS 平台</strong>
 </p>
 
 <p align="center">
@@ -18,133 +18,62 @@
   <a href="https://nodejs.org/">
     <img src="https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg" alt="Node.js Version"/>
   </a>
-  <a href="https://pnpm.io/">
-    <img src="https://img.shields.io/badge/pnpm-%3E%3D9.0.0-orange.svg" alt="pnpm Version"/>
-  </a>
-  <a href="https://github.com/yiying/ai-resume/pulls">
-    <img src="https://img.shields.io/badge/PRs-welcome-blue.svg" alt="PRs Welcome"/>
-  </a>
 </p>
 
 ---
 
-## 📖 项目简介
+## 📖 项目概述
 
-**Interview AI** 是一款革命性的求职辅助工具。它利用先进的自然语言处理（NLP）技术和大语言模型（LLM），为求职者提供从简历解析、匹配度分析、内容润色到模拟面试的全流程支持。
+**Interview AI** 致力于解决求职过程中的"信息差"与"准备不足"两大痛点。通过深度集成 LLM (GPT-4, DeepSeek, Qwen)，我们为用户提供全流程的智能化服务：从简历的深度解析与优化，到针对性的模拟面试演练，再到详细的面试复盘报告。
 
-> **为什么选择 Interview AI？**
-> 在竞争激烈的就业市场中，一份针对性强、符合 ATS 扫描规则的简历是敲开面试大门的关键。本项目通过 AI 技术消除简历与职位描述（JD）之间的信息差，让你的优势脱颖而出。
-
----
-
-## ✨ 核心特性
-
-### 🔍 智能简历分析
-- **深度解析**：支持 PDF, DOCX, TXT 格式，精准提取个人信息、工作经历与技能栈。
-- **JD 匹配引擎**：基于向量相似度与语义分析，量化简历与职位的匹配百分比。
-- **缺失关键词识别**：自动识别简历中缺少的关键技术词汇，提升 ATS 通过率。
-
-### 🤖 强大的 AI 驱动
-- **多模型支持**：无缝集成 OpenAI (GPT-4), Qwen (通义千问), DeepSeek, Gemini, 以及本地部署的 Ollama。
-- **智能工作流 (LCEL)**：基于 LangChain Expression Language 构建的高可靠性 AI 处理流水线。
-- **自愈式解析**：内置自动修复逻辑，确保 AI 输出的结构化数据 100% 准确。
-
-### ✍️ 简历优化
-- **成果量化建议**：AI 辅助将平铺直叙的描述转化为具有说服力的量化成果。
-- **多行业模板**：内置多套符合现代审美与专业标准的简历模板，支持一键导出 PDF。
-
-### 🎭 面试全链路加速
-- **面试预测**：根据简历内容与职位要求，生成针对性的面试题库。
-- **模拟面试**：沉浸式 AI 对话，实时评分并提供专业改进反馈。
+👉 **[查看完整功能特性 (Features)](./FEATURES.md)**
+👉 **[查看项目路线图 (Roadmap)](./ROADMAP.md)**
 
 ---
 
-## 📸 功能演示
+## 📚 文档中心
 
-<p align="center">
-  <em>(此处可添加项目演示 GIF 或 截图)</em>
-</p>
+### 🛠️ 快速上手
+- **[环境配置与开发指南](./docs/guide/environment-setup.md)**: 本地开发环境搭建、依赖安装与启动命令。
+- **[Agent 使用指南](./docs/guide/agent-user-guide.md)**: 面向最终用户的 AI Agent 功能使用说明。
 
----
+### 🚢 部署与运维
+- **[生产环境部署](./docs/guide/deployment.md)**: 生产环境部署方案 (Docker Compose)、SSL 配置与自动化脚本说明。
+- **[Agent 部署指南](./docs/guide/agent-deployment.md)**: Agent 系统的独立部署与扩容策略。
+- **[监控体系搭建](./docs/guide/monitoring.md)**: 基于 Prometheus + Grafana 的全链路监控配置。
+- **[Agent 专项监控](./docs/guide/agent-monitoring.md)**: 针对 AI 交互与 Token 消耗的专项监控。
+- **[安全指南](./docs/guide/security.md)**: 安全策略与最佳实践。
 
-## 🛠️ 技术架构
+### 📐 架构与设计
+- **[系统架构图](./docs/architecture/system-architecture.md)**: 宏观架构设计、技术栈选型与数据流向。
+- **[业务流程设计](./docs/design/business-flow.md)**: 核心业务链路 (简历解析、模拟面试) 的时序与交互逻辑。
+- **[商业模式与逻辑](./docs/design/business-model.md)**: Freemium 模式设计、配额管理与核心价值主张。
 
-### 核心技术栈
-- **后端**: [NestJS](https://nestjs.com/) + [TypeScript](https://www.typescriptlang.org/)
-- **数据库**: [PostgreSQL](https://www.postgresql.org/) + [Prisma ORM](https://www.prisma.io/)
-- **缓存/消息**: [Redis](https://redis.io/) + BullMQ
-- **AI 框架**: [LangChain](https://js.langchain.com/) (LCEL, Agents, Tools)
-- **前端**: [React 18](https://reactjs.org/) + [Vite](https://vitejs.dev/) + [Ant Design 5](https://ant.design/)
+### 🔧 技术细节
+- **[API 接口文档]**: 本地启动后访问 `http://localhost:3000/api/docs` 查看完整 Swagger 文档。
+- **[Agent 设计](./docs/architecture/agent-design.md)**: AI Agent 的工作流编排与 RAG 实现细节。
+- **[模拟面试模块](./docs/technical/interview-module.md)**: 面试会话管理、状态机与评分系统的技术实现。
+- **[实现总结](./docs/architecture/implementation-summary.md)**: 关键功能点的代码实现摘要。
 
-### 系统架构图
-```mermaid
-graph LR
-    User[用户] --> Frontend[React Frontend]
-    Frontend --> Backend[NestJS Backend]
-    Backend --> DB[(PostgreSQL)]
-    Backend --> Cache[(Redis)]
-    Backend --> AI[AI Routing Layer]
-    AI --> Models[GPT-4 / DeepSeek / Claude / Local]
-```
-
----
-
-## 🚀 快速上手
-
-### 环境准备
-- Node.js >= 18
-- pnpm >= 9
-- PostgreSQL & Redis
-
-### 快速启动
-1. **克隆并安装**
-   ```bash
-   git clone https://github.com/yiying/ai-resume.git
-   cd ai-resume
-   pnpm install
-   ```
-2. **配置环境变量**
-   ```bash
-   cp packages/backend/.env.example packages/backend/.env
-   # 编辑 .env 并填入数据库及 AI API Key
-   ```
-3. **初始化数据库**
-   ```bash
-   pnpm --filter backend prisma:migrate
-   ```
-4. **启动开发环境**
-   ```bash
-   pnpm dev
-   ```
-
-访问 [http://localhost:5173](http://localhost:5173) 开始优化你的简历！
+### 📊 项目报告
+- **[优化完成报告 (2026-01-17)](./docs/reports/optimization-complete-2026-01-17.md)**: 最近一次系统优化的详细记录。
+- **[优化实施细节](./docs/reports/optimization-implementation.md)**: 优化过程中的具体技术调整。
 
 ---
 
-## 🤝 参与贡献
+## 🛠️ 技术栈概览
 
-我们非常期待你的加入！无论是修复 Bug、完善文档还是提出新功能建议。
-
-- 详细指南：[CONTRIBUTING.md](./CONTRIBUTING.md)
-- 提交 Issue：[Issue Tracker](https://github.com/yiying/ai-resume/issues)
-- 提交 PR：[Pull Request Guide](https://github.com/yiying/ai-resume/pulls)
-
----
-
-## 📄 许可证
-
-本项目采用 [MIT License](./LICENSE) 开源协议。
+- **Backend**: NestJS, TypeScript, PostgreSQL, Prisma, Redis, BullMQ
+- **Frontend**: React 18, Vite, Ant Design 5, Zustand, TailwindCSS
+- **AI / LLM**: LangChain, OpenAI API, Ollama (Local LLM)
+- **DevOps**: Docker, Docker Compose, GitHub Actions
 
 ---
 
-## 🌟 Star 趋势
+## 🤝 贡献指南
 
-[![Stargazers over time](https://chart.basehash.com/github/yiying/ai-resume.svg)](https://github.com/yiying/ai-resume/stargazers)
+欢迎提交 Issue 和 Pull Request！在贡献代码前，请确保阅读 [开发指南](./docs/guide/environment-setup.md)。
 
----
+## 📄 开源协议
 
-<p align="center">
-  如果您觉得这个项目有帮助，请给它一个 ⭐️！这对我非常重要。
-</p>
-
-#Tags: #AI #Resume #NestJS #React #LangChain #DeepSeek #JobHunt #Career #OpenSource
+本项目采用 [MIT License](./LICENSE) 开源。
