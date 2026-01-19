@@ -1,94 +1,117 @@
-name: CI - Test and Build
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [main, develop]
-    types: [opened, synchronize, reopened]
-
-env:
-  NODE_VERSION: '18'
+    branches:
+      - main
+      - develop
 
 jobs:
   lint:
-    name: Lint and Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          node-version: 20
+          cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
 
-      - name: Run linter
-        run: pnpm run lint
-
-      - name: Security audit
-        run: pnpm audit --audit-level=high
-        continue-on-error: true
-
-  test-backend:
-    name: Test Backend
+  backend:
     runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: resume_optimizer_test
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: interview_ai
+          POSTGRES_USER: interview_ai_user
+          POSTGRES_PASSWORD: interview_ai_password
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U interview_ai_user -d interview_ai"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://interview_ai_user:interview_ai_password@localhost:5432/interview_ai
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      JWT_SECRET: test_jwt_secret_min_32_chars
+      NODE_ENV: test
+      OPENAI_API_KEY: test
+      QWEN_API_KEY: test
+      DEEPSEEK_API_KEY: test
+      GEMINI_API_KEY: test
+      OSS_TYPE: LOCAL
+      OSS_ENDPOINT: http://localhost:9000
+      OSS_REGION: us-east-1
+      OSS_ACCESS_KEY: local
+      OSS_SECRET_KEY: local
+      OSS_BUCKET: test
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+          node-version: 20
+          cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @interview-ai/backend prisma:generate
+      - run: pnpm --filter @interview-ai/backend exec prisma migrate deploy
+      - run: pnpm --filter @interview-ai/backend test
+      - run: pnpm --filter @interview-ai/backend build
 
-      - name: Generate Prisma
-        working-directory: packages/backend
-        run: pnpm prisma generate
-
-      - name: Run tests
-        working-directory: packages/backend
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/resume_optimizer_test
-        run: pnpm run test
-
-  test-frontend:
-    name: Test Frontend
+  frontend:
     runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      VITE_API_BASE_URL: http://localhost:3000/api/v1
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v2
+      - uses: pnpm/action-setup@v3
         with:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests
-        working-directory: packages/frontend
-        run: pnpm run test
+          node-version: 20
+          cache: pnpm
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: ${{ runner.os }}-turbo-
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @interview-ai/frontend typecheck
+      - run: pnpm --filter @interview-ai/frontend test
+      - run: pnpm --filter @interview-ai/frontend build

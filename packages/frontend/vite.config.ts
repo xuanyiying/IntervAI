@@ -1,13 +1,12 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
+
     /* VitePWA disabled for build performance
     VitePWA({
       registerType: 'autoUpdate',
@@ -49,8 +48,20 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
           'vendor-antd': ['antd', '@ant-design/icons', '@ant-design/x'],
           'vendor-framer': ['framer-motion'],
-          'vendor-utils': ['axios', 'dayjs', 'i18next', 'react-i18next', 'socket.io-client', 'zustand'],
-          'vendor-ui': ['@hello-pangea/dnd', 'lucide-react', 'react-markdown', 'remark-gfm'],
+          'vendor-utils': [
+            'axios',
+            'dayjs',
+            'i18next',
+            'react-i18next',
+            'socket.io-client',
+            'zustand',
+          ],
+          'vendor-ui': [
+            '@hello-pangea/dnd',
+            'lucide-react',
+            'react-markdown',
+            'remark-gfm',
+          ],
         },
         // Asset file naming for CDN caching
         assetFileNames: (assetInfo) => {

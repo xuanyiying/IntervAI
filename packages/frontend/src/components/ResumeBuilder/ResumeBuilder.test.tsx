@@ -7,8 +7,8 @@ import { ResumeBuilder } from './ResumeBuilder';
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // Mock URL
-global.URL.createObjectURL = vi.fn(() => 'mock-url');
-global.URL.revokeObjectURL = vi.fn();
+window.URL.createObjectURL = vi.fn(() => 'mock-url');
+window.URL.revokeObjectURL = vi.fn();
 
 // Mock Framer Motion to avoid animation issues in tests
 vi.mock('framer-motion', async () => {

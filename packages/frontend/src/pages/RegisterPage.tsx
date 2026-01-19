@@ -15,11 +15,11 @@ import {
   MailOutlined,
   GithubOutlined,
   GoogleOutlined,
-  RocketOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/auth-service';
+import { Logo } from '../components/Logo';
 import './auth.css';
 
 const { Title, Text } = Typography;
@@ -59,8 +59,8 @@ const RegisterPage: React.FC = () => {
 
       <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-white/10">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-secondary-500/10 border border-secondary-500/20 mb-4">
-            <RocketOutlined className="text-3xl" style={{ color: '#a855f7' }} />
+          <div className="inline-flex items-center justify-center mb-4">
+            <Logo width={64} height={64} className="shadow-lg rounded-2xl" />
           </div>
           <Title level={2} className="!text-white !font-bold !mb-2">
             创建账号

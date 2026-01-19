@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { RolePlayCard } from '../components/RolePlayCard';
 import { useResumeStore } from '../stores';
-import { Alert, Button, Space, Tooltip } from 'antd';
-import {
-  FileTextOutlined,
-  CommentOutlined,
-  ArrowLeftOutlined,
-} from '@ant-design/icons';
+import { Alert, Button, Space } from 'antd';
+import { FileTextOutlined, CommentOutlined } from '@ant-design/icons';
 import './agents.css';
 
 export const RolePlayPage: React.FC = () => {

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Button, Upload, Typography } from 'antd';
 import { FileTextOutlined, PlusOutlined } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
 
 const { Paragraph } = Typography;
 
@@ -14,8 +13,6 @@ export const ResumeEmptyState: React.FC<ResumeEmptyStateProps> = ({
   onUpload,
   uploading,
 }) => {
-  const { t } = useTranslation();
-
   return (
     <div className="empty-state min-h-[600px]">
       <div className="empty-icon-wrapper">

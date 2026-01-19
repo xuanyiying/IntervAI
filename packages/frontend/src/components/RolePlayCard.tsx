@@ -17,13 +17,6 @@ interface Message {
   timestamp: Date;
 }
 
-interface RealTimeAnalysis {
-  keywords: string[];
-  sentiment: string;
-  suggestions: string[];
-  relevanceScore: number;
-}
-
 interface InterviewFeedback {
   scores: {
     clarity: number;

@@ -1,11 +1,9 @@
-# 🚀 Interview AI | 智能求职辅助平台
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yiying/ai-resume/main/docs/assets/logo.png" alt="Interview AI Logo" width="200"/>
+  <img src="./docs/assets/brand/interview-ai-logo-256.png" alt="Interview AI Logo" width="180"/>
 </p>
 
 <p align="center">
-  <strong>基于大模型驱动的智能化面试准备与简历优化 SaaS 平台</strong>
+  <strong>基于大模型驱动的智能化面试准备与简历优化平台</strong>
 </p>
 
 <p align="center">
@@ -20,60 +18,132 @@
   </a>
 </p>
 
----
+<p align="center">
+  <a href="#zh-cn">简体中文</a> · <a href="#en">English</a>
+</p>
 
-## 📖 项目概述
+<a id="zh-cn"></a>
 
-**Interview AI** 致力于解决求职过程中的"信息差"与"准备不足"两大痛点。通过深度集成 LLM (GPT-4, DeepSeek, Qwen)，我们为用户提供全流程的智能化服务：从简历的深度解析与优化，到针对性的模拟面试演练，再到详细的面试复盘报告。
+## 简体中文
 
-👉 **[查看完整功能特性 (Features)](./FEATURES.md)**
-👉 **[查看项目路线图 (Roadmap)](./ROADMAP.md)**
+### 项目简介
 
----
+Interview AI 是一站式智能求职辅助平台，聚焦简历优化与模拟面试闭环。系统通过多模型协作、结构化评估与可视化反馈，帮助候选人快速识别差距、提升表达质量并完成投递准备。
 
-## 📚 文档中心
+### 功能特性
 
-### 🛠️ 快速上手
-- **[环境配置与开发指南](./docs/guide/environment-setup.md)**: 本地开发环境搭建、依赖安装与启动命令。
-- **[Agent 使用指南](./docs/guide/agent-user-guide.md)**: 面向最终用户的 AI Agent 功能使用说明。
+- 简历解析、结构化评估与高质量改写建议
+- 面试模拟与问题生成，支持实时反馈与评分
+- 多模型与多云存储支持（OpenAI、DeepSeek、Qwen、AWS/OSS/MinIO）
+- 实时会话与版本追踪，支持 PDF 导出与对比
+- 完整的监控、告警与审计日志体系
 
-### 🚢 部署与运维
-- **[生产环境部署](./docs/guide/deployment.md)**: 生产环境部署方案 (Docker Compose)、SSL 配置与自动化脚本说明。
-- **[Agent 部署指南](./docs/guide/agent-deployment.md)**: Agent 系统的独立部署与扩容策略。
-- **[监控体系搭建](./docs/guide/monitoring.md)**: 基于 Prometheus + Grafana 的全链路监控配置。
-- **[Agent 专项监控](./docs/guide/agent-monitoring.md)**: 针对 AI 交互与 Token 消耗的专项监控。
-- **[安全指南](./docs/guide/security.md)**: 安全策略与最佳实践。
+### 安装指南
 
-### 📐 架构与设计
-- **[系统架构图](./docs/architecture/system-architecture.md)**: 宏观架构设计、技术栈选型与数据流向。
-- **[业务流程设计](./docs/design/business-flow.md)**: 核心业务链路 (简历解析、模拟面试) 的时序与交互逻辑。
-- **[商业模式与逻辑](./docs/design/business-model.md)**: Freemium 模式设计、配额管理与核心价值主张。
+1. 安装依赖
 
-### 🔧 技术细节
-- **[API 接口文档]**: 本地启动后访问 `http://localhost:3000/api/docs` 查看完整 Swagger 文档。
-- **[Agent 设计](./docs/architecture/agent-design.md)**: AI Agent 的工作流编排与 RAG 实现细节。
-- **[模拟面试模块](./docs/technical/interview-module.md)**: 面试会话管理、状态机与评分系统的技术实现。
-- **[实现总结](./docs/architecture/implementation-summary.md)**: 关键功能点的代码实现摘要。
+```bash
+pnpm install
+```
 
-### 📊 项目报告
-- **[优化完成报告 (2026-01-17)](./docs/reports/optimization-complete-2026-01-17.md)**: 最近一次系统优化的详细记录。
-- **[优化实施细节](./docs/reports/optimization-implementation.md)**: 优化过程中的具体技术调整。
+2. 配置环境变量
 
----
+```bash
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+```
 
-## 🛠️ 技术栈概览
+3. 生成 Prisma 客户端并迁移数据库
 
-- **Backend**: NestJS, TypeScript, PostgreSQL, Prisma, Redis, BullMQ
-- **Frontend**: React 18, Vite, Ant Design 5, Zustand, TailwindCSS
-- **AI / LLM**: LangChain, OpenAI API, Ollama (Local LLM)
-- **DevOps**: Docker, Docker Compose, GitHub Actions
+```bash
+pnpm --filter @interview-ai/backend prisma:generate
+pnpm --filter @interview-ai/backend prisma:migrate
+```
 
----
+### 使用说明
 
-## 🤝 贡献指南
+```bash
+pnpm dev
+```
 
-欢迎提交 Issue 和 Pull Request！在贡献代码前，请确保阅读 [开发指南](./docs/guide/environment-setup.md)。
+- 前端: http://localhost:5173
+- 后端: http://localhost:3000
+- Swagger: http://localhost:3000/api/docs
 
-## 📄 开源协议
+生产构建：
+
+```bash
+pnpm build:backend
+pnpm build:frontend
+```
+
+### 贡献指南
+
+欢迎提交 Issue 与 Pull Request。请先阅读 [环境配置与开发指南](./docs/guide/environment-setup.md)。
+
+### 许可证信息
 
 本项目采用 [MIT License](./LICENSE) 开源。
+
+<a id="en"></a>
+
+## English
+
+### Project Overview
+
+Interview AI is an end-to-end career acceleration platform focused on resume optimization and interview readiness. It combines multi-model reasoning, structured evaluation, and actionable feedback to help candidates identify gaps, improve storytelling, and deliver stronger applications.
+
+### Features
+
+- Resume parsing, scoring, and rewrite guidance
+- Interview simulation with question generation and real-time feedback
+- Multi-provider AI and multi-cloud storage support
+- Conversation history, versioning, and PDF export
+- Full observability stack with metrics, alerts, and audit logs
+
+### Installation
+
+1. Install dependencies
+
+```bash
+pnpm install
+```
+
+2. Configure environment variables
+
+```bash
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+```
+
+3. Generate Prisma client and run migrations
+
+```bash
+pnpm --filter @interview-ai/backend prisma:generate
+pnpm --filter @interview-ai/backend prisma:migrate
+```
+
+### Usage
+
+```bash
+pnpm dev
+```
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3000
+- Swagger: http://localhost:3000/api/docs
+
+Production build:
+
+```bash
+pnpm build:backend
+pnpm build:frontend
+```
+
+### Contributing
+
+Issues and pull requests are welcome. Please read the [environment setup guide](./docs/guide/environment-setup.md) first.
+
+### License
+
+Licensed under the [MIT License](./LICENSE).

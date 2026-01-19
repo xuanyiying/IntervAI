@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Result } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth-service';
 
 const { Title, Text } = Typography;

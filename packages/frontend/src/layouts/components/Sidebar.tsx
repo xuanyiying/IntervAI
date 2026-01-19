@@ -23,6 +23,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore, useConversationStore, useResumeStore } from '@/stores';
 import { Role } from '@/types';
+import { Logo } from '@/components/Logo';
 
 // Interface for props if needed, though we use stores mostly
 interface SidebarProps {
@@ -223,11 +224,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div
         className={`sidebar-brand h-16 flex items-center px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}
       >
-        {!isCollapsed && (
-          <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-secondary-400">
-            {t('common.app_name')}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <Logo width={32} height={32} />
+          {!isCollapsed && (
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-secondary-400">
+              {t('common.app_name')}
+            </span>
+          )}
+        </div>
         {onToggleCollapse && (
           <Tooltip
             title={isCollapsed ? t('menu.expand') : t('menu.collapse')}

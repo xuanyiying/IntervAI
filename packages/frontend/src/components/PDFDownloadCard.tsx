@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Button, Space, Typography, Tag } from 'antd';
+import { Card, Button, Space, Typography } from 'antd';
 import {
   DownloadOutlined,
   FilePdfOutlined,

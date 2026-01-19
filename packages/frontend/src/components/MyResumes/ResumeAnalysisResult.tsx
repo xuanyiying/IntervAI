@@ -104,7 +104,9 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
         <Col xs={24} md={8}>
           <Card title="综合点评 (Summary)" hoverable style={{ height: '100%' }}>
             <Paragraph style={{ fontSize: 16 }}>{result.summary}</Paragraph>
-            <Divider orientation="left">亮点 (Strengths)</Divider>
+            <Divider orientation={'left' as any} plain>
+              亮点 (Strengths)
+            </Divider>
             <List
               size="small"
               dataSource={result.strengths}

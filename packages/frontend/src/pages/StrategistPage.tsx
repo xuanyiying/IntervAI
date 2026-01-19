@@ -1,12 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StrategistCard } from '../components/StrategistCard';
 import { useResumeStore } from '../stores';
-import { Space, Input, Button, Alert, Tooltip } from 'antd';
-import {
-  RocketOutlined,
-  ArrowLeftOutlined,
-  FileTextOutlined,
-} from '@ant-design/icons';
+import { Space, Input, Button, Alert } from 'antd';
+import { RocketOutlined, FileTextOutlined } from '@ant-design/icons';
 import './agents.css';
 
 const { TextArea } = Input;

@@ -12,13 +12,11 @@ import {
   message,
   Typography,
   Popconfirm,
-  Tooltip,
 } from 'antd';
 import {
   PlusOutlined,
   ReloadOutlined,
   DeleteOutlined,
-  CopyOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { adminService, InviteCode } from '../services/admin-service';
@@ -80,11 +78,6 @@ const InviteCodeManagementPage: React.FC = () => {
     } catch (error) {
       message.error('Failed to delete invite code');
     }
-  };
-
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    message.success('Code copied to clipboard');
   };
 
   const columns: ColumnsType<InviteCode> = [
