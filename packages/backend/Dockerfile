@@ -59,8 +59,11 @@ RUN npm install -g prisma@5.22.0 && \
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install Chromium
-RUN apk add --no-cache chromium
+# Install Chromium and OpenSSL (required for Prisma)
+RUN apk add --no-cache chromium openssl
+
+# Install ts-node and dependencies for seeding
+RUN npm install ts-node typescript tsconfig-paths
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
