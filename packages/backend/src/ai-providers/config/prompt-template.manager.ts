@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   PromptTemplate,
@@ -13,12 +13,14 @@ import { PREDEFINED_TEMPLATES } from './predefined-templates';
  * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7
  */
 @Injectable()
-export class PromptTemplateManager {
+export class PromptTemplateManager implements OnModuleInit {
   private readonly logger = new Logger(PromptTemplateManager.name);
   private templateCache: Map<string, PromptTemplate> = new Map();
 
-  constructor(private prisma: PrismaService) {
-    this.initializePredefinedTemplates();
+  constructor(private prisma: PrismaService) {}
+
+  async onModuleInit() {
+    await this.initializePredefinedTemplates();
   }
 
   /**
