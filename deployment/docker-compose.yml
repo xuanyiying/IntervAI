@@ -111,6 +111,7 @@ services:
       - "${BACKEND_PORT:-3000}:3000"
     volumes:
       - ../logs:/app/logs
+      - ../backups:/app/backups
       - ../packages/backend/src:/app/packages/backend/src # Hot reload
     networks:
       - app-network
