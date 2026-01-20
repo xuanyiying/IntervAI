@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
+import type { AgentSession } from '@prisma/client';
 
 /**
  * Agent Status Response
@@ -198,7 +199,7 @@ export class AgentManagementController {
       }
 
       // Get all sessions for this user and agent type
-      const sessions = await (this.prisma as any).agentSession.findMany({
+      const sessions: AgentSession[] = await this.prisma.agentSession.findMany({
         where: {
           userId: req.user.id,
           agentType,
@@ -207,10 +208,10 @@ export class AgentManagementController {
 
       const totalSessions = sessions.length;
       const successfulSessions = sessions.filter(
-        (s) => s.status === 'completed'
+        (s: AgentSession) => s.status === 'completed'
       ).length;
       const failedSessions = sessions.filter(
-        (s) => s.status === 'failed'
+        (s: AgentSession) => s.status === 'failed'
       ).length;
 
       // Calculate token usage
@@ -218,10 +219,15 @@ export class AgentManagementController {
       let totalCost = 0;
 
       for (const session of sessions) {
-        if (session.tokenUsage && typeof session.tokenUsage === 'object') {
-          const tokenUsage = session.tokenUsage;
-          if (tokenUsage.total) {
-            totalTokensUsed += tokenUsage.total;
+        const tokenUsageUnknown = session.tokenUsage as unknown;
+        if (
+          tokenUsageUnknown &&
+          typeof tokenUsageUnknown === 'object' &&
+          !Array.isArray(tokenUsageUnknown)
+        ) {
+          const maybeTotal = (tokenUsageUnknown as { total?: number }).total;
+          if (typeof maybeTotal === 'number') {
+            totalTokensUsed += maybeTotal;
           }
         }
         totalCost += session.cost || 0;

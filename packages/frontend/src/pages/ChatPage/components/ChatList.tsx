@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bubble } from '@ant-design/x';
 import { Button, Spin, Alert } from 'antd';
@@ -32,17 +32,43 @@ export const ChatList: React.FC<ChatListProps> = ({
   contentHandlers,
 }) => {
   const { t } = useTranslation();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [visibleCount, setVisibleCount] = useState<number>(50);
+  const lastItemKeyRef = useRef<string | undefined>(undefined);
 
-  // Scroll to bottom when items change
+  // Compute initial visible count based on container height (approximation)
   useEffect(() => {
-    const scrollableDiv = document.getElementById('scrollableDiv');
-    if (scrollableDiv) {
-      scrollableDiv.scrollTo({
-        top: scrollableDiv.scrollHeight,
-        behavior: 'smooth',
-      });
+    const el = containerRef.current;
+    if (!el) return;
+    const estimatedItemHeight = 92; // approximate bubble height
+    const overscan = 3;
+    const cnt = Math.max(
+      Math.ceil(el.clientHeight / estimatedItemHeight) * overscan,
+      30
+    );
+    setVisibleCount(cnt);
+  }, []);
+
+  // Scroll-to-bottom only when streaming or tail item changed
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const lastKey = items.length ? items[items.length - 1].key : undefined;
+    const shouldAutoScroll =
+      isStreaming ||
+      (lastKey &&
+        lastKey !== lastItemKeyRef.current &&
+        el.scrollTop > el.scrollHeight - el.clientHeight - 80);
+    if (shouldAutoScroll) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
     }
-  }, [items]);
+    lastItemKeyRef.current = lastKey;
+  }, [items, isStreaming]);
+
+  const visibleItems = useMemo(() => {
+    if (items.length <= visibleCount) return items;
+    return items.slice(items.length - visibleCount);
+  }, [items, visibleCount]);
 
   if (isLoading && items.length === 0) {
     return (
@@ -66,6 +92,7 @@ export const ChatList: React.FC<ChatListProps> = ({
   return (
     <div
       id="scrollableDiv"
+      ref={containerRef}
       className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth"
       style={{ height: 'calc(100vh - 180px)' }}
     >
@@ -86,13 +113,21 @@ export const ChatList: React.FC<ChatListProps> = ({
         )}
         {hasMoreMessages && (
           <div className="load-more-container flex justify-center mb-4">
-            <Button type="link" onClick={onLoadMore} loading={isLoading}>
+            <Button
+              type="link"
+              onClick={() => {
+                // Increase local window size before requesting older messages
+                setVisibleCount((c) => c + 40);
+                onLoadMore();
+              }}
+              loading={isLoading}
+            >
               {t('chat.load_more')}
             </Button>
           </div>
         )}
         <Bubble.List
-          items={items.map((item) => ({
+          items={visibleItems.map((item) => ({
             key: item.key,
             role: item.role,
             header: item.header,

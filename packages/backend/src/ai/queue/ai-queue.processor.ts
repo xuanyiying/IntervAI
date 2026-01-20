@@ -17,7 +17,7 @@ export class AIQueueProcessor {
     private chatGateway: ChatGateway
   ) {}
 
-  @Process('resume-parsing')
+  @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(
     job: Job<{
       resumeId: string;
@@ -141,7 +141,7 @@ export class AIQueueProcessor {
   /**
    * Handle sending cached optimization result to conversation
    */
-  @Process('send-optimization')
+  @Process({ name: 'send-optimization', concurrency: 6 })
   async handleSendOptimization(
     job: Job<{
       userId: string;

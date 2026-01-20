@@ -13,18 +13,14 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 import { InterviewService } from './interview.service';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
-import {
-  InterviewQuestion,
-  InterviewSession,
-  InterviewMessage,
-} from '@prisma/client';
+import { InterviewQuestion, InterviewSession } from '@prisma/client';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
-import { EndSessionDto } from './dto/end-session.dto';
 import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
 
 @Controller('interview')
@@ -41,6 +37,7 @@ export class InterviewController {
    * POST /api/v1/interview/preparation-guide
    */
   @Post('preparation-guide')
+  @Throttle({ default: { limit: 8, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async getPreparationGuide(
     @Request() req: any,
@@ -55,6 +52,7 @@ export class InterviewController {
    * POST /api/v1/interview/questions
    */
   @Post('questions')
+  @Throttle({ default: { limit: 6, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   async generateQuestions(
     @Request() req: any,
@@ -109,6 +107,7 @@ export class InterviewController {
    * POST /api/v1/interview/session
    */
   @Post('session')
+  @Throttle({ default: { limit: 12, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   async startSession(
     @Request() req: any,
@@ -126,6 +125,7 @@ export class InterviewController {
    * POST /api/v1/interview/session/:sessionId/answer
    */
   @Post('session/:sessionId/answer')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   async submitAnswer(
     @Request() req: any,
@@ -212,6 +212,7 @@ export class InterviewController {
    * POST /api/v1/interview/audio/transcribe
    */
   @Post('audio/transcribe')
+  @Throttle({ default: { limit: 8, ttl: 60000 } })
   @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.OK)
   async transcribeAudio(

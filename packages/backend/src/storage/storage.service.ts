@@ -423,7 +423,7 @@ export class StorageService {
    */
 
   private validateFileType(fileType: FileType, mimetype: string): void {
-    const typeMap = {
+    const typeMap: Record<FileType, string[]> = {
       [FileType.IMAGE]: ['image/'],
       [FileType.VIDEO]: ['video/'],
       [FileType.DOCUMENT]: [
@@ -436,10 +436,11 @@ export class StorageService {
         'application/octet-stream',
       ],
       [FileType.AUDIO]: ['audio/'],
+      [FileType.OTHER]: [''],
     };
 
-    const allowed = typeMap[fileType] || [];
-    const isValid = allowed.some((type) => mimetype.startsWith(type));
+    const allowed: string[] = typeMap[fileType] || [];
+    const isValid = allowed.some((type: string) => mimetype.startsWith(type));
 
     if (!isValid) {
       throw new Error(`Invalid file type: ${mimetype} for ${fileType}`);

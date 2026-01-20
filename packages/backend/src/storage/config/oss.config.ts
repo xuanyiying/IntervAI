@@ -71,8 +71,8 @@ export class OssConfigService {
     return {
       endpoint: process.env.OSS_ENDPOINT || 'http://localhost:9000',
       region: process.env.OSS_REGION || 'us-east-1',
-      accessKeyId: process.env.OSS_ACCESS_KEY || 'ossadmin',
-      secretAccessKey: process.env.OSS_SECRET_KEY || 'osspassword',
+      accessKeyId: process.env.OSS_ACCESS_KEY || 'minioadmin',
+      secretAccessKey: process.env.OSS_SECRET_KEY || 'minioadmin',
       bucket: process.env.OSS_BUCKET || 'default',
       appId: process.env.OSS_APP_ID || 'defualt',
       secure: process.env.OSS_SECURE === 'true',

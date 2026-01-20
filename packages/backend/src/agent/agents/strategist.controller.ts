@@ -15,6 +15,7 @@ import {
   StrategistAgentInput,
   StrategistAgentOutput,
   InterviewPerformance,
+  InterviewQuestionWithMetadata,
 } from './strategist.agent';
 import { ParsedResumeData } from '@/types';
 
@@ -114,7 +115,7 @@ export class StrategistController {
 
       // Note: In a real implementation, we would fetch the current question bank from storage
       // For now, we'll return a placeholder response
-      const currentQuestions = [];
+      const currentQuestions: InterviewQuestionWithMetadata[] = [];
 
       const updatedQuestions =
         await this.strategistAgent.updateBasedOnPerformance(

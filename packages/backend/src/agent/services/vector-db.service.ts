@@ -6,7 +6,7 @@
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ChromaClient, Collection } from 'chromadb';
+import { ChromaClient, Collection, EmbeddingFunction } from 'chromadb';
 import { EmbeddingService } from './embedding.service';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -24,6 +24,15 @@ export interface SimilaritySearchResult {
   content: string;
   metadata?: Record<string, unknown>;
   similarity: number;
+}
+
+class NestEmbeddingFunction implements EmbeddingFunction {
+  constructor(private embeddingService: EmbeddingService) {}
+
+  async generate(texts: string[]): Promise<number[][]> {
+    const results = await this.embeddingService.generateEmbeddings(texts);
+    return results.map((r) => r.embedding);
+  }
 }
 
 @Injectable()
@@ -46,9 +55,11 @@ export class VectorDbService implements OnModuleInit {
       );
       this.client = new ChromaClient({ path: chromaUrl });
 
-      // Initialize collection
+      // Initialize collection with custom embedding function
+      const embeddingFunction = new NestEmbeddingFunction(this.embeddingService);
       this.collection = await this.client.getOrCreateCollection({
         name: this.collectionName,
+        embeddingFunction,
       });
 
       this.logger.log(

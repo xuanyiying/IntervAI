@@ -62,6 +62,8 @@ export class AwsS3Service implements OssService {
     const key = folder ? `${folder}/${fileName}` : fileName;
 
     try {
+      const sse = process.env.S3_SSE || undefined; // 'AES256' | 'aws:kms'
+      const kmsKeyId = process.env.S3_KMS_KEY_ID || undefined;
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
@@ -71,6 +73,8 @@ export class AwsS3Service implements OssService {
           originalName: encodeURIComponent(originalName),
           uploadTime: new Date().toISOString(),
         },
+        ...(sse ? { ServerSideEncryption: sse as any } : {}),
+        ...(kmsKeyId ? { SSEKMSKeyId: kmsKeyId } : {}),
       });
 
       await this.s3Client.send(command);
@@ -221,10 +225,14 @@ export class AwsS3Service implements OssService {
 
   async copyFile(sourceKey: string, targetKey: string): Promise<void> {
     try {
+      const sse = process.env.S3_SSE || undefined;
+      const kmsKeyId = process.env.S3_KMS_KEY_ID || undefined;
       const command = new CopyObjectCommand({
         Bucket: this.bucket,
         CopySource: `${this.bucket}/${sourceKey}`,
         Key: targetKey,
+        ...(sse ? { ServerSideEncryption: sse as any } : {}),
+        ...(kmsKeyId ? { SSEKMSKeyId: kmsKeyId } : {}),
       });
 
       await this.s3Client.send(command);
@@ -240,10 +248,14 @@ export class AwsS3Service implements OssService {
     contentType?: string
   ): Promise<string> {
     try {
+      const sse = process.env.S3_SSE || undefined;
+      const kmsKeyId = process.env.S3_KMS_KEY_ID || undefined;
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         ContentType: contentType,
+        ...(sse ? { ServerSideEncryption: sse as any } : {}),
+        ...(kmsKeyId ? { SSEKMSKeyId: kmsKeyId } : {}),
       });
 
       return await getSignedUrl(this.s3Client, command, { expiresIn: expires });
