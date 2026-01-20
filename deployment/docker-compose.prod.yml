@@ -344,9 +344,8 @@ services:
     logging: *logging
 
   cadvisor:
-    # Using Aliyun mirror for better accessibility in China/Asia
-    # Original: gcr.io/cadvisor/cadvisor:latest
-    image: registry.cn-hangzhou.aliyuncs.com/google_containers/cadvisor:v0.47.0
+    # Using zcube/cadvisor as a reliable Docker Hub mirror for gcr.io/cadvisor/cadvisor
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/google/cadvisor:0.54.0
     container_name: cadvisor-prod
     ports:
       - "8080:8080"
