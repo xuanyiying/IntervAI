@@ -103,6 +103,11 @@ services:
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
       MINIO_PORT: 9000
+      OSS_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      OSS_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      OSS_ENDPOINT: http://minio:9000
+      OSS_REGION: us-east-1
+      OSS_BUCKET: ${MINIO_BUCKET:-resume-files}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
       MINIO_BUCKET: ${MINIO_BUCKET:-resume-files}
