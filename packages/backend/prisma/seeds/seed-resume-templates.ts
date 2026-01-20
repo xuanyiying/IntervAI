@@ -91,13 +91,13 @@ export async function seedResumeTemplates(prisma: PrismaClient) {
     });
 
     if (result.createdAt.getTime() === result.updatedAt.getTime()) {
-        created++;
+      created++;
     } else {
-        updated++;
+      updated++;
     }
     console.log(`✅ Processed template: ${template.name}`);
   }
-  
+
   console.log(`\n📊 Resume Templates Summary:`);
   console.log(`   ✅ Created: ${created}`);
   console.log(`   🔄 Updated: ${updated}`);

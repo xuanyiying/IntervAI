@@ -74,23 +74,22 @@ export class InterviewQuestionService {
       // Ensure we have the right number of questions
       questions = questions.slice(0, questionCount);
 
-      // Save questions to database
-      const savedQuestions: InterviewQuestion[] = [];
-      for (const question of questions) {
-        const saved = await this.prisma.interviewQuestion.create({
-          data: {
-            optimizationId,
-            questionType: question.questionType,
-            question: question.question,
-            suggestedAnswer: question.suggestedAnswer,
-            tips: question.tips,
-            difficulty: question.difficulty,
-          },
-        });
-        savedQuestions.push(saved);
-      }
-
-      return savedQuestions;
+      // Save questions to database in batch
+      await this.prisma.interviewQuestion.createMany({
+        data: questions.map((q) => ({
+          optimizationId,
+          questionType: q.questionType,
+          question: q.question,
+          suggestedAnswer: q.suggestedAnswer,
+          tips: q.tips,
+          difficulty: q.difficulty,
+        })),
+        skipDuplicates: true,
+      });
+      return this.prisma.interviewQuestion.findMany({
+        where: { optimizationId },
+        orderBy: { createdAt: 'asc' },
+      });
     } catch (error) {
       this.logger.error('Error generating interview questions:', error);
       // Get resume and job data for fallback
@@ -620,22 +619,21 @@ Remember to be specific with examples and quantify results when possible.`;
       count
     );
 
-    const savedQuestions: InterviewQuestion[] = [];
-    for (const question of questions) {
-      const saved = await this.prisma.interviewQuestion.create({
-        data: {
-          optimizationId,
-          questionType: question.questionType,
-          question: question.question,
-          suggestedAnswer: question.suggestedAnswer,
-          tips: question.tips,
-          difficulty: question.difficulty,
-        },
-      });
-      savedQuestions.push(saved);
-    }
-
-    return savedQuestions;
+    await this.prisma.interviewQuestion.createMany({
+      data: questions.map((q) => ({
+        optimizationId,
+        questionType: q.questionType,
+        question: q.question,
+        suggestedAnswer: q.suggestedAnswer,
+        tips: q.tips,
+        difficulty: q.difficulty,
+      })),
+      skipDuplicates: true,
+    });
+    return this.prisma.interviewQuestion.findMany({
+      where: { optimizationId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 
   /**

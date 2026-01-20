@@ -32,7 +32,9 @@ async function main() {
     await seedResumeTemplates(prisma);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`\n✨ Database seeding completed successfully in ${duration}s!`);
+    console.log(
+      `\n✨ Database seeding completed successfully in ${duration}s!`
+    );
   } catch (e) {
     console.error('\n❌ Error during database seeding:');
     if (e instanceof Error) {

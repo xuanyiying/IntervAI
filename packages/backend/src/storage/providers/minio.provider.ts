@@ -92,8 +92,14 @@ export class MinIOService implements OssService {
       }
     }
 
-    // 设置存储桶策略为公共读写
-    await this.setBucketPublicPolicy();
+    // 可选：设置存储桶公共策略（默认禁用，生产推荐使用私有桶 + 预签名访问）
+    if (process.env.OSS_PUBLIC_READ === 'true') {
+      await this.setBucketPublicPolicy();
+    } else {
+      this.logger.log(
+        `Skip public policy for bucket ${this.bucket} (OSS_PUBLIC_READ !== 'true')`
+      );
+    }
   }
 
   /**

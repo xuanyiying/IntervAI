@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AgentSession } from '@prisma/client';
 
 /**
  * Agent Session Summary
@@ -108,7 +109,7 @@ export class AgentSessionController {
       });
 
       // Fetch sessions
-      const sessions = await (this.prisma as any).agentSession.findMany({
+      const sessions: AgentSession[] = await this.prisma.agentSession.findMany({
         where: {
           userId: req?.user?.id,
           ...(agentType && { agentType }),
@@ -121,7 +122,7 @@ export class AgentSessionController {
         skip: offset,
       });
 
-      const summaries: AgentSessionSummary[] = sessions.map((session) => ({
+      const summaries: AgentSessionSummary[] = sessions.map((session: import('@prisma/client').AgentSession) => ({
         id: session.id,
         agentType: session.agentType,
         status: session.status,

@@ -11,7 +11,7 @@ import { ChatModule } from '@/chat/chat.module';
     BullModule.registerQueue({
       name: 'ai-processing',
       limiter: {
-        max: 10, // Max 10 jobs per minute
+        max: 30,
         duration: 60000,
       },
     }),

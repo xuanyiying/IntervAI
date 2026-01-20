@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
 import { resumeService } from '../../../services/resume-service';
+import { UPLOAD_TIMEOUT_MS, PARSE_TIMEOUT_MS } from '../../../config/app';
 import {
   MessageRole,
   type MessageItem,
@@ -128,7 +129,7 @@ export const useResumeUpload = ({
         const timeoutPromise = new Promise((_, reject) =>
           setTimeout(
             () => reject(new Error('上传超时，请检查网络连接')),
-            120000
+            UPLOAD_TIMEOUT_MS
           )
         );
 
@@ -197,7 +198,7 @@ export const useResumeUpload = ({
         const parseTimeoutPromise = new Promise((_, reject) =>
           setTimeout(
             () => reject(new Error('解析超时，后台正在处理中...')),
-            120000
+            PARSE_TIMEOUT_MS
           )
         );
 

@@ -118,6 +118,7 @@ model Resume {
   conversation     Conversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([userId, isPrimary])
   @@index([userId, fileMd5])
   @@map("resumes")
@@ -141,6 +142,7 @@ model Job {
   optimizations      Optimization[]
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@map("jobs")
 }
 
@@ -163,6 +165,7 @@ model Optimization {
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([resumeId])
   @@index([jobId])
   @@map("optimizations")
@@ -182,6 +185,7 @@ model GeneratedPDF {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, createdAt])
   @@index([optimizationId])
   @@map("generated_pdfs")
 }
@@ -407,6 +411,7 @@ model Conversation {
   resumes       Resume[]
 
   @@index([userId])
+  @@index([userId, lastMessageAt])
   @@map("conversations")
 }
 
@@ -441,6 +446,7 @@ model InvitationCode {
 
   @@index([code])
   @@index([isUsed])
+  @@index([isUsed, createdAt])
   @@map("invitation_codes")
 }
 
@@ -508,6 +514,7 @@ model InterviewSession {
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, startTime])
   @@index([optimizationId])
   @@map("interview_sessions")
 }

@@ -4,18 +4,34 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { IoAdapter } from '@nestjs/platform-socket.io';
+import { RedisIoAdapter } from './chat/redis-io.adapter';
 import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { MonitoringInterceptor } from './monitoring/monitoring.interceptor';
 import { MonitoringGuard } from './monitoring/monitoring.guard';
+import { initOpenTelemetry } from './monitoring/otel';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable WebSocket support with Socket.IO adapter
-  app.useWebSocketAdapter(new IoAdapter(app));
+  // Initialize OpenTelemetry (optional, env controlled)
+  await initOpenTelemetry();
+
+  // Enable WebSocket support with Redis adapter (fallback to default)
+  const redisHost = process.env.REDIS_HOST;
+  const redisPort = process.env.REDIS_PORT;
+  const redisPassword = process.env.REDIS_PASSWORD;
+  if (redisHost && redisPort) {
+    const redisUrl =
+      redisPassword && redisPassword.length > 0
+        ? `redis://:${redisPassword}@${redisHost}:${redisPort}`
+        : `redis://${redisHost}:${redisPort}`;
+    app.useWebSocketAdapter(new RedisIoAdapter(app, redisUrl));
+  } else {
+    app.useWebSocketAdapter(new IoAdapter(app));
+  }
 
   // Initialize Sentry for error tracking
   if (process.env.SENTRY_DSN) {

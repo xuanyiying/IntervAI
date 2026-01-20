@@ -9,7 +9,7 @@ import { OssConfig } from '@/storage/config/oss.config';
 
 export class AliyunOssService implements OssService {
   public bucketName: string;
-  private ossClient: OSS;
+  private ossClient: any;
   private bucket: string;
   private config: OssConfig;
 

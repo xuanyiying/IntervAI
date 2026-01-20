@@ -32,6 +32,7 @@ import { PerformanceMonitorService } from '@/ai-providers/monitoring';
 import { RetryHandler } from '@/ai-providers/utils';
 import { AIError, AIErrorCode } from './utils/ai-error';
 import { AILogger } from './logging/ai-logger';
+import { getAiTimeouts } from '@/config/ai.config';
 
 /**
  * AI Engine Service
@@ -686,7 +687,7 @@ export class AIEngineService implements OnModuleInit, OnApplicationBootstrap {
       };
 
       // Stream with timeout and retry
-      const STREAM_TIMEOUT = 120000; // 120s total stream timeout
+      const { streamTimeoutMs: STREAM_TIMEOUT } = getAiTimeouts();
       const streamStartTime = Date.now();
 
       try {

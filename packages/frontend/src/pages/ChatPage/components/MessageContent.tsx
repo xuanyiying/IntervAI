@@ -27,7 +27,7 @@ interface MessageContentProps {
   onAcceptAllSuggestions?: (optimizationId?: string) => void;
 }
 
-export const MessageContent: React.FC<MessageContentProps> = ({
+export const MessageContent = React.memo(function MessageContent({
   item,
   isStreaming,
   onDeleteAttachment,
@@ -40,7 +40,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
   onAcceptSuggestion,
   onRejectSuggestion,
   onAcceptAllSuggestions,
-}) => {
+}: MessageContentProps) {
   return (
     <div className="markdown-content">
       {item.key === 'streaming-optimization' ? (
@@ -131,4 +131,4 @@ export const MessageContent: React.FC<MessageContentProps> = ({
       )}
     </div>
   );
-};
+});

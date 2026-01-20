@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
 import { PromptTemplateManager } from '@/ai-providers/config/prompt-template.manager';
 import { UsageTrackerService } from '@/ai-providers/tracking/usage-tracker.service';
@@ -38,6 +39,7 @@ export class AIController {
   ) {}
 
   @Post('call')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async callAI(
     @Body() request: CallAiDto,
     @Request() req: AuthRequest
@@ -58,6 +60,7 @@ export class AIController {
   }
 
   @Post('stream')
+  @Throttle({ default: { limit: 15, ttl: 60000 } })
   async streamAI(
     @Body() request: CallAiDto,
     @Request() req: AuthRequest

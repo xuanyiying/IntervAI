@@ -1,10 +1,12 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
+import { HTTP_TIMEOUT_MS } from './app';
+import { generateTraceparent } from '../utils/trace';
 
 // Create axios instance with default configuration
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api/v1',
-  timeout: 120000, // Increased to 120s for long-running AI operations
+  timeout: HTTP_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -21,6 +23,10 @@ axiosInstance.interceptors.request.use(
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Attach W3C traceparent for backend OTel correlation
+    if (!config.headers['traceparent']) {
+      config.headers['traceparent'] = generateTraceparent();
     }
     return config;
   },

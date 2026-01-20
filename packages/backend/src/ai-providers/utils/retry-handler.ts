@@ -10,13 +10,23 @@ import {
   DEFAULT_RETRY_CONFIG,
   isRetryableError,
 } from './ai-error';
+import { getAiRetryConfig } from '@/config/ai.config';
 
 export class RetryHandler {
   private readonly logger = new Logger(RetryHandler.name);
   private readonly config: RetryConfig;
 
   constructor(config?: Partial<RetryConfig>) {
-    this.config = { ...DEFAULT_RETRY_CONFIG, ...config };
+    const envCfg =
+      (globalThis as any).__aiRetryConfig__ ||
+      ((): RetryConfig => {
+        try {
+          return getAiRetryConfig();
+        } catch {
+          return DEFAULT_RETRY_CONFIG;
+        }
+      })();
+    this.config = { ...DEFAULT_RETRY_CONFIG, ...envCfg, ...config };
   }
 
   /**

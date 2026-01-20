@@ -147,9 +147,11 @@ export class PromptTemplateManager implements OnModuleInit {
         return template as PromptTemplate;
       }
 
-      // Fall back to English if requested language not found
-      if (language !== 'en') {
-        return this.getTemplate(scenario, 'en', provider, version);
+      // Optional strict mode: do not fallback to English
+      if (process.env.PROMPT_STRICT !== 'true') {
+        if (language !== 'en') {
+          return this.getTemplate(scenario, 'en', provider, version);
+        }
       }
 
       return null;
