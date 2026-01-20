@@ -135,7 +135,9 @@ async function bootstrap() {
 
   // API prefix
   // FIXME: Hardcoded to avoid double prefix issue
-  app.setGlobalPrefix('/api/v1');
+  app.setGlobalPrefix('/api/v1', {
+    exclude: ['health', '/'],
+  });
 
   // Swagger documentation
   const config = new DocumentBuilder()
