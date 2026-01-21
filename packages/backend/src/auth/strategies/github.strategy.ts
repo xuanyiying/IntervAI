@@ -18,19 +18,24 @@ export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
     const callbackURL = configService.get<string>('GITHUB_CALLBACK_URL');
 
     if (!clientID || !clientSecret || !callbackURL) {
-      throw new Error('GitHub OAuth configuration is missing');
+      const logger = new Logger(GithubStrategy.name);
+      logger.warn(
+        'GitHub OAuth configuration is missing. GitHub Auth will be disabled.'
+      );
     }
 
     super({
-      clientID,
-      clientSecret,
-      callbackURL,
+      clientID: clientID || 'missing-github-client-id',
+      clientSecret: clientSecret || 'missing-github-client-secret',
+      callbackURL: callbackURL || 'http://localhost/missing-callback',
       scope: ['user:email'],
     });
 
-    this.logger.log(
-      `GitHub Strategy initialized with callbackURL: ${callbackURL}`
-    );
+    if (clientID && clientSecret && callbackURL) {
+      this.logger.log(
+        `GitHub Strategy initialized with callbackURL: ${callbackURL}`
+      );
+    }
   }
 
   async validate(
