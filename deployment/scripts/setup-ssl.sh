@@ -53,9 +53,13 @@ setup_ssl() {
     cp deployment/config/nginx/conf.d/default.conf deployment/config/nginx/conf.d/default.conf.prod.bak
     cp deployment/config/nginx/conf.d/default.conf.init deployment/config/nginx/conf.d/default.conf
 
-    # 3. 启动 Nginx
-    log_step "启动 Nginx..."
-    docker compose -f $COMPOSE_FILE up -d nginx
+    # 3. 启动 Nginx (确保 upstream 可解析)
+    log_step "启动 Nginx 及依赖..."
+    # 必须启动 backend 和 frontend，否则 nginx upstream 解析会失败
+    docker compose -f $COMPOSE_FILE up -d backend frontend nginx
+    
+    log_step "等待服务启动..."
+    sleep 10
 
     # 4. 申请 Let's Encrypt 证书
     log_step "申请 Let's Encrypt 证书..."
