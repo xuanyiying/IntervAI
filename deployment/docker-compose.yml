@@ -57,8 +57,8 @@ services:
     container_name: minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -98,19 +98,14 @@ services:
       CHROMA_DB_URL: http://chromadb:8000
       JWT_SECRET: ${JWT_SECRET:-dev-secret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
-      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
       MINIO_PORT: 9000
-      OSS_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      OSS_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      OSS_TYPE: ${OSS_TYPE:-minio}
+      OSS_ACCESS_KEY: ${OSS_ACCESS_KEY:-minioadmin}
+      OSS_SECRET_KEY: ${OSS_SECRET_KEY:-minioadmin}
       OSS_ENDPOINT: http://minio:9000
       OSS_REGION: us-east-1
-      OSS_BUCKET: ${MINIO_BUCKET:-resume-files}
-      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-      MINIO_BUCKET: ${MINIO_BUCKET:-resume-files}
+      OSS_BUCKET: ${OSS_BUCKET:-resume-files}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${BACKEND_PORT:-3000}:3000"
