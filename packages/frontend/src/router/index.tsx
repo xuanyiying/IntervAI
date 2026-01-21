@@ -66,11 +66,7 @@ const routes: RouteObject[] = [
   },
   {
     path: '/',
-    element: (
-      <ProtectedRoute>
-        <AppLayout />
-      </ProtectedRoute>
-    ),
+    element: <AppLayout />,
     children: [
       {
         index: true,
@@ -82,116 +78,160 @@ const routes: RouteObject[] = [
       },
       {
         path: 'resumes',
-        element: <MyResumesPage />,
+        element: (
+          <ProtectedRoute>
+            <MyResumesPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'resume-builder',
-        element: <ResumeBuilderPage />,
+        element: (
+          <ProtectedRoute>
+            <ResumeBuilderPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'profile',
-        element: <ProfilePage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'settings',
-        element: <SettingsPage />,
+        element: (
+          <ProtectedRoute>
+            <SettingsPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'pricing',
-        element: <PricingPage />,
+        element: (
+          <ProtectedRoute>
+            <PricingPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'payment/success',
-        element: <PaymentSuccessPage />,
+        element: (
+          <ProtectedRoute>
+            <PaymentSuccessPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'payment/cancel',
-        element: <PaymentCancelPage />,
+        element: (
+          <ProtectedRoute>
+            <PaymentCancelPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: 'subscription',
-        element: <SubscriptionManagementPage />,
-      },
-      {
-        path: 'interview/:optimizationId',
-        element: <InterviewPage />,
-      },
-      {
-        path: 'agents/interview-prediction',
-        element: <StrategistPage />,
-      },
-      {
-        path: 'agents/mock-interview',
-        element: <RolePlayPage />,
-      },
-      {
-        path: 'agents/pitch-perfect',
-        element: <PitchPerfectPage />,
-      },
-      {
-        path: 'agents/metrics',
-        element: <AgentMetricsPage />,
-      },
-      // Admin routes
-      {
-        path: 'admin/dashboard',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <UserManagementPage />
+          <ProtectedRoute>
+            <SubscriptionManagementPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/users',
+        path: 'interview',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <UserManagementPage />
+          <ProtectedRoute>
+            <InterviewPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/system-settings',
+        path: 'pitch-perfect',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <SystemSettingsPage />
+          <ProtectedRoute>
+            <PitchPerfectPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/prompts',
+        path: 'strategist',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <PromptManagementPage />
+          <ProtectedRoute>
+            <StrategistPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/models',
+        path: 'role-play',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <ModelManagementPage />
+          <ProtectedRoute>
+            <RolePlayPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/invite-codes',
+        path: 'agent-metrics',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
-            <InviteCodeManagementPage />
+          <ProtectedRoute>
+            <AgentMetricsPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: 'admin/knowledge-base',
+        path: 'knowledge-base',
         element: (
-          <ProtectedRoute requiredRole="ADMIN">
+          <ProtectedRoute>
             <KnowledgeBasePage />
           </ProtectedRoute>
         ),
       },
       {
-        path: '*',
-        element: <Navigate to="/" replace />,
+        path: 'admin',
+        children: [
+          {
+            path: 'prompts',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <PromptManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'models',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <ModelManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'users',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <UserManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'invites',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <InviteCodeManagementPage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'settings',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <SystemSettingsPage />
+              </ProtectedRoute>
+            ),
+          },
+        ],
       },
     ],
   },

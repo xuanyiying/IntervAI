@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { message, Modal, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useConversationStore, useResumeStore } from '../../stores';
+import { useConversationStore, useResumeStore, useAuthStore } from '../../stores';
 import { useChatSocket } from '../../hooks/useChatSocket';
-import { AttachmentStatus } from '../../types';
+import { AttachmentStatus, MessageRole } from '../../types';
 
 // Components
 import { ChatWelcome } from './components/ChatWelcome';
@@ -25,11 +25,24 @@ const ChatPage: React.FC = () => {
   const { t } = useTranslation();
   const { id: conversationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   // Local State
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  
+  // Guest State
+  const [guestCount, setGuestCount] = useState(0);
+  const [guestMessages, setGuestMessages] = useState<any[]>([]);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      const stored = localStorage.getItem('guest_usage_count');
+      if (stored) setGuestCount(parseInt(stored, 10));
+    }
+  }, [user]);
 
   // Global Stores
   const { currentResume } = useResumeStore();
@@ -59,7 +72,7 @@ const ChatPage: React.FC = () => {
     onResumeParsed: (resumeId, markdown, conversationId) => {
       const targetId = conversationId || currentConversation?.id;
       // Notify socket about parsed resume
-      if (targetId) {
+      if (targetId && user) {
         notifyResumeParsed(targetId, resumeId, markdown);
         sendSocketMessage(targetId, '优化简历', {
           action: 'optimize_resume',
@@ -176,7 +189,7 @@ const ChatPage: React.FC = () => {
 
   // 5. Chat Items Aggregation
   const items = useChatItems({
-    messages,
+    messages: user ? messages : guestMessages,
     localItems: uploadItems,
     streamingContent,
     isStreaming,
@@ -185,7 +198,7 @@ const ChatPage: React.FC = () => {
   // Initialization Effects
   useEffect(() => {
     const init = async () => {
-      if (conversationId) {
+      if (conversationId && user) {
         if (currentConversation?.id !== conversationId) {
           setCurrentConversation({ id: conversationId } as any);
           await loadMessages(conversationId);
@@ -199,17 +212,57 @@ const ChatPage: React.FC = () => {
     currentConversation?.id,
     loadMessages,
     setCurrentConversation,
+    user,
   ]);
 
   useEffect(() => {
-    if (currentConversation && isConnected) {
+    if (currentConversation && isConnected && user) {
       joinConversation(currentConversation.id);
     }
-  }, [currentConversation?.id, isConnected, joinConversation]);
+  }, [currentConversation?.id, isConnected, joinConversation, user]);
 
   // Handlers
+  const handleGuestSubmit = async (nextValue: string) => {
+    if (guestCount >= 3) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
+    const newCount = guestCount + 1;
+    setGuestCount(newCount);
+    localStorage.setItem('guest_usage_count', newCount.toString());
+
+    // Add user message
+    const userMsg = {
+      id: Date.now().toString(),
+      role: MessageRole.USER,
+      content: nextValue,
+      createdAt: new Date(),
+    };
+    setGuestMessages(prev => [...prev, userMsg]);
+    setValue('');
+    setLoading(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiMsg = {
+        id: (Date.now() + 1).toString(),
+        role: MessageRole.ASSISTANT,
+        content: "我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！",
+        createdAt: new Date(),
+      };
+      setGuestMessages(prev => [...prev, aiMsg]);
+      setLoading(false);
+    }, 1500);
+  };
+
   const handleSubmit = async (nextValue: string) => {
     if (!nextValue) return;
+
+    if (!user) {
+      handleGuestSubmit(nextValue);
+      return;
+    }
 
     let targetId = currentConversation?.id;
     if (!targetId) {
@@ -238,7 +291,7 @@ const ChatPage: React.FC = () => {
   };
 
   const handleRetryLoadMessages = async () => {
-    if (currentConversation) {
+    if (currentConversation && user) {
       try {
         await loadMessages(currentConversation.id);
         setRetryCount(0);
@@ -252,6 +305,11 @@ const ChatPage: React.FC = () => {
   };
 
   const handleFileUploadWrapper = async (file: File) => {
+    if (!user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
     let targetId = currentConversation?.id;
     if (!targetId) {
       try {
@@ -269,6 +327,11 @@ const ChatPage: React.FC = () => {
   };
 
   const handleActionClick = async (key: string, label: string) => {
+    if (!user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
     if (key === 'job_input') {
       setJobInputDialogVisible(true);
     } else if (key === 'resume_optimization') {
@@ -296,15 +359,27 @@ const ChatPage: React.FC = () => {
   };
 
   const handleLoadMore = async () => {
-    if (currentConversation && hasMoreMessages && !isLoadingMessages) {
+    if (currentConversation && hasMoreMessages && !isLoadingMessages && user) {
       await loadMoreMessages(currentConversation.id);
     }
   };
 
   return (
-    <div className="chat-page-container flex h-full w-full relative overflow-hidden">
-      <div className="flex-1 flex flex-col h-full relative z-10">
-        {items.length <= 1 && !loading && !isLoadingMessages ? (
+    <div className="chat-page-container flex flex-col h-full w-full relative overflow-hidden">
+      {/* Guest Header */}
+      {!user && (
+        <div className="w-full bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 px-4 py-2 flex items-center justify-between z-20">
+          <span className="text-sm text-blue-600 dark:text-blue-300">
+            {t('chat.guest_mode', '访客模式')}
+          </span>
+          <span className="text-sm font-medium text-blue-600 dark:text-blue-300">
+            {t('chat.remaining_uses', '剩余次数')}: {Math.max(0, 3 - guestCount)}/3
+          </span>
+        </div>
+      )}
+
+      <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
+        {items.length <= 1 && !loading && !isLoadingMessages && guestMessages.length === 0 ? (
           <ChatWelcome
             value={value}
             onChange={setValue}
@@ -319,7 +394,7 @@ const ChatPage: React.FC = () => {
               items={items}
               isLoading={isLoadingMessages}
               messageError={messageError}
-              hasMoreMessages={hasMoreMessages}
+              hasMoreMessages={hasMoreMessages && !!user}
               isStreaming={isStreaming}
               onLoadMore={handleLoadMore}
               onRetryLoad={handleRetryLoadMessages}
@@ -345,7 +420,7 @@ const ChatPage: React.FC = () => {
               onChange={setValue}
               onSubmit={handleSubmit}
               loading={loading}
-              onFileSelect={handleResumeUpload}
+              onFileSelect={handleFileUploadWrapper}
             />
           </>
         )}
@@ -369,6 +444,22 @@ const ChatPage: React.FC = () => {
         onJobUpdated={handleJobUpdated}
         initialData={editingJob}
       />
+
+      <Modal
+        title={t('common.login_required', '需要登录')}
+        open={isLoginModalOpen}
+        onCancel={() => setIsLoginModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setIsLoginModalOpen(false)}>
+            {t('common.cancel', '取消')}
+          </Button>,
+          <Button key="login" type="primary" onClick={() => navigate('/login')}>
+            {t('common.login_now', '立即登录')}
+          </Button>,
+        ]}
+      >
+        <p>{t('chat.guest_limit_reached', '您已达到访客使用限制（3次）。请登录以继续使用完整功能！')}</p>
+      </Modal>
     </div>
   );
 };

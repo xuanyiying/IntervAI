@@ -34,6 +34,42 @@ const AppLayout: React.FC = () => {
     navigate('/login');
   };
 
+  const guestMenuItems: MenuProps['items'] = [
+    {
+      key: 'theme',
+      icon: theme === 'light' ? <MoonOutlined /> : <SunOutlined />,
+      label:
+        theme === 'light'
+          ? t('menu.dark_mode', '深色模式')
+          : t('menu.light_mode', '浅色模式'),
+      onClick: toggleTheme,
+    },
+    {
+      key: 'lang',
+      label: t('common.language'),
+      icon: <GlobalOutlined />,
+      children: [
+        {
+          key: 'zh-CN',
+          label: '简体中文',
+          onClick: () => i18n.changeLanguage('zh-CN'),
+        },
+        {
+          key: 'en-US',
+          label: 'English',
+          onClick: () => i18n.changeLanguage('en-US'),
+        },
+      ],
+    },
+    { type: 'divider' },
+    {
+      key: 'login',
+      label: t('common.login', '登录'),
+      icon: <UserOutlined />,
+      onClick: () => navigate('/login'),
+    },
+  ];
+
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
@@ -124,7 +160,7 @@ const AppLayout: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <Dropdown
-            menu={{ items: userMenuItems }}
+            menu={{ items: user ? userMenuItems : guestMenuItems }}
             placement="bottomRight"
             trigger={['click']}
             classNames={{ root: 'user-menu-dropdown' }}
@@ -143,7 +179,7 @@ const AppLayout: React.FC = () => {
       <Header className="hidden md:flex items-center justify-end px-6 bg-transparent border-none absolute right-0 top-0 z-50 h-16">
         <div className="flex items-center gap-4 relative">
           <Dropdown
-            menu={{ items: userMenuItems }}
+            menu={{ items: user ? userMenuItems : guestMenuItems }}
             placement="bottomRight"
             trigger={['click']}
             classNames={{ root: 'user-menu-dropdown' }}
