@@ -18,7 +18,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432" # Localhost only
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_prod:/var/lib/postgresql/data
       - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
       - ../backups/postgres:/backups
@@ -52,7 +52,7 @@ services:
     ports:
       - "127.0.0.1:6379:6379" # Localhost only
     volumes:
-      - redis_data:/data
+      - redis_data_prod:/data
       - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     healthcheck:
       test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
@@ -75,7 +75,7 @@ services:
     environment:
       - IS_PERSISTENT=TRUE
     volumes:
-      - chroma_data:/chroma/chroma
+      - chroma_data_prod:/chroma/chroma
     networks:
       - app-network
     restart: always
@@ -90,7 +90,7 @@ services:
       MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
     volumes:
-      - minio_data:/data
+      - minio_data_prod:/data
     networks:
       - app-network
     restart: always
@@ -213,8 +213,8 @@ services:
       - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./config/ssl:/etc/nginx/ssl:ro
       - ../logs/nginx:/var/log/nginx
-      - certbot_data:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_data_prod:/var/www/certbot:ro
+      - certbot_conf_prod:/etc/letsencrypt:ro
     networks:
       - app-network
     restart: always
@@ -225,8 +225,8 @@ services:
     image: certbot/certbot:latest
     container_name: certbot
     volumes:
-      - certbot_data:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
+      - certbot_data_prod:/var/www/certbot
+      - certbot_conf_prod:/etc/letsencrypt
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - app-network
@@ -263,7 +263,7 @@ services:
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-      - prometheus_data:/prometheus
+      - prometheus_data_prod:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -282,7 +282,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - grafana_data:/var/lib/grafana
+      - grafana_data_prod:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
@@ -300,7 +300,7 @@ services:
       - "3100:3100"
     volumes:
       - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - loki_data:/tmp/loki
+      - loki_data_prod:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - app-network
@@ -327,7 +327,7 @@ services:
       - "9093:9093"
     volumes:
       - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
+      - alertmanager_data_prod:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -374,16 +374,16 @@ services:
       - /dev/kmsg
 
 volumes:
-  postgres_data:
-  redis_data:
-  chroma_data:
-  minio_data:
-  prometheus_data:
-  grafana_data:
-  loki_data:
-  alertmanager_data:
-  certbot_data:
-  certbot_conf:
+  postgres_data_prod:
+  redis_data_prod:
+  chroma_data_prod:
+  minio_data_prod:
+  prometheus_data_prod:
+  grafana_data_prod:
+  loki_data_prod:
+  alertmanager_data_prod:
+  certbot_data_prod:
+  certbot_conf_prod:
 
 networks:
   app-network:
