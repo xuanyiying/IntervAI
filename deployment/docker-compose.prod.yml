@@ -5,7 +5,7 @@ services:
   # PostgreSQL Database - Production
   postgres:
     image: postgres:15-alpine
-    container_name: postgres-prod
+    container_name: postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -18,7 +18,7 @@ services:
     ports:
       - "127.0.0.1:5432:5432" # Localhost only
     volumes:
-      - postgres_data_prod:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
       - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
       - ../backups/postgres:/backups
@@ -46,13 +46,13 @@ services:
   # Redis Cache - Production
   redis:
     image: redis:7-alpine
-    container_name: redis-prod
+    container_name: redis
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     restart: always
     ports:
       - "127.0.0.1:6379:6379" # Localhost only
     volumes:
-      - redis_data_prod:/data
+      - redis_data:/data
       - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     healthcheck:
       test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD}", "ping"]
@@ -71,11 +71,11 @@ services:
   # ChromaDB Vector Database
   chromadb:
     image: chromadb/chroma:latest
-    container_name: chromadb-prod
+    container_name: chromadb
     environment:
       - IS_PERSISTENT=TRUE
     volumes:
-      - chroma_data_prod:/chroma/chroma
+      - chroma_data:/chroma/chroma
     networks:
       - app-network
     restart: always
@@ -84,13 +84,13 @@ services:
   # Object Storage (MinIO)
   minio:
     image: minio/minio:latest
-    container_name: minio-prod
+    container_name: minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
     volumes:
-      - minio_data_prod:/data
+      - minio_data:/data
     networks:
       - app-network
     restart: always
@@ -108,7 +108,7 @@ services:
       dockerfile: packages/backend/Dockerfile
       args:
         NODE_ENV: production
-    # container_name: backend-prod  # Removed to allow scaling with replicas
+    # container_name: backend  # Removed to allow scaling with replicas
     depends_on:
       postgres:
         condition: service_healthy
@@ -130,7 +130,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
-      OSS_ENDPOINT: ${OSS_ENDPOINT:-minio-prod:9000}
+      OSS_ENDPOINT: ${OSS_ENDPOINT:-minio:9000}
       OSS_PORT: 9000
       OSS_REGION: ${OSS_REGION:-us-east-1}
       OSS_ACCESS_KEY: ${OSS_ACCESS_KEY:-minioadmin}
@@ -173,7 +173,7 @@ services:
       dockerfile: packages/frontend/Dockerfile
       args:
         NODE_ENV: production
-    # container_name: frontend-prod # Removed to allow scaling with replicas
+    # container_name: frontend # Removed to allow scaling with replicas
     depends_on:
       backend:
         condition: service_healthy
@@ -199,7 +199,7 @@ services:
   # Nginx Load Balancer
   nginx:
     image: nginx:alpine
-    container_name: nginx-prod
+    container_name: nginx
     depends_on:
       backend:
         condition: service_healthy
@@ -213,8 +213,8 @@ services:
       - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./config/ssl:/etc/nginx/ssl:ro
       - ../logs/nginx:/var/log/nginx
-      - certbot_data_prod:/var/www/certbot:ro
-      - certbot_conf_prod:/etc/letsencrypt:ro
+      - certbot_data:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
     networks:
       - app-network
     restart: always
@@ -225,8 +225,8 @@ services:
     image: certbot/certbot:latest
     container_name: certbot
     volumes:
-      - certbot_data_prod:/var/www/certbot
-      - certbot_conf_prod:/etc/letsencrypt
+      - certbot_data:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - app-network
@@ -257,13 +257,13 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus-prod
+    container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-      - prometheus_data_prod:/prometheus
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -274,7 +274,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana-prod
+    container_name: grafana
     ports:
       - "3001:3000"
     environment:
@@ -282,7 +282,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
-      - grafana_data_prod:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
       - ./config/grafana/provisioning:/etc/grafana/provisioning
     depends_on:
       - prometheus
@@ -294,13 +294,13 @@ services:
 
   loki:
     image: grafana/loki:2.9.0
-    container_name: loki-prod
+    container_name: loki
     user: "0"
     ports:
       - "3100:3100"
     volumes:
       - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - loki_data_prod:/tmp/loki
+      - loki_data:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - app-network
@@ -309,7 +309,7 @@ services:
 
   promtail:
     image: grafana/promtail:2.9.0
-    container_name: promtail-prod
+    container_name: promtail
     volumes:
       - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - ../logs:/var/log/app:ro
@@ -322,12 +322,12 @@ services:
 
   alertmanager:
     image: prom/alertmanager:latest
-    container_name: alertmanager-prod
+    container_name: alertmanager
     ports:
       - "9093:9093"
     volumes:
       - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data_prod:/alertmanager
+      - alertmanager_data:/alertmanager
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -338,7 +338,7 @@ services:
 
   node-exporter:
     image: prom/node-exporter:latest
-    container_name: node-exporter-prod
+    container_name: node-exporter
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -356,7 +356,7 @@ services:
   cadvisor:
     # Using zcube/cadvisor as a reliable Docker Hub mirror for gcr.io/cadvisor/cadvisor
     image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/google/cadvisor:0.54.0
-    container_name: cadvisor-prod
+    container_name: cadvisor
     ports:
       - "8080:8080"
     volumes:
@@ -374,16 +374,16 @@ services:
       - /dev/kmsg
 
 volumes:
-  postgres_data_prod:
-  redis_data_prod:
-  chroma_data_prod:
-  minio_data_prod:
-  prometheus_data_prod:
-  grafana_data_prod:
-  loki_data_prod:
-  alertmanager_data_prod:
-  certbot_data_prod:
-  certbot_conf_prod:
+  postgres_data:
+  redis_data:
+  chroma_data:
+  minio_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  alertmanager_data:
+  certbot_data:
+  certbot_conf:
 
 networks:
   app-network:
