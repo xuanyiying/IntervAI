@@ -25,10 +25,12 @@ server {
     server_name udefined.cc www.udefined.cc;
 
     # ============================================
-    # SSL Config - Let's Encrypt
-    ssl_certificate /etc/letsencrypt/live/udefined.cc/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/udefined.cc/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/udefined.cc/chain.pem;
+    # SSL/TLS Configuration (Requirement 9.1)
+    # ============================================
+    # Using self-signed certs for initial startup
+    ssl_certificate /etc/nginx/ssl/cert.pem;
+    ssl_certificate_key /etc/nginx/ssl/key.pem;
+    # ssl_trusted_certificate /etc/letsencrypt/live/udefined.cc/chain.pem;
 
     # SSL Protocol and Ciphers
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -52,7 +54,6 @@ server {
     # ============================================
     # Security Headers (Requirement 9.4)
     # ============================================
-    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:;" always;
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
@@ -93,9 +94,6 @@ server {
         # Error handling
         proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
         proxy_next_upstream_tries 2;
-
-        # Secure Cookie Settings (Requirement 9.4)
-        proxy_cookie_path / "/; secure; HttpOnly; SameSite=strict";
     }
 
     # ============================================

@@ -48,11 +48,16 @@ setup_ssl() {
             -subj "/C=CN/ST=State/L=City/O=Organization/CN=${domain}"
     fi
 
-    # 2. 启动 Nginx
+    # 2. 切换到初始配置 (Self-Signed)
+    log_step "应用初始 Nginx 配置..."
+    cp deployment/config/nginx/conf.d/default.conf deployment/config/nginx/conf.d/default.conf.prod.bak
+    cp deployment/config/nginx/conf.d/default.conf.init deployment/config/nginx/conf.d/default.conf
+
+    # 3. 启动 Nginx
     log_step "启动 Nginx..."
     docker compose -f $COMPOSE_FILE up -d nginx
 
-    # 3. 申请 Let's Encrypt 证书
+    # 4. 申请 Let's Encrypt 证书
     log_step "申请 Let's Encrypt 证书..."
 
     local staging_arg=""
@@ -74,13 +79,19 @@ setup_ssl() {
     if [ $? -eq 0 ]; then
         log_info "✓ 证书申请成功"
 
-        # 4. 更新 Nginx 配置并重载
+        # 5. 恢复生产配置 (Let's Encrypt)
+        log_step "恢复生产 Nginx 配置..."
+        mv deployment/config/nginx/conf.d/default.conf.prod.bak deployment/config/nginx/conf.d/default.conf
+
+        # 6. 更新 Nginx 配置并重载
         log_step "重载 Nginx..."
         docker compose -f $COMPOSE_FILE exec nginx nginx -s reload
 
         log_info "SSL 配置完成! 访问: https://${domain}"
     else
         log_error "证书申请失败，请检查日志"
+        # 恢复配置以便下次尝试
+        mv deployment/config/nginx/conf.d/default.conf.prod.bak deployment/config/nginx/conf.d/default.conf
         exit 1
     fi
 }
