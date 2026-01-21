@@ -175,7 +175,8 @@ services:
         NODE_ENV: production
     # container_name: frontend-prod # Removed to allow scaling with replicas
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     networks:
@@ -200,8 +201,10 @@ services:
     image: nginx:alpine
     container_name: nginx-prod
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"

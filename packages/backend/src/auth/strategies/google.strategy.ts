@@ -17,19 +17,24 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const callbackURL = configService.get<string>('GOOGLE_CALLBACK_URL');
 
     if (!clientID || !clientSecret || !callbackURL) {
-      throw new Error('Google OAuth configuration is missing');
+      const logger = new Logger(GoogleStrategy.name);
+      logger.warn(
+        'Google OAuth configuration is missing. Google Auth will be disabled.'
+      );
     }
 
     super({
-      clientID,
-      clientSecret,
-      callbackURL,
+      clientID: clientID || 'missing-google-client-id',
+      clientSecret: clientSecret || 'missing-google-client-secret',
+      callbackURL: callbackURL || 'http://localhost/missing-callback',
       scope: ['email', 'profile'],
     });
 
-    this.logger.log(
-      `Google Strategy initialized with callbackURL: ${callbackURL}`
-    );
+    if (clientID && clientSecret && callbackURL) {
+      this.logger.log(
+        `Google Strategy initialized with callbackURL: ${callbackURL}`
+      );
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
