@@ -213,21 +213,6 @@ services:
       - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
       - ./config/ssl:/etc/nginx/ssl:ro
       - ../logs/nginx:/var/log/nginx
-      - certbot_data:/var/www/certbot:ro
-      - certbot_conf:/etc/letsencrypt:ro
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  # Certbot
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    volumes:
-      - certbot_data:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks:
       - app-network
     restart: always
@@ -382,8 +367,6 @@ volumes:
   grafana_data:
   loki_data:
   alertmanager_data:
-  certbot_data:
-  certbot_conf:
 
 networks:
   app-network:
