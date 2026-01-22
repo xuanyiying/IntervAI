@@ -140,7 +140,6 @@ export class ResumeOptimizerService {
       };
 
       const maxRetries = 3;
-      let lastError: any;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
@@ -205,7 +204,6 @@ export class ResumeOptimizerService {
           this.logger.debug(`Resume optimization completed for user ${userId}`);
           return; // Success, exit the retry loop
         } catch (error) {
-          lastError = error;
           this.logger.error(
             `Resume optimization attempt ${attempt} failed for user ${userId}: ${
               error instanceof Error ? error.message : String(error)

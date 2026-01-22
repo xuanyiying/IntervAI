@@ -122,18 +122,20 @@ export class AgentSessionController {
         skip: offset,
       });
 
-      const summaries: AgentSessionSummary[] = sessions.map((session: import('@prisma/client').AgentSession) => ({
-        id: session.id,
-        agentType: session.agentType,
-        status: session.status,
-        startedAt: session.startedAt,
-        completedAt: session.completedAt || undefined,
-        duration: session.completedAt
-          ? session.completedAt.getTime() - session.startedAt.getTime()
-          : undefined,
-        tokenUsage: session.tokenUsage as any,
-        cost: session.cost,
-      }));
+      const summaries: AgentSessionSummary[] = sessions.map(
+        (session: import('@prisma/client').AgentSession) => ({
+          id: session.id,
+          agentType: session.agentType,
+          status: session.status,
+          startedAt: session.startedAt,
+          completedAt: session.completedAt || undefined,
+          duration: session.completedAt
+            ? session.completedAt.getTime() - session.startedAt.getTime()
+            : undefined,
+          tokenUsage: session.tokenUsage as any,
+          cost: session.cost,
+        })
+      );
 
       return {
         sessions: summaries,

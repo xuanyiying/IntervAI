@@ -123,7 +123,7 @@ export class StructuredOutputService {
     let zodSchema: z.ZodTypeAny;
 
     switch (schema.type) {
-      case 'object':
+      case 'object': {
         const shape: any = {};
         for (const [key, prop] of Object.entries(schema.properties || {})) {
           let propSchema = this.translateToZod(prop);
@@ -134,6 +134,7 @@ export class StructuredOutputService {
         }
         zodSchema = z.object(shape);
         break;
+      }
       case 'array':
         zodSchema = z.array(this.translateToZod(schema.items));
         break;

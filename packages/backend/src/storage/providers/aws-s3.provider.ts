@@ -43,8 +43,7 @@ export class AwsS3Service implements OssService {
         Bucket: this.bucket,
         Key: 'test-access', // Just checking access, not really checking bucket existence in the same way as MinIO
       });
-      // This will likely fail if file doesn't exist, but if it's 404 it means bucket exists and we have access
-      // A better way is HeadBucket but that requires specific permissions
+      await this.s3Client.send(headCommand);
     } catch (error) {
       // Ignore for now, assuming bucket exists and credentials are correct
     }

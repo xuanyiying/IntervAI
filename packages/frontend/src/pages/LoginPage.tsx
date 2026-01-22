@@ -14,7 +14,6 @@ import {
   LockOutlined,
   GithubOutlined,
   GoogleOutlined,
-  RocketOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';

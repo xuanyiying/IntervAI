@@ -1,13 +1,11 @@
 export async function initOpenTelemetry() {
   if (process.env.OTEL_ENABLE !== 'true') return;
   try {
-    const { OTLPTraceExporter } = await import(
-      '@opentelemetry/exporter-trace-otlp-http'
-    );
+    const { OTLPTraceExporter } =
+      await import('@opentelemetry/exporter-trace-otlp-http');
     const { NodeSDK } = await import('@opentelemetry/sdk-node');
-    const { getNodeAutoInstrumentations } = await import(
-      '@opentelemetry/auto-instrumentations-node'
-    );
+    const { getNodeAutoInstrumentations } =
+      await import('@opentelemetry/auto-instrumentations-node');
     const exporter = new OTLPTraceExporter({
       url: process.env.OTEL_OTLP_URL || 'http://localhost:4318/v1/traces',
       headers: {},

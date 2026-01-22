@@ -14,9 +14,6 @@ import { UsageTrackerService } from './usage-tracker.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 describe('UsageTrackerService - Property-Based Tests', () => {
-  let service: UsageTrackerService;
-  let prisma: PrismaService;
-
   const mockPrismaService = {
     usageRecord: {
       create: jest.fn(),
@@ -36,8 +33,8 @@ describe('UsageTrackerService - Property-Based Tests', () => {
       ],
     }).compile();
 
-    service = module.get<UsageTrackerService>(UsageTrackerService);
-    prisma = module.get<PrismaService>(PrismaService);
+    module.get<UsageTrackerService>(UsageTrackerService);
+    module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {
@@ -373,16 +370,6 @@ describe('UsageTrackerService - Property-Based Tests', () => {
             { minLength: 1, maxLength: 20 }
           ),
           (items) => {
-            const report = {
-              period: {
-                startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-01-31'),
-              },
-              groupBy: 'model' as const,
-              totalCost: items.reduce((sum, item) => sum + item.cost, 0),
-              items,
-            };
-
             // CSV should contain headers
             const csv = [
               'Key,Cost,Call Count,Input Tokens,Output Tokens,Average Latency (ms)',

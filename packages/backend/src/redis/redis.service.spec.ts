@@ -24,7 +24,6 @@ jest.mock('ioredis', () => {
 
 describe('RedisService', () => {
   let service: RedisService;
-  let configService: ConfigService;
   let redisClientMock: any;
 
   beforeEach(async () => {
@@ -48,7 +47,6 @@ describe('RedisService', () => {
     }).compile();
 
     service = module.get<RedisService>(RedisService);
-    configService = module.get<ConfigService>(ConfigService);
 
     // Initialize the service which creates the redis client
     await service.onModuleInit();

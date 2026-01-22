@@ -118,7 +118,7 @@ export class LCELWorkflowOrchestrator {
       const runnables: Record<string, any> = {};
       steps.forEach((step) => {
         runnables[step.id] = new RunnableLambda({
-          func: async (input: any) => this.executeStep(step, context, {}),
+          func: async (_input: any) => this.executeStep(step, context, {}),
         })
           .withConfig({ runName: step.id })
           .withRetry({ stopAfterAttempt: 3 });
@@ -299,14 +299,14 @@ export class LCELWorkflowOrchestrator {
     };
   }
 
-  private async executeToolUse(step: WorkflowStep, context: WorkflowContext) {
+  private async executeToolUse(step: WorkflowStep, _context: WorkflowContext) {
     // Tool execution logic...
     return { result: `Tool ${step.input.toolName} executed`, tokenUsage: 0 };
   }
 
   private async executeRAGRetrieval(
-    step: WorkflowStep,
-    context: WorkflowContext
+    _step: WorkflowStep,
+    _context: WorkflowContext
   ) {
     // RAG retrieval logic...
     return { documents: [], tokenUsage: 0 };
@@ -314,7 +314,7 @@ export class LCELWorkflowOrchestrator {
 
   private async executeCompression(
     step: WorkflowStep,
-    context: WorkflowContext
+    _context: WorkflowContext
   ) {
     // Compression logic...
     return { compressed: step.input.content, tokenUsage: 0 };

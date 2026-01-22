@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AIEngineService } from '../../ai-providers/ai-engine.service';
-import { PromptTemplateManager } from '../../ai-providers/config/prompt-template.manager';
 import { ScenarioType } from '../../ai-providers/interfaces/model.interface';
 import { RAGService, InterviewQuestion } from '../services/rag.service';
 import { UsageTrackerService } from '../../ai-providers/tracking/usage-tracker.service';

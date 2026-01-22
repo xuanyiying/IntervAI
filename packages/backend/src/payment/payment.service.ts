@@ -146,7 +146,7 @@ export class PaymentService {
       `Processing refund for user ${userId}, transaction ${transactionId}`
     );
 
-    return this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (_tx) => {
       const result = await provider.processRefund!(
         userId,
         transactionId,

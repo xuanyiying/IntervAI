@@ -10,7 +10,6 @@ import { ResumeOptimizerService } from '@/resume/services/resume-optimizer.servi
 import { AIRequest } from '@/ai-providers/interfaces';
 import { PromptScenario } from '@/ai-providers/interfaces/prompt-template.interface';
 import { ChatResponse } from './chat.gateway';
-import { MessageRole } from '@prisma/client';
 
 export enum ChatIntent {
   OPTIMIZE_RESUME = 'optimize_resume',

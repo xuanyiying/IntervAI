@@ -4,7 +4,6 @@ import { StripePaymentProvider } from './providers/stripe-payment.provider';
 import { PaddlePaymentProvider } from './providers/paddle-payment.provider';
 import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException } from '@nestjs/common';
-import { PaymentProvider } from './interfaces/payment-provider.interface';
 import { BillingStatus } from '../types';
 
 // Mock Provider Factory

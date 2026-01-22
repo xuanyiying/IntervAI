@@ -7,6 +7,9 @@ import {
 import { JobService } from './job.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AIEngine } from '../ai/ai.engine';
+import axios from 'axios';
+
+jest.mock('axios');
 
 describe('JobService', () => {
   let service: JobService;
@@ -222,8 +225,7 @@ describe('JobService', () => {
     });
 
     it('should throw BadRequestException if fetching fails', async () => {
-      const axios = require('axios');
-      jest.mock('axios');
+      (axios.get as jest.Mock).mockRejectedValue(new Error('Network error'));
 
       await expect(
         service.fetchJobFromUrl('https://example.com/job')

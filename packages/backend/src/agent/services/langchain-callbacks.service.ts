@@ -37,14 +37,14 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
     _llm: Serialized,
     _prompts: string[],
     runId: string,
-    parentRunId?: string,
+    _parentRunId?: string,
     _extraParams?: Record<string, any>,
     _tags?: string[],
     metadata?: Record<string, any>
   ): Promise<void> {
     this.runStartTimes.set(runId, Date.now());
     this.logger.debug(
-      `[LLM Start] RunID: ${runId}, ParentID: ${parentRunId || 'root'}, Model: ${metadata?.model_name || 'unknown'}`
+      `[LLM Start] RunID: ${runId}, ParentID: ${_parentRunId || 'root'}, Model: ${metadata?.model_name || 'unknown'}`
     );
   }
 
@@ -54,7 +54,7 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   async handleLLMEnd(
     output: LLMResult,
     runId: string,
-    parentRunId?: string,
+    _parentRunId?: string,
     _tags?: string[]
   ): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();
@@ -108,7 +108,7 @@ export class ProjectCallbackHandler extends BaseCallbackHandler {
   async handleLLMError(
     err: Error,
     runId: string,
-    parentRunId?: string,
+    _parentRunId?: string,
     _tags?: string[]
   ): Promise<void> {
     const startTime = this.runStartTimes.get(runId) || Date.now();

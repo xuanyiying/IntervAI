@@ -96,16 +96,6 @@ describe('ModelSelector', () => {
     resetToDefaults: jest.fn(),
   };
 
-  const mockOpenSourceModelRegistry = {
-    registerModel: jest.fn(),
-    getModel: jest.fn(),
-    getModelsByFamily: jest.fn(() => []),
-    getAvailableModels: jest.fn(() => []),
-    getAllModels: jest.fn(() => []),
-    updateModelStatus: jest.fn(),
-    updateModelMetrics: jest.fn(),
-  };
-
   const mockStrategyConfig = {
     quality: {
       qualityRanking: ['gpt-3.5-turbo', 'qwen-max', 'gpt-4'],

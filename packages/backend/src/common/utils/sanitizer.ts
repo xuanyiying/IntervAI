@@ -115,7 +115,7 @@ export class Sanitizer {
     // We keep alphanumeric, dots, hyphens, and underscores.
     // The \w in many environments only matches [a-zA-Z0-9_], so we use a more inclusive approach.
     // Allow any character that is not a dangerous control character or path separator.
-    sanitized = sanitized.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+    sanitized = sanitized.replace(/[<>:"/\\|?*\p{Cc}]/gu, '_');
 
     // Limit length
     if (sanitized.length > 255) {

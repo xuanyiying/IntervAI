@@ -13,9 +13,7 @@ import * as fc from 'fast-check';
 
 describe('ResumeOptimizerService Property Tests', () => {
   let service: ResumeOptimizerService;
-  let prismaService: jest.Mocked<PrismaService>;
   let aiEngineService: jest.Mocked<AIEngineService>;
-  let quotaService: jest.Mocked<QuotaService>;
 
   // Mock implementations
   const mockPrismaService = {
@@ -54,9 +52,7 @@ describe('ResumeOptimizerService Property Tests', () => {
     }).compile();
 
     service = module.get<ResumeOptimizerService>(ResumeOptimizerService);
-    prismaService = module.get(PrismaService);
     aiEngineService = module.get(AIEngineService);
-    quotaService = module.get(QuotaService);
 
     // Reset mocks
     jest.clearAllMocks();
@@ -274,6 +270,11 @@ describe('ResumeOptimizerService Property Tests', () => {
             // Mock AI engine to throw error
             aiEngineService.stream.mockImplementation(async function* () {
               throw new Error(errorMessage);
+              yield {
+                content: '',
+                model: 'test-model',
+                provider: 'test-provider',
+              };
             });
 
             // Collect all output chunks

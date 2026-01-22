@@ -4,7 +4,6 @@ import { EncryptionService } from './encryption.service';
 
 describe('EncryptionService', () => {
   let service: EncryptionService;
-  let configService: ConfigService;
 
   const mockEncryptionKey = 'test-encryption-key-32-chars-long-!!!';
 
@@ -25,7 +24,6 @@ describe('EncryptionService', () => {
     }).compile();
 
     service = module.get<EncryptionService>(EncryptionService);
-    configService = module.get<ConfigService>(ConfigService);
   });
 
   it('should be defined', () => {
@@ -48,9 +46,9 @@ describe('EncryptionService', () => {
     it('should handle empty or null input', () => {
       expect(service.encrypt('')).toBe('');
       expect(service.decrypt('')).toBe('');
-      // @ts-ignore
+      // @ts-expect-error null input test
       expect(service.encrypt(null)).toBe(null);
-      // @ts-ignore
+      // @ts-expect-error null input test
       expect(service.decrypt(null)).toBe(null);
     });
 
