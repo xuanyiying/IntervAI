@@ -61,6 +61,32 @@ export class UserController {
     return 'http://localhost:5173';
   }
 
+  private getOAuthProviderStatus() {
+    const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
+    const googleClientSecret = this.configService.get<string>(
+      'GOOGLE_CLIENT_SECRET'
+    );
+    const googleCallbackUrl = this.configService.get<string>(
+      'GOOGLE_CALLBACK_URL'
+    );
+    const githubClientId = this.configService.get<string>('GITHUB_CLIENT_ID');
+    const githubClientSecret = this.configService.get<string>(
+      'GITHUB_CLIENT_SECRET'
+    );
+    const githubCallbackUrl = this.configService.get<string>(
+      'GITHUB_CALLBACK_URL'
+    );
+
+    return {
+      google: {
+        enabled: !!(googleClientId && googleClientSecret && googleCallbackUrl),
+      },
+      github: {
+        enabled: !!(githubClientId && githubClientSecret && githubCallbackUrl),
+      },
+    };
+  }
+
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({
@@ -237,6 +263,12 @@ export class UserController {
   @ApiOperation({ summary: 'Google OAuth login' })
   async googleAuth(@Req() _req: any) {
     // Guard redirects to Google
+  }
+
+  @Get('oauth/providers')
+  @ApiOperation({ summary: 'OAuth provider status' })
+  async oauthProviders() {
+    return this.getOAuthProviderStatus();
   }
 
   @Get('google/callback')
