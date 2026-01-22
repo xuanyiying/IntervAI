@@ -2,7 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { message, Modal, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useConversationStore, useResumeStore, useAuthStore } from '../../stores';
+import {
+  useConversationStore,
+  useResumeStore,
+  useAuthStore,
+} from '../../stores';
 import { useChatSocket } from '../../hooks/useChatSocket';
 import { AttachmentStatus, MessageRole } from '../../types';
 
@@ -31,7 +35,7 @@ const ChatPage: React.FC = () => {
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  
+
   // Guest State
   const [guestCount, setGuestCount] = useState(0);
   const [guestMessages, setGuestMessages] = useState<any[]>([]);
@@ -239,7 +243,7 @@ const ChatPage: React.FC = () => {
       content: nextValue,
       createdAt: new Date(),
     };
-    setGuestMessages(prev => [...prev, userMsg]);
+    setGuestMessages((prev) => [...prev, userMsg]);
     setValue('');
     setLoading(true);
 
@@ -248,10 +252,11 @@ const ChatPage: React.FC = () => {
       const aiMsg = {
         id: (Date.now() + 1).toString(),
         role: MessageRole.ASSISTANT,
-        content: "我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！",
+        content:
+          '我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！',
         createdAt: new Date(),
       };
-      setGuestMessages(prev => [...prev, aiMsg]);
+      setGuestMessages((prev) => [...prev, aiMsg]);
       setLoading(false);
     }, 1500);
   };
@@ -373,13 +378,17 @@ const ChatPage: React.FC = () => {
             {t('chat.guest_mode', '访客模式')}
           </span>
           <span className="text-sm font-medium text-blue-600 dark:text-blue-300">
-            {t('chat.remaining_uses', '剩余次数')}: {Math.max(0, 3 - guestCount)}/3
+            {t('chat.remaining_uses', '剩余次数')}:{' '}
+            {Math.max(0, 3 - guestCount)}/3
           </span>
         </div>
       )}
 
       <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
-        {items.length <= 1 && !loading && !isLoadingMessages && guestMessages.length === 0 ? (
+        {items.length <= 1 &&
+        !loading &&
+        !isLoadingMessages &&
+        guestMessages.length === 0 ? (
           <ChatWelcome
             value={value}
             onChange={setValue}
@@ -458,7 +467,12 @@ const ChatPage: React.FC = () => {
           </Button>,
         ]}
       >
-        <p>{t('chat.guest_limit_reached', '您已达到访客使用限制（3次）。请登录以继续使用完整功能！')}</p>
+        <p>
+          {t(
+            'chat.guest_limit_reached',
+            '您已达到访客使用限制（3次）。请登录以继续使用完整功能！'
+          )}
+        </p>
       </Modal>
     </div>
   );

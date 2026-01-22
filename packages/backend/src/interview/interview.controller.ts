@@ -165,17 +165,7 @@ export class InterviewController {
     @Param('sessionId') sessionId: string
   ): Promise<void> {
     const userId = req.user.id;
-    // We reuse submitAnswer logic or force completion in service
-    // For now, we can rely on submitAnswer returning isCompleted=true
-    // But if user quits early, we might need a specific method.
-    // The current sessionService doesn't expose forceComplete.
-    // Let's assume frontend calls submitAnswer until done, or we add forceComplete later.
-    // For now, let's keep the old behavior via InterviewService or add a method.
-    // Actually, I'll map it to `submitAnswer` with empty content if we want to skip?
-    // No, "End Session" usually means "I'm done, evaluate what I have".
-    // I should update `InterviewSessionService` to have `forceComplete`.
-    // I'll skip implementation for now and rely on natural completion or add it if needed.
-    // I will return 200 OK.
+    await this.interviewService.endSession(userId, { sessionId });
   }
 
   /**

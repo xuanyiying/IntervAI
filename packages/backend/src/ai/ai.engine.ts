@@ -842,7 +842,7 @@ ${description}`,
 
       // Construct expected template name
       // e.g. general_qa_concise_zh
-      let templateName = `${scenario}_${variant}_${langSuffix}`;
+      const templateName = `${scenario}_${variant}_${langSuffix}`;
 
       // Handle legacy/default templates that don't follow the pattern
       if (variant === 'default') {

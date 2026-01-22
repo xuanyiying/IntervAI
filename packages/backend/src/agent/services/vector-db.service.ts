@@ -56,7 +56,9 @@ export class VectorDbService implements OnModuleInit {
       this.client = new ChromaClient({ path: chromaUrl });
 
       // Initialize collection with custom embedding function
-      const embeddingFunction = new NestEmbeddingFunction(this.embeddingService);
+      const embeddingFunction = new NestEmbeddingFunction(
+        this.embeddingService
+      );
       this.collection = await this.client.getOrCreateCollection({
         name: this.collectionName,
         embeddingFunction,

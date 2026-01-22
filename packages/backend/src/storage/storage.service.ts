@@ -37,7 +37,9 @@ export class StorageService {
       );
 
       // Check if it's a UTF-8 string mis-interpreted as Latin1
-      const isLatin1 = !/[^\x00-\xff]/.test(originalName);
+      const isLatin1 = [...originalName].every(
+        (char) => char.charCodeAt(0) <= 0xff
+      );
       if (isLatin1) {
         const converted = Buffer.from(originalName, 'latin1').toString('utf8');
         const hasCJK = /[\u4e00-\u9fa5]/.test(converted);

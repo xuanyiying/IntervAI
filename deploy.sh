@@ -162,27 +162,50 @@ main() {
 
     # 8. 健康检查
     log_step "执行健康检查..."
-    local health_url="http://localhost:3000/health"
+    
+    local check_urls=()
+    
     if [ "$ENV" == "prod" ]; then
-        health_url="http://localhost/health"
+        # In prod, check via Load Balancer (handles both frontend and backend routing)
+        local lb_url="http://localhost/health"
         if [ "$SETUP_SSL" == true ]; then
-             health_url="https://${DOMAIN:-localhost}/health"
+             lb_url="https://${DOMAIN:-localhost}/health"
         fi
+        check_urls+=("$lb_url")
+    else
+        # In Dev, check both services directly
+        check_urls+=("http://localhost:3000/health") # Backend
+        
+        # Frontend defaults to 80 if not set
+        local fe_port="${FRONTEND_PORT:-80}"
+        check_urls+=("http://localhost:${fe_port}/health") # Frontend
     fi
 
-    # 简单的重试逻辑
-    for i in {1..12}; do
-        if curl -s -f "$health_url" > /dev/null; then
-            log_info "✓ 服务健康检查通过"
-            log_info "部署成功! 访问地址: $health_url"
-            exit 0
+    for url in "${check_urls[@]}"; do
+        log_info "Checking: $url"
+        # Retry loop
+        local success=false
+        for i in {1..12}; do
+            # Use -k for self-signed certs (if any) and -L to follow redirects
+            if curl -s -f -k -L "$url" > /dev/null; then
+                log_info "✓ Health check passed: $url"
+                success=true
+                break
+            fi
+            echo -n "."
+            sleep 5
+        done
+        echo ""
+        
+        if [ "$success" = false ]; then
+            log_error "Health check failed for: $url"
+            log_warn "服务启动可能超时，请手动检查: docker compose -f $compose_file logs"
+            exit 1
         fi
-        echo -n "."
-        sleep 5
     done
-    echo "" # 换行
-
-    log_warn "服务启动可能超时，请手动检查: docker compose -f $compose_file logs"
+    
+    log_info "部署成功! 访问地址: ${check_urls[0]}"
+    exit 0
 }
 
 main

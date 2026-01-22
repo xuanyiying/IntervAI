@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import PdfGenerationService, { PDFOptions } from './pdf-generation.service';
-import { ParsedResumeData, ParsedJobData } from '../../types';
+import { ParsedResumeData } from '../../types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StorageService } from '../../storage/storage.service';
 import { QuotaService } from '../../quota/quota.service';

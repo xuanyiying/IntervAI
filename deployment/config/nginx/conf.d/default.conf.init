@@ -22,7 +22,7 @@ server {
     listen 443 ssl;
     http2 on;
     listen [::]:443 ssl;
-    server_name udefined.cc www.udefined.cc;
+    server_name __DOMAIN__ www.__DOMAIN__;
 
     # ============================================
     # SSL/TLS Configuration (Requirement 9.1)
@@ -30,7 +30,7 @@ server {
     # Using self-signed certs for initial startup
     ssl_certificate /etc/nginx/ssl/cert.pem;
     ssl_certificate_key /etc/nginx/ssl/key.pem;
-    # ssl_trusted_certificate /etc/letsencrypt/live/udefined.cc/chain.pem;
+    # ssl_trusted_certificate /etc/letsencrypt/live/__DOMAIN__/chain.pem;
 
     # SSL Protocol and Ciphers
     ssl_protocols TLSv1.2 TLSv1.3;
@@ -102,7 +102,7 @@ server {
     location /api/v1/resumes/upload {
         # Rate limiting for uploads
         limit_req zone=upload burst=5 nodelay;
-        
+
         # Increased timeout for file uploads
         client_max_body_size 11M;
         proxy_read_timeout 120s;

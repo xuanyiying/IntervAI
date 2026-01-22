@@ -47,11 +47,8 @@ export class EncryptionUtils {
    */
   public static decrypt(encryptedText: string, key: string): string {
     let textToDecrypt = encryptedText;
-    let hasVersionPrefix = false;
-
     if (encryptedText.startsWith(this.VERSION_PREFIX)) {
       textToDecrypt = encryptedText.substring(this.VERSION_PREFIX.length);
-      hasVersionPrefix = true;
     }
 
     const parts = textToDecrypt.split(':');

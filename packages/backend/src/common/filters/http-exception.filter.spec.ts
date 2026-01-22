@@ -1,4 +1,3 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { HttpExceptionFilter } from './http-exception.filter';
 import { ArgumentsHost, BadRequestException, HttpStatus } from '@nestjs/common';
 import { AppException } from '../exceptions/app.exception';

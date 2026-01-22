@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, Navigate, RouteObject } from 'react-router-dom';
+import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
@@ -237,5 +237,4 @@ const routes: RouteObject[] = [
   },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const router: any = createBrowserRouter(routes);
+export const router = createBrowserRouter(routes);

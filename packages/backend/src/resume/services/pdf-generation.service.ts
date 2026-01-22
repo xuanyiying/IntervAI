@@ -11,7 +11,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { StorageService } from '@/storage/storage.service';
 import { QuotaService } from '@/quota/quota.service';
 import { GeneratedPDF, Template } from '@prisma/client';
-import { ParsedResumeData, ParsedJobData } from '@/types';
+import { ParsedResumeData } from '@/types';
 import * as puppeteer from 'puppeteer';
 import * as Handlebars from 'handlebars';
 import {

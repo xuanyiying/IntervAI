@@ -136,7 +136,9 @@ export class ResumeService {
     try {
       // Check if it's a UTF-8 string mis-interpreted as Latin1
       // If it's Latin1, all characters are <= 255.
-      const isLatin1 = !/[^\x00-\xff]/.test(originalName);
+      const isLatin1 = [...originalName].every(
+        (char) => char.charCodeAt(0) <= 0xff
+      );
 
       if (isLatin1) {
         // Attempt conversion from Latin1 (binary) to UTF-8

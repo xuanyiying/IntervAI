@@ -183,11 +183,12 @@ export abstract class BaseOpenAIProvider implements AIProvider {
 
     const metadata = (request.metadata as Record<string, any>) || {};
 
-    // Filter out internal metadata that shouldn't be sent to the AI provider
-    const { templateName, templateVariables, ...providerMetadata } = metadata;
+    const providerMetadata = { ...metadata };
+    delete providerMetadata.templateName;
+    delete providerMetadata.templateVariables;
 
     // Handle response_format if present in metadata
-    let response_format = providerMetadata.response_format;
+    const response_format = providerMetadata.response_format;
 
     // If response_format is 'json_object', we need to make sure the provider supports it
     // Most modern OpenAI-compatible APIs support it, but some might require specific instructions in the prompt.

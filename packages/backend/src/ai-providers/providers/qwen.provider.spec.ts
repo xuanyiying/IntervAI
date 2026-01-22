@@ -8,7 +8,6 @@
 import { QwenProvider } from './qwen.provider';
 import { QwenConfig } from '../interfaces/model-config.interface';
 import { AIRequest } from '../interfaces';
-import { AIError } from '../utils/ai-error';
 import OpenAI from 'openai';
 
 jest.mock('openai');
