@@ -28,6 +28,15 @@ export interface AuthResponse {
   accessToken?: string;
 }
 
+export interface OAuthProvidersStatus {
+  google: {
+    enabled: boolean;
+  };
+  github: {
+    enabled: boolean;
+  };
+}
+
 /**
  * Service for handling authentication-related operations
  */
@@ -128,5 +137,12 @@ export const authService = {
       // Clean up the authorization header
       delete axios.defaults.headers.common['Authorization'];
     }
+  },
+
+  getOAuthProviders: async (): Promise<OAuthProvidersStatus> => {
+    const response = await axios.get<OAuthProvidersStatus>(
+      '/auth/oauth/providers'
+    );
+    return response.data;
   },
 };
