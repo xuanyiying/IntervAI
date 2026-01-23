@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Edit3 } from 'lucide-react';
 import { ResumeSection } from '../types';
@@ -15,6 +16,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   activeSection,
   onUpdateSection,
 }) => {
+  const { t } = useTranslation();
   const sectionTitleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
         <div className="h-[600px] flex flex-col items-center justify-center text-white/20 space-y-4">
           <Edit3 size={48} strokeWidth={1} />
           <p className="text-sm font-medium">
-            Select a section to start editing
+            {t('resume_builder.select_section_hint', 'Select a section to start editing')}
           </p>
         </div>
       </motion.div>
@@ -53,7 +55,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
       <div className="space-y-12">
         <div className="space-y-4">
           <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-            Section Title
+            {t('resume_builder.section_title', 'Section Title')}
           </label>
           <input
             ref={sectionTitleRef}
@@ -62,7 +64,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               onUpdateSection(activeSection.id, { title: e.target.value })
             }
             className="text-6xl font-black tracking-tighter bg-transparent border-none focus:outline-none w-full font-display placeholder-white/5 selection:bg-white/20"
-            placeholder="Section Title"
+            placeholder={t('resume_builder.section_title', 'Section Title')}
             aria-label="Section Title"
           />
         </div>
@@ -70,10 +72,10 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-              Content Editor
+              {t('resume_builder.content_editor', 'Content Editor')}
             </label>
             <span className="text-[10px] font-bold text-white/10 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">
-              Markdown v4.0
+              {t('resume_builder.markdown_version', 'Markdown v4.0')}
             </span>
           </div>
           <textarea
@@ -82,7 +84,7 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               onUpdateSection(activeSection.id, { content: e.target.value })
             }
             className="w-full h-[600px] bg-white/[0.03] border border-white/5 rounded-[2rem] p-10 font-mono text-sm leading-[1.8] focus:border-white/10 focus:bg-white/[0.04] focus:outline-none transition-all resize-none shadow-inner selection:bg-white/20"
-            placeholder="# Start building your story..."
+            placeholder={t('resume_builder.content_placeholder', '# Start building your story...')}
             aria-label="Section Content in Markdown"
           />
         </div>

@@ -8,6 +8,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   DollarOutlined,
+  ThunderboltOutlined,
   GlobalOutlined,
   SunOutlined,
   MoonOutlined,
@@ -87,10 +88,23 @@ const AppLayout: React.FC = () => {
       onClick: () => navigate('/settings'),
     },
     {
-      key: 'pricing',
-      label: t('menu.pricing'),
-      icon: <DollarOutlined />,
-      onClick: () => navigate('/pricing'),
+      key: 'account',
+      label: t('menu.account', '账户'),
+      icon: <UserOutlined />,
+      children: [
+        {
+          key: 'account_subscription',
+          label: t('menu.account_subscription', '订阅记录'),
+          icon: <DollarOutlined />,
+          onClick: () => navigate('/account/subscription'),
+        },
+        {
+          key: 'account_usage',
+          label: t('menu.account_usage', '使用量'),
+          icon: <ThunderboltOutlined />,
+          onClick: () => navigate('/account/usage'),
+        },
+      ],
     },
 
     { type: 'divider' },

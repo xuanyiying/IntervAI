@@ -29,7 +29,11 @@ export class StripePaymentProvider implements PaymentProvider {
     }
   }
 
-  async createCheckoutSession(userId: string, priceId: string) {
+  async createCheckoutSession(
+    userId: string,
+    priceId: string,
+    options?: { tier?: SubscriptionTier }
+  ) {
     if (!this.stripe) {
       this.logger.error('Stripe is not configured');
       throw new BadRequestException('Stripe is not configured');
@@ -68,6 +72,8 @@ export class StripePaymentProvider implements PaymentProvider {
         client_reference_id: userId,
         metadata: {
           userId,
+          tier: options?.tier ?? null,
+          priceId,
         },
         allow_promotion_codes: true,
       });
@@ -129,8 +135,24 @@ export class StripePaymentProvider implements PaymentProvider {
     }
 
     try {
-      await this.stripe.subscriptions.update(user.stripeSubscriptionId, {
-        cancel_at_period_end: true,
+      const updated = await this.stripe.subscriptions.update(
+        user.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true,
+        }
+      );
+
+      await this.prisma.subscriptionEvent.create({
+        data: {
+          userId,
+          provider: 'stripe',
+          externalSubscriptionId: user.stripeSubscriptionId,
+          tier: user.subscriptionTier,
+          status: this.mapSubscriptionStatus(updated.status),
+          action: 'cancel',
+          effectiveAt: new Date(),
+          expiresAt: new Date(updated.current_period_end * 1000),
+        },
       });
       return {
         message:
@@ -270,13 +292,67 @@ export class StripePaymentProvider implements PaymentProvider {
 
     this.logger.log(`Checkout completed for user ${userId}`);
 
+    const userBefore = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { subscriptionTier: true, subscriptionExpiresAt: true },
+    });
+
+    let tierFromMetadata: SubscriptionTier | undefined;
+    const rawTier = (session.metadata?.tier || '').toString();
+    if (rawTier === SubscriptionTier.FREE) tierFromMetadata = SubscriptionTier.FREE;
+    if (rawTier === SubscriptionTier.PRO) tierFromMetadata = SubscriptionTier.PRO;
+    if (rawTier === SubscriptionTier.ENTERPRISE)
+      tierFromMetadata = SubscriptionTier.ENTERPRISE;
+
+    const tier = tierFromMetadata || SubscriptionTier.PRO;
+
+    let expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    let status = SubscriptionStatus.ACTIVE;
+
+    try {
+      const subscription = await this.stripe!.subscriptions.retrieve(
+        subscriptionId
+      );
+      expiresAt = new Date(subscription.current_period_end * 1000);
+      status = this.mapSubscriptionStatus(subscription.status);
+    } catch (error) {
+      this.logger.error(`Failed to retrieve Stripe subscription ${subscriptionId}: ${error}`);
+    }
+
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         stripeCustomerId: customerId,
         stripeSubscriptionId: subscriptionId,
-        subscriptionTier: SubscriptionTier.PRO,
-        subscriptionExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        subscriptionProvider: 'stripe',
+        subscriptionTier: tier,
+        subscriptionExpiresAt: expiresAt,
+      },
+    });
+
+    const tierRank = (t: SubscriptionTier) =>
+      t === SubscriptionTier.FREE ? 0 : t === SubscriptionTier.PRO ? 1 : 2;
+    const beforeTier = userBefore?.subscriptionTier || SubscriptionTier.FREE;
+    const action =
+      tierRank(beforeTier) === tierRank(tier)
+        ? 'renew'
+        : tierRank(beforeTier) < tierRank(tier)
+          ? 'upgrade'
+          : 'downgrade';
+
+    await this.prisma.subscriptionEvent.create({
+      data: {
+        userId,
+        provider: 'stripe',
+        externalSubscriptionId: subscriptionId,
+        tier,
+        status,
+        action,
+        effectiveAt: new Date(),
+        expiresAt,
+        metadata: {
+          priceId: session.metadata?.priceId || null,
+        },
       },
     });
   }
@@ -297,6 +373,20 @@ export class StripePaymentProvider implements PaymentProvider {
       data: {
         subscriptionExpiresAt: expiresAt,
         stripeSubscriptionId: subscription.id,
+        subscriptionProvider: 'stripe',
+      },
+    });
+
+    await this.prisma.subscriptionEvent.create({
+      data: {
+        userId: user.id,
+        provider: 'stripe',
+        externalSubscriptionId: subscription.id,
+        tier: user.subscriptionTier,
+        status,
+        action: 'renew',
+        effectiveAt: new Date(),
+        expiresAt,
       },
     });
 
@@ -319,6 +409,19 @@ export class StripePaymentProvider implements PaymentProvider {
         subscriptionTier: SubscriptionTier.FREE,
         subscriptionExpiresAt: null,
         stripeSubscriptionId: null,
+        subscriptionProvider: null,
+      },
+    });
+
+    await this.prisma.subscriptionEvent.create({
+      data: {
+        userId: user.id,
+        provider: 'stripe',
+        externalSubscriptionId: subscription.id,
+        tier: SubscriptionTier.FREE,
+        status: SubscriptionStatus.CANCELED,
+        action: 'cancel',
+        effectiveAt: new Date(),
       },
     });
 

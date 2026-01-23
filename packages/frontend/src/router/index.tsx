@@ -2,7 +2,6 @@ import React from 'react';
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
-import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import ChatPage from '../pages/ChatPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -22,6 +21,8 @@ import OAuthCallbackPage from '../pages/OAuthCallbackPage';
 import PaymentSuccessPage from '../pages/PaymentSuccessPage';
 import PaymentCancelPage from '../pages/PaymentCancelPage';
 import SubscriptionManagementPage from '../pages/SubscriptionManagementPage';
+import AccountSubscriptionPage from '../pages/AccountSubscriptionPage';
+import AccountUsagePage from '../pages/AccountUsagePage';
 import InterviewPage from '../pages/InterviewPage';
 import PitchPerfectPage from '../pages/PitchPerfectPage';
 import StrategistPage from '../pages/StrategistPage';
@@ -30,6 +31,7 @@ import AgentMetricsPage from '../pages/AgentMetricsPage';
 import KnowledgeBasePage from '../pages/KnowledgeBasePage';
 import ResumeBuilderPage from '../pages/ResumeBuilderPage';
 import MyResumesPage from '../pages/MyResumesPage';
+import LoginPage from '@/pages/LoginPage';
 
 const routes: RouteObject[] = [
   {
@@ -137,6 +139,22 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute>
             <SubscriptionManagementPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'account/subscription',
+        element: (
+          <ProtectedRoute>
+            <AccountSubscriptionPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'account/usage',
+        element: (
+          <ProtectedRoute>
+            <AccountUsagePage />
           </ProtectedRoute>
         ),
       },

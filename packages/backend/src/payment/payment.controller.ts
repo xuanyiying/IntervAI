@@ -38,7 +38,8 @@ export class PaymentController {
     return this.paymentService.createCheckoutSession(
       req.user.id,
       createCheckoutSessionDto.priceId,
-      createCheckoutSessionDto.provider
+      createCheckoutSessionDto.provider,
+      { tier: createCheckoutSessionDto.tier }
     );
   }
 

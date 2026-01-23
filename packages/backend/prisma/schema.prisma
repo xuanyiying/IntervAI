@@ -47,9 +47,29 @@ model User {
   resumes               Resume[]
   sessions              Session[]
   storages              Storage[]
+  subscriptionEvents    SubscriptionEvent[]
 
   @@index([email])
   @@map("users")
+}
+
+model SubscriptionEvent {
+  id                     String           @id @default(uuid())
+  userId                 String
+  provider               String
+  externalSubscriptionId String?
+  tier                   SubscriptionTier
+  status                 String
+  action                 String
+  effectiveAt            DateTime
+  expiresAt              DateTime?
+  metadata               Json?
+  createdAt              DateTime         @default(now())
+  user                   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("subscription_events")
 }
 
 model Session {

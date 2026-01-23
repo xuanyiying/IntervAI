@@ -59,7 +59,6 @@
     "ali-oss": "^6.23.0",
     "axios": "^1.5.0",
     "bcryptjs": "^2.4.3",
-    "better-auth": "^1.4.5",
     "bull": "^4.11.0",
     "cheerio": "^1.0.0-rc.12",
     "chromadb": "^3.1.7",

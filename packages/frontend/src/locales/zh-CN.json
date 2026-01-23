@@ -115,7 +115,9 @@
     "expand": "展开",
     "profile": "个人中心",
     "settings": "设置",
-    "pricing": "价格方案",
+    "account": "账号",
+    "account_subscription": "订阅记录",
+    "account_usage": "使用量",
     "logout": "退出登录",
     "admin": "管理",
     "agents": "AI 助手",
@@ -135,6 +137,94 @@
     "dark_mode": "深色模式",
     "light_mode": "浅色模式",
     "resume_optimization": "简历优化"
+  },
+  "account": {
+    "subscription": {
+      "title": "订阅记录",
+      "subtitle": "查看当前计划、续费日期与历史订阅变更",
+      "load_failed": "订阅信息加载失败",
+      "current_plan": "当前计划",
+      "plan": "计划",
+      "state": "状态",
+      "renew_date": "续费日期",
+      "active": "已激活",
+      "inactive": "未激活",
+      "no_active": "暂无有效订阅",
+      "records": "订阅变更记录",
+      "records_empty": "暂无记录",
+      "billing_history": "账单历史",
+      "billing_empty": "暂无账单",
+      "columns": {
+        "effective_at": "生效时间",
+        "action": "操作",
+        "plan": "计划",
+        "status": "状态",
+        "expires_at": "到期时间"
+      },
+      "billing": {
+        "columns": {
+          "date": "日期",
+          "amount": "金额",
+          "status": "状态",
+          "invoice": "发票"
+        },
+        "download_invoice": "下载"
+      },
+      "billing_status": {
+        "paid": "已支付",
+        "failed": "失败"
+      },
+      "action": {
+        "create": "开通",
+        "renew": "续费",
+        "upgrade": "升级",
+        "downgrade": "降级",
+        "cancel": "取消"
+      },
+      "tier": {
+        "FREE": "免费",
+        "PRO": "专业版",
+        "ENTERPRISE": "企业版"
+      },
+      "status": {
+        "ACTIVE": "激活",
+        "PAST_DUE": "逾期",
+        "CANCELED": "已取消",
+        "INCOMPLETE": "未完成",
+        "INCOMPLETE_EXPIRED": "已过期",
+        "TRIALING": "试用中",
+        "UNPAID": "未支付"
+      }
+    },
+    "usage": {
+      "title": "使用量",
+      "subtitle": "查看当前计费周期内的 AI 使用情况与配额状态",
+      "load_failed": "使用量加载失败",
+      "period": "计费周期",
+      "ai_usage": "AI 使用情况",
+      "quota": "配额",
+      "trend": "趋势",
+      "trend_hint": "近 30 天调用次数趋势",
+      "unlimited": "无限制",
+      "reset_at": "重置时间",
+      "metrics": {
+        "total_calls": "调用次数",
+        "successful_calls": "成功",
+        "failed_calls": "失败",
+        "avg_latency": "平均延迟(ms)",
+        "input_tokens": "输入 Token",
+        "output_tokens": "输出 Token",
+        "total_cost": "成本(USD)"
+      },
+      "quota": {
+        "optimizations": "简历优化",
+        "pdf": "PDF 导出"
+      },
+      "quota_items": {
+        "optimizations": "简历优化",
+        "pdf": "PDF 导出"
+      }
+    }
   },
   "invite_codes": {
     "title": "邀请码管理",
@@ -610,5 +700,24 @@
     "chunk_info": "分块 #{{index}}",
     "clear_all": "清空知识库",
     "clear_confirm": "确定清空整个知识库？此操作不可恢复。"
+  },
+  "resume_builder": {
+    "build": "构建",
+    "preview": "预览",
+    "json": "JSON",
+    "export_pdf": "导出 PDF",
+    "reset": "重置默认",
+    "themes": {
+      "modern": "现代深色",
+      "minimal": "极简浅色",
+      "emerald": "翡翠专业",
+      "royal": "皇家衬线"
+    },
+    "resume_sections": "简历模块",
+    "select_section_hint": "选择一个模块开始编辑",
+    "section_title": "模块标题",
+    "content_editor": "内容编辑器",
+    "content_placeholder": "# 开始构建您的故事...",
+    "markdown_version": "Markdown v4.0"
   }
 }

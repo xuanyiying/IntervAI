@@ -21,7 +21,10 @@ export interface BillingRecord {
 export interface PaymentProvider {
   createCheckoutSession(
     userId: string,
-    priceId: string
+    priceId: string,
+    options?: {
+      tier?: SubscriptionTier;
+    }
   ): Promise<{ url?: string; transactionId?: string }>;
   handleWebhook(signature: string, payload: Buffer | any): Promise<void>;
   getUserSubscription(userId: string): Promise<SubscriptionDetails>;

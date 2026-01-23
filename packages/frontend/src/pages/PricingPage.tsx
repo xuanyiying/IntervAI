@@ -23,6 +23,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { paymentService } from '../services/payment-service';
 import { loadPaddle } from '../utils/paddle-loader';
+import { SubscriptionTier } from '../types';
+import SubscriptionManagementPage from './SubscriptionManagementPage';
 import './pricing.css';
 
 const { Title, Text } = Typography;
@@ -33,17 +35,28 @@ const PricingPage: React.FC = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedPriceId, setSelectedPriceId] = useState('');
+  const [selectedTier, setSelectedTier] = useState<SubscriptionTier | undefined>(
+    undefined
+  );
   const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'paddle'>(
     'stripe'
   );
   const { user } = useAuthStore();
 
-  const handleUpgrade = (priceId: string) => {
+  const isSubscribed =
+    user?.subscriptionTier && user.subscriptionTier !== SubscriptionTier.FREE;
+
+  if (isSubscribed) {
+    return <SubscriptionManagementPage />;
+  }
+
+  const handleUpgrade = (priceId: string, tier: SubscriptionTier) => {
     if (!user) {
       message.warning(t('pricing.login_required'));
       return;
     }
     setSelectedPriceId(priceId);
+    setSelectedTier(tier);
     setIsModalVisible(true);
   };
 
@@ -53,7 +66,8 @@ const PricingPage: React.FC = () => {
       if (paymentProvider === 'stripe') {
         const { url } = await paymentService.createCheckoutSession(
           selectedPriceId,
-          'stripe'
+          'stripe',
+          selectedTier
         );
         if (url) {
           window.location.href = url;
@@ -62,7 +76,8 @@ const PricingPage: React.FC = () => {
         // Paddle
         const { transactionId } = await paymentService.createCheckoutSession(
           selectedPriceId,
-          'paddle'
+          'paddle',
+          selectedTier
         );
         if (transactionId) {
           const paddle = await loadPaddle();
@@ -140,7 +155,7 @@ const PricingPage: React.FC = () => {
       ],
       buttonText: t('pricing.upgrade_pro'),
       isCurrent: user?.subscriptionTier === 'PRO',
-      action: () => handleUpgrade(getPriceId('Pro')),
+      action: () => handleUpgrade(getPriceId('Pro'), SubscriptionTier.PRO),
       popular: true,
     },
     {
@@ -157,7 +172,8 @@ const PricingPage: React.FC = () => {
       ],
       buttonText: t('pricing.contact_sales'),
       isCurrent: user?.subscriptionTier === 'ENTERPRISE',
-      action: () => handleUpgrade(getPriceId('Enterprise')),
+      action: () =>
+        handleUpgrade(getPriceId('Enterprise'), SubscriptionTier.ENTERPRISE),
     },
   ];
 

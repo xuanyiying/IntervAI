@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sun, Moon, RotateCcw, FileJson, Download } from 'lucide-react';
 import { ResumeTheme } from '../types';
 import { THEMES } from '../constants';
@@ -31,6 +32,8 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
   onExportJSON,
   onExportPDF,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <nav
       className="sticky top-0 z-50 px-8 py-6 border-b border-white/5 bg-black/60 backdrop-blur-2xl"
@@ -54,7 +57,7 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
               onClick={() => setIsEditView(true)}
               className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isEditView ? 'bg-white text-black shadow-lg' : 'hover:bg-white/5 text-white/40'}`}
             >
-              Build
+              {t('resume_builder.build', 'Build')}
             </button>
             <button
               role="tab"
@@ -62,7 +65,7 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
               onClick={() => setIsEditView(false)}
               className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${!isEditView ? 'bg-white text-black shadow-lg' : 'hover:bg-white/5 text-white/40'}`}
             >
-              Preview
+              {t('resume_builder.preview', 'Preview')}
             </button>
           </div>
         </div>
@@ -75,7 +78,7 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
                 onClick={() => setCurrentTheme(theme)}
                 className={`w-8 h-8 rounded-lg border-2 transition-all ${currentTheme.id === theme.id ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:border-white/20'}`}
                 style={{ backgroundColor: theme.primary }}
-                title={theme.name}
+                title={t(`resume_builder.themes.${theme.id}`, theme.name)}
               />
             ))}
           </div>
@@ -88,18 +91,18 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
           <button
             onClick={onReset}
             className={BUTTON_SECONDARY}
-            title="Reset to default"
+            title={t('resume_builder.reset', 'Reset to default')}
           >
             <RotateCcw size={18} />
           </button>
           <div className="h-6 w-[1px] bg-white/10 mx-2" />
           <button onClick={onExportJSON} className={BUTTON_SECONDARY}>
             <FileJson size={18} />
-            <span className="hidden sm:inline">JSON</span>
+            <span className="hidden sm:inline">{t('resume_builder.json', 'JSON')}</span>
           </button>
           <button onClick={onExportPDF} className={BUTTON_PRIMARY}>
             <Download size={18} />
-            <span>Export</span>
+            <span>{t('resume_builder.export_pdf', 'Export PDF')}</span>
           </button>
         </div>
       </div>

@@ -153,6 +153,7 @@ async function bootstrap() {
     .addTag('optimizations', 'Resume optimization endpoints')
     .addTag('generate', 'PDF generation endpoints')
     .addTag('interview', 'Interview preparation endpoints')
+    .addTag('account', 'Account endpoints')
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);

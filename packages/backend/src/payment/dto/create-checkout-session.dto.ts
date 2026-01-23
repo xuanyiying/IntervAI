@@ -1,5 +1,6 @@
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SubscriptionTier } from '@prisma/client';
 
 export class CreateCheckoutSessionDto {
   @ApiProperty({
@@ -9,6 +10,14 @@ export class CreateCheckoutSessionDto {
   @IsString()
   @IsNotEmpty()
   priceId: string;
+
+  @ApiPropertyOptional({
+    description: 'Subscription tier for the plan (used for audit/history)',
+    enum: SubscriptionTier,
+  })
+  @IsEnum(SubscriptionTier)
+  @IsOptional()
+  tier?: SubscriptionTier;
 
   @IsString()
   @IsNotEmpty()

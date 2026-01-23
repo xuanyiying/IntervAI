@@ -138,15 +138,21 @@ const RegisterPage: React.FC = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-white/10">
+      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <Logo width={64} height={64} className="shadow-lg rounded-2xl" />
           </div>
-          <Title level={2} className="!text-white !font-bold !mb-2">
+          <Title
+            level={2}
+            className="!font-bold !mb-2"
+            style={{ color: 'var(--text-primary)' }}
+          >
             创建账号
           </Title>
-          <Text className="!text-gray-400">开启您的 AI 职业助手之旅</Text>
+          <Text style={{ color: 'var(--text-secondary)' }}>
+            开启您的 AI 职业助手之旅
+          </Text>
         </div>
 
         <Form
@@ -157,6 +163,7 @@ const RegisterPage: React.FC = () => {
           className="auth-form"
         >
           <Form.Item
+            label={t('auth.username_label', '用户名')}
             name="username"
             rules={[
               {
@@ -169,13 +176,15 @@ const RegisterPage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined className="text-gray-400" />}
+              id="register-username"
+              prefix={<UserOutlined />}
               placeholder={t('auth.username_placeholder', 'Username')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+              autoComplete="username"
             />
           </Form.Item>
 
           <Form.Item
+            label={t('auth.email_label', '邮箱')}
             name="email"
             rules={[
               {
@@ -189,13 +198,15 @@ const RegisterPage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<MailOutlined className="text-gray-400" />}
+              id="register-email"
+              prefix={<MailOutlined />}
               placeholder={t('auth.email_placeholder', 'Email Address')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+              autoComplete="email"
             />
           </Form.Item>
 
           <Form.Item
+            label={t('auth.password_label', '密码')}
             name="password"
             rules={[
               {
@@ -208,9 +219,10 @@ const RegisterPage: React.FC = () => {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined className="text-gray-400" />}
+              id="register-password"
+              prefix={<LockOutlined />}
               placeholder={t('auth.password_placeholder', 'Password')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+              autoComplete="new-password"
             />
           </Form.Item>
 
@@ -226,13 +238,13 @@ const RegisterPage: React.FC = () => {
               },
             ]}
           >
-            <Checkbox className="!text-gray-400">
+            <Checkbox style={{ color: 'var(--text-secondary)' }}>
               我已阅读并同意{' '}
-              <a href="/terms" className="text-primary-400">
+              <a href="/terms-of-service" className="text-primary-400">
                 服务条款
               </a>{' '}
               和{' '}
-              <a href="/privacy" className="text-primary-400">
+              <a href="/privacy-policy" className="text-primary-400">
                 隐私政策
               </a>
             </Checkbox>
@@ -248,7 +260,13 @@ const RegisterPage: React.FC = () => {
             </button>
           </Form.Item>
 
-          <Divider className="!border-white/10 !text-gray-500 !text-xs">
+          <Divider
+            className="auth-divider !text-xs"
+            style={{
+              borderColor: 'var(--glass-border)',
+              color: 'var(--text-tertiary)',
+            }}
+          >
             或使用以下方式
           </Divider>
 
@@ -268,7 +286,7 @@ const RegisterPage: React.FC = () => {
               icon={<GoogleOutlined />}
               onClick={() => handleSocialLogin('google')}
               disabled={!googleEnabled}
-              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 w-12 h-12 flex items-center justify-center transition-all"
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
             />
             <Button
               shape="circle"
@@ -276,13 +294,13 @@ const RegisterPage: React.FC = () => {
               icon={<GithubOutlined />}
               onClick={() => handleSocialLogin('github')}
               disabled={!githubEnabled}
-              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 w-12 h-12 flex items-center justify-center transition-all"
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
             />
           </div>
 
           {/* Login Link */}
           <div className="text-center mt-6">
-            <Text className="!text-gray-400">
+            <Text style={{ color: 'var(--text-secondary)' }}>
               {t('auth.have_account')}{' '}
               <Link
                 to="/login"

@@ -31,7 +31,7 @@ interface LoginFormValues {
   remember?: boolean;
 }
 
-const LoginPage: React.FC = () => {
+const LegacyLoginPage: React.FC = () => {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [oauthStatus, setOauthStatus] = useState({
@@ -46,7 +46,6 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { setAuth, isAuthenticated } = useAuthStore();
 
-  // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
@@ -144,7 +143,6 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-primary/5">
-      {/* Background Decor Effects */}
       <div className="absolute w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
@@ -183,9 +181,8 @@ const LoginPage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined className="text-gray-400" />}
+              prefix={<UserOutlined />}
               placeholder={t('auth.email_placeholder', 'Email Address')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -202,9 +199,8 @@ const LoginPage: React.FC = () => {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined className="text-gray-400" />}
+              prefix={<LockOutlined />}
               placeholder={t('auth.password_placeholder', 'Password')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -250,7 +246,7 @@ const LoginPage: React.FC = () => {
             size="large"
             onClick={() => handleSocialLogin('google')}
             disabled={!googleEnabled}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10"
           />
           <Button
             shape="circle"
@@ -258,11 +254,10 @@ const LoginPage: React.FC = () => {
             size="large"
             onClick={() => handleSocialLogin('github')}
             disabled={!githubEnabled}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10"
           />
         </div>
 
-        {/* Register Link */}
         <div className="text-center mt-6">
           <Text className="!text-gray-400">
             {t('auth.no_account')}{' '}
@@ -279,4 +274,4 @@ const LoginPage: React.FC = () => {
   );
 };
 
-export default LoginPage;
+export default LegacyLoginPage;

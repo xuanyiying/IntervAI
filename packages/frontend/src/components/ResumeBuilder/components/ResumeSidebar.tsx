@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { Plus, GripVertical, Copy, Trash2 } from 'lucide-react';
 import { ResumeSection } from '../types';
@@ -22,12 +23,14 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
   onDuplicateSection,
   onDeleteSection,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className="lg:col-span-4 space-y-8">
       <div>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-sm font-bold uppercase tracking-widest text-white/40">
-            Resume Sections
+            {t('resume_builder.resume_sections', 'Resume Sections')}
           </h2>
           <button
             onClick={onAddSection}
