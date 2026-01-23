@@ -26,4 +26,3 @@ export class AccountController {
     return this.accountService.getUsage(req.user.id, { start, end });
   }
 }
-

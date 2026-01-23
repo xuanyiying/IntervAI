@@ -299,8 +299,10 @@ export class StripePaymentProvider implements PaymentProvider {
 
     let tierFromMetadata: SubscriptionTier | undefined;
     const rawTier = (session.metadata?.tier || '').toString();
-    if (rawTier === SubscriptionTier.FREE) tierFromMetadata = SubscriptionTier.FREE;
-    if (rawTier === SubscriptionTier.PRO) tierFromMetadata = SubscriptionTier.PRO;
+    if (rawTier === SubscriptionTier.FREE)
+      tierFromMetadata = SubscriptionTier.FREE;
+    if (rawTier === SubscriptionTier.PRO)
+      tierFromMetadata = SubscriptionTier.PRO;
     if (rawTier === SubscriptionTier.ENTERPRISE)
       tierFromMetadata = SubscriptionTier.ENTERPRISE;
 
@@ -310,13 +312,14 @@ export class StripePaymentProvider implements PaymentProvider {
     let status = SubscriptionStatus.ACTIVE;
 
     try {
-      const subscription = await this.stripe!.subscriptions.retrieve(
-        subscriptionId
-      );
+      const subscription =
+        await this.stripe!.subscriptions.retrieve(subscriptionId);
       expiresAt = new Date(subscription.current_period_end * 1000);
       status = this.mapSubscriptionStatus(subscription.status);
     } catch (error) {
-      this.logger.error(`Failed to retrieve Stripe subscription ${subscriptionId}: ${error}`);
+      this.logger.error(
+        `Failed to retrieve Stripe subscription ${subscriptionId}: ${error}`
+      );
     }
 
     await this.prisma.user.update({

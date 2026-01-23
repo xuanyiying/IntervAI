@@ -77,4 +77,3 @@ describe('AuthService.register', () => {
     expect(invitationService.markAsUsed).not.toHaveBeenCalled();
   });
 });
-

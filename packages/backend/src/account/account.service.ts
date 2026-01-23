@@ -30,7 +30,9 @@ export class AccountService {
       current: current
         ? {
             ...current,
-            expiresAt: current.expiresAt ? new Date(current.expiresAt).toISOString() : undefined,
+            expiresAt: current.expiresAt
+              ? new Date(current.expiresAt).toISOString()
+              : undefined,
             currentPeriodEnd: current.currentPeriodEnd
               ? new Date(current.currentPeriodEnd).toISOString()
               : undefined,
@@ -49,7 +51,10 @@ export class AccountService {
       })),
       billingHistory: billingHistory.map((b) => ({
         ...b,
-        date: b.date instanceof Date ? b.date.toISOString() : new Date(b.date).toISOString(),
+        date:
+          b.date instanceof Date
+            ? b.date.toISOString()
+            : new Date(b.date).toISOString(),
       })),
     };
   }
@@ -155,8 +160,20 @@ export class AccountService {
 
     const series: { date: string; totalCalls: number; totalCost: number }[] =
       [];
-    const cursor = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
-    const end = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
+    const cursor = new Date(
+      Date.UTC(
+        startDate.getUTCFullYear(),
+        startDate.getUTCMonth(),
+        startDate.getUTCDate()
+      )
+    );
+    const end = new Date(
+      Date.UTC(
+        endDate.getUTCFullYear(),
+        endDate.getUTCMonth(),
+        endDate.getUTCDate()
+      )
+    );
 
     while (cursor <= end) {
       const key = this.formatDateKey(cursor);
@@ -168,4 +185,3 @@ export class AccountService {
     return series;
   }
 }
-

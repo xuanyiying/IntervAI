@@ -37,7 +37,10 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
         <div className="h-[600px] flex flex-col items-center justify-center text-white/20 space-y-4">
           <Edit3 size={48} strokeWidth={1} />
           <p className="text-sm font-medium">
-            {t('resume_builder.select_section_hint', 'Select a section to start editing')}
+            {t(
+              'resume_builder.select_section_hint',
+              'Select a section to start editing'
+            )}
           </p>
         </div>
       </motion.div>
@@ -84,7 +87,10 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
               onUpdateSection(activeSection.id, { content: e.target.value })
             }
             className="w-full h-[600px] bg-white/[0.03] border border-white/5 rounded-[2rem] p-10 font-mono text-sm leading-[1.8] focus:border-white/10 focus:bg-white/[0.04] focus:outline-none transition-all resize-none shadow-inner selection:bg-white/20"
-            placeholder={t('resume_builder.content_placeholder', '# Start building your story...')}
+            placeholder={t(
+              'resume_builder.content_placeholder',
+              '# Start building your story...'
+            )}
             aria-label="Section Content in Markdown"
           />
         </div>
