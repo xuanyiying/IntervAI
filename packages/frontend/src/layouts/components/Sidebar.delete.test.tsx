@@ -7,12 +7,6 @@ import Sidebar from './Sidebar';
 import { useConversationStore } from '@/stores';
 import { Role, SubscriptionTier } from '@/types';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
-
 vi.mock('@/stores', async () => {
   const actual = await vi.importActual<typeof import('@/stores')>('@/stores');
   return {

@@ -69,15 +69,25 @@ export class AuthService {
    * Register a new user
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, username, phone, invitationCode } = registerDto;
+    const { email, password, username, phone, invitationCode, agreement } =
+      registerDto;
 
     this.validatePassword(password);
 
-    // Validate invitation code
-    const isCodeValid =
-      await this.invitationService.validateCode(invitationCode);
-    if (!isCodeValid) {
-      throw new BadRequestException('Invalid or used invitation code');
+    if (agreement === false) {
+      throw new BadRequestException('Terms of service must be accepted');
+    }
+
+    const sanitizedInvitationCode = invitationCode
+      ? Sanitizer.sanitizeString(invitationCode)
+      : undefined;
+
+    if (sanitizedInvitationCode) {
+      const isCodeValid =
+        await this.invitationService.validateCode(sanitizedInvitationCode);
+      if (!isCodeValid) {
+        throw new BadRequestException('Invalid or used invitation code');
+      }
     }
 
     // Sanitize email
@@ -118,8 +128,9 @@ export class AuthService {
       },
     });
 
-    // Mark invitation code as used
-    await this.invitationService.markAsUsed(invitationCode, user.id);
+    if (sanitizedInvitationCode) {
+      await this.invitationService.markAsUsed(sanitizedInvitationCode, user.id);
+    }
 
     // Send verification email
     try {

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Button, Upload, Empty, Tag, Popconfirm, Typography } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../../i18n';
 import { Resume, ParseStatus } from '../../types';
 
 const { Text } = Typography;
@@ -139,9 +140,7 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
 
                   <div className="flex items-center gap-2 text-xs text-gray-400">
                     <span className="flex items-center gap-2">
-                      <span>
-                        {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
+                      <span>{formatDate(item.createdAt)}</span>
                     </span>
                     {getStatusTag(item.parseStatus)}
                   </div>

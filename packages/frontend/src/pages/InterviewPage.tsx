@@ -15,11 +15,13 @@ import {
 import { AudioOutlined, StopOutlined, SendOutlined } from '@ant-design/icons';
 import { interviewService } from '../services/interview-service';
 import { InterviewQuestion, InterviewSession } from '@/types';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const InterviewPage: React.FC = () => {
+  const { t } = useTranslation();
   const { optimizationId } = useParams<{ optimizationId: string }>();
   const navigate = useNavigate();
   const [session, setSession] = useState<InterviewSession | null>(null);
@@ -85,7 +87,7 @@ const InterviewPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to initialize session:', error);
-      message.error('Failed to start interview');
+      message.error(t('interview.start_failed'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ const InterviewPage: React.FC = () => {
       setRecording(true);
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      message.error('Microphone access denied');
+      message.error(t('interview.microphone_denied'));
     }
   };
 
@@ -129,7 +131,7 @@ const InterviewPage: React.FC = () => {
 
   const handleSubmitAnswer = async (audioBlob?: Blob) => {
     if (!session || (!answerText.trim() && !audioBlob)) {
-      message.warning('Please provide an answer (text or audio)');
+      message.warning(t('interview.answer_required'));
       return;
     }
 
@@ -151,7 +153,7 @@ const InterviewPage: React.FC = () => {
 
       const result = await interviewService.submitAnswer(
         session.id,
-        answerText || '[Audio Answer]',
+        answerText || t('interview.audio_answer'),
         audioUrl
       );
 
@@ -162,18 +164,18 @@ const InterviewPage: React.FC = () => {
       } else if (result.nextQuestion) {
         setCurrentQuestion(result.nextQuestion);
         setCurrentIndex((prev) => prev + 1);
-        message.success('Answer submitted! Next question...');
+        message.success(t('interview.answer_submitted_next'));
       }
     } catch (error) {
       console.error('Failed to submit answer:', error);
-      message.error('Failed to submit answer');
+      message.error(t('interview.submit_failed'));
     } finally {
       setProcessing(false);
     }
   };
 
   const handleCompletion = (sessionId: string) => {
-    message.success('Interview completed! Generating feedback...');
+    message.success(t('interview.completed_generating_feedback'));
     pollFeedback(sessionId);
   };
 
@@ -191,14 +193,12 @@ const InterviewPage: React.FC = () => {
           clearInterval(pollInterval);
           setFeedbackData({
             score: updatedSession.score || 0,
-            content: updatedSession.feedback || 'No feedback generated.',
+            content: updatedSession.feedback || t('interview.no_feedback'),
           });
           setFeedbackModalVisible(true);
         } else if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
-          message.warning(
-            'Feedback generation is taking longer than expected. Check "My Interviews" later.'
-          );
+          message.warning(t('interview.feedback_slow'));
           navigate('/dashboard');
         }
       } catch (e) {
@@ -210,15 +210,14 @@ const InterviewPage: React.FC = () => {
   const endSessionEarly = async () => {
     if (!session) return;
     Modal.confirm({
-      title: 'End Interview?',
-      content:
-        'Are you sure you want to end the interview early? You will receive feedback on answered questions.',
+      title: t('interview.end_confirm_title'),
+      content: t('interview.end_confirm_content'),
       onOk: async () => {
         try {
           await interviewService.endSession(session.id);
           handleCompletion(session.id);
         } catch (error) {
-          message.error('Failed to end session');
+          message.error(t('interview.end_failed'));
         }
       },
     });
@@ -236,16 +235,19 @@ const InterviewPage: React.FC = () => {
             }}
           >
             <Title level={3} style={{ margin: 0 }}>
-              Mock Interview
+              {t('interview.title')}
             </Title>
             <Text type="secondary">
-              Question {currentIndex + 1} of {totalQuestions}
+              {t('interview.question_progress', {
+                current: currentIndex + 1,
+                total: totalQuestions,
+              })}
             </Text>
           </div>
         }
         extra={
           <Button danger onClick={endSessionEarly}>
-            End Early
+            {t('interview.end_early')}
           </Button>
         }
       >
@@ -270,7 +272,7 @@ const InterviewPage: React.FC = () => {
                 {currentQuestion.tips && currentQuestion.tips.length > 0 && (
                   <div style={{ marginTop: 16 }}>
                     <Text type="secondary" strong>
-                      Tips:
+                      {t('interview.tips')}:
                     </Text>
                     <ul>
                       {currentQuestion.tips.map((tip, idx) => (
@@ -283,13 +285,13 @@ const InterviewPage: React.FC = () => {
                 )}
               </Card>
 
-              <Divider>Your Answer</Divider>
+              <Divider>{t('interview.your_answer')}</Divider>
 
               <TextArea
                 rows={6}
                 value={answerText}
                 onChange={(e) => setAnswerText(e.target.value)}
-                placeholder="Type your answer here or record audio..."
+                placeholder={t('interview.answer_placeholder')}
                 disabled={processing || recording}
               />
 
@@ -324,28 +326,28 @@ const InterviewPage: React.FC = () => {
                     disabled={recording || processing || !answerText.trim()}
                     loading={processing}
                   >
-                    Submit Answer
+                    {t('interview.submit_answer')}
                   </Button>
                 </Space>
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary">
                     {recording
-                      ? 'Recording... Tap to stop'
-                      : 'Record audio or type answer'}
+                      ? t('interview.recording_hint_recording')
+                      : t('interview.recording_hint_idle')}
                   </Text>
                 </div>
               </div>
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Text>Session Completed or Error Loading Question</Text>
+              <Text>{t('interview.session_completed_or_error')}</Text>
             </div>
           )}
         </div>
       </Card>
 
       <Modal
-        title="Interview Feedback"
+        title={t('interview.feedback_title')}
         open={feedbackModalVisible}
         onOk={() => navigate('/dashboard')}
         onCancel={() => navigate('/dashboard')}
@@ -354,7 +356,9 @@ const InterviewPage: React.FC = () => {
         {feedbackData && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <Title level={4}>Score: {feedbackData.score}/100</Title>
+              <Title level={4}>
+                {t('interview.score', { score: feedbackData.score })}
+              </Title>
               <Progress
                 type="circle"
                 percent={feedbackData.score}

@@ -3,6 +3,7 @@ import { rolePlayService } from '../services';
 import { ParsedResumeData, MessageRole } from '../types';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
+import { formatTime } from '../i18n';
 import './RolePlayCard.css';
 
 interface RolePlayCardProps {
@@ -226,7 +227,7 @@ export const RolePlayCard: React.FC<RolePlayCardProps> = ({
                   </div>
                   <div className="message-content">{msg.content}</div>
                   <div className="message-time">
-                    {msg.timestamp.toLocaleTimeString()}
+                    {formatTime(msg.timestamp)}
                   </div>
                 </div>
               ))}

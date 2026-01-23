@@ -24,6 +24,7 @@ import {
 import type { Template } from '../stores/generateStore';
 import { useGenerateStore } from '../stores/generateStore';
 import { generateService } from '../services/generate-service';
+import { formatDateTime } from '../i18n';
 
 interface PDFGenerationDialogProps {
   visible: boolean;
@@ -395,7 +396,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
                   <Col span={24}>
                     <p>
                       <strong>生成时间:</strong>{' '}
-                      {new Date(generatedPDF.createdAt).toLocaleString()}
+                      {formatDateTime(generatedPDF.createdAt)}
                     </p>
                   </Col>
                   <Col span={24}>

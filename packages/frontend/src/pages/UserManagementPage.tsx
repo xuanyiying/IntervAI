@@ -22,6 +22,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../i18n';
 import { adminService } from '../services/admin-service';
 import './common.css';
 
@@ -189,7 +190,7 @@ const UserManagementPage: React.FC = () => {
       dataIndex: 'createdAt',
       key: 'createdAt',
       responsive: ['lg'],
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
     {
       title: t('admin.users.actions'),

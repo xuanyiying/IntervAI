@@ -18,11 +18,14 @@ import {
 } from '../services/payment-service';
 import SubscriptionStatus from '../components/SubscriptionStatus';
 import { SubscriptionStatus as SubStatus, BillingStatus } from '../types';
+import { useTranslation } from 'react-i18next';
+import { formatCurrency, formatDate } from '../i18n';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
 const SubscriptionManagementPage: React.FC = () => {
+  const { t } = useTranslation();
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(
     null
   );
@@ -41,7 +44,7 @@ const SubscriptionManagementPage: React.FC = () => {
       setBillingHistory(billingData);
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);
-      message.error('Failed to load subscription details');
+      message.error(t('subscription.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -53,22 +56,21 @@ const SubscriptionManagementPage: React.FC = () => {
 
   const handleCancelSubscription = () => {
     confirm({
-      title: 'Are you sure you want to cancel?',
+      title: t('subscription.cancel_confirm_title'),
       icon: <ExclamationCircleOutlined />,
-      content:
-        'Your subscription will remain active until the end of the current billing period. After that, you will lose access to Pro features.',
-      okText: 'Yes, Cancel Subscription',
+      content: t('subscription.cancel_confirm_content'),
+      okText: t('subscription.cancel_confirm_ok'),
       okType: 'danger',
-      cancelText: 'No, Keep It',
+      cancelText: t('subscription.cancel_confirm_cancel'),
       onOk: async () => {
         try {
           setCanceling(true);
           await paymentService.cancelSubscription();
-          message.success('Subscription canceled successfully');
+          message.success(t('subscription.cancel_success'));
           fetchData(); // Refresh data
         } catch (error) {
           console.error('Failed to cancel subscription:', error);
-          message.error('Failed to cancel subscription');
+          message.error(t('subscription.cancel_failed'));
         } finally {
           setCanceling(false);
         }
@@ -78,34 +80,36 @@ const SubscriptionManagementPage: React.FC = () => {
 
   const columns = [
     {
-      title: 'Date',
+      title: t('subscription.columns.date'),
       dataIndex: 'date',
       key: 'date',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
     {
-      title: 'Amount',
+      title: t('subscription.columns.amount'),
       dataIndex: 'amount',
       key: 'amount',
       render: (amount: number, record: BillingRecord) =>
-        `${amount.toFixed(2)} ${record.currency.toUpperCase()}`,
+        formatCurrency(amount, record.currency.toUpperCase()),
     },
     {
-      title: 'Status',
+      title: t('subscription.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: BillingStatus) => (
         <Tag color={status === BillingStatus.PAID ? 'success' : 'error'}>
-          {status}
+          {status === BillingStatus.PAID
+            ? t('subscription.billing_status.paid')
+            : t('subscription.billing_status.failed')}
         </Tag>
       ),
     },
     {
-      title: 'Invoice',
+      title: t('subscription.columns.invoice'),
       key: 'action',
       render: (_: any, record: BillingRecord) => (
         <a href={record.pdfUrl} target="_blank" rel="noopener noreferrer">
-          Download PDF
+          {t('subscription.download_invoice')}
         </a>
       ),
     },
@@ -113,13 +117,13 @@ const SubscriptionManagementPage: React.FC = () => {
 
   return (
     <div style={{ padding: '40px 20px', maxWidth: 1000, margin: '0 auto' }}>
-      <Title level={2}>Subscription Management</Title>
+      <Title level={2}>{t('subscription.title')}</Title>
 
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Card title="Current Subscription" loading={loading}>
+        <Card title={t('subscription.current_subscription')} loading={loading}>
           {subscription ? (
             <Descriptions bordered column={1}>
-              <Descriptions.Item label="Plan">
+              <Descriptions.Item label={t('subscription.plan')}>
                 <SubscriptionStatus
                   tier={subscription.tier}
                   status={subscription.status}
@@ -127,19 +131,21 @@ const SubscriptionManagementPage: React.FC = () => {
                   cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="Status">
+              <Descriptions.Item label={t('subscription.status')}>
                 {subscription.status === SubStatus.ACTIVE
-                  ? 'Active'
-                  : 'Inactive'}
+                  ? t('subscription.active')
+                  : t('subscription.inactive')}
               </Descriptions.Item>
               {subscription.currentPeriodEnd && (
-                <Descriptions.Item label="Current Period Ends">
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                <Descriptions.Item
+                  label={t('subscription.current_period_ends')}
+                >
+                  {formatDate(subscription.currentPeriodEnd)}
                 </Descriptions.Item>
               )}
             </Descriptions>
           ) : (
-            <Text>No active subscription found.</Text>
+            <Text>{t('subscription.no_active_subscription')}</Text>
           )}
 
           {subscription?.status === SubStatus.ACTIVE &&
@@ -150,13 +156,13 @@ const SubscriptionManagementPage: React.FC = () => {
                   onClick={handleCancelSubscription}
                   loading={canceling}
                 >
-                  Cancel Subscription
+                  {t('subscription.cancel')}
                 </Button>
               </div>
             )}
         </Card>
 
-        <Card title="Billing History" loading={loading}>
+        <Card title={t('subscription.billing_history')} loading={loading}>
           <Table
             dataSource={billingHistory}
             columns={columns}

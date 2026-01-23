@@ -7,6 +7,7 @@ import {
   type AttachmentStatus,
   type InterviewQuestion,
 } from '../../../types';
+import { formatTime } from '../../../i18n';
 
 interface UseChatItemsProps {
   messages: any[];
@@ -43,10 +44,7 @@ export const useChatItems = ({
           messageType = 'optimization_result' as any;
         }
 
-        const time = new Date(msg.createdAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        });
+        const time = formatTime(msg.createdAt);
 
         return {
           key: msg.id,

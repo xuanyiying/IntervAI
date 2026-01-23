@@ -1,7 +1,7 @@
 export const PASSWORD_POLICY = {
   minLength: 8,
-  requireUppercase: true,
+  requireUppercase: false,
   requireLowercase: true,
-  requireNumbers: true,
-  requireSpecialChars: true,
+  requireNumbers: false,
+  requireSpecialChars: false,
 };

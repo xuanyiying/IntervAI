@@ -3,19 +3,21 @@ import { Form, Input, Button, Card, Typography, message, Result } from 'antd';
 import { LockOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth-service';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 
 const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const token = searchParams.get('token');
 
   const onFinish = async (values: { password: string }) => {
     if (!token) {
-      message.error('Invalid token');
+      message.error(t('auth.reset_invalid_token'));
       return;
     }
 
@@ -23,10 +25,10 @@ const ResetPasswordPage: React.FC = () => {
     try {
       await authService.resetPassword(token, values.password);
       setSuccess(true);
-      message.success('Password reset successfully!');
+      message.success(t('auth.reset_success_message'));
     } catch (error) {
       console.error('Failed to reset password:', error);
-      message.error('Failed to reset password. The link may have expired.');
+      message.error(t('auth.reset_failed_message'));
     } finally {
       setLoading(false);
     }
@@ -44,15 +46,15 @@ const ResetPasswordPage: React.FC = () => {
       >
         <Result
           status="error"
-          title="Invalid Link"
-          subTitle="The password reset link is invalid or missing."
+          title={t('auth.reset_invalid_title')}
+          subTitle={t('auth.reset_invalid_subtitle')}
           extra={[
             <Button
               type="primary"
               key="login"
               onClick={() => navigate('/login')}
             >
-              Go to Login
+              {t('auth.reset_action_login')}
             </Button>,
           ]}
         />
@@ -72,15 +74,15 @@ const ResetPasswordPage: React.FC = () => {
       >
         <Result
           status="success"
-          title="Password Reset Successfully"
-          subTitle="You can now login with your new password."
+          title={t('auth.reset_success_title')}
+          subTitle={t('auth.reset_success_subtitle')}
           extra={[
             <Button
               type="primary"
               key="login"
               onClick={() => navigate('/login')}
             >
-              Go to Login
+              {t('auth.reset_action_login')}
             </Button>,
           ]}
         />
@@ -100,21 +102,21 @@ const ResetPasswordPage: React.FC = () => {
     >
       <Card style={{ width: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <Title level={3}>Reset Password</Title>
-          <Text type="secondary">Enter your new password</Text>
+          <Title level={3}>{t('auth.reset_title')}</Title>
+          <Text type="secondary">{t('auth.reset_subtitle')}</Text>
         </div>
 
         <Form name="reset_password" onFinish={onFinish} layout="vertical">
           <Form.Item
             name="password"
             rules={[
-              { required: true, message: 'Please input your new Password!' },
-              { min: 8, message: 'Password must be at least 8 characters!' },
+              { required: true, message: t('auth.reset_password_required') },
+              { min: 8, message: t('auth.reset_password_min') },
             ]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="New Password"
+              placeholder={t('auth.reset_new_password_placeholder')}
               size="large"
             />
           </Form.Item>
@@ -124,16 +126,14 @@ const ResetPasswordPage: React.FC = () => {
             dependencies={['password']}
             hasFeedback
             rules={[
-              { required: true, message: 'Please confirm your password!' },
+              { required: true, message: t('auth.reset_confirm_required') },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('password') === value) {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error(
-                      'The two passwords that you entered do not match!'
-                    )
+                    new Error(t('auth.reset_password_mismatch'))
                   );
                 },
               }),
@@ -141,7 +141,7 @@ const ResetPasswordPage: React.FC = () => {
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="Confirm Password"
+              placeholder={t('auth.reset_confirm_placeholder')}
               size="large"
             />
           </Form.Item>
@@ -154,7 +154,7 @@ const ResetPasswordPage: React.FC = () => {
               size="large"
               loading={loading}
             >
-              Reset Password
+              {t('auth.reset_submit')}
             </Button>
           </Form.Item>
         </Form>

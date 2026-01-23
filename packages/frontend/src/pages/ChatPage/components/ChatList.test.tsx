@@ -1,7 +1,21 @@
-import { describe, it, expect } from 'vitest';
+import React from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ChatList } from './ChatList';
 import { MessageRole, type MessageItem } from '../../../types';
+
+vi.mock('@ant-design/x', () => ({
+  Bubble: {
+    List: ({ items }: any) =>
+      React.createElement(
+        'div',
+        null,
+        items.map((item: any) =>
+          React.createElement('div', { key: item.key }, item.content)
+        )
+      ),
+  },
+}));
 
 function makeItems(n: number): MessageItem[] {
   return Array.from({ length: n }).map((_, i) => ({

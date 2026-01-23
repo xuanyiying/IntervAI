@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { agentMetricsService } from '../services';
 import './AgentMetricsDashboard.css';
+import { formatNumber } from '../i18n';
 
 interface TokenUsageItem {
   key: string;
@@ -165,7 +166,7 @@ export const AgentMetricsDashboard: React.FC = () => {
       <div className="summary-cards">
         <div className="summary-card">
           <div className="card-label">Total Tokens</div>
-          <div className="card-value">{totalTokens.toLocaleString()}</div>
+          <div className="card-value">{formatNumber(totalTokens)}</div>
         </div>
         <div className="summary-card">
           <div className="card-label">Total Cost</div>
@@ -173,7 +174,7 @@ export const AgentMetricsDashboard: React.FC = () => {
         </div>
         <div className="summary-card">
           <div className="card-label">Total Calls</div>
-          <div className="card-value">{totalCalls.toLocaleString()}</div>
+          <div className="card-value">{formatNumber(totalCalls)}</div>
         </div>
         <div className="summary-card">
           <div className="card-label">Avg Tokens/Call</div>
@@ -217,13 +218,13 @@ export const AgentMetricsDashboard: React.FC = () => {
                   <tr key={idx}>
                     <td className="key-cell">{item.key}</td>
                     <td className="number-cell">
-                      {item.totalTokens.toLocaleString()}
+                      {formatNumber(item.totalTokens)}
                     </td>
                     <td className="number-cell">
-                      {item.inputTokens.toLocaleString()}
+                      {formatNumber(item.inputTokens)}
                     </td>
                     <td className="number-cell">
-                      {item.outputTokens.toLocaleString()}
+                      {formatNumber(item.outputTokens)}
                     </td>
                     <td className="number-cell">{item.callCount}</td>
                     <td className="number-cell">{item.averageTokensPerCall}</td>
@@ -277,10 +278,10 @@ export const AgentMetricsDashboard: React.FC = () => {
                     <td className="number-cell">${item.cost.toFixed(4)}</td>
                     <td className="number-cell">{item.callCount}</td>
                     <td className="number-cell">
-                      {item.inputTokens.toLocaleString()}
+                      {formatNumber(item.inputTokens)}
                     </td>
                     <td className="number-cell">
-                      {item.outputTokens.toLocaleString()}
+                      {formatNumber(item.outputTokens)}
                     </td>
                     <td className="number-cell">
                       ${item.averageCostPerCall.toFixed(4)}
@@ -307,27 +308,25 @@ export const AgentMetricsDashboard: React.FC = () => {
             <div className="savings-card">
               <div className="savings-label">Caching Savings</div>
               <div className="savings-value">
-                {savingsData.totalSavingsFromCaching.toLocaleString()} tokens
+                {formatNumber(savingsData.totalSavingsFromCaching)} tokens
               </div>
             </div>
             <div className="savings-card">
               <div className="savings-label">Compression Savings</div>
               <div className="savings-value">
-                {savingsData.totalSavingsFromCompression.toLocaleString()}{' '}
-                tokens
+                {formatNumber(savingsData.totalSavingsFromCompression)} tokens
               </div>
             </div>
             <div className="savings-card">
               <div className="savings-label">Model Routing Savings</div>
               <div className="savings-value">
-                {savingsData.totalSavingsFromModelRouting.toLocaleString()}{' '}
-                tokens
+                {formatNumber(savingsData.totalSavingsFromModelRouting)} tokens
               </div>
             </div>
             <div className="savings-card total">
               <div className="savings-label">Total Savings</div>
               <div className="savings-value">
-                {savingsData.totalSavings.toLocaleString()} tokens
+                {formatNumber(savingsData.totalSavings)} tokens
               </div>
               <div className="savings-percentage">
                 {savingsData.savingsPercentage.toFixed(1)}% reduction

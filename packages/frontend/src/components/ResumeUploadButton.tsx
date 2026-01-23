@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Button, message } from 'antd';
 import { CloudUploadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import './ResumeUploadButton.css';
 
 interface ResumeUploadButtonProps {
@@ -20,6 +21,7 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
   disabled,
   children,
 }) => {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 处理文件选择
@@ -35,14 +37,16 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
     if (!isPDF && !isDoc) {
-      message.error('只能上传 PDF 或 Word 文档！');
+      message.error(
+        t('resume.upload_type_error', '只能上传 PDF 或 Word 文档！')
+      );
       return;
     }
 
     // 验证文件大小
     const isLt10M = file.size / 1024 / 1024 < 10;
     if (!isLt10M) {
-      message.error('文件大小不能超过 10MB！');
+      message.error(t('resume.upload_size_error', '文件大小不能超过 10MB！'));
       return;
     }
 
@@ -76,7 +80,7 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
         disabled={disabled}
         style={{ border: 'none', boxShadow: 'none' }}
       >
-        {children}
+        {children ?? t('resume.upload', '上传简历')}
       </Button>
     </>
   );

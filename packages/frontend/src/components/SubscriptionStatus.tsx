@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 
 import { SubscriptionTier, SubscriptionStatus as SubStatus } from '../types';
+import { formatDate } from '../i18n';
 
 interface SubscriptionStatusProps {
   tier: SubscriptionTier;
@@ -26,11 +27,6 @@ const SubscriptionStatus: React.FC<SubscriptionStatusProps> = ({
     if (status === SubStatus.PAST_DUE) return 'warning';
     if (status === SubStatus.CANCELED) return 'error';
     return 'default';
-  };
-
-  const formatDate = (date: string | Date) => {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString();
   };
 
   return (
