@@ -60,7 +60,9 @@ export const ChatWelcome: React.FC<ChatWelcomeProps> = ({
 
   return (
     <div className="welcome-container">
-      <h1 className="welcome-title">你好，我是简历优化助手</h1>
+      <h1 className="welcome-title">
+        {t('chat.welcome_title', '你好，我是你的面试求职AI助手')}
+      </h1>
 
       <div className="w-full max-w-3xl mx-auto px-4">
         <div className="modern-sender-wrapper">

@@ -34,6 +34,7 @@ import {
   ClearOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { formatDate } from '../i18n';
 import type { UploadFile, UploadProps } from 'antd';
 import type {
   KBDocument,
@@ -281,7 +282,7 @@ const KnowledgeBasePage: React.FC = () => {
       title: t('common.created_at'),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
+      render: (date: string) => formatDate(date),
     },
     {
       title: t('common.actions'),
@@ -344,11 +345,7 @@ const KnowledgeBasePage: React.FC = () => {
           <Card className="glass-card">
             <Statistic
               title={t('knowledge_base.last_updated')}
-              value={
-                stats?.lastUpdated
-                  ? new Date(stats.lastUpdated).toLocaleDateString()
-                  : 'N/A'
-              }
+              value={stats?.lastUpdated ? formatDate(stats.lastUpdated) : 'N/A'}
             />
           </Card>
         </Col>

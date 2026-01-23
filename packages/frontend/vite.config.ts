@@ -17,6 +17,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'antd/es/version': 'antd/es/version/index.js',
     },
   },
   server: {
@@ -103,6 +104,10 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     css: true,
     reporters: ['default', 'html'],
+    isolate: true,
+    deps: {
+      inline: [/^antd/, /^@ant-design/],
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

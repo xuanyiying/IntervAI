@@ -17,6 +17,7 @@ import CookieConsent from '../components/CookieConsent';
 import Sidebar from './components/Sidebar';
 import { Logo } from '../components/Logo';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '../i18n';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -29,38 +30,40 @@ const AppLayout: React.FC = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
+  const languageStorageKey = 'i18nextLng';
+  const currentLanguage = normalizeLanguage(
+    i18n.resolvedLanguage || i18n.language
+  );
+
+  const setLanguage = (language: string) => {
+    const normalized = normalizeLanguage(language);
+    try {
+      localStorage.setItem(languageStorageKey, normalized);
+    } catch (error) {
+      void error;
+    }
+    i18n.changeLanguage(normalized);
+  };
+
+  const languageMenuItems: MenuProps['items'] = [
+    {
+      key: 'zh-CN',
+      label: t('common.lang_cn'),
+      onClick: () => setLanguage('zh-CN'),
+    },
+    {
+      key: 'en-US',
+      label: t('common.lang_en'),
+      onClick: () => setLanguage('en-US'),
+    },
+  ];
+
   const handleLogout = () => {
     clearAuth();
     navigate('/login');
   };
 
   const guestMenuItems: MenuProps['items'] = [
-    {
-      key: 'theme',
-      icon: theme === 'light' ? <MoonOutlined /> : <SunOutlined />,
-      label:
-        theme === 'light'
-          ? t('menu.dark_mode', '深色模式')
-          : t('menu.light_mode', '浅色模式'),
-      onClick: toggleTheme,
-    },
-    {
-      key: 'lang',
-      label: t('common.language'),
-      icon: <GlobalOutlined />,
-      children: [
-        {
-          key: 'zh-CN',
-          label: '简体中文',
-          onClick: () => i18n.changeLanguage('zh-CN'),
-        },
-        {
-          key: 'en-US',
-          label: 'English',
-          onClick: () => i18n.changeLanguage('en-US'),
-        },
-      ],
-    },
     { type: 'divider' },
     {
       key: 'login',
@@ -89,32 +92,7 @@ const AppLayout: React.FC = () => {
       icon: <DollarOutlined />,
       onClick: () => navigate('/pricing'),
     },
-    {
-      key: 'theme',
-      icon: theme === 'light' ? <MoonOutlined /> : <SunOutlined />,
-      label:
-        theme === 'light'
-          ? t('menu.dark_mode', '深色模式')
-          : t('menu.light_mode', '浅色模式'),
-      onClick: toggleTheme,
-    },
-    {
-      key: 'lang',
-      label: t('common.language'),
-      icon: <GlobalOutlined />,
-      children: [
-        {
-          key: 'zh-CN',
-          label: '简体中文',
-          onClick: () => i18n.changeLanguage('zh-CN'),
-        },
-        {
-          key: 'en-US',
-          label: 'English',
-          onClick: () => i18n.changeLanguage('en-US'),
-        },
-      ],
-    },
+
     { type: 'divider' },
     {
       key: 'logout',
@@ -136,6 +114,19 @@ const AppLayout: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(languageStorageKey);
+      const normalized = normalizeLanguage(saved);
+      const current = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
+      if (normalized && normalized !== current) {
+        i18n.changeLanguage(normalized);
+      }
+    } catch (error) {
+      void error;
+    }
+  }, [i18n]);
 
   return (
     <Layout className="app-layout min-h-screen bg-transparent relative">
@@ -159,6 +150,28 @@ const AppLayout: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            type="text"
+            icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+          />
+          <Dropdown
+            menu={{ items: languageMenuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined />}
+              aria-label={t('common.language')}
+              className="theme-toggle-btn"
+            >
+              {currentLanguage === 'zh-CN'
+                ? t('common.lang_cn')
+                : t('common.lang_en')}
+            </Button>
+          </Dropdown>
           <Dropdown
             menu={{ items: user ? userMenuItems : guestMenuItems }}
             placement="bottomRight"
@@ -178,6 +191,28 @@ const AppLayout: React.FC = () => {
       {/* Desktop Header/Nav - For User Profile */}
       <Header className="hidden md:flex items-center justify-end px-6 bg-transparent border-none absolute right-0 top-0 z-50 h-16">
         <div className="flex items-center gap-4 relative">
+          <Dropdown
+            menu={{ items: languageMenuItems }}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Button
+              type="text"
+              icon={<GlobalOutlined />}
+              aria-label={t('common.language')}
+              className="theme-toggle-btn"
+            >
+              {currentLanguage === 'zh-CN'
+                ? t('common.lang_cn')
+                : t('common.lang_en')}
+            </Button>
+          </Dropdown>
+          <Button
+            type="text"
+            icon={theme === 'light' ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            className="theme-toggle-btn"
+          />
           <Dropdown
             menu={{ items: user ? userMenuItems : guestMenuItems }}
             placement="bottomRight"

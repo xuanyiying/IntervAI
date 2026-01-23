@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -30,8 +31,17 @@ export class RegisterDto {
   @IsOptional()
   phone?: string;
 
-  @ApiProperty({ example: 'INV-123456', required: true })
+  @ApiProperty({
+    example: true,
+    required: false,
+    description: 'Whether the user accepted the terms of service.',
+  })
+  @IsBoolean()
+  @IsOptional()
+  agreement?: boolean;
+
+  @ApiProperty({ example: 'INV-123456', required: false })
   @IsString()
-  @IsNotEmpty()
-  invitationCode!: string;
+  @IsOptional()
+  invitationCode?: string;
 }

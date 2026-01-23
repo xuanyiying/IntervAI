@@ -8,6 +8,7 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../../i18n';
 import { Resume, ParseStatus } from '../../types';
 
 export type ResumeViewMode =
@@ -66,12 +67,14 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
           </div>
           <Space className="text-secondary">
             <HistoryOutlined />
-            <span>上次更新: {new Date(resume.createdAt).toLocaleString()}</span>
+            <span>
+              {t('resume.last_updated')}: {formatDateTime(resume.createdAt)}
+            </span>
           </Space>
         </div>
         <Space size="middle" wrap>
           {resume.parseStatus === ParseStatus.COMPLETED && (
-            <Tooltip {...getTooltipProps('简历详情')}>
+            <Tooltip {...getTooltipProps(t('resume.view_detail'))}>
               <Button
                 icon={<FileTextOutlined />}
                 onClick={() => onViewChange('detail')}
@@ -81,7 +84,7 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
             </Tooltip>
           )}
 
-          <Tooltip {...getTooltipProps('预览原文')}>
+          <Tooltip {...getTooltipProps(t('resume.view_preview'))}>
             <Button
               icon={<EyeOutlined />}
               onClick={() => onViewChange('preview')}
@@ -103,7 +106,7 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
 
           {resume.parseStatus === ParseStatus.COMPLETED && (
             <>
-              <Tooltip {...getTooltipProps('深度诊断')}>
+              <Tooltip {...getTooltipProps(t('resume.deep_diagnosis'))}>
                 <Button
                   icon={<ThunderboltOutlined />}
                   onClick={() => onViewChange('analysis')}

@@ -119,7 +119,8 @@ const RegisterPage: React.FC = () => {
   const onFinish = async (values: any) => {
     try {
       setLoading(true);
-      await authService.register(values);
+      const { agreement: _agreement, ...payload } = values ?? {};
+      await authService.register(payload);
       message.success(t('auth.register_success', 'Registration successful!'));
       navigate('/login');
     } catch (error) {

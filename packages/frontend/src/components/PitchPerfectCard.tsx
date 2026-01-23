@@ -22,6 +22,7 @@ import {
   CheckCircleOutlined,
   ArrowLeftOutlined,
 } from '@ant-design/icons';
+import { formatDateTime } from '../i18n';
 import './PitchPerfectCard.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -166,7 +167,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                     title={
                       <Space>
                         <Text className="text-white font-medium">
-                          {new Date(item.timestamp).toLocaleString()}
+                          {formatDateTime(item.timestamp)}
                         </Text>
                         <Tag color="blue">{item.style}</Tag>
                         <Tag>{item.duration}s</Tag>

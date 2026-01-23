@@ -15,6 +15,7 @@ import {
   Popconfirm,
 } from 'antd';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../i18n';
 import {
   PlusOutlined,
   EditOutlined,
@@ -500,7 +501,7 @@ const PromptManagementPage: React.FC = () => {
               title: t('common.time', 'Time'),
               dataIndex: 'createdAt',
               key: 'createdAt',
-              render: (date: string) => new Date(date).toLocaleString(),
+              render: (date: string) => formatDateTime(date),
             },
             {
               title: t('common.actions'),

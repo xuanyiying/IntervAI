@@ -48,6 +48,38 @@
   padding: 8px !important;
 }
 
+.modern-sender .ant-input,
+.modern-sender textarea,
+.modern-sender input {
+  color: var(--text-primary);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme='light'] .modern-sender,
+[data-theme='light'] .modern-sender:hover,
+[data-theme='light'] .modern-sender:focus-within {
+  background: transparent !important;
+  border: none !important;
+}
+
+[data-theme='light'] .modern-sender .ant-input,
+[data-theme='light'] .modern-sender textarea,
+[data-theme='light'] .modern-sender input,
+[data-theme='light'] .modern-sender .ant-input-affix-wrapper {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme='light'] .modern-sender .ant-input::placeholder,
+[data-theme='light'] .modern-sender textarea::placeholder,
+[data-theme='light'] .modern-sender input::placeholder {
+  color: var(--text-secondary);
+}
+
 .modern-sender:hover, .modern-sender:focus-within {
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.2) !important;
   border-color: var(--glass-border-light) !important;

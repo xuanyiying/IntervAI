@@ -2,6 +2,7 @@ import React from 'react';
 import { Empty, Tag, Button, Space } from 'antd';
 import { HistoryOutlined, RocketOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../../i18n';
 import { Optimization } from '../../types';
 
 interface ResumeHistoryViewProps {
@@ -43,7 +44,7 @@ export const ResumeHistoryView: React.FC<ResumeHistoryViewProps> = ({
                       {opt.job?.title || 'Target Position'}
                     </div>
                     <div className="text-xs text-secondary">
-                      {new Date(opt.createdAt).toLocaleString()}
+                      {formatDateTime(opt.createdAt)}
                     </div>
                   </div>
                   <Tag

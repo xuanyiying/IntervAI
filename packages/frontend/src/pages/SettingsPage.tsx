@@ -19,6 +19,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '../i18n';
 import './common.css';
 
 const { Title, Text } = Typography;
@@ -28,6 +29,12 @@ const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+
+  React.useEffect(() => {
+    form.setFieldsValue({
+      language: normalizeLanguage(i18n.resolvedLanguage || i18n.language),
+    });
+  }, [form, i18n.language, i18n.resolvedLanguage]);
 
   const onFinish = async (values: Record<string, unknown>) => {
     setLoading(true);
@@ -53,10 +60,13 @@ const SettingsPage: React.FC = () => {
       <Title level={5}>
         <GlobalOutlined /> {t('common.language')}
       </Title>
-      <Form.Item name="language" initialValue={i18n.language}>
-        <Select onChange={(val) => i18n.changeLanguage(val)}>
-          <Option value="zh-CN">简体中文</Option>
-          <Option value="en-US">English</Option>
+      <Form.Item
+        name="language"
+        initialValue={normalizeLanguage(i18n.resolvedLanguage || i18n.language)}
+      >
+        <Select onChange={(val) => i18n.changeLanguage(normalizeLanguage(val))}>
+          <Option value="zh-CN">{t('common.lang_cn')}</Option>
+          <Option value="en-US">{t('common.lang_en')}</Option>
         </Select>
       </Form.Item>
 

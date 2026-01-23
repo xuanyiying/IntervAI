@@ -25,6 +25,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
+import { formatDateTime } from '../i18n';
 import {
   userService,
   UserActivity,
@@ -176,16 +177,16 @@ const ProfilePage: React.FC = () => {
       setNotifications([
         {
           id: '1',
-          title: 'Welcome',
-          content: 'Welcome to AI Resume!',
+          title: t('profile.demo_notification_welcome_title'),
+          content: t('profile.demo_notification_welcome_content'),
           type: 'INFO',
           read: false,
           createdAt: new Date().toISOString(),
         },
         {
           id: '2',
-          title: 'System Update',
-          content: 'Maintenance scheduled.',
+          title: t('profile.demo_notification_system_update_title'),
+          content: t('profile.demo_notification_system_update_content'),
           type: 'WARNING',
           read: true,
           createdAt: new Date(Date.now() - 86400000).toISOString(),
@@ -366,7 +367,7 @@ const ProfilePage: React.FC = () => {
               <Space direction="vertical" size={0}>
                 <Text>{item.description}</Text>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  {new Date(item.createdAt).toLocaleString()}
+                  {formatDateTime(item.createdAt)}
                 </Text>
               </Space>
             }
@@ -423,7 +424,7 @@ const ProfilePage: React.FC = () => {
               <Space direction="vertical" size={0}>
                 <Text>{item.content}</Text>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  {new Date(item.createdAt).toLocaleString()}
+                  {formatDateTime(item.createdAt)}
                 </Text>
               </Space>
             }

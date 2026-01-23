@@ -70,19 +70,19 @@ const Sidebar: React.FC<SidebarProps> = ({
       key: 'pitch-perfect',
       icon: <StarOutlined />,
       label: t('menu.pitch_perfect', '履历点睛'),
-      path: '/agents/pitch-perfect',
+      path: '/pitch-perfect',
     },
     {
       key: 'interview-prediction',
       icon: <LineChartOutlined />,
       label: t('menu.interview_prediction', '面试预测'),
-      path: '/agents/interview-prediction',
+      path: '/strategist',
     },
     {
       key: 'mock-interview',
       icon: <UserOutlined />,
       label: t('menu.mock_interview', '模拟面试'),
-      path: '/agents/mock-interview',
+      path: '/role-play',
     },
   ];
 

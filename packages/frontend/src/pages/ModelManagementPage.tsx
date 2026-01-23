@@ -28,12 +28,14 @@ import {
   ModelConfig,
   CreateModelConfigDto,
 } from '../services/model-admin-service';
+import { useTranslation } from 'react-i18next';
 import './common.css';
 import './admin.css';
 
 const { Title, Text } = Typography;
 
 const ModelManagementPage: React.FC = () => {
+  const { t } = useTranslation();
   const [models, setModels] = useState<ModelConfig[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -130,37 +132,39 @@ const ModelManagementPage: React.FC = () => {
 
       if (editingModel) {
         await modelAdminService.updateModel(editingModel.id, submitData);
-        message.success('更新成功');
+        message.success(t('models.update_success'));
       } else {
         await modelAdminService.createModel(values);
-        message.success('创建成功');
+        message.success(t('models.create_success'));
       }
       setModalVisible(false);
       loadModels();
     } catch (error) {
-      message.error(editingModel ? '更新失败' : '创建失败');
+      message.error(
+        editingModel ? t('models.update_failed') : t('models.create_failed')
+      );
     }
   };
 
   const handleRefreshCache = async () => {
     try {
       await modelAdminService.refreshCache();
-      message.success('缓存刷新成功');
+      message.success(t('models.refresh_cache_success'));
     } catch (error) {
-      message.error('缓存刷新失败');
+      message.error(t('models.refresh_cache_failed'));
     }
   };
 
   const columns: ColumnsType<ModelConfig> = [
     {
-      title: '名称',
+      title: t('models.name'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
       fixed: 'left',
     },
     {
-      title: '提供商',
+      title: t('models.provider'),
       dataIndex: 'provider',
       key: 'provider',
       width: 120,
@@ -181,35 +185,37 @@ const ModelManagementPage: React.FC = () => {
       },
     },
     {
-      title: 'API端点',
+      title: t('models.endpoint'),
       dataIndex: 'endpoint',
       key: 'endpoint',
       ellipsis: true,
-      render: (endpoint?: string) => <Text ellipsis>{endpoint || '默认'}</Text>,
+      render: (endpoint?: string) => (
+        <Text ellipsis>{endpoint || t('common.default')}</Text>
+      ),
     },
     {
-      title: 'API密钥',
+      title: t('models.api_key'),
       dataIndex: 'apiKey',
       key: 'apiKey',
       width: 150,
       render: (apiKey: string) => <Text code>{apiKey}</Text>,
     },
     {
-      title: '温度',
+      title: t('models.temperature'),
       dataIndex: 'defaultTemperature',
       key: 'temperature',
       width: 80,
       align: 'center',
     },
     {
-      title: '最大Token',
+      title: t('models.max_tokens'),
       dataIndex: 'defaultMaxTokens',
       key: 'maxTokens',
       width: 100,
       align: 'center',
     },
     {
-      title: '费用(输入)',
+      title: t('models.cost_input'),
       dataIndex: 'costPerInputToken',
       key: 'costInput',
       width: 100,
@@ -217,7 +223,7 @@ const ModelManagementPage: React.FC = () => {
       render: (cost?: number) => (cost ? `$${cost.toFixed(6)}` : '-'),
     },
     {
-      title: '费用(输出)',
+      title: t('models.cost_output'),
       dataIndex: 'costPerOutputToken',
       key: 'costOutput',
       width: 100,
@@ -225,7 +231,7 @@ const ModelManagementPage: React.FC = () => {
       render: (cost?: number) => (cost ? `$${cost.toFixed(6)}` : '-'),
     },
     {
-      title: '状态',
+      title: t('common.status'),
       dataIndex: 'isActive',
       key: 'isActive',
       width: 100,
@@ -234,19 +240,19 @@ const ModelManagementPage: React.FC = () => {
         <Switch
           checked={isActive}
           onChange={(checked) => handleToggleActive(record.id, checked)}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
+          checkedChildren={t('common.enabled')}
+          unCheckedChildren={t('common.disabled')}
         />
       ),
     },
     {
-      title: '操作',
+      title: t('common.actions'),
       key: 'actions',
       width: 200,
       fixed: 'right',
       render: (_, record) => (
         <Space>
-          <Tooltip title="测试连接">
+          <Tooltip title={t('models.test_connection')}>
             <Button
               type="text"
               icon={<ApiOutlined />}
@@ -254,7 +260,7 @@ const ModelManagementPage: React.FC = () => {
               onClick={() => handleTestConnection(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -262,12 +268,12 @@ const ModelManagementPage: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此模型配置？"
+            title={t('models.delete_confirm')}
             onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common.confirm')}
+            cancelText={t('common.cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common.delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>

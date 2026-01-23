@@ -3,6 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ConfigProvider } from 'antd';
 import ResumeUploadButton from './ResumeUploadButton';
+import i18n from '../i18n';
+import { I18nextProvider } from 'react-i18next';
 
 // Mock the resume service
 vi.mock('../services/resume-service', () => ({
@@ -26,7 +28,11 @@ describe('ResumeUploadButton', () => {
   });
 
   const renderWithProvider = (component: React.ReactElement) => {
-    return render(<ConfigProvider>{component}</ConfigProvider>);
+    return render(
+      <I18nextProvider i18n={i18n}>
+        <ConfigProvider>{component}</ConfigProvider>
+      </I18nextProvider>
+    );
   };
 
   it('should render upload button initially', () => {

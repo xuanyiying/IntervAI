@@ -20,12 +20,15 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { adminService, InviteCode } from '../services/admin-service';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatDateTime } from '../i18n';
 import './admin.css';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const InviteCodeManagementPage: React.FC = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<InviteCode[]>([]);
   const [total, setTotal] = useState(0);
@@ -45,7 +48,7 @@ const InviteCodeManagementPage: React.FC = () => {
       setData(response.data);
       setTotal(response.total);
     } catch (error) {
-      message.error('Failed to load invitation codes');
+      message.error(t('invite_codes.load_failed'));
     } finally {
       setLoading(false);
     }
@@ -59,12 +62,12 @@ const InviteCodeManagementPage: React.FC = () => {
     try {
       setGenerating(true);
       await adminService.generateInviteCodes(values);
-      message.success('Invite codes generated successfully');
+      message.success(t('invite_codes.generate_success'));
       setModalVisible(false);
       form.resetFields();
       loadData();
     } catch (error) {
-      message.error('Failed to generate invite codes');
+      message.error(t('invite_codes.generate_failed'));
     } finally {
       setGenerating(false);
     }
@@ -73,16 +76,16 @@ const InviteCodeManagementPage: React.FC = () => {
   const handleDelete = async (id: string) => {
     try {
       await adminService.deleteInviteCode(id);
-      message.success('Invite code deleted');
+      message.success(t('invite_codes.delete_success'));
       loadData();
     } catch (error) {
-      message.error('Failed to delete invite code');
+      message.error(t('invite_codes.delete_failed'));
     }
   };
 
   const columns: ColumnsType<InviteCode> = [
     {
-      title: 'Code',
+      title: t('invite_codes.columns.code'),
       dataIndex: 'code',
       key: 'code',
       render: (text) => (
@@ -92,15 +95,19 @@ const InviteCodeManagementPage: React.FC = () => {
       ),
     },
     {
-      title: 'Type',
+      title: t('invite_codes.columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type) => (
-        <Tag color={type === 'BATCH' ? 'blue' : 'cyan'}>{type}</Tag>
+        <Tag color={type === 'BATCH' ? 'blue' : 'cyan'}>
+          {type === 'BATCH'
+            ? t('invite_codes.type.batch')
+            : t('invite_codes.type.single')}
+        </Tag>
       ),
     },
     {
-      title: 'Status',
+      title: t('invite_codes.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
@@ -108,38 +115,45 @@ const InviteCodeManagementPage: React.FC = () => {
         if (status === 'UNUSED') color = 'success';
         if (status === 'USED') color = 'processing';
         if (status === 'EXPIRED') color = 'error';
-        return <Tag color={color}>{status}</Tag>;
+        const label =
+          status === 'UNUSED'
+            ? t('invite_codes.status.unused')
+            : status === 'USED'
+              ? t('invite_codes.status.used')
+              : status === 'EXPIRED'
+                ? t('invite_codes.status.expired')
+                : status;
+        return <Tag color={color}>{label}</Tag>;
       },
     },
     {
-      title: 'Valid Until',
+      title: t('invite_codes.columns.valid_until'),
       dataIndex: 'validUntil',
       key: 'validUntil',
-      render: (date) =>
-        date ? new Date(date).toLocaleDateString() : 'Permanent',
+      render: (date) => (date ? formatDate(date) : t('invite_codes.permanent')),
     },
     {
-      title: 'Used By',
+      title: t('invite_codes.columns.used_by'),
       dataIndex: 'usedBy',
       key: 'usedBy',
-      render: (user) => user || '-',
+      render: (user) => user || t('common.none'),
     },
     {
-      title: 'Created At',
+      title: t('invite_codes.columns.created_at'),
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date) => new Date(date).toLocaleString(),
+      render: (date) => formatDateTime(date),
     },
     {
-      title: 'Actions',
+      title: t('common.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
           <Popconfirm
-            title="Delete this code?"
+            title={t('invite_codes.delete_confirm')}
             onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
+            okText={t('common.yes')}
+            cancelText={t('common.no')}
           >
             <Button type="text" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -153,18 +167,18 @@ const InviteCodeManagementPage: React.FC = () => {
       <Card>
         <div className="admin-header">
           <Title level={3} style={{ margin: 0 }}>
-            Invitation Code Management
+            {t('invite_codes.title')}
           </Title>
           <Space>
             <Button icon={<ReloadOutlined />} onClick={loadData}>
-              Refresh
+              {t('common.refresh')}
             </Button>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setModalVisible(true)}
             >
-              Generate Codes
+              {t('invite_codes.generate')}
             </Button>
           </Space>
         </div>
@@ -188,7 +202,7 @@ const InviteCodeManagementPage: React.FC = () => {
       </Card>
 
       <Modal
-        title="Generate Invite Codes"
+        title={t('invite_codes.generate_modal_title')}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
@@ -201,12 +215,12 @@ const InviteCodeManagementPage: React.FC = () => {
         >
           <Form.Item
             name="type"
-            label="Generation Type"
+            label={t('invite_codes.form.type')}
             rules={[{ required: true }]}
           >
             <Select>
-              <Option value="SINGLE">Single Code</Option>
-              <Option value="BATCH">Batch Generation</Option>
+              <Option value="SINGLE">{t('invite_codes.type.single')}</Option>
+              <Option value="BATCH">{t('invite_codes.type.batch')}</Option>
             </Select>
           </Form.Item>
 
@@ -218,7 +232,7 @@ const InviteCodeManagementPage: React.FC = () => {
               getFieldValue('type') === 'BATCH' ? (
                 <Form.Item
                   name="count"
-                  label="Number of Codes"
+                  label={t('invite_codes.form.count')}
                   rules={[{ required: true, min: 1, max: 100 }]}
                 >
                   <InputNumber min={1} max={100} style={{ width: '100%' }} />
@@ -229,18 +243,20 @@ const InviteCodeManagementPage: React.FC = () => {
 
           <Form.Item
             name="validDays"
-            label="Validity Period (Days)"
+            label={t('invite_codes.form.valid_days')}
             rules={[{ required: true, min: 1 }]}
-            help="Set to 0 for permanent validity"
+            help={t('invite_codes.form.valid_days_help')}
           >
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-              <Button onClick={() => setModalVisible(false)}>Cancel</Button>
+              <Button onClick={() => setModalVisible(false)}>
+                {t('common.cancel')}
+              </Button>
               <Button type="primary" htmlType="submit" loading={generating}>
-                Generate
+                {t('invite_codes.generate')}
               </Button>
             </Space>
           </Form.Item>

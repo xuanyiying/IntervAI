@@ -24,6 +24,7 @@ import {
   FileSearchOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '../../i18n';
 import { optimizationService } from '../../services/optimization-service';
 import { jobService } from '../../services/job-service';
 import { interviewService } from '../../services/interview-service';
@@ -45,8 +46,11 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
   initialOptimizationId,
   onSuccess,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [activeTab, setActiveTab] = useState('job-match');
+  const currentLanguage = normalizeLanguage(
+    i18n.resolvedLanguage || i18n.language
+  );
 
   // Job Match State
   const [jdText, setJdText] = useState('');
@@ -94,8 +98,8 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
       setLoading(true);
       // 1. Create job from JD
       const job = await jobService.createJob({
-        title: 'Target Position', // Default title
-        company: 'Target Company',
+        title: t('resume.target_position_default'),
+        company: t('resume.target_company_default'),
         jobDescription: jdText,
         requirements: jdText, // Also use as requirements for backend logic
       });
@@ -117,7 +121,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
 
   const handleStarPolish = async () => {
     if (!starExperienceText.trim()) {
-      message.warning('Please enter your experience description first');
+      message.warning(t('resume.star.input_required'));
       return;
     }
 
@@ -126,12 +130,12 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
       const response = await interviewService.getPreparationGuide({
         type: 'star',
         question: starExperienceText,
-        language: 'zh-CN', // Default to Chinese as per user context
+        language: currentLanguage,
       });
       setStarResult(response.content);
     } catch (error) {
       console.error('STAR polish failed:', error);
-      message.error('Failed to polish experience');
+      message.error(t('resume.star.polish_failed'));
     } finally {
       setStarLoading(false);
     }
@@ -257,7 +261,8 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
         <div className="sticky-header mb-4 flex justify-between items-center">
           <div>
             <Text strong className="text-lg">
-              AI 优化建议 ({optimization?.suggestions.length || 0})
+              {t('resume.optimization_suggestions')} (
+              {optimization?.suggestions.length || 0})
             </Text>
           </div>
           <Space>
@@ -283,20 +288,22 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
                     <Tag className="tag-section">{suggestion.section}</Tag>
                     {suggestion.status === SuggestionStatus.ACCEPTED ? (
                       <Tag icon={<CheckCircleOutlined />} color="success">
-                        已接受
+                        {t('resume.suggestion_status.accepted')}
                       </Tag>
                     ) : suggestion.status === SuggestionStatus.REJECTED ? (
                       <Tag icon={<CloseCircleOutlined />} color="error">
-                        已拒绝
+                        {t('resume.suggestion_status.rejected')}
                       </Tag>
                     ) : (
-                      <Tag color="warning">待处理</Tag>
+                      <Tag color="warning">
+                        {t('resume.suggestion_status.pending')}
+                      </Tag>
                     )}
                   </Space>
                   <Space>
                     {suggestion.status === SuggestionStatus.PENDING && (
                       <>
-                        <Tooltip title="接受建议">
+                        <Tooltip title={t('resume.accept_suggestion')}>
                           <Button
                             type="text"
                             icon={
@@ -307,7 +314,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
                             }
                           />
                         </Tooltip>
-                        <Tooltip title="拒绝建议">
+                        <Tooltip title={t('resume.reject_suggestion')}>
                           <Button
                             type="text"
                             icon={
@@ -342,22 +349,23 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
     return (
       <div className="py-4 max-w-4xl mx-auto">
         <div className="mb-6">
-          <Title level={4}>STAR 法则经历润色</Title>
+          <Title level={4}>{t('resume.star.title')}</Title>
           <Paragraph className="text-secondary">
-            输入一段您的工作经历描述，AI 将使用 STAR
-            法则（情境、任务、行动、结果）对其进行重写和润色，使其更具职业竞争力和说服力。
+            {t('resume.star.description')}
           </Paragraph>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Input Column */}
           <div className="flex flex-col h-full">
-            <div className="mb-2 font-medium">原始经历描述</div>
+            <div className="mb-2 font-medium">
+              {t('resume.star.input_label')}
+            </div>
             <TextArea
               rows={15}
               value={starExperienceText}
               onChange={(e) => setStarExperienceText(e.target.value)}
-              placeholder="例如：负责后端开发，优化了数据库查询，提高了系统性能..."
+              placeholder={t('resume.star.input_placeholder')}
               className="mb-4 flex-grow"
               style={{ minHeight: '300px' }}
             />
@@ -369,21 +377,21 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
               block
               size="large"
             >
-              使用 STAR 法则润色
+              {t('resume.star.submit')}
             </Button>
           </div>
 
           {/* Output Column */}
           <div className="flex flex-col h-full">
             <div className="mb-2 font-medium flex justify-between items-center">
-              <span>AI 润色结果</span>
+              <span>{t('resume.star.result')}</span>
               {starResult && (
                 <Button
                   size="small"
                   icon={<CopyOutlined />}
                   onClick={() => handleCopy(starResult)}
                 >
-                  复制
+                  {t('common.copy')}
                 </Button>
               )}
             </div>
@@ -393,7 +401,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             >
               {starLoading ? (
                 <div className="flex justify-center items-center h-full">
-                  <Spin tip="正在润色中..." />
+                  <Spin tip={t('resume.star.loading')} />
                 </div>
               ) : starResult ? (
                 <div className="markdown-body">
@@ -407,7 +415,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
                   <StarOutlined
                     style={{ fontSize: '2rem', marginBottom: '1rem' }}
                   />
-                  <div>润色后的内容将显示在这里</div>
+                  <div>{t('resume.star.empty')}</div>
                 </div>
               )}
             </div>
@@ -445,7 +453,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             label: (
               <span>
                 <FileSearchOutlined />
-                职位匹配优化
+                {t('resume.tabs.job_match')}
               </span>
             ),
             children: renderJobMatchContent(),
@@ -455,7 +463,7 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             label: (
               <span>
                 <StarOutlined />
-                STAR 法则润色
+                {t('resume.tabs.star_polish')}
               </span>
             ),
             children: renderStarPolisherContent(),
