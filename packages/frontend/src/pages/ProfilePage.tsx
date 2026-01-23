@@ -463,11 +463,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="profile-container animate-fade-in relative overflow-hidden">
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-secondary-500/5 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="glass-card p-6 md:p-8 relative z-10 border border-white/10">
+      <div className="section-card">
         <div className="mb-8">
           <Title
             level={2}
@@ -476,7 +472,7 @@ const ProfilePage: React.FC = () => {
             {t('profile.title')}
           </Title>
           <Text className="!text-gray-400 mt-1 block">
-            管理您的个人资料、安全设置和账户通知
+            {t('profile.subtitle', '管理您的个人资料、安全设置和账户通知')}
           </Text>
         </div>
 

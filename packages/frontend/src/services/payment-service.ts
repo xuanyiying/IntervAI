@@ -21,11 +21,13 @@ export interface BillingRecord {
 export const paymentService = {
   createCheckoutSession: async (
     priceId: string,
-    provider: 'stripe' | 'paddle' = 'stripe'
+    provider: 'stripe' | 'paddle' = 'stripe',
+    tier?: SubscriptionTier
   ) => {
     const response = await axios.post('/payments/create-checkout-session', {
       priceId,
       provider,
+      tier,
     });
     return response.data;
   },

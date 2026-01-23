@@ -89,9 +89,9 @@ i18n
   .init({
     resources,
     fallbackLng: 'zh-CN',
-    supportedLngs: ['zh-CN', 'en-US'],
+    supportedLngs: ['zh-CN', 'en-US', 'zh', 'en'],
     nonExplicitSupportedLngs: true,
-    load: 'currentOnly',
+    load: 'all',
     interpolation: {
       escapeValue: false,
     },

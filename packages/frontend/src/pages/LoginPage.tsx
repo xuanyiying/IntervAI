@@ -250,7 +250,7 @@ const LoginPage: React.FC = () => {
             size="large"
             onClick={() => handleSocialLogin('google')}
             disabled={!googleEnabled}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
           />
           <Button
             shape="circle"
@@ -258,7 +258,7 @@ const LoginPage: React.FC = () => {
             size="large"
             onClick={() => handleSocialLogin('github')}
             disabled={!githubEnabled}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
           />
         </div>
 

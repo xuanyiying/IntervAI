@@ -131,5 +131,6 @@ export const useResumePage = () => {
     handleDelete,
     handleDeleteWithConfirm,
     handleSetPrimary,
+    fetchOptimizations,
   };
 };

@@ -29,7 +29,11 @@ export class PaddlePaymentProvider implements PaymentProvider {
     }
   }
 
-  async createCheckoutSession(userId: string, priceId: string) {
+  async createCheckoutSession(
+    userId: string,
+    priceId: string,
+    options?: { tier?: SubscriptionTier }
+  ) {
     if (!this.paddle) {
       this.logger.error('Paddle is not configured');
       throw new BadRequestException('Paddle is not configured');
@@ -70,6 +74,8 @@ export class PaddlePaymentProvider implements PaymentProvider {
         ],
         customData: {
           userId,
+          tier: options?.tier || undefined,
+          priceId,
         },
       });
 
@@ -136,6 +142,19 @@ export class PaddlePaymentProvider implements PaymentProvider {
     try {
       await this.paddle.subscriptions.cancel(user.paddleSubscriptionId, {
         effectiveFrom: 'next_billing_period',
+      });
+
+      await this.prisma.subscriptionEvent.create({
+        data: {
+          userId,
+          provider: 'paddle',
+          externalSubscriptionId: user.paddleSubscriptionId,
+          tier: user.subscriptionTier,
+          status: SubscriptionStatus.ACTIVE,
+          action: 'cancel',
+          effectiveAt: new Date(),
+          expiresAt: user.subscriptionExpiresAt || undefined,
+        },
       });
       return {
         message:
@@ -249,8 +268,24 @@ export class PaddlePaymentProvider implements PaymentProvider {
 
     if (!user) return;
 
-    const status = subscription.status;
+    const status = this.mapSubscriptionStatus(subscription.status);
     const expiresAt = new Date(subscription.currentBillingPeriod.endsAt);
+    const rawTier = (subscription.customData?.tier || '').toString();
+    const tier: SubscriptionTier =
+      rawTier === SubscriptionTier.ENTERPRISE
+        ? SubscriptionTier.ENTERPRISE
+        : rawTier === SubscriptionTier.PRO
+          ? SubscriptionTier.PRO
+          : user.subscriptionTier;
+
+    const tierRank = (t: SubscriptionTier) =>
+      t === SubscriptionTier.FREE ? 0 : t === SubscriptionTier.PRO ? 1 : 2;
+    const action =
+      tierRank(user.subscriptionTier) === tierRank(tier)
+        ? 'renew'
+        : tierRank(user.subscriptionTier) < tierRank(tier)
+          ? 'upgrade'
+          : 'downgrade';
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -258,7 +293,23 @@ export class PaddlePaymentProvider implements PaymentProvider {
         subscriptionExpiresAt: expiresAt,
         paddleSubscriptionId: subscription.id,
         subscriptionProvider: 'paddle',
-        subscriptionTier: SubscriptionTier.PRO, // Simplified logic
+        subscriptionTier: tier,
+      },
+    });
+
+    await this.prisma.subscriptionEvent.create({
+      data: {
+        userId: user.id,
+        provider: 'paddle',
+        externalSubscriptionId: subscription.id,
+        tier,
+        status,
+        action,
+        effectiveAt: new Date(),
+        expiresAt,
+        metadata: {
+          priceId: subscription.customData?.priceId || null,
+        },
       },
     });
 
@@ -282,6 +333,18 @@ export class PaddlePaymentProvider implements PaymentProvider {
         subscriptionExpiresAt: null,
         paddleSubscriptionId: null,
         subscriptionProvider: null,
+      },
+    });
+
+    await this.prisma.subscriptionEvent.create({
+      data: {
+        userId: user.id,
+        provider: 'paddle',
+        externalSubscriptionId: subscription.id,
+        tier: SubscriptionTier.FREE,
+        status: SubscriptionStatus.CANCELED,
+        action: 'cancel',
+        effectiveAt: new Date(),
       },
     });
 

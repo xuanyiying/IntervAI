@@ -115,7 +115,9 @@
     "expand": "Expand",
     "profile": "Profile",
     "settings": "Settings",
-    "pricing": "Pricing",
+    "account": "Account",
+    "account_subscription": "Subscription",
+    "account_usage": "Usage",
     "logout": "Logout",
     "admin": "Admin",
     "agents": "AI Agents",
@@ -135,6 +137,94 @@
     "knowledge_base": "Knowledge Base",
     "dark_mode": "Dark Mode",
     "light_mode": "Light Mode"
+  },
+  "account": {
+    "subscription": {
+      "title": "Subscription",
+      "subtitle": "View your plan, renewal date, and subscription changes",
+      "load_failed": "Failed to load subscription data",
+      "current_plan": "Current Plan",
+      "plan": "Plan",
+      "state": "Status",
+      "renew_date": "Renewal Date",
+      "active": "Active",
+      "inactive": "Inactive",
+      "no_active": "No active subscription",
+      "records": "Subscription Changes",
+      "records_empty": "No records",
+      "billing_history": "Billing History",
+      "billing_empty": "No invoices",
+      "columns": {
+        "effective_at": "Effective At",
+        "action": "Action",
+        "plan": "Plan",
+        "status": "Status",
+        "expires_at": "Expires At"
+      },
+      "billing": {
+        "columns": {
+          "date": "Date",
+          "amount": "Amount",
+          "status": "Status",
+          "invoice": "Invoice"
+        },
+        "download_invoice": "Download"
+      },
+      "billing_status": {
+        "paid": "Paid",
+        "failed": "Failed"
+      },
+      "action": {
+        "create": "Created",
+        "renew": "Renewed",
+        "upgrade": "Upgraded",
+        "downgrade": "Downgraded",
+        "cancel": "Canceled"
+      },
+      "tier": {
+        "FREE": "Free",
+        "PRO": "Pro",
+        "ENTERPRISE": "Enterprise"
+      },
+      "status": {
+        "ACTIVE": "Active",
+        "PAST_DUE": "Past Due",
+        "CANCELED": "Canceled",
+        "INCOMPLETE": "Incomplete",
+        "INCOMPLETE_EXPIRED": "Expired",
+        "TRIALING": "Trialing",
+        "UNPAID": "Unpaid"
+      }
+    },
+    "usage": {
+      "title": "Usage",
+      "subtitle": "Track AI usage and quota status for the current period",
+      "load_failed": "Failed to load usage data",
+      "period": "Billing Period",
+      "ai_usage": "AI Usage",
+      "quota": "Quota",
+      "trend": "Trend",
+      "trend_hint": "Calls trend in the last 30 days",
+      "unlimited": "Unlimited",
+      "reset_at": "Resets At",
+      "metrics": {
+        "total_calls": "Calls",
+        "successful_calls": "Success",
+        "failed_calls": "Failed",
+        "avg_latency": "Avg Latency (ms)",
+        "input_tokens": "Input Tokens",
+        "output_tokens": "Output Tokens",
+        "total_cost": "Cost (USD)"
+      },
+      "quota": {
+        "optimizations": "Optimizations",
+        "pdf": "PDF Exports"
+      },
+      "quota_items": {
+        "optimizations": "Optimizations",
+        "pdf": "PDF Exports"
+      }
+    }
   },
   "invite_codes": {
     "title": "Invitation Code Management",
@@ -605,5 +695,24 @@
     "chunk_info": "Chunk #{{index}}",
     "clear_all": "Clear Knowledge Base",
     "clear_confirm": "Are you sure to clear the entire knowledge base? This cannot be undone."
+  },
+  "resume_builder": {
+    "build": "Build",
+    "preview": "Preview",
+    "json": "JSON",
+    "export_pdf": "Export PDF",
+    "reset": "Reset to default",
+    "themes": {
+      "modern": "Modern Dark",
+      "minimal": "Minimal Light",
+      "emerald": "Emerald Professional",
+      "royal": "Royal Serif"
+    },
+    "resume_sections": "Resume Sections",
+    "select_section_hint": "Select a section to start editing",
+    "section_title": "Section Title",
+    "content_editor": "Content Editor",
+    "content_placeholder": "# Start building your story...",
+    "markdown_version": "Markdown v4.0"
   }
 }

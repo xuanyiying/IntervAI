@@ -15,11 +15,9 @@ import { ChatWelcome } from './components/ChatWelcome';
 import { ChatList } from './components/ChatList';
 import { ChatInput } from './components/ChatInput';
 import ResumeComparisonDialog from '../../components/ResumeComparisonDialog';
-import JobInputDialog from '../../components/JobInputDialog';
 
 // Hooks
 import { useResumeUpload } from './hooks/useResumeUpload';
-import { useJobActions } from './hooks/useJobActions';
 import { useOptimization } from './hooks/useOptimization';
 import { useChatItems } from './hooks/useChatItems';
 
@@ -173,23 +171,8 @@ const ChatPage: React.FC = () => {
     handleStartOptimization,
   } = useOptimization({
     sendSocketMessage,
-    setLocalItems: setUploadItems, // Reuse upload items for PDF gen status which is similar
+    setLocalItems: setUploadItems,
   });
-
-  // 4. Job Actions
-  const {
-    jobInputDialogVisible,
-    setJobInputDialogVisible,
-    editingJob,
-    setEditingJob,
-    handleJobCreated,
-    handleJobConfirm,
-    handleJobEdit,
-    handleJobUpdated,
-    handleJobDelete,
-  } = useJobActions(() =>
-    handleStartOptimization(!!(currentResume || comparisonData.original))
-  );
 
   // 5. Chat Items Aggregation
   const items = useChatItems({
@@ -337,9 +320,7 @@ const ChatPage: React.FC = () => {
       return;
     }
 
-    if (key === 'job_input') {
-      setJobInputDialogVisible(true);
-    } else if (key === 'resume_optimization') {
+    if (key === 'resume_optimization') {
       let targetId = currentConversation?.id;
       if (!targetId && (currentResume || comparisonData.original)) {
         try {
@@ -416,9 +397,9 @@ const ChatPage: React.FC = () => {
                 },
                 onOpenComparison: () => setComparisonVisible(true),
                 onDownloadOptimized: handleDownloadOptimized,
-                onConfirmJob: handleJobConfirm,
-                onEditJob: handleJobEdit,
-                onDeleteJob: handleJobDelete,
+                onConfirmJob: () => {},
+                onEditJob: () => {},
+                onDeleteJob: () => {},
                 onAcceptSuggestion: handleAcceptSuggestion,
                 onRejectSuggestion: handleRejectSuggestion,
                 onAcceptAllSuggestions: handleAcceptAllSuggestions,
@@ -441,17 +422,6 @@ const ChatPage: React.FC = () => {
         originalContent={comparisonData.original}
         optimizedContent={comparisonData.optimized}
         onDownload={handleDownloadOptimized}
-      />
-
-      <JobInputDialog
-        visible={jobInputDialogVisible}
-        onClose={() => {
-          setJobInputDialogVisible(false);
-          setEditingJob(null);
-        }}
-        onJobCreated={handleJobCreated}
-        onJobUpdated={handleJobUpdated}
-        initialData={editingJob}
       />
 
       <Modal

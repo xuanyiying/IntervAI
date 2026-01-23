@@ -3,6 +3,7 @@ import { PaymentProvider } from './interfaces/payment-provider.interface';
 import { StripePaymentProvider } from './providers/stripe-payment.provider';
 import { PaddlePaymentProvider } from './providers/paddle-payment.provider';
 import { PrismaService } from '../prisma/prisma.service';
+import { SubscriptionTier } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
@@ -24,10 +25,11 @@ export class PaymentService {
   async createCheckoutSession(
     userId: string,
     priceId: string,
-    providerName: 'stripe' | 'paddle' = 'stripe'
+    providerName: 'stripe' | 'paddle' = 'stripe',
+    options?: { tier?: SubscriptionTier }
   ) {
     const provider = this.getProvider(providerName);
-    return provider.createCheckoutSession(userId, priceId);
+    return provider.createCheckoutSession(userId, priceId, options);
   }
 
   async getUserSubscription(userId: string) {

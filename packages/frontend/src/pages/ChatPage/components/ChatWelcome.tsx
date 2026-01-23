@@ -32,11 +32,6 @@ export const ChatWelcome: React.FC<ChatWelcomeProps> = ({
 
   const welcomeActions = [
     {
-      icon: <Briefcase size={20} />,
-      label: t('chat.actions.job_input', '职位输入'),
-      key: 'job_input',
-    },
-    {
       icon: <Sparkles size={20} />,
       label: t('chat.actions.resume_optimization', '简历优化'),
       key: 'resume_optimization',
@@ -61,7 +56,7 @@ export const ChatWelcome: React.FC<ChatWelcomeProps> = ({
   return (
     <div className="welcome-container">
       <h1 className="welcome-title">
-        {t('chat.welcome_title', '你好，我是你的面试求职AI助手')}
+        {t('chat.welcome_title', '你好，我是你的求职面试AI助手')}
       </h1>
 
       <div className="w-full max-w-3xl mx-auto px-4">
