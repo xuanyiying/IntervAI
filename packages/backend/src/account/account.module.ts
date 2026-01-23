@@ -12,4 +12,3 @@ import { AccountService } from './account.service';
   providers: [AccountService],
 })
 export class AccountModule {}
-

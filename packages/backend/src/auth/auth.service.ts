@@ -83,8 +83,9 @@ export class AuthService {
       : undefined;
 
     if (sanitizedInvitationCode) {
-      const isCodeValid =
-        await this.invitationService.validateCode(sanitizedInvitationCode);
+      const isCodeValid = await this.invitationService.validateCode(
+        sanitizedInvitationCode
+      );
       if (!isCodeValid) {
         throw new BadRequestException('Invalid or used invitation code');
       }

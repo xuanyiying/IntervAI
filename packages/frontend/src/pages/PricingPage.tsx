@@ -35,9 +35,9 @@ const PricingPage: React.FC = () => {
   const [isYearly, setIsYearly] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedPriceId, setSelectedPriceId] = useState('');
-  const [selectedTier, setSelectedTier] = useState<SubscriptionTier | undefined>(
-    undefined
-  );
+  const [selectedTier, setSelectedTier] = useState<
+    SubscriptionTier | undefined
+  >(undefined);
   const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'paddle'>(
     'stripe'
   );

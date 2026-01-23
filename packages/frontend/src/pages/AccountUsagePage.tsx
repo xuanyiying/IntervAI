@@ -100,7 +100,8 @@ const AccountUsagePage: React.FC = () => {
       quota?.optimizationsLimit === -1
         ? 0
         : clamp(
-            (quota?.optimizationsUsed / Math.max(1, quota?.optimizationsLimit)) *
+            (quota?.optimizationsUsed /
+              Math.max(1, quota?.optimizationsLimit)) *
               100,
             0,
             100
@@ -109,7 +110,8 @@ const AccountUsagePage: React.FC = () => {
       quota?.pdfGenerationsLimit === -1
         ? 0
         : clamp(
-            (quota?.pdfGenerationsUsed / Math.max(1, quota?.pdfGenerationsLimit)) *
+            (quota?.pdfGenerationsUsed /
+              Math.max(1, quota?.pdfGenerationsLimit)) *
               100,
             0,
             100
@@ -141,10 +143,7 @@ const AccountUsagePage: React.FC = () => {
           />
         )}
 
-        <Card
-          title={t('account.usage.period', '计费周期')}
-          loading={loading}
-        >
+        <Card title={t('account.usage.period', '计费周期')} loading={loading}>
           <Text>
             {data?.period?.start && data?.period?.end
               ? `${formatDateTime(data.period.start)} → ${formatDateTime(
@@ -154,7 +153,10 @@ const AccountUsagePage: React.FC = () => {
           </Text>
         </Card>
 
-        <Card title={t('account.usage.ai_usage', 'AI 使用情况')} loading={loading}>
+        <Card
+          title={t('account.usage.ai_usage', 'AI 使用情况')}
+          loading={loading}
+        >
           <Row gutter={[16, 16]}>
             <Col xs={12} md={6}>
               <Statistic
@@ -205,7 +207,11 @@ const AccountUsagePage: React.FC = () => {
         <Card title={t('account.usage.quota', '配额')} loading={loading}>
           <Row gutter={[16, 16]}>
             <Col xs={24} md={12}>
-              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: '100%' }}
+              >
                 <Text strong>
                   {t('account.usage.quota.optimizations', '简历优化')}
                 </Text>
@@ -228,7 +234,11 @@ const AccountUsagePage: React.FC = () => {
               </Space>
             </Col>
             <Col xs={24} md={12}>
-              <Space direction="vertical" size="small" style={{ width: '100%' }}>
+              <Space
+                direction="vertical"
+                size="small"
+                style={{ width: '100%' }}
+              >
                 <Text strong>{t('account.usage.quota.pdf', 'PDF 导出')}</Text>
                 <Text type="secondary">
                   {quota?.pdfGenerationsLimit === -1
@@ -265,4 +275,3 @@ const AccountUsagePage: React.FC = () => {
 };
 
 export default AccountUsagePage;
-

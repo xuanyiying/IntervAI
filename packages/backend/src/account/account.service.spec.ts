@@ -141,4 +141,3 @@ describe('AccountService', () => {
     expect(result.dailySeries[1].totalCalls).toBe(1);
   });
 });
-

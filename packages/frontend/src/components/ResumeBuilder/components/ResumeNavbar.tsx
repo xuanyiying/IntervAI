@@ -98,7 +98,9 @@ export const ResumeNavbar: React.FC<ResumeNavbarProps> = ({
           <div className="h-6 w-[1px] bg-white/10 mx-2" />
           <button onClick={onExportJSON} className={BUTTON_SECONDARY}>
             <FileJson size={18} />
-            <span className="hidden sm:inline">{t('resume_builder.json', 'JSON')}</span>
+            <span className="hidden sm:inline">
+              {t('resume_builder.json', 'JSON')}
+            </span>
           </button>
           <button onClick={onExportPDF} className={BUTTON_PRIMARY}>
             <Download size={18} />
