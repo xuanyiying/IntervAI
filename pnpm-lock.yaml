@@ -314,7 +314,7 @@ importers:
         version: 6.0.0(date-fns@2.30.0)(luxon@3.7.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       axios:
         specifier: ^1.4.0
-        version: 1.13.2
+        version: 1.13.2(debug@4.4.3)
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
@@ -355,9 +355,6 @@ importers:
         specifier: ^4.4.0
         version: 4.5.7(@types/react@18.3.27)(react@18.3.1)
     devDependencies:
-      '@playwright/test':
-        specifier: ^1.57.0
-        version: 1.57.0
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -14597,14 +14594,6 @@ snapshots:
 
   aws4@1.13.2: {}
 
-  axios@1.13.2:
-    dependencies:
-      follow-redirects: 1.15.11
-      form-data: 4.0.5
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
-
   axios@1.13.2(debug@4.4.3):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.3)
@@ -16114,8 +16103,6 @@ snapshots:
   flatted@3.3.3: {}
 
   fn.name@1.1.0: {}
-
-  follow-redirects@1.15.11: {}
 
   follow-redirects@1.15.11(debug@4.4.3):
     optionalDependencies:
