@@ -97,6 +97,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Create GitHub Deployment
+        id: create_deployment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: '${{ github.event.inputs.environment || 'production' }}',
+              auto_merge: false,
+              required_contexts: [],
+            });
+            return deployment.id;
+
       - name: Deploy to staging
         if: github.event.inputs.environment == 'staging' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
         env:
@@ -104,12 +119,19 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST_STAGING }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER_STAGING }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_STAGING }}
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ steps.version.outputs.version }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && docker-compose pull && docker-compose up -d"
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
+            export BACKEND_IMAGE=$BACKEND_IMAGE && \
+            export FRONTEND_IMAGE=$FRONTEND_IMAGE && \
+            docker-compose pull && \
+            docker-compose up -d && \
+            docker system prune -f"
 
       - name: Deploy to production
         if: github.event.inputs.environment == 'production' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/'))
@@ -118,21 +140,37 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST_PRODUCTION }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER_PRODUCTION }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_PRODUCTION }}
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ steps.version.outputs.version }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts
-          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && docker-compose pull && docker-compose up -d"
+          ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
+            export BACKEND_IMAGE=$BACKEND_IMAGE && \
+            export FRONTEND_IMAGE=$FRONTEND_IMAGE && \
+            docker-compose pull && \
+            docker-compose up -d && \
+            docker system prune -f"
 
-      - name: Notify deployment
+      - name: Update Deployment Status
         if: always()
         uses: actions/github-script@v6
         with:
           script: |
-            const status = context.payload.pull_request ? 'pending' : '${{ job.status }}';
-            const environment = '${{ github.event.inputs.environment || 'production' }}';
-            console.log(`Deployment to ${environment} completed with status: ${status}`);
+            const deploymentId = ${{ steps.create_deployment.outputs.result }};
+            const jobStatus = '${{ job.status }}';
+            const state = jobStatus === 'success' ? 'success' : (jobStatus === 'failure' ? 'failure' : 'error');
+            
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deploymentId,
+              state: state,
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              environment_url: '${{ github.event.inputs.environment == 'staging' && 'https://staging.example.com' || 'https://example.com' }}', // 请替换为实际 URL
+            });
 
   notify:
     name: Notify Deployment Status
@@ -141,40 +179,53 @@ jobs:
     if: always()
     steps:
       - name: Send Slack notification
-        if: failure()
         uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
             {
-              "text": "Deployment failed for ${{ github.repository }}",
+              "text": "Deployment ${{ needs.deploy.result }} for ${{ github.repository }}",
               "blocks": [
                 {
-                  "type": "section",
+                  "type": "header",
                   "text": {
-                    "type": "mrkdwn",
-                    "text": "*Deployment Failed* :x:\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref }}\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    "type": "plain_text",
+                    "text": "Deployment ${{ needs.deploy.result == 'success' && 'Succeeded ✅' || 'Failed ❌' }}",
+                    "emoji": true
                   }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-
-      - name: Send Slack notification on success
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          payload: |
-            {
-              "text": "Deployment succeeded for ${{ github.repository }}",
-              "blocks": [
+                },
                 {
                   "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Deployment Succeeded* :white_check_mark:\n*Repository:* ${{ github.repository }}\n*Branch:* ${{ github.ref }}\n*Commit:* <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
-                  }
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:*\n${{ github.event.inputs.environment || 'production' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
+                    }
+                  ]
+                },
+                {
+                  "type": "actions",
+                  "elements": [
+                    {
+                      "type": "button",
+                      "text": {
+                        "type": "plain_text",
+                        "text": "View Action Logs"
+                      },
+                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    }
+                  ]
                 }
               ]
             }

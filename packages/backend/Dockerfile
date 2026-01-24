@@ -59,14 +59,14 @@ RUN npm install -g prisma@5.22.0 && \
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install Chromium and OpenSSL (required for Prisma)
+# Install only necessary runtime dependencies
+# Chromium is required for Puppeteer (PDF generation)
+# OpenSSL is required for Prisma
 RUN apk add --no-cache chromium openssl
-
-# Install ts-node and dependencies for seeding
-RUN npm install ts-node typescript tsconfig-paths
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
@@ -74,14 +74,14 @@ RUN adduser --system --uid 1001 nestjs
 # Copy the fully prepared deploy directory
 COPY --from=builder --chown=nestjs:nodejs /app/deploy /app
 
-# Create backups directory with correct permissions
-RUN mkdir -p /app/backups && chown nestjs:nodejs /app/backups
+# Create backups and logs directory with correct permissions
+RUN mkdir -p /app/backups /app/logs && \
+    chown -R nestjs:nodejs /app/backups /app/logs
 
 USER nestjs
 
 EXPOSE 3000
 
 ENV PORT=3000
-ENV NODE_ENV=production
 
 CMD ["node", "dist/main"]

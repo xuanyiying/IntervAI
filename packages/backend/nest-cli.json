@@ -5,7 +5,7 @@
   "entryFile": "main",
   "compilerOptions": {
     "deleteOutDir": true,
-    "webpack": false,
+    "webpack": true,
     "tsConfigPath": "tsconfig.build.json"
   }
 }
