@@ -171,8 +171,7 @@ services:
     build:
       context: ..
       dockerfile: packages/frontend/Dockerfile
-      args:
-        NODE_ENV: production
+    image: ${FRONTEND_IMAGE:-ghcr.io/interview-ai/frontend:latest}
     # container_name: frontend # Removed to allow scaling with replicas
     depends_on:
       backend:

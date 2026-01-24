@@ -26,6 +26,7 @@ ENV="dev"
 SKIP_BUILD=false
 SKIP_PULL=false
 SETUP_SSL=false
+SERVICES=""
 
 # 帮助信息
 show_help() {
@@ -36,6 +37,7 @@ IntervAI 部署脚本
 
 选项:
   -e, --env <env>       部署环境: dev (默认) 或 prod
+  -s, --services <list> 只构建/启动指定的组件 (例如: "backend frontend")
   --skip-build          跳过 Docker 镜像构建
   --skip-pull           跳过代码拉取 (git pull)
   --ssl                 配置 SSL 证书 (仅 prod)
@@ -53,6 +55,7 @@ EOF
 while [[ $# -gt 0 ]]; do
     case $1 in
         -e|--env) ENV="$2"; shift 2 ;;
+        -s|--services) SERVICES="$2"; shift 2 ;;
         --skip-build) SKIP_BUILD=true; shift ;;
         --skip-pull) SKIP_PULL=true; shift ;;
         --ssl) SETUP_SSL=true; shift ;;
@@ -134,16 +137,16 @@ main() {
 
     # 4. 构建镜像
     if [ "$SKIP_BUILD" = false ]; then
-        log_step "构建 Docker 镜像..."
+        log_step "构建 Docker 镜像... ${SERVICES}"
         # 确保使用正确的 compose 文件
-        docker compose --env-file "$env_file" -f "$compose_file" build --no-cache
+        docker compose --env-file "$env_file" -f "$compose_file" build --no-cache $SERVICES
     else
         log_info "跳过镜像构建"
     fi
 
     # 5. 启动服务
-    log_step "启动服务..."
-    docker compose --env-file "$env_file" -f "$compose_file" up -d
+    log_step "启动服务... ${SERVICES}"
+    docker compose --env-file "$env_file" -f "$compose_file" up -d $SERVICES
 
     # 6. 数据库迁移
     log_step "执行数据库迁移..."
