@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/node';
 import { Logger } from 'winston';
 import { Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { PrismaService } from '@/prisma/prisma.service';
 
 /**
  * Monitoring Service
@@ -12,7 +13,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 @Injectable()
 export class MonitoringService implements OnModuleInit {
   constructor(
-    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger
+    @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
+    private prisma: PrismaService
   ) {}
 
   onModuleInit() {
@@ -131,13 +133,47 @@ export class MonitoringService implements OnModuleInit {
     labels: Record<string, string> = {},
     _hint?: string
   ): Promise<void> {
-    // Create or update gauge
     const metricKey = this.getMetricKey(name, labels);
 
-    // In a real implementation, we would send this to Prometheus or another metrics system
-    // For now, we'll just log it if it's significant
-    if (process.env.NODE_ENV !== 'production') {
-      this.logger.debug(`Metric recorded: ${metricKey} = ${value}`);
+    try {
+      const provider = labels.provider || 'unknown';
+      const isSuccess = labels.success !== 'false'; // Default to success unless explicitly false
+      const latency = value;
+
+      // Update or create performance metrics in the database
+      // This provides persistent performance tracking as required by 10.2
+      await this.prisma.performanceMetrics.upsert({
+        where: { model: name },
+        update: {
+          totalCalls: { increment: 1 },
+          successfulCalls: isSuccess ? { increment: 1 } : undefined,
+          failedCalls: !isSuccess ? { increment: 1 } : undefined,
+          lastUpdated: new Date(),
+          // Simple average latency update
+          averageLatency: latency,
+          maxLatency: { set: latency > 0 ? latency : undefined }, // Simplified max check
+        },
+        create: {
+          model: name,
+          provider: provider,
+          totalCalls: 1,
+          successfulCalls: isSuccess ? 1 : 0,
+          failedCalls: isSuccess ? 0 : 1,
+          averageLatency: latency,
+          maxLatency: latency,
+          minLatency: latency,
+          successRate: isSuccess ? 100 : 0,
+          failureRate: isSuccess ? 0 : 100,
+        },
+      });
+
+      if (process.env.NODE_ENV !== 'production') {
+        this.logger.debug(`Metric recorded in DB: ${metricKey} = ${value}`);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to persist metric: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

@@ -1,7 +1,11 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
 export class CreateSessionDto {
   @IsNotEmpty()
   @IsString()
   optimizationId: string;
+
+  @IsString()
+  @IsOptional()
+  voiceId?: string;
 }

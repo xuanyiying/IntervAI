@@ -8,6 +8,7 @@ import { AlertingController } from './alerting.controller';
 import { MonitoringInterceptor } from './monitoring.interceptor';
 import { MonitoringExceptionFilter } from './monitoring.filter';
 import { MonitoringGuard } from './monitoring.guard';
+import { PrismaModule } from '@/prisma/prisma.module';
 
 /**
  * Monitoring Module
@@ -15,7 +16,7 @@ import { MonitoringGuard } from './monitoring.guard';
  * Provides APM, metrics collection, error tracking, and alerting capabilities
  */
 @Module({
-  imports: [WinstonModule],
+  imports: [WinstonModule, PrismaModule],
   controllers: [MetricsController, AlertingController],
   providers: [
     MonitoringService,

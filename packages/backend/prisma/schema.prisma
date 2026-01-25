@@ -48,9 +48,27 @@ model User {
   sessions              Session[]
   storages              Storage[]
   subscriptionEvents    SubscriptionEvent[]
+  voices                Voice[]
 
   @@index([email])
   @@map("users")
+}
+
+model Voice {
+  id          String   @id @default(uuid())
+  userId      String?  // Null for system default voices
+  name        String
+  voiceType   String   // e.g., "DEFAULT", "CLONED"
+  style       String?  // e.g., "Professional", "Friendly", "Serious"
+  avatarUrl   String?
+  sampleUrl   String?  // Sample audio URL for preview
+  voiceCode   String   @unique // Code used by Alibaba TTS
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("voices")
 }
 
 model SubscriptionEvent {
@@ -527,6 +545,7 @@ model InterviewSession {
   endTime        DateTime?
   score          Int?
   feedback       String?
+  voiceId        String?
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   messages       InterviewMessage[]

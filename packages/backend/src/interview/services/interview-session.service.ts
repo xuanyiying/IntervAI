@@ -18,6 +18,7 @@ import { CreateSessionDto } from '../dto/create-session.dto';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { EndSessionDto } from '../dto/end-session.dto';
 import { ParsedJobData, ParsedResumeData } from '@/types';
+import { AlibabaVoiceService } from '@/voice/voice.service';
 
 @Injectable()
 export class InterviewSessionService {
@@ -26,7 +27,8 @@ export class InterviewSessionService {
   constructor(
     private prisma: PrismaService,
     private aiEngine: AIEngine,
-    private quotaService: QuotaService
+    private quotaService: QuotaService,
+    private voiceService: AlibabaVoiceService
   ) {}
 
   /**
@@ -42,7 +44,20 @@ export class InterviewSessionService {
     // Check interview quota
     await this.quotaService.enforceInterviewQuota(userId);
 
-    const { optimizationId } = createSessionDto;
+    const { optimizationId, voiceId } = createSessionDto;
+
+    // Verify voiceId if provided
+    if (voiceId) {
+      const voices = await this.voiceService.getVoices(userId);
+      const voiceExists = voices.some(
+        (v: any) => v.id === voiceId || v.voiceCode === voiceId
+      );
+      if (!voiceExists) {
+        throw new NotFoundException(
+          `Voice with ID or Code ${voiceId} not found`
+        );
+      }
+    }
 
     // Verify user owns the optimization
     const optimization = await this.prisma.optimization.findUnique({
@@ -70,6 +85,7 @@ export class InterviewSessionService {
       data: {
         userId,
         optimizationId,
+        voiceId: createSessionDto.voiceId,
         status: InterviewStatus.IN_PROGRESS,
       },
       include: {

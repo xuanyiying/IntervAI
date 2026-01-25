@@ -25,6 +25,7 @@ import { InvitationModule } from './invitation/invitation.module';
 import { ChatModule } from './chat/chat.module';
 import { AgentModule } from './agent/agent.module';
 import { AccountModule } from './account/account.module';
+import { VoiceModule } from './voice/voice.module';
 import { loggerConfig } from './logger/logger.config';
 import {
   PerformanceMiddleware,
@@ -70,6 +71,7 @@ import { AuthModule } from './auth/auth.module';
     ChatModule,
     AgentModule,
     AccountModule,
+    VoiceModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

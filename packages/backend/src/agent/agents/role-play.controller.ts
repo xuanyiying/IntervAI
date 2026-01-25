@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Get,
   Param,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   IsString,
@@ -25,6 +26,7 @@ import {
   InterviewFeedback,
 } from '@/agent';
 import { ParsedResumeData } from '@/types';
+import { PrismaService } from '@/prisma/prisma.service';
 
 /**
  * Request DTO for starting interview
@@ -74,7 +76,10 @@ export class ConcludeInterviewRequest {
 export class RolePlayController {
   private readonly logger = new Logger(RolePlayController.name);
 
-  constructor(private rolePlayAgent: RolePlayAgent) {}
+  constructor(
+    private rolePlayAgent: RolePlayAgent,
+    private prisma: PrismaService
+  ) {}
 
   /**
    * Start a new mock interview session
@@ -226,16 +231,32 @@ export class RolePlayController {
         `Retrieving feedback for session ${sessionId} for user ${req.user.id}`
       );
 
-      // In a real implementation, you would retrieve from database
-      // For now, we'll return a placeholder
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.NOT_FOUND,
-          message: 'Feedback not found',
+      const session = await this.prisma.interviewSession.findFirst({
+        where: {
+          id: sessionId,
+          userId: req.user.id,
         },
-        HttpStatus.NOT_FOUND
-      );
+      });
+
+      if (!session || !session.feedback) {
+        throw new NotFoundException('Feedback not found for this session');
+      }
+
+      // Parse the feedback string back into InterviewFeedback object
+      // Assuming feedback was stored as a JSON string
+      try {
+        return JSON.parse(session.feedback) as InterviewFeedback;
+      } catch (e) {
+        // If not JSON, it might be legacy or simple text
+        this.logger.warn(`Feedback for session ${sessionId} is not valid JSON`);
+        throw new HttpException(
+          'Feedback format is invalid',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
     } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+
       this.logger.error(
         `Failed to get feedback: ${error instanceof Error ? error.message : String(error)}`
       );

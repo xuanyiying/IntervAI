@@ -7,8 +7,10 @@ import { AIModule } from '../ai/ai.module';
 import { AIProvidersModule } from '../ai-providers/ai-providers.module';
 import { RedisModule } from '../redis/redis.module';
 import { QuotaModule } from '../quota/quota.module';
+import { VoiceModule } from '../voice/voice.module';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
+import { InterviewGateway } from './interview.gateway';
 import { QuestionGeneratorService } from './services/question-generator.service';
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
@@ -20,6 +22,7 @@ import { EvaluationProcessor } from './processors/evaluation.processor';
     AIProvidersModule,
     RedisModule,
     QuotaModule,
+    VoiceModule,
     BullModule.registerQueue({
       name: 'interview-evaluation',
     }),
@@ -28,6 +31,7 @@ import { EvaluationProcessor } from './processors/evaluation.processor';
     InterviewService,
     InterviewQuestionService,
     InterviewSessionService,
+    InterviewGateway,
     QuestionGeneratorService,
     AnswerEvaluationService,
     EvaluationProcessor,
