@@ -15,7 +15,8 @@ export const interviewService = {
    * @returns The created interview session and the first question
    */
   startSession: async (
-    optimizationId: string
+    optimizationId: string,
+    voiceId?: string
   ): Promise<{
     session: InterviewSession;
     firstQuestion: InterviewQuestion;
@@ -25,6 +26,7 @@ export const interviewService = {
       firstQuestion: InterviewQuestion;
     }>('/interview/session', {
       optimizationId,
+      voiceId,
     });
     return response.data;
   },

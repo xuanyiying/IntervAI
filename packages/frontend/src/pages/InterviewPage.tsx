@@ -12,10 +12,17 @@ import {
   Input,
   Divider,
 } from 'antd';
-import { AudioOutlined, StopOutlined, SendOutlined } from '@ant-design/icons';
+import {
+  AudioOutlined,
+  StopOutlined,
+  SendOutlined,
+  PhoneOutlined,
+} from '@ant-design/icons';
 import { interviewService } from '../services/interview-service';
 import { InterviewQuestion, InterviewSession } from '@/types';
 import { useTranslation } from 'react-i18next';
+import VoiceManager from '../components/VoiceManager';
+import VoiceInterviewCall from '../components/VoiceInterviewCall';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -40,6 +47,8 @@ const InterviewPage: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [answerText, setAnswerText] = useState('');
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string | undefined>();
+  const [isVoiceCallActive, setIsVoiceCallActive] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -72,7 +81,10 @@ const InterviewPage: React.FC = () => {
         }
       } else {
         // Start new session
-        const result = await interviewService.startSession(optimizationId!);
+        const result = await interviewService.startSession(
+          optimizationId!,
+          selectedVoiceId
+        );
         setSession(result.session);
         setCurrentQuestion(result.firstQuestion);
         // We need to know total questions. The startSession response might need update or we fetch it.
@@ -246,9 +258,20 @@ const InterviewPage: React.FC = () => {
           </div>
         }
         extra={
-          <Button danger onClick={endSessionEarly}>
-            {t('interview.end_early')}
-          </Button>
+          <Space>
+            <Button
+              type="primary"
+              ghost
+              icon={<PhoneOutlined />}
+              onClick={() => setIsVoiceCallActive(true)}
+              disabled={loading}
+            >
+              Start Voice Call
+            </Button>
+            <Button danger onClick={endSessionEarly}>
+              {t('interview.end_early')}
+            </Button>
+          </Space>
         }
       >
         <Progress
@@ -345,6 +368,44 @@ const InterviewPage: React.FC = () => {
           )}
         </div>
       </Card>
+
+      <Modal
+        title="Voice Interview Settings"
+        open={isVoiceCallActive && !session}
+        onCancel={() => setIsVoiceCallActive(false)}
+        footer={null}
+        width={800}
+      >
+        <VoiceManager
+          onSelect={setSelectedVoiceId}
+          selectedVoiceId={selectedVoiceId}
+        />
+        <div style={{ textAlign: 'right', marginTop: 24 }}>
+          <Button
+            type="primary"
+            size="large"
+            onClick={initializeSession}
+            disabled={!selectedVoiceId}
+          >
+            Start Interview with Selected Voice
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={isVoiceCallActive && !!session}
+        footer={null}
+        closable={false}
+        width={600}
+        centered
+        styles={{ body: { padding: 0 } }}
+      >
+        <VoiceInterviewCall
+          sessionId={session?.id || ''}
+          onClose={() => setIsVoiceCallActive(false)}
+          voiceId={selectedVoiceId}
+        />
+      </Modal>
 
       <Modal
         title={t('interview.feedback_title')}

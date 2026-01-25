@@ -18,6 +18,7 @@ import {
   InterviewQuestionWithMetadata,
 } from './strategist.agent';
 import { ParsedResumeData } from '@/types';
+import { PrismaService } from '@/prisma/prisma.service';
 
 /**
  * Request DTO for question bank generation
@@ -51,7 +52,10 @@ export class UpdateQuestionBankRequest {
 export class StrategistController {
   private readonly logger = new Logger(StrategistController.name);
 
-  constructor(private strategistAgent: StrategistAgent) {}
+  constructor(
+    private strategistAgent: StrategistAgent,
+    private prisma: PrismaService
+  ) {}
 
   /**
    * Generate customized question bank
@@ -113,9 +117,25 @@ export class StrategistController {
         `Updating question bank for user ${req.user.id} based on performance`
       );
 
-      // Note: In a real implementation, we would fetch the current question bank from storage
-      // For now, we'll return a placeholder response
-      const currentQuestions: InterviewQuestionWithMetadata[] = [];
+      // Fetch the most recent successful strategist session to get the current question bank
+      const lastSession = await this.prisma.agentSession.findFirst({
+        where: {
+          userId: req.user.id,
+          agentType: 'strategist',
+          status: 'COMPLETED',
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      let currentQuestions: InterviewQuestionWithMetadata[] = [];
+      if (lastSession && lastSession.output) {
+        const output = lastSession.output as any;
+        if (Array.isArray(output.questions)) {
+          currentQuestions = output.questions;
+        }
+      }
 
       const updatedQuestions =
         await this.strategistAgent.updateBasedOnPerformance(

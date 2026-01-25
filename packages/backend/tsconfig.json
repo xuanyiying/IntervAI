@@ -1,5 +1,4 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -14,12 +13,15 @@
     "baseUrl": "./",
     "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo",
     "skipLibCheck": true,
+    "strict": true,
     "strictNullChecks": true,
     "strictPropertyInitialization": false,
     "noImplicitAny": true,
     "strictBindCallApply": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "types": ["node", "jest", "express", "multer"],
     "paths": {
       "@/*": ["src/*"]
