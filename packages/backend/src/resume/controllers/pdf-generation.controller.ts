@@ -11,7 +11,7 @@ import {
   Logger,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import PdfGenerationService, {
   PDFOptions,
 } from '../services/pdf-generation.service';
