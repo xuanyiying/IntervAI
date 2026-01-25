@@ -1,5 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MetricsService } from './metrics.service';
 
