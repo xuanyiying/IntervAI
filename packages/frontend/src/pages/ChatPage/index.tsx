@@ -9,6 +9,7 @@ import {
 } from '../../stores';
 import { useChatSocket } from '../../hooks/useChatSocket';
 import { AttachmentStatus, MessageRole } from '../../types';
+import { accountService } from '../../services/account-service';
 
 // Components
 import { ChatWelcome } from './components/ChatWelcome';
@@ -28,6 +29,7 @@ const ChatPage: React.FC = () => {
   const { id: conversationId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [usage, setUsage] = useState<any>(null);
 
   // Local State
   const [value, setValue] = useState('');
@@ -39,12 +41,44 @@ const ChatPage: React.FC = () => {
   const [guestMessages, setGuestMessages] = useState<any[]>([]);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  // Usage Data Fetching
+  const fetchUsage = async () => {
+    if (user) {
+      try {
+        const data = await accountService.getUsage();
+        setUsage(data);
+      } catch (error) {
+        console.error('Failed to fetch usage:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchUsage();
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!user) {
       const stored = localStorage.getItem('guest_usage_count');
       if (stored) setGuestCount(parseInt(stored, 10));
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setUsage({
+        quota: {
+          tier: 'FREE',
+          optimizationsLimit: 3,
+          optimizationsUsed: guestCount,
+          pdfGenerationsLimit: 0,
+          pdfGenerationsUsed: 0,
+        },
+      } as any);
+    }
+  }, [user, guestCount]);
 
   // Global Stores
   const { currentResume } = useResumeStore();
@@ -252,6 +286,12 @@ const ChatPage: React.FC = () => {
       return;
     }
 
+    // Check quota for authenticated user
+    if (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit) {
+      message.warning(t('account.usage.no_remaining_uses', '次数已用尽，请升级计划'));
+      return;
+    }
+
     let targetId = currentConversation?.id;
     if (!targetId) {
       try {
@@ -359,8 +399,27 @@ const ChatPage: React.FC = () => {
             {t('chat.guest_mode', '访客模式')}
           </span>
           <span className="text-sm font-medium text-blue-600 dark:text-blue-300">
-            {t('chat.remaining_uses', '剩余次数')}:{' '}
-            {Math.max(0, 3 - guestCount)}/3
+            {t('account.usage.remaining_uses', {
+              count: Math.max(0, 3 - guestCount),
+              remaining: Math.max(0, 3 - guestCount),
+              limit: 3,
+            })}
+          </span>
+        </div>
+      )}
+
+      {/* Auth Usage Header */}
+      {user && usage && (
+        <div className="w-full bg-primary/5 border-b border-primary/10 px-4 py-2 flex items-center justify-between z-20">
+          <span className="text-sm text-primary-400">
+            {usage.quota.tier === 'FREE' ? t('account.usage.free_tier', '免费版') : t('account.usage.pro_tier', '专业版')}
+          </span>
+          <span className="text-sm font-medium text-primary-400">
+            {t('account.usage.remaining_uses', {
+              count: Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
+              remaining: Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
+              limit: usage.quota.optimizationsLimit,
+            })}
           </span>
         </div>
       )}
@@ -374,7 +433,7 @@ const ChatPage: React.FC = () => {
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
-            loading={loading}
+            loading={loading || (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit)}
             onFileSelect={handleFileUploadWrapper}
             onActionClick={handleActionClick}
           />
@@ -409,7 +468,7 @@ const ChatPage: React.FC = () => {
               value={value}
               onChange={setValue}
               onSubmit={handleSubmit}
-              loading={loading}
+              loading={loading || (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit)}
               onFileSelect={handleFileUploadWrapper}
             />
           </>

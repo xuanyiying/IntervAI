@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Button,
+  Card,
   Space,
   Typography,
   Tabs,
@@ -32,12 +34,14 @@ import {
   UserNotification,
   ChangePasswordDto,
 } from '../services/user-service';
+import { accountService } from '../services/account-service';
 import './common.css';
 
 const { Title, Text } = Typography;
 
 const ProfilePage: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { user, updateUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
 
@@ -48,6 +52,21 @@ const ProfilePage: React.FC = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [usage, setUsage] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUsage = async () => {
+      if (user) {
+        try {
+          const data = await accountService.getUsage();
+          setUsage(data);
+        } catch (error) {
+          console.error('Failed to fetch usage:', error);
+        }
+      }
+    };
+    fetchUsage();
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -201,6 +220,43 @@ const ProfilePage: React.FC = () => {
     if (key === 'history') loadHistory();
     if (key === 'notifications') loadNotifications();
   };
+
+  const UsageTab = () => (
+    <div className="tab-content">
+      <Title level={5}>{t('account.usage.ai_usage', 'AI 使用情况')}</Title>
+      {usage ? (
+        <Card bordered={false} className="!bg-white/5 !border-white/10 !text-white">
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <Text className="!text-gray-400">{t('account.usage.quota_items.optimizations', '简历优化')}</Text>
+              <Text className="!text-primary-400 font-bold">
+                {t('account.usage.remaining_uses', {
+                  count: usage.quota.optimizationsLimit === -1 ? 0 : Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
+                  remaining: usage.quota.optimizationsLimit === -1 ? '∞' : Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
+                  limit: usage.quota.optimizationsLimit === -1 ? '∞' : usage.quota.optimizationsLimit,
+                })}
+              </Text>
+            </div>
+            <div className="flex justify-between items-center">
+              <Text className="!text-gray-400">{t('account.usage.quota_items.pdf', 'PDF 导出')}</Text>
+              <Text className="!text-primary-400 font-bold">
+                {usage.quota.pdfGenerationsUsed} / {usage.quota.pdfGenerationsLimit === -1 ? '∞' : usage.quota.pdfGenerationsLimit}
+              </Text>
+            </div>
+            <Button 
+              type="primary" 
+              className="mt-4" 
+              onClick={() => navigate('/account/usage')}
+            >
+              {t('account.usage.view_details', '查看详情')}
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Text>{t('common.loading')}</Text>
+      )}
+    </div>
+  );
 
   const ProfileTab = () => (
     <div className="tab-content">
@@ -446,6 +502,12 @@ const ProfilePage: React.FC = () => {
       label: t('profile.tab_security'),
       children: <SecurityTab />,
       icon: <LockOutlined />,
+    },
+    {
+      key: 'usage',
+      label: t('account.usage.title', '使用量'),
+      children: <UsageTab />,
+      icon: <HistoryOutlined />,
     },
     {
       key: 'history',

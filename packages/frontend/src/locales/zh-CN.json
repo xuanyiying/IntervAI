@@ -216,14 +216,12 @@
         "output_tokens": "输出 Token",
         "total_cost": "成本(USD)"
       },
-      "quota": {
-        "optimizations": "简历优化",
-        "pdf": "PDF 导出"
-      },
       "quota_items": {
         "optimizations": "简历优化",
         "pdf": "PDF 导出"
-      }
+      },
+      "remaining_uses": "{{count}} uses remaining: {{remaining}}/{{limit}}",
+      "no_remaining_uses": "次数已用尽，请升级计划"
     }
   },
   "invite_codes": {

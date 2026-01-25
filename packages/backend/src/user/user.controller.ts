@@ -77,12 +77,38 @@ export class UserController {
       'GITHUB_CALLBACK_URL'
     );
 
+    const googleEnabled = !!(
+      googleClientId &&
+      googleClientSecret &&
+      googleCallbackUrl
+    );
+    const githubEnabled = !!(
+      githubClientId &&
+      githubClientSecret &&
+      githubCallbackUrl
+    );
+
+    if (!googleEnabled || !githubEnabled) {
+      this.logger.warn('OAuth Providers Status:', {
+        google: {
+          hasClientId: !!googleClientId,
+          hasClientSecret: !!googleClientSecret,
+          hasCallbackUrl: !!googleCallbackUrl,
+        },
+        github: {
+          hasClientId: !!githubClientId,
+          hasClientSecret: !!githubClientSecret,
+          hasCallbackUrl: !!githubCallbackUrl,
+        },
+      });
+    }
+
     return {
       google: {
-        enabled: !!(googleClientId && googleClientSecret && googleCallbackUrl),
+        enabled: googleEnabled,
       },
       github: {
-        enabled: !!(githubClientId && githubClientSecret && githubCallbackUrl),
+        enabled: githubEnabled,
       },
     };
   }
