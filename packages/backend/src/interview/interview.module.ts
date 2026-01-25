@@ -15,6 +15,8 @@ import { QuestionGeneratorService } from './services/question-generator.service'
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
 
+import { AuthModule } from '../auth/auth.module';
+
 @Module({
   imports: [
     PrismaModule,
@@ -23,6 +25,7 @@ import { EvaluationProcessor } from './processors/evaluation.processor';
     RedisModule,
     QuotaModule,
     VoiceModule,
+    AuthModule,
     BullModule.registerQueue({
       name: 'interview-evaluation',
     }),
