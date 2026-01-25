@@ -32,6 +32,6 @@ import { RedisModule } from '@/redis/redis.module';
   ],
   controllers: [],
   providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
