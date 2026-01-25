@@ -216,14 +216,12 @@
         "output_tokens": "Output Tokens",
         "total_cost": "Cost (USD)"
       },
-      "quota": {
-        "optimizations": "Optimizations",
+      "quota_items": {
+        "optimizations": "Resume Optimizations",
         "pdf": "PDF Exports"
       },
-      "quota_items": {
-        "optimizations": "Optimizations",
-        "pdf": "PDF Exports"
-      }
+      "remaining_uses": "{{count}} uses remaining: {{remaining}}/{{limit}}",
+      "no_remaining_uses": "Uses exhausted, please upgrade plan"
     }
   },
   "invite_codes": {

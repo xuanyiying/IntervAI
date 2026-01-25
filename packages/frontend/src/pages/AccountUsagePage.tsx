@@ -156,6 +156,17 @@ const AccountUsagePage: React.FC = () => {
         <Card
           title={t('account.usage.ai_usage', 'AI 使用情况')}
           loading={loading}
+          extra={
+            quota && (
+              <Text strong className="text-primary-500">
+                {t('account.usage.remaining_uses', {
+                  count: (quota.optimizationsLimit === -1 ? 0 : Math.max(0, quota.optimizationsLimit - quota.optimizationsUsed)) as any,
+                  remaining: (quota.optimizationsLimit === -1 ? '∞' : Math.max(0, quota.optimizationsLimit - quota.optimizationsUsed)) as any,
+                  limit: quota.optimizationsLimit === -1 ? '∞' : quota.optimizationsLimit,
+                })}
+              </Text>
+            )
+          }
         >
           <Row gutter={[16, 16]}>
             <Col xs={12} md={6}>
