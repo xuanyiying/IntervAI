@@ -10,6 +10,10 @@ import {
   Param,
   Query,
   Request,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -19,7 +23,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { ValidateFile } from '../../common/decorators/validate-file.decorator';
+import { FILE_UPLOAD_CONFIG } from '../../common/validators/file-upload.validator';
 import { ResumeService } from '../services/resume.service';
 import { UploadResumeDto } from '../dto/upload-resume.dto';
 import { UpdateResumeDto } from '../dto/update-resume.dto';
@@ -36,11 +40,30 @@ export class ResumeController {
    * POST /resumes/upload
    */
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
+      },
+    })
+  )
   @ApiOperation({ summary: 'Upload a new resume file' })
   @ApiConsumes('multipart/form-data')
   async uploadResume(
-    @ValidateFile() file: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
+          }),
+          new FileTypeValidator({
+            fileType:
+              /(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|plain|markdown|x-markdown)/,
+          }),
+        ],
+      })
+    )
+    file: Express.Multer.File,
     @Body() dto: UploadResumeDto,
     @Request() req: any
   ) {

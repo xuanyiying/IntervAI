@@ -17,7 +17,7 @@ export const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || '/api/v1';
 };
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and handle FormData
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('auth_token');

@@ -1,45 +1,75 @@
 import type { ThemeConfig } from 'antd';
 import { theme as antTheme } from 'antd';
 
-// Shared tokens between themes
 const sharedTokens = {
   borderRadius: 8,
   borderRadiusLG: 12,
   borderRadiusSM: 4,
+  borderRadiusXS: 4,
   fontFamily:
     "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   fontSize: 14,
+  fontSizeSM: 12,
+  fontSizeLG: 16,
+  fontSizeXL: 20,
+  fontSizeHeading1: 38,
+  fontSizeHeading2: 30,
+  fontSizeHeading3: 24,
+  fontSizeHeading4: 20,
+  fontSizeHeading5: 16,
+  lineHeight: 1.6,
+  lineHeightLG: 1.625,
+  lineHeightSM: 1.5,
+  motionDurationFast: '0.15s',
+  motionDurationMid: '0.2s',
+  motionDurationSlow: '0.3s',
+  motionEaseInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  motionEaseOut: 'cubic-bezier(0, 0, 0.2, 1)',
+  motionEaseIn: 'cubic-bezier(0.4, 0, 1, 1)',
 };
 
 export const darkTheme: ThemeConfig = {
   algorithm: antTheme.darkAlgorithm,
   token: {
     ...sharedTokens,
-    colorPrimary: '#6366f1', // Indigo-500
+    colorPrimary: '#6366f1',
     colorSuccess: '#10b981',
     colorWarning: '#f59e0b',
     colorError: '#ef4444',
     colorInfo: '#3b82f6',
+    colorLink: '#818cf8',
+    colorLinkHover: '#a5b4fc',
 
-    // Backgrounds
-    colorBgBase: '#030712', // Very dark slate
-    colorBgContainer: '#0f172a', // Slate 900
-    colorBgElevated: '#1e293b', // Slate 800
+    colorBgBase: '#030712',
+    colorBgContainer: '#0f172a',
+    colorBgElevated: '#1e293b',
+    colorBgLayout: '#030712',
+    colorBgSpotlight: 'rgba(255, 255, 255, 0.08)',
+    colorBgMask: 'rgba(0, 0, 0, 0.6)',
 
-    // Text
     colorText: '#f8fafc',
     colorTextSecondary: '#94a3b8',
     colorTextTertiary: '#64748b',
+    colorTextQuaternary: '#475569',
 
-    // Borders
     colorBorder: 'rgba(255, 255, 255, 0.08)',
     colorBorderSecondary: 'rgba(255, 255, 255, 0.05)',
+    colorSplit: 'rgba(255, 255, 255, 0.05)',
+
+    colorFill: 'rgba(255, 255, 255, 0.08)',
+    colorFillSecondary: 'rgba(255, 255, 255, 0.05)',
+    colorFillTertiary: 'rgba(255, 255, 255, 0.03)',
+    colorFillQuaternary: 'rgba(255, 255, 255, 0.02)',
+
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
+    boxShadowSecondary: '0 8px 40px rgba(0, 0, 0, 0.15)',
   },
   components: {
     Layout: {
       bodyBg: '#030712',
       headerBg: 'rgba(3, 7, 18, 0.7)',
       headerPadding: '0 24px',
+      headerHeight: 64,
       siderBg: '#030712',
     },
     Menu: {
@@ -48,25 +78,172 @@ export const darkTheme: ThemeConfig = {
       itemSelectedColor: '#fff',
       itemSelectedBg: 'rgba(99, 102, 241, 0.15)',
       itemHoverBg: 'rgba(255, 255, 255, 0.05)',
+      itemHoverColor: '#f8fafc',
       activeBarBorderWidth: 0,
       activeBarHeight: 0,
+      subMenuItemBg: 'transparent',
+      itemBorderRadius: 8,
+      groupTitleColor: '#64748b',
     },
     Button: {
       primaryShadow: '0 4px 14px 0 rgba(99, 102, 241, 0.3)',
       defaultBg: 'rgba(255, 255, 255, 0.02)',
       defaultBorderColor: 'rgba(255, 255, 255, 0.08)',
       defaultColor: '#f8fafc',
+      defaultHoverBg: 'rgba(255, 255, 255, 0.05)',
+      defaultHoverColor: '#f8fafc',
+      defaultHoverBorderColor: 'rgba(255, 255, 255, 0.15)',
+      defaultActiveBg: 'rgba(255, 255, 255, 0.08)',
+      defaultActiveBorderColor: 'rgba(255, 255, 255, 0.15)',
+      borderRadius: 8,
+      controlHeight: 40,
+      controlHeightLG: 48,
+      controlHeightSM: 32,
     },
     Card: {
       colorBgContainer: 'rgba(15, 23, 42, 0.6)',
       colorBorderSecondary: 'rgba(255, 255, 255, 0.05)',
+      borderRadiusLG: 16,
+      paddingLG: 24,
     },
     Modal: {
       contentBg: '#0f172a',
       headerBg: '#0f172a',
+      borderRadiusLG: 16,
+      paddingContentHorizontalLG: 24,
     },
     Drawer: {
       colorBgElevated: '#030712',
+      borderRadiusLG: 16,
+    },
+    Input: {
+      colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+      colorBorder: 'rgba(255, 255, 255, 0.08)',
+      colorText: '#f8fafc',
+      colorTextPlaceholder: '#64748b',
+      hoverBorderColor: 'rgba(255, 255, 255, 0.15)',
+      activeBorderColor: '#6366f1',
+      activeShadow: '0 0 0 2px rgba(99, 102, 241, 0.1)',
+      borderRadius: 8,
+      paddingBlock: 10,
+      paddingInline: 12,
+    },
+    InputNumber: {
+      colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+      colorBorder: 'rgba(255, 255, 255, 0.08)',
+      colorText: '#f8fafc',
+      borderRadius: 8,
+    },
+    Select: {
+      colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+      colorBorder: 'rgba(255, 255, 255, 0.08)',
+      colorText: '#f8fafc',
+      optionSelectedBg: 'rgba(99, 102, 241, 0.15)',
+      optionActiveBg: 'rgba(255, 255, 255, 0.05)',
+      selectorBg: 'rgba(255, 255, 255, 0.03)',
+      borderRadius: 8,
+    },
+    Table: {
+      colorBgContainer: 'transparent',
+      headerBg: 'rgba(255, 255, 255, 0.03)',
+      headerColor: '#94a3b8',
+      rowHoverBg: 'rgba(255, 255, 255, 0.03)',
+      rowSelectedBg: 'rgba(99, 102, 241, 0.08)',
+      borderColor: 'rgba(255, 255, 255, 0.05)',
+      headerSplitColor: 'rgba(255, 255, 255, 0.05)',
+      cellPaddingBlock: 16,
+      cellPaddingInline: 16,
+    },
+    Tag: {
+      defaultBg: 'rgba(255, 255, 255, 0.05)',
+      defaultColor: '#94a3b8',
+      borderRadiusSM: 6,
+    },
+    Badge: {
+      colorBgContainer: '#ef4444',
+      colorErrorBg: '#ef4444',
+    },
+    Tooltip: {
+      colorBgSpotlight: '#1e293b',
+      colorTextLightSolid: '#f8fafc',
+      borderRadius: 8,
+    },
+    Popover: {
+      colorBgElevated: '#1e293b',
+      colorText: '#f8fafc',
+      borderRadiusLG: 12,
+    },
+    Dropdown: {
+      colorBgElevated: '#1e293b',
+      colorText: '#f8fafc',
+      borderRadiusLG: 12,
+      paddingBlock: 8,
+      controlItemBgHover: 'rgba(255, 255, 255, 0.05)',
+      controlItemBgActive: 'rgba(99, 102, 241, 0.15)',
+    },
+    Tabs: {
+      colorText: '#94a3b8',
+      inkBarColor: '#6366f1',
+      horizontalItemPadding: '12px 16px',
+      borderRadius: 8,
+    },
+    Form: {
+      labelColor: '#94a3b8',
+      labelFontSize: 14,
+      verticalLabelPadding: '0 0 8px',
+    },
+    Message: {
+      contentBg: '#1e293b',
+      colorText: '#f8fafc',
+    },
+    Notification: {
+      colorBgElevated: '#1e293b',
+      colorText: '#f8fafc',
+    },
+    Progress: {
+      defaultColor: '#6366f1',
+      remainingColor: 'rgba(255, 255, 255, 0.1)',
+    },
+    Spin: {
+      colorPrimary: '#6366f1',
+    },
+    Switch: {
+      colorPrimary: '#6366f1',
+      colorPrimaryHover: '#818cf8',
+      trackHeight: 22,
+      trackMinWidth: 44,
+    },
+    Slider: {
+      trackBg: '#6366f1',
+      trackHoverBg: '#818cf8',
+      handleColor: '#6366f1',
+      handleActiveColor: '#818cf8',
+      railBg: 'rgba(255, 255, 255, 0.1)',
+      railHoverBg: 'rgba(255, 255, 255, 0.15)',
+    },
+    Divider: {
+      colorSplit: 'rgba(255, 255, 255, 0.08)',
+    },
+    List: {
+      colorText: '#f8fafc',
+      colorSplit: 'rgba(255, 255, 255, 0.05)',
+    },
+    Collapse: {
+      colorBgContainer: 'rgba(255, 255, 255, 0.03)',
+      colorText: '#f8fafc',
+      colorTextHeading: '#f8fafc',
+      headerBg: 'transparent',
+      contentBg: 'transparent',
+    },
+    Empty: {
+      colorText: '#64748b',
+      colorTextDisabled: '#475569',
+    },
+    Pagination: {
+      colorBgContainer: 'transparent',
+      colorText: '#94a3b8',
+      itemActiveBg: 'rgba(99, 102, 241, 0.15)',
+      borderRadius: 8,
     },
   },
 };
@@ -75,31 +252,44 @@ export const lightTheme: ThemeConfig = {
   algorithm: antTheme.defaultAlgorithm,
   token: {
     ...sharedTokens,
-    colorPrimary: '#4f46e5', // Indigo-600
+    colorPrimary: '#4f46e5',
     colorSuccess: '#059669',
     colorWarning: '#d97706',
     colorError: '#dc2626',
     colorInfo: '#2563eb',
+    colorLink: '#4f46e5',
+    colorLinkHover: '#6366f1',
 
-    // Backgrounds
-    colorBgBase: '#f8fafc', // Slate 50
+    colorBgBase: '#f8fafc',
     colorBgContainer: '#ffffff',
     colorBgElevated: '#ffffff',
+    colorBgLayout: '#f8fafc',
+    colorBgSpotlight: 'rgba(0, 0, 0, 0.04)',
+    colorBgMask: 'rgba(0, 0, 0, 0.45)',
 
-    // Text
-    colorText: '#0f172a', // Slate 900
-    colorTextSecondary: '#475569', // Slate 600
-    colorTextTertiary: '#94a3b8', // Slate 400
+    colorText: '#0f172a',
+    colorTextSecondary: '#475569',
+    colorTextTertiary: '#64748b',
+    colorTextQuaternary: '#94a3b8',
 
-    // Borders
     colorBorder: 'rgba(0, 0, 0, 0.06)',
     colorBorderSecondary: 'rgba(0, 0, 0, 0.03)',
+    colorSplit: 'rgba(0, 0, 0, 0.03)',
+
+    colorFill: 'rgba(0, 0, 0, 0.04)',
+    colorFillSecondary: 'rgba(0, 0, 0, 0.03)',
+    colorFillTertiary: 'rgba(0, 0, 0, 0.02)',
+    colorFillQuaternary: 'rgba(0, 0, 0, 0.01)',
+
+    boxShadow: '0 4px 30px rgba(0, 0, 0, 0.05)',
+    boxShadowSecondary: '0 8px 40px rgba(0, 0, 0, 0.08)',
   },
   components: {
     Layout: {
       bodyBg: '#f8fafc',
       headerBg: 'rgba(248, 250, 252, 0.7)',
       headerPadding: '0 24px',
+      headerHeight: 64,
       siderBg: '#ffffff',
     },
     Menu: {
@@ -108,28 +298,174 @@ export const lightTheme: ThemeConfig = {
       itemSelectedColor: '#4f46e5',
       itemSelectedBg: 'rgba(79, 70, 229, 0.08)',
       itemHoverBg: 'rgba(0, 0, 0, 0.02)',
+      itemHoverColor: '#0f172a',
       activeBarBorderWidth: 0,
       activeBarHeight: 0,
+      subMenuItemBg: 'transparent',
+      itemBorderRadius: 8,
+      groupTitleColor: '#64748b',
     },
     Button: {
       primaryShadow: '0 4px 14px 0 rgba(79, 70, 229, 0.2)',
       defaultBg: '#ffffff',
       defaultBorderColor: 'rgba(0, 0, 0, 0.08)',
       defaultColor: '#0f172a',
+      defaultHoverBg: '#ffffff',
+      defaultHoverColor: '#0f172a',
+      defaultHoverBorderColor: 'rgba(0, 0, 0, 0.15)',
+      defaultActiveBg: '#ffffff',
+      defaultActiveBorderColor: 'rgba(0, 0, 0, 0.15)',
+      borderRadius: 8,
+      controlHeight: 40,
+      controlHeightLG: 48,
+      controlHeightSM: 32,
     },
     Card: {
       colorBgContainer: '#ffffff',
       colorBorderSecondary: 'rgba(0, 0, 0, 0.05)',
+      borderRadiusLG: 16,
+      paddingLG: 24,
     },
     Modal: {
       contentBg: '#ffffff',
       headerBg: '#ffffff',
+      borderRadiusLG: 16,
+      paddingContentHorizontalLG: 24,
     },
     Drawer: {
       colorBgElevated: '#ffffff',
+      borderRadiusLG: 16,
+    },
+    Input: {
+      colorBgContainer: '#ffffff',
+      colorBorder: 'rgba(0, 0, 0, 0.08)',
+      colorText: '#0f172a',
+      colorTextPlaceholder: '#94a3b8',
+      hoverBorderColor: 'rgba(0, 0, 0, 0.15)',
+      activeBorderColor: '#4f46e5',
+      activeShadow: '0 0 0 2px rgba(79, 70, 229, 0.1)',
+      borderRadius: 8,
+      paddingBlock: 10,
+      paddingInline: 12,
+    },
+    InputNumber: {
+      colorBgContainer: '#ffffff',
+      colorBorder: 'rgba(0, 0, 0, 0.08)',
+      colorText: '#0f172a',
+      borderRadius: 8,
+    },
+    Select: {
+      colorBgContainer: '#ffffff',
+      colorBorder: 'rgba(0, 0, 0, 0.08)',
+      colorText: '#0f172a',
+      optionSelectedBg: 'rgba(79, 70, 229, 0.08)',
+      optionActiveBg: 'rgba(0, 0, 0, 0.02)',
+      selectorBg: '#ffffff',
+      borderRadius: 8,
+    },
+    Table: {
+      colorBgContainer: '#ffffff',
+      headerBg: '#f8fafc',
+      headerColor: '#475569',
+      rowHoverBg: 'rgba(0, 0, 0, 0.02)',
+      rowSelectedBg: 'rgba(79, 70, 229, 0.05)',
+      borderColor: 'rgba(0, 0, 0, 0.05)',
+      headerSplitColor: 'rgba(0, 0, 0, 0.03)',
+      cellPaddingBlock: 16,
+      cellPaddingInline: 16,
+    },
+    Tag: {
+      defaultBg: 'rgba(0, 0, 0, 0.04)',
+      defaultColor: '#475569',
+      borderRadiusSM: 6,
+    },
+    Badge: {
+      colorBgContainer: '#dc2626',
+      colorErrorBg: '#dc2626',
+    },
+    Tooltip: {
+      colorBgSpotlight: '#1e293b',
+      colorTextLightSolid: '#f8fafc',
+      borderRadius: 8,
+    },
+    Popover: {
+      colorBgElevated: '#ffffff',
+      colorText: '#0f172a',
+      borderRadiusLG: 12,
+    },
+    Dropdown: {
+      colorBgElevated: '#ffffff',
+      colorText: '#0f172a',
+      borderRadiusLG: 12,
+      paddingBlock: 8,
+      controlItemBgHover: 'rgba(0, 0, 0, 0.02)',
+      controlItemBgActive: 'rgba(79, 70, 229, 0.08)',
+    },
+    Tabs: {
+      colorText: '#475569',
+      inkBarColor: '#4f46e5',
+      horizontalItemPadding: '12px 16px',
+      borderRadius: 8,
+    },
+    Form: {
+      labelColor: '#475569',
+      labelFontSize: 14,
+      verticalLabelPadding: '0 0 8px',
+    },
+    Message: {
+      contentBg: '#ffffff',
+      colorText: '#0f172a',
+    },
+    Notification: {
+      colorBgElevated: '#ffffff',
+      colorText: '#0f172a',
+    },
+    Progress: {
+      defaultColor: '#4f46e5',
+      remainingColor: 'rgba(0, 0, 0, 0.08)',
+    },
+    Spin: {
+      colorPrimary: '#4f46e5',
+    },
+    Switch: {
+      colorPrimary: '#4f46e5',
+      colorPrimaryHover: '#6366f1',
+      trackHeight: 22,
+      trackMinWidth: 44,
+    },
+    Slider: {
+      trackBg: '#4f46e5',
+      trackHoverBg: '#6366f1',
+      handleColor: '#4f46e5',
+      handleActiveColor: '#6366f1',
+      railBg: 'rgba(0, 0, 0, 0.08)',
+      railHoverBg: 'rgba(0, 0, 0, 0.12)',
+    },
+    Divider: {
+      colorSplit: 'rgba(0, 0, 0, 0.06)',
+    },
+    List: {
+      colorText: '#0f172a',
+      colorSplit: 'rgba(0, 0, 0, 0.03)',
+    },
+    Collapse: {
+      colorBgContainer: '#ffffff',
+      colorText: '#0f172a',
+      colorTextHeading: '#0f172a',
+      headerBg: 'transparent',
+      contentBg: 'transparent',
+    },
+    Empty: {
+      colorText: '#64748b',
+      colorTextDisabled: '#94a3b8',
+    },
+    Pagination: {
+      colorBgContainer: 'transparent',
+      colorText: '#475569',
+      itemActiveBg: 'rgba(79, 70, 229, 0.08)',
+      borderRadius: 8,
     },
   },
 };
 
-// Deprecated: keeping it for compatibility during transition if needed
 export const theme = darkTheme;

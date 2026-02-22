@@ -1,4 +1,5 @@
 import axios from '../config/axios';
+import { upload } from './upload-service';
 import { Resume, ParsedResumeData } from '@/types';
 
 /**
@@ -23,17 +24,13 @@ export const resumeService = {
       formData.append('title', title);
     }
 
-    const response = await axios.post<{ resume: Resume; isDuplicate: boolean }>(
-      '/resumes/upload',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress,
-      }
-    );
-    return response.data.resume;
+    const response = await upload<{
+      resume: Resume;
+      isDuplicate: boolean;
+    }>('/resumes/upload', formData, {
+      onUploadProgress,
+    });
+    return response.resume;
   },
 
   /**

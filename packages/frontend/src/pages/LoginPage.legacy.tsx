@@ -52,39 +52,18 @@ const LegacyLoginPage: React.FC = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  React.useEffect(() => {
-    let active = true;
-    const loadOAuthStatus = async () => {
-      try {
-        const status = await authService.getOAuthProviders();
-        if (!active) return;
-        setOauthStatus({
-          google: status.google.enabled,
-          github: status.github.enabled,
-          loaded: true,
-        });
-      } catch (error) {
-        if (!active) return;
-        setOauthStatus({ google: false, github: false, loaded: true });
-        setOauthNotice({
-          type: 'error',
-          message: t(
-            'auth.oauth_status_failed',
-            '无法获取第三方登录状态，请稍后重试。'
-          ),
-        });
-      }
-    };
-    loadOAuthStatus();
-    return () => {
-      active = false;
-    };
-  }, [t]);
-
   const isGoogleEnvEnabled =
     String(import.meta.env.VITE_GOOGLE_OAUTH_ENABLED).toLowerCase() === 'true';
   const isGithubEnvEnabled =
     String(import.meta.env.VITE_GITHUB_OAUTH_ENABLED).toLowerCase() === 'true';
+
+  React.useEffect(() => {
+    setOauthStatus({
+      google: isGoogleEnvEnabled,
+      github: isGithubEnvEnabled,
+      loaded: true,
+    });
+  }, [isGoogleEnvEnabled, isGithubEnvEnabled]);
   const googleEnabled = isGoogleEnvEnabled && oauthStatus.google;
   const githubEnabled = isGithubEnvEnabled && oauthStatus.github;
 

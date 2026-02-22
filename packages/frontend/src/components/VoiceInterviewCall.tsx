@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Space, Typography, Card, Badge, Tooltip } from 'antd';
 import {
   AudioOutlined,
@@ -21,7 +21,7 @@ interface VoiceInterviewCallProps {
 const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   sessionId,
   onClose,
-  voiceId,
+  voiceId: _voiceId,
 }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isCalling, setIsCalling] = useState(false);

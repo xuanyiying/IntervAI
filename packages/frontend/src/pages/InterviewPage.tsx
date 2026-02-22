@@ -11,18 +11,21 @@ import {
   Progress,
   Input,
   Divider,
+  Steps,
 } from 'antd';
 import {
   AudioOutlined,
   StopOutlined,
   SendOutlined,
   PhoneOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { interviewService } from '../services/interview-service';
+import { interviewService, InterviewerPersona } from '../services/interview-service';
 import { InterviewQuestion, InterviewSession } from '@/types';
 import { useTranslation } from 'react-i18next';
 import VoiceManager from '../components/VoiceManager';
 import VoiceInterviewCall from '../components/VoiceInterviewCall';
+import { PersonaSelector } from '../components/PersonaSelector';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -41,7 +44,6 @@ const InterviewPage: React.FC = () => {
     content: string;
   } | null>(null);
 
-  // Structured Interview State
   const [currentQuestion, setCurrentQuestion] =
     useState<InterviewQuestion | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -50,27 +52,46 @@ const InterviewPage: React.FC = () => {
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | undefined>();
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false);
 
+  const [personas, setPersonas] = useState<InterviewerPersona[]>([]);
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string | undefined>();
+  const [currentStep, setCurrentStep] = useState(0);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    if (optimizationId) {
+    loadPersonas();
+  }, []);
+
+  const loadPersonas = async () => {
+    try {
+      const data = await interviewService.getPersonas();
+      setPersonas(data);
+      const defaultPersona = data.find((p) => p.isDefault);
+      if (defaultPersona) {
+        setSelectedPersonaId(defaultPersona.id);
+      }
+    } catch (error) {
+      console.error('Failed to load personas:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (optimizationId && currentStep === 1) {
       initializeSession();
     }
-  }, [optimizationId]);
+  }, [optimizationId, currentStep]);
 
   const initializeSession = async () => {
     try {
       setLoading(true);
 
-      // Try to get active session
       const activeSession = await interviewService.getActiveSession(
         optimizationId!
       );
 
       if (activeSession) {
         setSession(activeSession);
-        // Restore state
         const state = await interviewService.getCurrentState(activeSession.id);
         if (state.isCompleted || state.status === 'COMPLETED') {
           handleCompletion(activeSession.id);
@@ -80,19 +101,13 @@ const InterviewPage: React.FC = () => {
           setCurrentQuestion(state.currentQuestion || null);
         }
       } else {
-        // Start new session
         const result = await interviewService.startSession(
           optimizationId!,
-          selectedVoiceId
+          selectedVoiceId,
+          selectedPersonaId
         );
         setSession(result.session);
         setCurrentQuestion(result.firstQuestion);
-        // We need to know total questions. The startSession response might need update or we fetch it.
-        // For now, let's assume 10 or fetch from state.
-        // Let's fetch state to be sure or update startSession return type.
-        // Efficient way: startSession returns firstQuestion. We can assume index 0.
-        // To get total, we might need to fetch state or questions list.
-        // Let's call getCurrentState immediately to sync totals.
         const state = await interviewService.getCurrentState(result.session.id);
         setTotalQuestions(state.totalQuestions || 10);
         setCurrentIndex(0);
@@ -236,138 +251,184 @@ const InterviewPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <Card
-        title={
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <Title level={3} style={{ margin: 0 }}>
-              {t('interview.title')}
-            </Title>
-            <Text type="secondary">
-              {t('interview.question_progress', {
-                current: currentIndex + 1,
-                total: totalQuestions,
-              })}
-            </Text>
-          </div>
-        }
-        extra={
-          <Space>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <Steps
+        current={currentStep}
+        className="mb-8"
+        items={[
+          {
+            title: t('interview.select_persona', '选择面试官'),
+            icon: <UserOutlined />,
+          },
+          {
+            title: t('interview.interview', '面试进行中'),
+            icon: <PhoneOutlined />,
+          },
+        ]}
+      />
+
+      {currentStep === 0 && (
+        <Card className="mb-6">
+          <Title level={3} className="mb-4">
+            {t('interview.choose_interviewer', '选择你的面试官')}
+          </Title>
+          <Paragraph className="mb-6">
+            {t(
+              'interview.persona_description',
+              '不同的面试官有不同的风格和侧重点，选择最适合你的面试官来提升面试体验。'
+            )}
+          </Paragraph>
+          <PersonaSelector
+            personas={personas}
+            selectedPersonaId={selectedPersonaId}
+            onSelect={setSelectedPersonaId}
+          />
+          <div className="mt-6 flex justify-end">
             <Button
               type="primary"
-              ghost
-              icon={<PhoneOutlined />}
-              onClick={() => setIsVoiceCallActive(true)}
-              disabled={loading}
+              size="large"
+              onClick={() => setCurrentStep(1)}
+              disabled={!selectedPersonaId}
             >
-              Start Voice Call
+              {t('interview.start_interview', '开始面试')}
             </Button>
-            <Button danger onClick={endSessionEarly}>
-              {t('interview.end_early')}
-            </Button>
-          </Space>
-        }
-      >
-        <Progress
-          percent={Math.round((currentIndex / totalQuestions) * 100)}
-          showInfo={false}
-        />
+          </div>
+        </Card>
+      )}
 
-        <div style={{ marginTop: '24px', minHeight: '300px' }}>
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Spin size="large" />
+      {currentStep === 1 && (
+        <Card
+          title={
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Title level={3} style={{ margin: 0 }}>
+                {t('interview.title')}
+              </Title>
+              <Text type="secondary">
+                {t('interview.question_progress', {
+                  current: currentIndex + 1,
+                  total: totalQuestions,
+                })}
+              </Text>
             </div>
-          ) : currentQuestion ? (
-            <>
-              <Card
-                type="inner"
-                title={currentQuestion.questionType}
-                style={{ backgroundColor: '#f9f9f9' }}
+          }
+          extra={
+            <Space>
+              <Button
+                type="primary"
+                ghost
+                icon={<PhoneOutlined />}
+                onClick={() => setIsVoiceCallActive(true)}
+                disabled={loading}
               >
-                <Title level={4}>{currentQuestion.question}</Title>
-                {currentQuestion.tips && currentQuestion.tips.length > 0 && (
-                  <div style={{ marginTop: 16 }}>
-                    <Text type="secondary" strong>
-                      {t('interview.tips')}:
-                    </Text>
-                    <ul>
-                      {currentQuestion.tips.map((tip, idx) => (
-                        <li key={idx}>
-                          <Text type="secondary">{tip}</Text>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </Card>
+                Start Voice Call
+              </Button>
+              <Button danger onClick={endSessionEarly}>
+                {t('interview.end_early')}
+              </Button>
+            </Space>
+          }
+        >
+          <Progress
+            percent={Math.round((currentIndex / totalQuestions) * 100)}
+            showInfo={false}
+          />
 
-              <Divider>{t('interview.your_answer')}</Divider>
+          <div style={{ marginTop: '24px', minHeight: '300px' }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Spin size="large" />
+              </div>
+            ) : currentQuestion ? (
+              <>
+                <Card
+                  type="inner"
+                  title={currentQuestion.questionType}
+                  style={{ backgroundColor: '#f9f9f9' }}
+                >
+                  <Title level={4}>{currentQuestion.question}</Title>
+                  {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <Text type="secondary" strong>
+                        {t('interview.tips')}:
+                      </Text>
+                      <ul>
+                        {currentQuestion.tips.map((tip, idx) => (
+                          <li key={idx}>
+                            <Text type="secondary">{tip}</Text>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </Card>
 
-              <TextArea
-                rows={6}
-                value={answerText}
-                onChange={(e) => setAnswerText(e.target.value)}
-                placeholder={t('interview.answer_placeholder')}
-                disabled={processing || recording}
-              />
+                <Divider>{t('interview.your_answer')}</Divider>
 
-              <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                <Space size="large">
-                  {!recording ? (
-                    <Button
-                      shape="circle"
-                      icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-                      size="large"
-                      style={{ width: '64px', height: '64px' }}
-                      onClick={startRecording}
-                      disabled={processing}
-                    />
-                  ) : (
+                <TextArea
+                  rows={6}
+                  value={answerText}
+                  onChange={(e) => setAnswerText(e.target.value)}
+                  placeholder={t('interview.answer_placeholder')}
+                  disabled={processing || recording}
+                />
+
+                <div style={{ marginTop: '24px', textAlign: 'center' }}>
+                  <Space size="large">
+                    {!recording ? (
+                      <Button
+                        shape="circle"
+                        icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+                        size="large"
+                        style={{ width: '64px', height: '64px' }}
+                        onClick={startRecording}
+                        disabled={processing}
+                      />
+                    ) : (
+                      <Button
+                        type="primary"
+                        danger
+                        shape="circle"
+                        icon={<StopOutlined style={{ fontSize: '24px' }} />}
+                        size="large"
+                        style={{ width: '64px', height: '64px' }}
+                        onClick={stopRecording}
+                      />
+                    )}
+
                     <Button
                       type="primary"
-                      danger
-                      shape="circle"
-                      icon={<StopOutlined style={{ fontSize: '24px' }} />}
                       size="large"
-                      style={{ width: '64px', height: '64px' }}
-                      onClick={stopRecording}
-                    />
-                  )}
-
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<SendOutlined />}
-                    onClick={() => handleSubmitAnswer()}
-                    disabled={recording || processing || !answerText.trim()}
-                    loading={processing}
-                  >
-                    {t('interview.submit_answer')}
-                  </Button>
-                </Space>
-                <div style={{ marginTop: 8 }}>
-                  <Text type="secondary">
-                    {recording
-                      ? t('interview.recording_hint_recording')
-                      : t('interview.recording_hint_idle')}
-                  </Text>
+                      icon={<SendOutlined />}
+                      onClick={() => handleSubmitAnswer()}
+                      disabled={recording || processing || !answerText.trim()}
+                      loading={processing}
+                    >
+                      {t('interview.submit_answer')}
+                    </Button>
+                  </Space>
+                  <div style={{ marginTop: 8 }}>
+                    <Text type="secondary">
+                      {recording
+                        ? t('interview.recording_hint_recording')
+                        : t('interview.recording_hint_idle')}
+                    </Text>
+                  </div>
                 </div>
+              </>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Text>{t('interview.session_completed_or_error')}</Text>
               </div>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '40px' }}>
-              <Text>{t('interview.session_completed_or_error')}</Text>
-            </div>
-          )}
-        </div>
-      </Card>
+            )}
+          </div>
+        </Card>
+      )}
 
       <Modal
         title="Voice Interview Settings"

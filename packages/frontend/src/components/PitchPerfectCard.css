@@ -3,18 +3,10 @@
   margin: 0 auto;
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
-}
-
 .history-section {
   max-height: 400px;
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: var(--spacing-2);
 }
 
 .history-section::-webkit-scrollbar {
@@ -22,61 +14,58 @@
 }
 
 .history-section::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
 }
 
 .history-section::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-sm);
 }
 
 .history-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  background: var(--scrollbar-thumb-hover);
 }
 
 .results-display h5 {
-  margin-bottom: 12px !important;
-  font-weight: 600 !important;
+  margin-bottom: var(--spacing-3) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  color: var(--text-primary) !important;
 }
 
 .refinement-box {
-  margin-top: 32px;
+  margin-top: var(--spacing-8);
 }
 
-/* Ant Design Overrides for dark theme consistency */
-.ant-select:not(.ant-select-customize-input) .ant-select-selector {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
+/* Ant Design Overrides for theme consistency */
+.pitch-perfect-card-container .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background-color: var(--glass-bg-hover) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
 }
 
-.ant-select-arrow {
-  color: rgba(255, 255, 255, 0.5) !important;
+.pitch-perfect-card-container .ant-select-arrow {
+  color: var(--text-secondary) !important;
 }
 
-.ant-input {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
+.pitch-perfect-card-container .ant-input {
+  background-color: var(--glass-bg-hover) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--text-primary) !important;
 }
 
-.ant-list-item-meta-title {
-  color: #fff !important;
+.pitch-perfect-card-container .ant-input:focus,
+.pitch-perfect-card-container .ant-input:hover {
+  border-color: var(--primary-color) !important;
 }
 
-.ant-list-item-meta-description {
-  color: rgba(255, 255, 255, 0.45) !important;
+.pitch-perfect-card-container .ant-list-item-meta-title {
+  color: var(--text-primary) !important;
 }
 
-.ant-card-head-title {
-  color: #fff !important;
+.pitch-perfect-card-container .ant-list-item-meta-description {
+  color: var(--text-secondary) !important;
+}
+
+.pitch-perfect-card-container .ant-card-head-title {
+  color: var(--text-primary) !important;
 }

@@ -1,11 +1,13 @@
 import React from 'react';
 import { Button, Upload, Typography } from 'antd';
 import { FileTextOutlined, PlusOutlined } from '@ant-design/icons';
+import type { UploadFile } from 'antd/es/upload/interface';
+import { RESUME_ACCEPT } from '../../services/upload-service';
 
 const { Paragraph } = Typography;
 
 interface ResumeEmptyStateProps {
-  onUpload: (file: File) => void;
+  onUpload: (file: File | UploadFile) => void;
   uploading: boolean;
 }
 
@@ -28,7 +30,7 @@ export const ResumeEmptyState: React.FC<ResumeEmptyStateProps> = ({
           return false;
         }}
         showUploadList={false}
-        accept=".pdf,.doc,.docx"
+        accept={RESUME_ACCEPT}
       >
         <Button
           type="primary"

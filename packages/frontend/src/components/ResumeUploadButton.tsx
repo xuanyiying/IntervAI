@@ -2,6 +2,12 @@ import React, { useRef } from 'react';
 import { Button, message } from 'antd';
 import { CloudUploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import {
+  MAX_FILE_SIZE_MB,
+  RESUME_ACCEPT,
+  RESUME_ALLOWED_TYPES,
+  validateFile,
+} from '../services/upload-service';
 import './ResumeUploadButton.css';
 
 interface ResumeUploadButtonProps {
@@ -24,35 +30,28 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 处理文件选择
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 验证文件类型
-    const isPDF = file.type === 'application/pdf';
-    const isDoc =
-      file.type === 'application/msword' ||
-      file.type ===
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
-    if (!isPDF && !isDoc) {
+    const validation = validateFile(file, {
+      allowedTypes: RESUME_ALLOWED_TYPES,
+      maxSizeMB: MAX_FILE_SIZE_MB,
+    });
+    if (!validation.valid) {
       message.error(
-        t('resume.upload_type_error', '只能上传 PDF 或 Word 文档！')
+        validation.error === 'type'
+          ? t('resume.upload_type_error', '只能上传 PDF 或 Word 文档！')
+          : t('resume.upload_size_error', '文件大小不能超过 10MB！')
       );
-      return;
-    }
-
-    // 验证文件大小
-    const isLt10M = file.size / 1024 / 1024 < 10;
-    if (!isLt10M) {
-      message.error(t('resume.upload_size_error', '文件大小不能超过 10MB！'));
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
     onFileSelect(file);
 
-    // 重置 input，允许再次选择同一个文件
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -68,7 +67,7 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.doc,.docx"
+        accept={RESUME_ACCEPT}
         style={{ display: 'none' }}
         onChange={handleFileSelect}
       />

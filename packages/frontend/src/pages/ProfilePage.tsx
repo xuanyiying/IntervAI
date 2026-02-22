@@ -26,7 +26,7 @@ import {
   PhoneOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '@/stores';
 import { formatDateTime } from '../i18n';
 import {
   userService,
@@ -225,27 +225,54 @@ const ProfilePage: React.FC = () => {
     <div className="tab-content">
       <Title level={5}>{t('account.usage.ai_usage', 'AI 使用情况')}</Title>
       {usage ? (
-        <Card bordered={false} className="!bg-white/5 !border-white/10 !text-white">
+        <Card
+          bordered={false}
+          className="!bg-white/5 !border-white/10 !text-white"
+        >
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
-              <Text className="!text-gray-400">{t('account.usage.quota_items.optimizations', '简历优化')}</Text>
+              <Text className="!text-gray-400">
+                {t('account.usage.quota_items.optimizations', '简历优化')}
+              </Text>
               <Text className="!text-primary-400 font-bold">
                 {t('account.usage.remaining_uses', {
-                  count: usage.quota.optimizationsLimit === -1 ? 0 : Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
-                  remaining: usage.quota.optimizationsLimit === -1 ? '∞' : Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
-                  limit: usage.quota.optimizationsLimit === -1 ? '∞' : usage.quota.optimizationsLimit,
+                  count:
+                    usage.quota.optimizationsLimit === -1
+                      ? 0
+                      : Math.max(
+                          0,
+                          usage.quota.optimizationsLimit -
+                            usage.quota.optimizationsUsed
+                        ),
+                  remaining:
+                    usage.quota.optimizationsLimit === -1
+                      ? '∞'
+                      : Math.max(
+                          0,
+                          usage.quota.optimizationsLimit -
+                            usage.quota.optimizationsUsed
+                        ),
+                  limit:
+                    usage.quota.optimizationsLimit === -1
+                      ? '∞'
+                      : usage.quota.optimizationsLimit,
                 })}
               </Text>
             </div>
             <div className="flex justify-between items-center">
-              <Text className="!text-gray-400">{t('account.usage.quota_items.pdf', 'PDF 导出')}</Text>
+              <Text className="!text-gray-400">
+                {t('account.usage.quota_items.pdf', 'PDF 导出')}
+              </Text>
               <Text className="!text-primary-400 font-bold">
-                {usage.quota.pdfGenerationsUsed} / {usage.quota.pdfGenerationsLimit === -1 ? '∞' : usage.quota.pdfGenerationsLimit}
+                {usage.quota.pdfGenerationsUsed} /{' '}
+                {usage.quota.pdfGenerationsLimit === -1
+                  ? '∞'
+                  : usage.quota.pdfGenerationsLimit}
               </Text>
             </div>
-            <Button 
-              type="primary" 
-              className="mt-4" 
+            <Button
+              type="primary"
+              className="mt-4"
               onClick={() => navigate('/account/usage')}
             >
               {t('account.usage.view_details', '查看详情')}

@@ -16,8 +16,8 @@ import {
   GoogleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
-import { authService } from '../services/auth-service';
+import { useAuthStore } from '@/stores';
+import { authService } from '@/services';
 import { getApiBaseUrl } from '../config/axios';
 import './auth.css';
 import { Logo } from '@/components/Logo';
@@ -86,7 +86,7 @@ const LoginPage: React.FC = () => {
             <Logo width={64} height={64} className="shadow-lg rounded-2xl" />
           </div>
           <Title level={2} className="!text-white !font-bold !mb-2">
-            AI 简历助手
+            AI 求职面试助手
           </Title>
           <Text className="!text-gray-400">登录您的账号</Text>
         </div>
@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
             <Input
               prefix={<UserOutlined className="text-gray-400" />}
               placeholder={t('auth.email_placeholder', 'Email Address')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -134,7 +134,7 @@ const LoginPage: React.FC = () => {
             <Input.Password
               prefix={<LockOutlined className="text-gray-400" />}
               placeholder={t('auth.password_placeholder', 'Password')}
-              className="!bg-white/5 !border-white/10 !text-white placeholder:!text-gray-500"
+              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -169,15 +169,17 @@ const LoginPage: React.FC = () => {
             shape="circle"
             icon={<GoogleOutlined />}
             size="large"
+            disabled={false}
             onClick={() => handleSocialLogin('google')}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
           />
           <Button
             shape="circle"
             icon={<GithubOutlined />}
             size="large"
+            disabled={false}
             onClick={() => handleSocialLogin('github')}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
           />
         </div>
 

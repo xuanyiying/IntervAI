@@ -4,6 +4,7 @@
  */
 
 import axios from '../config/axios';
+import { upload } from './upload-service';
 import type {
   KBDocument,
   KBStats,
@@ -37,16 +38,7 @@ export async function uploadDocument(
     formData.append('title', options.title);
   }
 
-  const response = await axios.post<KBDocument>(
-    `${API_BASE}/upload`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
-  return response.data;
+  return upload<KBDocument>(`${API_BASE}/upload`, formData);
 }
 
 /**

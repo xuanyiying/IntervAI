@@ -1,22 +1,89 @@
 import axios from '../config/axios';
+import { upload } from './upload-service';
 import type {
   InterviewQuestion,
   InterviewSession,
   InterviewMessage,
-} from '../types';
+} from '@/types';
+
+export interface InterviewerPersona {
+  id: string;
+  name: string;
+  style:
+    | 'STRICT'
+    | 'FRIENDLY'
+    | 'TECHNICAL'
+    | 'HR'
+    | 'SUPPORTIVE'
+    | 'CHALLENGING';
+  company: string | null;
+  position: string | null;
+  avatarUrl: string | null;
+  description: string;
+  traits: string[];
+  questionStyle: Record<string, any>;
+  systemPrompt: string;
+  isDefault: boolean;
+  isActive: boolean;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 /**
  * Service for managing AI-powered interview sessions and question generation
  */
 export const interviewService = {
   /**
+   * Get all interviewer personas
+   * @param includeInactive - Whether to include inactive personas
+   * @returns List of interviewer personas
+   */
+  getPersonas: async (
+    includeInactive = false
+  ): Promise<InterviewerPersona[]> => {
+    const response = await axios.get<InterviewerPersona[]>(
+      '/interviewer-personas',
+      {
+        params: { includeInactive },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Get recommended persona based on job description and resume
+   * @param jobDescription - The job description
+   * @param resumeData - The resume data
+   * @returns The recommended persona
+   */
+  getRecommendedPersona: async (
+    jobDescription?: string,
+    resumeData?: any
+  ): Promise<InterviewerPersona> => {
+    const response = await axios.get<InterviewerPersona>(
+      '/interviewer-personas/recommended',
+      {
+        params: {
+          jobDescription,
+          resumeData: resumeData ? JSON.stringify(resumeData) : undefined,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
    * Start a new interview session for a given optimization
    * @param optimizationId - The ID of the optimization to base the interview on
+   * @param voiceId - Optional voice ID for audio interviews
+   * @param personaId - Optional persona ID for custom interviewer
    * @returns The created interview session and the first question
    */
   startSession: async (
     optimizationId: string,
-    voiceId?: string
+    voiceId?: string,
+    personaId?: string
   ): Promise<{
     session: InterviewSession;
     firstQuestion: InterviewQuestion;
@@ -27,6 +94,7 @@ export const interviewService = {
     }>('/interview/session', {
       optimizationId,
       voiceId,
+      personaId,
     });
     return response.data;
   },
@@ -122,16 +190,7 @@ export const interviewService = {
     formData.append('fileType', 'AUDIO');
     formData.append('category', 'interview_recording');
 
-    const response = await axios.post<{ url: string }>(
-      '/storage/upload',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
+    return upload<{ url: string }>('/storage/upload', formData);
   },
 
   /**
@@ -143,16 +202,7 @@ export const interviewService = {
     const formData = new FormData();
     formData.append('file', file, 'recording.webm');
 
-    const response = await axios.post<{ text: string }>(
-      '/interview/audio/transcribe',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data;
+    return upload<{ text: string }>('/resumes/audio/transcribe', formData);
   },
 
   /**
@@ -190,7 +240,7 @@ export const interviewService = {
     optimizationId: string
   ): Promise<InterviewQuestion[]> => {
     const response = await axios.post<InterviewQuestion[]>(
-      '/interview/questions',
+      '/resumes/questions',
       {
         optimizationId,
       }
@@ -245,7 +295,7 @@ export const interviewService = {
     question?: string;
   }): Promise<{ content: string }> => {
     const response = await axios.post<{ content: string }>(
-      '/interview/preparation-guide',
+      '/resumes/preparation-guide',
       params
     );
     return response.data;

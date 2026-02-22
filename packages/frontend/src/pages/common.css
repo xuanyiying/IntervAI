@@ -1,9 +1,12 @@
-/* Common Page Styles - Cyber-Tech/Deep Space Theme */
+/* ==========================================================================
+   Common Page Styles - Unified Design System
+   ========================================================================== */
 
+/* Page Container Patterns */
 .settings-container,
 .profile-container,
 .admin-container {
-  padding: 32px;
+  padding: var(--spacing-8);
   max-width: 1400px;
   margin: 0 auto;
   min-height: 100%;
@@ -17,11 +20,11 @@
   backdrop-filter: var(--glass-backdrop);
   -webkit-backdrop-filter: var(--glass-backdrop);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  padding: 32px;
-  margin-bottom: 32px;
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-8);
+  margin-bottom: var(--spacing-8);
   box-shadow: var(--glass-shadow);
-  transition: all var(--duration-normal) ease;
+  transition: all var(--duration-normal) var(--ease-in-out);
 }
 
 .section-card:hover {
@@ -33,8 +36,8 @@
 .avatar-section {
   display: flex;
   align-items: center;
-  gap: 32px;
-  margin-bottom: 40px;
+  gap: var(--spacing-8);
+  margin-bottom: var(--spacing-10);
 }
 
 .avatar-upload-trigger {
@@ -43,7 +46,7 @@
 }
 
 .avatar-upload-trigger::after {
-  content: '更换';
+  content: '';
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
@@ -53,7 +56,7 @@
   color: white;
   border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity var(--duration-fast) var(--ease-in-out);
 }
 
 .avatar-upload-trigger:hover::after {
@@ -63,8 +66,8 @@
 /* Typography Customization */
 h2.ant-typography {
   color: var(--text-primary) !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.01em !important;
+  font-weight: var(--font-weight-extrabold) !important;
+  letter-spacing: var(--letter-spacing-tight) !important;
 }
 
 .ant-typography-secondary {
@@ -76,29 +79,268 @@ h2.ant-typography {
   background: var(--glass-bg) !important;
   backdrop-filter: var(--glass-backdrop) !important;
   border: 1px solid var(--glass-border) !important;
-  border-radius: var(--radius-xl) !important;
+  border-radius: var(--radius-2xl) !important;
 }
 
 .ant-card-head {
   border-bottom: 1px solid var(--glass-border) !important;
-  padding: 0 24px !important;
+  padding: 0 var(--spacing-6) !important;
 }
 
 .ant-card-head-title {
   color: var(--text-primary) !important;
-  font-weight: 600 !important;
+  font-weight: var(--font-weight-semibold) !important;
 }
 
-/* Responsive Adjustments */
+/* ==========================================================================
+   Form Patterns
+   ========================================================================== */
+
+.form-group {
+  margin-bottom: var(--spacing-6);
+}
+
+.form-group label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-2);
+  padding-left: var(--spacing-1);
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  background: var(--glass-bg-hover) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+  color: var(--text-primary) !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  font-size: var(--font-size-base) !important;
+  transition: all var(--duration-normal) var(--ease-in-out) !important;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1) !important;
+  background: var(--bg-card) !important;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--text-tertiary) !important;
+}
+
+/* ==========================================================================
+   Button Patterns
+   ========================================================================== */
+
+.btn-primary {
+  width: 100%;
+  height: var(--button-height-xl);
+  background: var(--primary-gradient);
+  border: none;
+  border-radius: var(--radius-lg);
+  color: white;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+  box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(var(--primary-rgb), 0.35);
+  filter: brightness(1.1);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: var(--glass-bg-hover);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-lg);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.btn-secondary:hover {
+  background: var(--glass-border);
+  border-color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Page Header Patterns
+   ========================================================================== */
+
+.page-header {
+  margin-bottom: var(--spacing-10);
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.page-header h1 {
+  color: var(--text-primary);
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-extrabold);
+  margin-bottom: var(--spacing-2);
+  letter-spacing: var(--letter-spacing-tight);
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.page-header p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header-icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: rgba(var(--primary-rgb), 0.1);
+  border: 1px solid rgba(var(--primary-rgb), 0.2);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--spacing-4);
+  font-size: var(--font-size-3xl);
+  color: var(--primary-color);
+  box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.15);
+}
+
+/* ==========================================================================
+   Content Container Patterns
+   ========================================================================== */
+
+.content-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  padding-top: var(--spacing-4);
+}
+
+.form-container {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-8);
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+
+/* Text Utilities */
+.text-gradient {
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.text-gradient-secondary {
+  background: var(--secondary-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glass Effect Utilities */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-xl);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-light);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.glass-panel {
+  background: var(--surface-gradient);
+  backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
 @media (max-width: 768px) {
 
   .settings-container,
   .profile-container,
   .admin-container {
-    padding: 16px;
+    padding: var(--spacing-4);
   }
 
   .section-card {
-    padding: 24px;
+    padding: var(--spacing-6);
+  }
+
+  .page-header h1 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .form-container {
+    padding: var(--spacing-4);
+  }
+}
+
+@media (max-width: 480px) {
+
+  .settings-container,
+  .profile-container,
+  .admin-container {
+    padding: var(--spacing-3);
+  }
+
+  .section-card {
+    padding: var(--spacing-4);
+    border-radius: var(--radius-xl);
+  }
+
+  .avatar-section {
+    flex-direction: column;
+    text-align: center;
   }
 }

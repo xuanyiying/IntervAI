@@ -11,11 +11,15 @@ import {
   UploadedFile,
   UploadedFiles,
   Req,
+  BadRequestException,
+  ParseFilePipe,
+  MaxFileSizeValidator,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { StorageService } from './storage.service';
 import { DirectUploadService } from './direct-upload.service';
 import { FileType } from './interfaces/storage.interface';
+import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -35,12 +39,30 @@ export class StorageController {
    * Upload single file
    */
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
+      },
+    })
+  )
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
+          }),
+        ],
+      })
+    )
+    file: Express.Multer.File,
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
     const { fileType, category } = body;
     const userId = req.user?.id || 'anonymous';
 
@@ -59,12 +81,21 @@ export class StorageController {
    * Upload multiple files
    */
   @Post('upload-batch')
-  @UseInterceptors(FilesInterceptor('files'))
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: {
+        fileSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
+      },
+    })
+  )
   async uploadFiles(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files provided');
+    }
     const { fileType, category } = body;
     const userId = req.user?.id || 'anonymous';
 

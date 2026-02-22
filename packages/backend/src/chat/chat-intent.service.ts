@@ -3,13 +3,30 @@
  * Handles intent recognition and dispatches to appropriate handlers
  */
 
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  Inject,
+  forwardRef,
+  OnModuleInit,
+  Optional,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
 import { ResumeOptimizerService } from '@/resume/services/resume-optimizer.service';
 import { AIRequest } from '@/ai-providers/interfaces';
 import { PromptScenario } from '@/ai-providers/interfaces/prompt-template.interface';
 import { ChatResponse } from './chat.gateway';
+import {
+  SceneAnalysisService,
+  SceneContext,
+  SceneAnalysisResult,
+} from './scene-analysis.service';
+import {
+  TeamTaskService,
+  ComplexTaskType,
+  ComplexTaskResult,
+} from '@/agent/team/team-task.service';
 
 export enum ChatIntent {
   OPTIMIZE_RESUME = 'optimize_resume',
@@ -17,6 +34,13 @@ export enum ChatIntent {
   MOCK_INTERVIEW = 'mock_interview',
   INTERVIEW_PREDICTION = 'interview_prediction',
   PARSE_JOB_DESCRIPTION = 'parse_job_description',
+  CAREER_ADVICE = 'career_advice',
+  SKILL_ANALYSIS = 'skill_analysis',
+  SALARY_NEGOTIATION = 'salary_negotiation',
+  FULL_OPTIMIZATION = 'full_optimization',
+  INTERVIEW_PREPARATION = 'interview_preparation',
+  CAREER_TRANSITION = 'career_transition',
+  COMPETITIVE_ANALYSIS = 'competitive_analysis',
   GENERAL_CHAT = 'general_chat',
   HELP = 'help',
   UNKNOWN = 'unknown',
@@ -26,6 +50,8 @@ interface IntentResult {
   intent: ChatIntent;
   confidence: number;
   entities?: Record<string, any>;
+  reasoning?: string;
+  suggestedActions?: string[];
 }
 
 // In-memory cache for user's resume content (should use Redis in production)
@@ -35,10 +61,11 @@ const userResumeCache = new Map<
 >();
 
 @Injectable()
-export class ChatIntentService {
+export class ChatIntentService implements OnModuleInit {
   private readonly logger = new Logger(ChatIntentService.name);
+  private useAISceneAnalysis: boolean = true;
+  private useTeamAgents: boolean = true;
 
-  // Intent keywords mapping
   private readonly intentKeywords: Record<ChatIntent, string[]> = {
     [ChatIntent.OPTIMIZE_RESUME]: [
       '优化',
@@ -97,6 +124,61 @@ export class ChatIntentService {
       'read',
       'extract',
     ],
+    [ChatIntent.CAREER_ADVICE]: [
+      '职业建议',
+      '职业规划',
+      '求职建议',
+      '职业发展',
+      'career',
+      'advice',
+      'planning',
+    ],
+    [ChatIntent.SKILL_ANALYSIS]: [
+      '技能分析',
+      '技能评估',
+      '能力分析',
+      'skill',
+      'analysis',
+      'assessment',
+    ],
+    [ChatIntent.SALARY_NEGOTIATION]: [
+      '薪资谈判',
+      '薪资',
+      '工资',
+      '薪酬',
+      'salary',
+      'negotiation',
+      'compensation',
+    ],
+    [ChatIntent.FULL_OPTIMIZATION]: [
+      '完整优化',
+      '深度优化',
+      '全面优化',
+      '根据JD优化',
+      '针对职位优化',
+      'full optimization',
+    ],
+    [ChatIntent.INTERVIEW_PREPARATION]: [
+      '面试准备',
+      '准备面试',
+      '面试攻略',
+      '面试技巧',
+      'interview preparation',
+    ],
+    [ChatIntent.CAREER_TRANSITION]: [
+      '职业转型',
+      '转行',
+      '职业转换',
+      'career transition',
+      'switch career',
+    ],
+    [ChatIntent.COMPETITIVE_ANALYSIS]: [
+      '竞争力分析',
+      '竞争分析',
+      '优劣势分析',
+      'competitive analysis',
+      'strength weakness',
+    ],
     [ChatIntent.HELP]: [
       '帮助',
       '怎么用',
@@ -115,9 +197,20 @@ export class ChatIntentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiEngineService: AIEngineService,
+    private readonly sceneAnalysisService: SceneAnalysisService,
     @Inject(forwardRef(() => ResumeOptimizerService))
-    private readonly resumeOptimizerService: ResumeOptimizerService
+    private readonly resumeOptimizerService: ResumeOptimizerService,
+    @Optional() private readonly teamTaskService: TeamTaskService
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    this.logger.log(
+      'ChatIntentService initialized with AI scene analysis enabled'
+    );
+    if (this.teamTaskService?.isEnabled()) {
+      this.logger.log('Team Agent integration enabled');
+    }
+  }
 
   /**
    * Store user's resume content for later use
@@ -208,13 +301,42 @@ export class ChatIntentService {
     ) => Promise<void>
   ): Promise<void> {
     try {
-      // 1. Recognize intent
-      const intentResult = this.recognizeIntent(content);
-      this.logger.debug(
-        `Recognized intent: ${intentResult.intent} (confidence: ${intentResult.confidence})`
-      );
+      const resumeData = await this.getUserResumeContent(userId);
 
-      // 2. Dispatch to appropriate handler
+      const sceneContext: SceneContext = {
+        userId,
+        conversationId,
+        previousMessages: metadata?.previousMessages || [],
+        userMetadata: metadata?.userMetadata,
+        hasResume: !!resumeData,
+        hasJobDescription: !!metadata?.hasJobDescription,
+      };
+
+      let intentResult: IntentResult;
+
+      if (this.useAISceneAnalysis) {
+        try {
+          const sceneResult = await this.sceneAnalysisService.analyzeScene(
+            content,
+            sceneContext
+          );
+          intentResult = this.convertSceneResultToIntent(sceneResult);
+          this.logger.debug(
+            `AI scene analysis: ${intentResult.intent} (confidence: ${intentResult.confidence}, reasoning: ${intentResult.reasoning})`
+          );
+        } catch (error) {
+          this.logger.warn(
+            `AI scene analysis failed, falling back to keyword matching: ${error instanceof Error ? error.message : String(error)}`
+          );
+          intentResult = this.recognizeIntent(content);
+        }
+      } else {
+        intentResult = this.recognizeIntent(content);
+        this.logger.debug(
+          `Keyword-based intent: ${intentResult.intent} (confidence: ${intentResult.confidence})`
+        );
+      }
+
       switch (intentResult.intent) {
         case ChatIntent.OPTIMIZE_RESUME:
           await this.handleOptimizeResume(
@@ -256,6 +378,63 @@ export class ChatIntentService {
           );
           break;
 
+        case ChatIntent.CAREER_ADVICE:
+          await this.handleCareerAdvice(userId, content, onChunk, onComplete);
+          break;
+
+        case ChatIntent.SKILL_ANALYSIS:
+          await this.handleSkillAnalysis(userId, content, onChunk, onComplete);
+          break;
+
+        case ChatIntent.SALARY_NEGOTIATION:
+          await this.handleSalaryNegotiation(
+            userId,
+            content,
+            onChunk,
+            onComplete
+          );
+          break;
+
+        case ChatIntent.FULL_OPTIMIZATION:
+          await this.handleFullOptimization(
+            userId,
+            content,
+            metadata,
+            onChunk,
+            onComplete
+          );
+          break;
+
+        case ChatIntent.INTERVIEW_PREPARATION:
+          await this.handleInterviewPreparation(
+            userId,
+            content,
+            metadata,
+            onChunk,
+            onComplete
+          );
+          break;
+
+        case ChatIntent.CAREER_TRANSITION:
+          await this.handleCareerTransition(
+            userId,
+            content,
+            metadata,
+            onChunk,
+            onComplete
+          );
+          break;
+
+        case ChatIntent.COMPETITIVE_ANALYSIS:
+          await this.handleCompetitiveAnalysis(
+            userId,
+            content,
+            metadata,
+            onChunk,
+            onComplete
+          );
+          break;
+
         case ChatIntent.HELP:
           await this.handleHelp(onChunk, onComplete);
           break;
@@ -275,6 +454,36 @@ export class ChatIntentService {
           : '处理消息时发生错误，请稍后重试。';
       await onComplete(errorMessage, { error: true });
     }
+  }
+
+  private convertSceneResultToIntent(
+    sceneResult: SceneAnalysisResult
+  ): IntentResult {
+    const sceneToIntentMap: Record<string, ChatIntent> = {
+      optimize_resume: ChatIntent.OPTIMIZE_RESUME,
+      parse_resume: ChatIntent.PARSE_RESUME,
+      mock_interview: ChatIntent.MOCK_INTERVIEW,
+      interview_prediction: ChatIntent.INTERVIEW_PREDICTION,
+      parse_job_description: ChatIntent.PARSE_JOB_DESCRIPTION,
+      career_advice: ChatIntent.CAREER_ADVICE,
+      skill_analysis: ChatIntent.SKILL_ANALYSIS,
+      salary_negotiation: ChatIntent.SALARY_NEGOTIATION,
+      full_optimization: ChatIntent.FULL_OPTIMIZATION,
+      interview_preparation: ChatIntent.INTERVIEW_PREPARATION,
+      career_transition: ChatIntent.CAREER_TRANSITION,
+      competitive_analysis: ChatIntent.COMPETITIVE_ANALYSIS,
+      general_chat: ChatIntent.GENERAL_CHAT,
+      help: ChatIntent.HELP,
+      unknown: ChatIntent.UNKNOWN,
+    };
+
+    return {
+      intent: sceneToIntentMap[sceneResult.scene] || ChatIntent.GENERAL_CHAT,
+      confidence: sceneResult.confidence,
+      entities: sceneResult.entities,
+      reasoning: sceneResult.reasoning,
+      suggestedActions: sceneResult.suggestedActions,
+    };
   }
 
   /**
@@ -515,9 +724,520 @@ export class ChatIntentService {
     );
   }
 
-  /**
-   * Helper to stream AI response
-   */
+  private async handleCareerAdvice(
+    userId: string,
+    content: string,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    const resumeData = await this.getUserResumeContent(userId);
+
+    let systemPrompt =
+      '你是一个资深的职业发展顾问。请根据用户的背景和需求，提供专业的职业规划建议、行业发展趋势分析、职业转型指导等。';
+
+    if (resumeData) {
+      systemPrompt += `\n\n用户的简历内容摘要：\n${resumeData.content.substring(0, 800)}...`;
+    }
+
+    onChunk({
+      type: 'chunk',
+      content: '让我来为您提供职业发展建议...\n\n',
+      timestamp: Date.now(),
+    });
+
+    await this.streamAIResponse(
+      userId,
+      systemPrompt,
+      content,
+      onChunk,
+      async (finalContent) => {
+        await onComplete(finalContent, { type: 'career_advice' });
+      }
+    );
+  }
+
+  private async handleSkillAnalysis(
+    userId: string,
+    content: string,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    const resumeData = await this.getUserResumeContent(userId);
+
+    let systemPrompt =
+      '你是一个专业的技能评估专家。请分析用户的技能组合，识别优势和待提升领域，并提供针对性的技能发展建议。';
+
+    if (resumeData) {
+      systemPrompt += `\n\n用户的简历内容：\n${resumeData.content}`;
+    } else {
+      systemPrompt +=
+        '\n\n用户尚未上传简历。请建议用户上传简历以获取更精准的技能分析。';
+    }
+
+    onChunk({
+      type: 'chunk',
+      content: '正在分析您的技能组合...\n\n',
+      timestamp: Date.now(),
+    });
+
+    await this.streamAIResponse(
+      userId,
+      systemPrompt,
+      content,
+      onChunk,
+      async (finalContent) => {
+        await onComplete(finalContent, { type: 'skill_analysis' });
+      }
+    );
+  }
+
+  private async handleSalaryNegotiation(
+    userId: string,
+    content: string,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    const resumeData = await this.getUserResumeContent(userId);
+
+    let systemPrompt =
+      '你是一个薪资谈判专家。请帮助用户了解市场薪资水平，制定薪资谈判策略，准备谈判话术，并提供应对不同情况的建议。';
+
+    if (resumeData) {
+      systemPrompt += `\n\n用户的简历内容摘要：\n${resumeData.content.substring(0, 500)}...`;
+    }
+
+    onChunk({
+      type: 'chunk',
+      content: '让我来帮您准备薪资谈判...\n\n',
+      timestamp: Date.now(),
+    });
+
+    await this.streamAIResponse(
+      userId,
+      systemPrompt,
+      content,
+      onChunk,
+      async (finalContent) => {
+        await onComplete(finalContent, { type: 'salary_negotiation' });
+      }
+    );
+  }
+
+  private async handleFullOptimization(
+    userId: string,
+    content: string,
+    metadata: Record<string, any> | undefined,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    onChunk({
+      type: 'chunk',
+      content: '正在启动多智能体团队进行深度简历优化...\n\n',
+      timestamp: Date.now(),
+    });
+
+    if (this.useTeamAgents && this.teamTaskService?.isEnabled()) {
+      try {
+        const resumeData = await this.getUserResumeContent(userId);
+        const jd = metadata?.jobDescription || metadata?.jd;
+
+        if (!resumeData) {
+          onChunk({
+            type: 'chunk',
+            content: '⚠️ 请先上传您的简历，以便进行深度优化分析。\n\n',
+            timestamp: Date.now(),
+          });
+          await onComplete('请先上传简历后再进行深度优化。', {
+            type: 'full_optimization',
+            requiresResume: true,
+          });
+          return;
+        }
+
+        if (!jd) {
+          onChunk({
+            type: 'chunk',
+            content: '⚠️ 请提供目标职位描述（JD），以便进行针对性优化。\n\n',
+            timestamp: Date.now(),
+          });
+          await onComplete('请提供职位描述后再进行深度优化。', {
+            type: 'full_optimization',
+            requiresJD: true,
+          });
+          return;
+        }
+
+        onChunk({
+          type: 'chunk',
+          content: '📋 正在分析您的简历...\n',
+          timestamp: Date.now(),
+        });
+
+        const result = await this.teamTaskService.executeFullResumeOptimization(
+          {
+            userId,
+            taskType: ComplexTaskType.FULL_RESUME_OPTIMIZATION,
+            resumeContent: resumeData.content,
+            jobDescription: jd,
+          }
+        );
+
+        if (result.success && result.data) {
+          onChunk({
+            type: 'chunk',
+            content: '\n✅ 深度优化分析完成！\n\n',
+            timestamp: Date.now(),
+          });
+
+          const output = this.formatTeamResult(result.data);
+          await onComplete(output, {
+            type: 'full_optimization',
+            teamExecutionTime: result.executionTimeMs,
+          });
+        } else {
+          await onComplete(
+            `优化过程中遇到问题：${result.error || '未知错误'}，请稍后重试。`,
+            {
+              type: 'full_optimization',
+              error: true,
+            }
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Full optimization failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        await onComplete(`深度优化失败，正在切换到标准模式...\n\n`, {
+          type: 'full_optimization',
+          fallback: true,
+        });
+      }
+    } else {
+      onChunk({
+        type: 'chunk',
+        content: '多智能体团队暂不可用，正在使用标准优化模式...\n\n',
+        timestamp: Date.now(),
+      });
+      await this.handleOptimizeResume(userId, '', content, onChunk, onComplete);
+    }
+  }
+
+  private async handleInterviewPreparation(
+    userId: string,
+    content: string,
+    metadata: Record<string, any> | undefined,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    onChunk({
+      type: 'chunk',
+      content: '正在启动多智能体团队进行面试准备分析...\n\n',
+      timestamp: Date.now(),
+    });
+
+    if (this.useTeamAgents && this.teamTaskService?.isEnabled()) {
+      try {
+        const resumeData = await this.getUserResumeContent(userId);
+        const jd = metadata?.jobDescription || metadata?.jd;
+
+        onChunk({
+          type: 'chunk',
+          content: '🎯 正在分析您的背景和目标职位...\n',
+          timestamp: Date.now(),
+        });
+
+        const result = await this.teamTaskService.executeInterviewPreparation({
+          userId,
+          taskType: ComplexTaskType.INTERVIEW_PREPARATION,
+          resumeContent: resumeData?.content,
+          jobDescription: jd,
+          additionalContext: metadata,
+        });
+
+        if (result.success && result.data) {
+          onChunk({
+            type: 'chunk',
+            content: '\n✅ 面试准备分析完成！\n\n',
+            timestamp: Date.now(),
+          });
+
+          const output = this.formatTeamResult(result.data);
+          await onComplete(output, {
+            type: 'interview_preparation',
+            teamExecutionTime: result.executionTimeMs,
+          });
+        } else {
+          await onComplete(
+            `面试准备分析遇到问题：${result.error || '未知错误'}，请稍后重试。`,
+            {
+              type: 'interview_preparation',
+              error: true,
+            }
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Interview preparation failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        await onComplete(`面试准备分析失败，请稍后重试。`, {
+          type: 'interview_preparation',
+          error: true,
+        });
+      }
+    } else {
+      await this.handleMockInterview(userId, '', content, onChunk, onComplete);
+    }
+  }
+
+  private async handleCareerTransition(
+    userId: string,
+    content: string,
+    metadata: Record<string, any> | undefined,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    onChunk({
+      type: 'chunk',
+      content: '正在启动多智能体团队进行职业转型分析...\n\n',
+      timestamp: Date.now(),
+    });
+
+    if (this.useTeamAgents && this.teamTaskService?.isEnabled()) {
+      try {
+        const resumeData = await this.getUserResumeContent(userId);
+
+        onChunk({
+          type: 'chunk',
+          content: '🔄 正在分析您的技能和转型路径...\n',
+          timestamp: Date.now(),
+        });
+
+        const result =
+          await this.teamTaskService.executeCareerTransitionAnalysis({
+            userId,
+            taskType: ComplexTaskType.CAREER_TRANSITION_ANALYSIS,
+            resumeContent: resumeData?.content,
+            additionalContext: {
+              currentField: metadata?.currentField,
+              targetField: metadata?.targetField,
+            },
+          });
+
+        if (result.success && result.data) {
+          onChunk({
+            type: 'chunk',
+            content: '\n✅ 职业转型分析完成！\n\n',
+            timestamp: Date.now(),
+          });
+
+          const output = this.formatTeamResult(result.data);
+          await onComplete(output, {
+            type: 'career_transition',
+            teamExecutionTime: result.executionTimeMs,
+          });
+        } else {
+          await onComplete(
+            `职业转型分析遇到问题：${result.error || '未知错误'}，请稍后重试。`,
+            {
+              type: 'career_transition',
+              error: true,
+            }
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Career transition analysis failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        await onComplete(`职业转型分析失败，请稍后重试。`, {
+          type: 'career_transition',
+          error: true,
+        });
+      }
+    } else {
+      await this.handleCareerAdvice(userId, content, onChunk, onComplete);
+    }
+  }
+
+  private async handleCompetitiveAnalysis(
+    userId: string,
+    content: string,
+    metadata: Record<string, any> | undefined,
+    onChunk: (chunk: ChatResponse) => void,
+    onComplete: (
+      finalContent: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
+  ): Promise<void> {
+    onChunk({
+      type: 'chunk',
+      content: '正在启动多智能体团队进行竞争力分析...\n\n',
+      timestamp: Date.now(),
+    });
+
+    if (this.useTeamAgents && this.teamTaskService?.isEnabled()) {
+      try {
+        const resumeData = await this.getUserResumeContent(userId);
+        const jd = metadata?.jobDescription || metadata?.jd;
+
+        if (!resumeData || !jd) {
+          await onComplete(
+            '竞争力分析需要您的简历和目标职位描述，请确保已上传简历并提供JD。',
+            { type: 'competitive_analysis', requiresData: true }
+          );
+          return;
+        }
+
+        onChunk({
+          type: 'chunk',
+          content: '📊 正在分析您的竞争力...\n',
+          timestamp: Date.now(),
+        });
+
+        const result = await this.teamTaskService.executeCompetitiveAnalysis({
+          userId,
+          taskType: ComplexTaskType.COMPETITIVE_ANALYSIS,
+          resumeContent: resumeData.content,
+          jobDescription: jd,
+        });
+
+        if (result.success && result.data) {
+          onChunk({
+            type: 'chunk',
+            content: '\n✅ 竞争力分析完成！\n\n',
+            timestamp: Date.now(),
+          });
+
+          const output = this.formatTeamResult(result.data);
+          await onComplete(output, {
+            type: 'competitive_analysis',
+            teamExecutionTime: result.executionTimeMs,
+          });
+        } else {
+          await onComplete(
+            `竞争力分析遇到问题：${result.error || '未知错误'}，请稍后重试。`,
+            {
+              type: 'competitive_analysis',
+              error: true,
+            }
+          );
+        }
+      } catch (error) {
+        this.logger.error(
+          `Competitive analysis failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+        await onComplete(`竞争力分析失败，请稍后重试。`, {
+          type: 'competitive_analysis',
+          error: true,
+        });
+      }
+    } else {
+      await this.handleSkillAnalysis(userId, content, onChunk, onComplete);
+    }
+  }
+
+  private formatTeamResult(data: any): string {
+    const parts: string[] = [];
+
+    if (data.analysis) {
+      parts.push('## 📋 分析结果\n');
+      if (data.analysis.resumeAnalysis) {
+        parts.push('### 简历分析');
+        parts.push(this.formatAnalysisSection(data.analysis.resumeAnalysis));
+      }
+      if (data.analysis.jdAnalysis) {
+        parts.push('\n### 职位分析');
+        parts.push(this.formatAnalysisSection(data.analysis.jdAnalysis));
+      }
+    }
+
+    if (data.suggestions) {
+      parts.push('\n## 💡 优化建议\n');
+      parts.push(this.formatSuggestions(data.suggestions));
+    }
+
+    if (data.validation) {
+      parts.push('\n## ✅ 质量检查\n');
+      parts.push(this.formatValidation(data.validation));
+    }
+
+    if (data.finalOutput && typeof data.finalOutput === 'string') {
+      parts.push('\n## 📝 详细内容\n');
+      parts.push(data.finalOutput);
+    }
+
+    return parts.join('\n');
+  }
+
+  private formatAnalysisSection(data: any): string {
+    if (typeof data === 'string') return data;
+    const lines: string[] = [];
+    if (data.skills) {
+      lines.push(
+        `- **技能**: ${Array.isArray(data.skills) ? data.skills.join(', ') : data.skills}`
+      );
+    }
+    if (data.strengths) {
+      lines.push(
+        `- **优势**: ${Array.isArray(data.strengths) ? data.strengths.join(', ') : data.strengths}`
+      );
+    }
+    if (data.requiredSkills) {
+      lines.push(
+        `- **要求技能**: ${Array.isArray(data.requiredSkills) ? data.requiredSkills.join(', ') : data.requiredSkills}`
+      );
+    }
+    return lines.join('\n');
+  }
+
+  private formatSuggestions(data: any): string {
+    if (typeof data === 'string') return data;
+    if (Array.isArray(data.suggestions)) {
+      return data.suggestions
+        .map(
+          (s: any, i: number) =>
+            `${i + 1}. ${typeof s === 'string' ? s : s.suggestion || s.message || JSON.stringify(s)}`
+        )
+        .join('\n');
+    }
+    if (data.improvedContent) {
+      return data.improvedContent;
+    }
+    return JSON.stringify(data, null, 2);
+  }
+
+  private formatValidation(data: any): string {
+    if (typeof data === 'string') return data;
+    const lines: string[] = [];
+    if (data.overallScore !== undefined) {
+      lines.push(`- **综合评分**: ${data.overallScore}/100`);
+    }
+    if (data.isValid !== undefined) {
+      lines.push(`- **验证结果**: ${data.isValid ? '✅ 通过' : '⚠️ 需要改进'}`);
+    }
+    if (Array.isArray(data.issues) && data.issues.length > 0) {
+      lines.push(`- **发现的问题**: ${data.issues.length} 个`);
+    }
+    return lines.join('\n');
+  }
+
   private async streamAIResponse(
     userId: string,
     systemPrompt: string,

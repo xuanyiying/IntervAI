@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { userService } from './user-service';
 import axios from '../config/axios';
+import { upload } from './upload-service';
 
 // Mock axios
 vi.mock('../config/axios', () => ({
@@ -9,6 +10,10 @@ vi.mock('../config/axios', () => ({
     post: vi.fn(),
     get: vi.fn(),
   },
+}));
+
+vi.mock('./upload-service', () => ({
+  upload: vi.fn(),
 }));
 
 describe('userService', () => {
@@ -23,14 +28,13 @@ describe('userService', () => {
       });
       const mockUrl = 'https://example.com/avatar.png';
 
-      (axios.post as any).mockResolvedValueOnce({ data: { url: mockUrl } });
+      (upload as any).mockResolvedValueOnce({ url: mockUrl });
 
       const result = await userService.uploadAvatar(mockFile);
 
-      expect(axios.post).toHaveBeenCalledWith(
+      expect(upload).toHaveBeenCalledWith(
         '/storage/upload',
-        expect.any(FormData),
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        expect.any(FormData)
       );
       expect(result).toBe(mockUrl);
     });

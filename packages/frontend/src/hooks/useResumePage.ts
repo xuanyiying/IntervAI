@@ -1,9 +1,16 @@
 import { useState, useEffect } from 'react';
 import { message, Modal } from 'antd';
+import type { UploadFile } from 'antd/es/upload/interface';
 import { useTranslation } from 'react-i18next';
 import { useResumeStore } from '../stores';
 import { resumeService } from '../services/resume-service';
 import { optimizationService } from '../services/optimization-service';
+import {
+  MAX_FILE_SIZE_MB,
+  RESUME_ALLOWED_TYPES,
+  resolveUploadFile,
+  validateFile,
+} from '../services/upload-service';
 import { Resume, Optimization, ParseStatus } from '../types';
 
 export const useResumePage = () => {
@@ -72,10 +79,28 @@ export const useResumePage = () => {
     }
   };
 
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (file: File | UploadFile) => {
+    const resolvedFile = resolveUploadFile(file);
+    if (!resolvedFile) {
+      message.error(t('resume.upload_failed', '上传失败'));
+      return;
+    }
+    const validation = validateFile(resolvedFile, {
+      allowedTypes: RESUME_ALLOWED_TYPES,
+      maxSizeMB: MAX_FILE_SIZE_MB,
+    });
+    if (!validation.valid) {
+      message.error(
+        validation.error === 'type'
+          ? t('resume.upload_type_error', '只能上传 PDF 或 Word 文档！')
+          : t('resume.upload_size_error', '文件大小不能超过 10MB！')
+      );
+      return;
+    }
+
     try {
       setState((prev) => ({ ...prev, uploading: true }));
-      const newResume = await resumeService.uploadResume(file);
+      const newResume = await resumeService.uploadResume(resolvedFile);
       addResume(newResume);
       setCurrentResume(newResume);
       message.success(t('resume.upload_success', '简历上传成功，开始解析...'));

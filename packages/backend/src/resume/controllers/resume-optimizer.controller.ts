@@ -18,14 +18,14 @@ import { ResumeOptimizerService } from '../services/resume-optimizer.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Optimization } from '@prisma/client';
 
-@Controller('interview-ai')
+@Controller('resumes')
 @UseGuards(JwtAuthGuard)
 export class ResumeOptimizerController {
   constructor(private resumeOptimizerService: ResumeOptimizerService) {}
 
   /**
    * Create a new optimization
-   * POST /api/v1/interview-ai/optimizations
+   * POST /api/v1/resumes/optimizations
    */
   @Post('optimizations')
   @HttpCode(HttpStatus.CREATED)
@@ -42,7 +42,7 @@ export class ResumeOptimizerController {
 
   /**
    * List all optimizations for the user
-   * GET /api/v1/interview-ai/optimizations
+   * GET /api/v1/resumes/optimizations
    */
   @Get('optimizations')
   async listOptimizations(@Request() req: any): Promise<Optimization[]> {
@@ -51,7 +51,7 @@ export class ResumeOptimizerController {
 
   /**
    * Get an optimization by ID
-   * GET /api/v1/interview-ai/optimizations/:id
+   * GET /api/v1/resumes/optimizations/:id
    */
   @Get('optimizations/:id')
   async getOptimization(
@@ -66,7 +66,7 @@ export class ResumeOptimizerController {
 
   /**
    * Apply a single suggestion
-   * POST /api/v1/interview-ai/optimizations/:id/suggestions/:suggestionId/accept
+   * POST /api/v1/resumes/optimizations/:id/suggestions/:suggestionId/accept
    */
   @Post('optimizations/:id/suggestions/:suggestionId/accept')
   @HttpCode(HttpStatus.OK)
@@ -84,7 +84,7 @@ export class ResumeOptimizerController {
 
   /**
    * Apply multiple suggestions in batch
-   * POST /api/v1/interview-ai/optimizations/:id/suggestions/accept-batch
+   * POST /api/v1/resumes/optimizations/:id/suggestions/accept-batch{ suggestionIds: [string] }
    */
   @Post('optimizations/:id/suggestions/accept-batch')
   @HttpCode(HttpStatus.OK)
@@ -102,7 +102,7 @@ export class ResumeOptimizerController {
 
   /**
    * Reject a suggestion
-   * POST /api/v1/interview-ai/optimizations/:id/suggestions/:suggestionId/reject
+   * POST /api/v1/resumes/optimizations/:id/suggestions/:suggestionId/reject  reject a suggestion
    */
   @Post('optimizations/:id/suggestions/:suggestionId/reject')
   @HttpCode(HttpStatus.OK)

@@ -20,6 +20,7 @@ import {
   CustomerServiceOutlined,
 } from '@ant-design/icons';
 import axios from 'axios';
+import { upload } from '../services/upload-service';
 
 const { Title, Text } = Typography;
 
@@ -81,13 +82,7 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
       formData.append('audio', fileList[0].originFileObj);
       formData.append('name', newVoiceName);
 
-      const token = localStorage.getItem('auth_token');
-      await axios.post('/api/v1/voices/clone', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      await upload('/voices/clone', formData);
 
       message.success('Voice cloned successfully');
       setIsUploadModalVisible(false);
@@ -253,7 +248,7 @@ const VoiceManager: React.FC<VoiceManagerProps> = ({
               <Button icon={<PlusOutlined />}>Select Audio File</Button>
             </Upload>
           </div>
-          <Text type="secondary" size="small">
+          <Text type="secondary" className="text-xs">
             Your voice sample will be processed by Alibaba Bailian to create a
             high-quality clone. Ensure the recording is clear and has minimal
             background noise.
