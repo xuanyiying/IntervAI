@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
+import { ConversationContextService } from './conversation-context.service';
 import { ConversationController } from './conversation.controller';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AIProvidersModule } from '../ai-providers/ai-providers.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AIProvidersModule],
   controllers: [ConversationController],
-  providers: [ConversationService],
-  exports: [ConversationService],
+  providers: [ConversationService, ConversationContextService],
+  exports: [ConversationService, ConversationContextService],
 })
 export class ConversationModule {}

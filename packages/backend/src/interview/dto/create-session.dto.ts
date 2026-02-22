@@ -8,4 +8,8 @@ export class CreateSessionDto {
   @IsString()
   @IsOptional()
   voiceId?: string;
+
+  @IsString()
+  @IsOptional()
+  personaId?: string;
 }

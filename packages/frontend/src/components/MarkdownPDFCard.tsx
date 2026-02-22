@@ -7,7 +7,7 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { generateService } from '../services/generate-service';
+import { generateService } from '@/services';
 
 interface MarkdownPDFCardProps {
   markdown: string;
@@ -86,7 +86,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
         border: 'none',
       }}
     >
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+      <Space orientation="vertical" style={{ width: '100%' }} size="middle">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <FileTextOutlined style={{ fontSize: '24px' }} />
           <div>
@@ -111,7 +111,11 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
               borderRadius: '6px',
             }}
           >
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space
+              orientation="vertical"
+              size="small"
+              style={{ width: '100%' }}
+            >
               <div
                 style={{
                   display: 'flex',

@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
 import { Button, Upload, Empty, Tag, Popconfirm, Typography } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import type { UploadFile } from 'antd/es/upload/interface';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '../../i18n';
-import { Resume, ParseStatus } from '../../types';
+import { formatDate } from '@/i18n';
+import { Resume, ParseStatus } from '@/types';
+import { RESUME_ACCEPT } from '@/services/upload-service';
 
 const { Text } = Typography;
 
@@ -11,7 +13,7 @@ interface ResumeSidebarProps {
   resumes: Resume[];
   currentResume: Resume | null;
   onSelect: (resume: Resume) => void;
-  onUpload: (file: File) => void;
+  onUpload: (file: File | UploadFile) => void;
   onDelete: (resumeId: string) => void;
   uploading: boolean;
 }
@@ -86,7 +88,7 @@ export const ResumeSidebar: React.FC<ResumeSidebarProps> = ({
               return false;
             }}
             showUploadList={false}
-            accept=".pdf,.doc,.docx"
+            accept={RESUME_ACCEPT}
           >
             <Button
               type="primary"

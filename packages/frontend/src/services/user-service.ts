@@ -1,10 +1,11 @@
 import axios from '../config/axios';
+import { upload } from './upload-service';
 import { User } from '@/types';
 
 /**
  * User profile details
  */
-export interface UserProfile extends User {}
+export interface UserProfile extends User { }
 
 /**
  * Data required to update a user profile
@@ -121,15 +122,7 @@ export const userService = {
     formData.append('fileType', 'IMAGE');
     formData.append('category', 'avatar');
 
-    const response = await axios.post<{ url: string }>(
-      '/storage/upload',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-    return response.data.url;
+    const response = await upload<{ url: string }>('/storage/upload', formData);
+    return response.url;
   },
 };

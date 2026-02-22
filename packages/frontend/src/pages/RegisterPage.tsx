@@ -17,10 +17,11 @@ import {
   GoogleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
-import { authService } from '../services/auth-service';
+import { useAuthStore } from '@/stores';
+import { authService } from '@/services';
 import { getApiBaseUrl } from '../config/axios';
 import { Logo } from '../components/Logo';
+import { PasswordStrengthChecker } from '../components/PasswordStrengthChecker';
 import './auth.css';
 
 const { Title, Text } = Typography;
@@ -30,6 +31,9 @@ const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
+  const [form] = Form.useForm();
+  const password = Form.useWatch('password', form);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
 
   React.useEffect(() => {
     if (isAuthenticated) {
@@ -110,6 +114,7 @@ const RegisterPage: React.FC = () => {
               prefix={<UserOutlined />}
               placeholder={t('auth.username_placeholder', 'Username')}
               autoComplete="username"
+              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -132,6 +137,7 @@ const RegisterPage: React.FC = () => {
               prefix={<MailOutlined />}
               placeholder={t('auth.email_placeholder', 'Email Address')}
               autoComplete="email"
+              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
 
@@ -153,8 +159,14 @@ const RegisterPage: React.FC = () => {
               prefix={<LockOutlined />}
               placeholder={t('auth.password_placeholder', 'Password')}
               autoComplete="new-password"
+              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
             />
           </Form.Item>
+
+          <PasswordStrengthChecker
+            password={password}
+            onValidationChange={setIsPasswordValid}
+          />
 
           <Form.Item
             name="agreement"
@@ -183,8 +195,20 @@ const RegisterPage: React.FC = () => {
           <Form.Item className="mb-4">
             <button
               type="submit"
-              disabled={loading}
-              className="gradient-button w-full h-12 text-base font-bold shadow-lg hover:shadow-secondary-500/20"
+              disabled={loading || !isPasswordValid}
+              className={`gradient-button w-full h-12 text-base font-bold shadow-lg transition-all ${
+                loading || !isPasswordValid
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:shadow-secondary-500/20'
+              }`}
+              title={
+                !isPasswordValid
+                  ? t(
+                      'auth.password_requirements_not_met',
+                      'Please meet all password requirements'
+                    )
+                  : ''
+              }
             >
               {loading ? '注册中...' : '立即注册'}
             </button>
@@ -205,15 +229,17 @@ const RegisterPage: React.FC = () => {
               shape="circle"
               size="large"
               icon={<GoogleOutlined />}
+              disabled={false}
               onClick={() => handleSocialLogin('google')}
-              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
             />
             <Button
               shape="circle"
               size="large"
               icon={<GithubOutlined />}
+              disabled={false}
               onClick={() => handleSocialLogin('github')}
-              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all"
+              className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
             />
           </div>
 

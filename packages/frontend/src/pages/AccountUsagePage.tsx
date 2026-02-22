@@ -159,11 +159,28 @@ const AccountUsagePage: React.FC = () => {
           extra={
             quota && (
               <Text strong className="text-primary-500">
-                {t('account.usage.remaining_uses', {
-                  count: (quota.optimizationsLimit === -1 ? 0 : Math.max(0, quota.optimizationsLimit - quota.optimizationsUsed)) as any,
-                  remaining: (quota.optimizationsLimit === -1 ? '∞' : Math.max(0, quota.optimizationsLimit - quota.optimizationsUsed)) as any,
-                  limit: quota.optimizationsLimit === -1 ? '∞' : quota.optimizationsLimit,
-                })}
+                {String(
+                  t('account.usage.remaining_uses', {
+                    count:
+                      quota.optimizationsLimit === -1
+                        ? 0
+                        : Math.max(
+                            0,
+                            quota.optimizationsLimit - quota.optimizationsUsed
+                          ),
+                    remaining:
+                      quota.optimizationsLimit === -1
+                        ? '∞'
+                        : Math.max(
+                            0,
+                            quota.optimizationsLimit - quota.optimizationsUsed
+                          ),
+                    limit:
+                      quota.optimizationsLimit === -1
+                        ? '∞'
+                        : quota.optimizationsLimit,
+                  } as any)
+                )}
               </Text>
             )
           }

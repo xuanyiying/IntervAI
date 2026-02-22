@@ -3,6 +3,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AIProvidersModule } from '../ai-providers/ai-providers.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RedisModule } from '../redis/redis.module';
+import { AuthModule } from '../auth/auth.module';
 import {
   EmbeddingService,
   VectorDbService,
@@ -38,12 +39,26 @@ import {
   AgentSessionController,
   KnowledgeBaseController,
 } from './controllers';
+import {
+  LeaderAgent,
+  AnalysisWorker,
+  GenerationWorker,
+  RetrievalWorker,
+  ValidationWorker,
+  MessageQueueService,
+  TeamMonitorService,
+  TeamOrchestratorService,
+  TeamController,
+  TeamTaskService,
+  TeamGateway,
+} from './team';
 
 @Module({
   imports: [
     AIProvidersModule,
     PrismaModule,
     RedisModule,
+    AuthModule,
     ScheduleModule.forRoot(),
   ],
   providers: [
@@ -69,6 +84,16 @@ import {
     RolePlayAgent,
     WorkflowOrchestrator,
     LCELWorkflowOrchestrator,
+    LeaderAgent,
+    AnalysisWorker,
+    GenerationWorker,
+    RetrievalWorker,
+    ValidationWorker,
+    MessageQueueService,
+    TeamMonitorService,
+    TeamOrchestratorService,
+    TeamTaskService,
+    TeamGateway,
   ],
   controllers: [
     PitchPerfectController,
@@ -78,6 +103,7 @@ import {
     AgentMetricsController,
     AgentSessionController,
     KnowledgeBaseController,
+    TeamController,
   ],
   exports: [
     EmbeddingService,
@@ -93,6 +119,11 @@ import {
     StrategistAgent,
     RolePlayAgent,
     WorkflowOrchestrator,
+    LeaderAgent,
+    TeamOrchestratorService,
+    TeamMonitorService,
+    MessageQueueService,
+    TeamTaskService,
   ],
 })
 export class AgentModule {}

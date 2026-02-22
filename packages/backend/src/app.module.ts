@@ -30,6 +30,7 @@ import { loggerConfig } from './logger/logger.config';
 import {
   PerformanceMiddleware,
   CacheControlMiddleware,
+  RequestSizeLimitMiddleware,
 } from './common/middleware/performance.middleware';
 import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -102,7 +103,11 @@ export class AppModule implements NestModule {
 
     // Apply performance monitoring middleware to all routes
     consumer
-      .apply(PerformanceMiddleware, CacheControlMiddleware)
+      .apply(
+        RequestSizeLimitMiddleware,
+        PerformanceMiddleware,
+        CacheControlMiddleware
+      )
       .forRoutes('*');
   }
 }

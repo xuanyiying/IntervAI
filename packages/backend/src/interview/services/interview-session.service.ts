@@ -41,12 +41,10 @@ export class InterviewSessionService {
     session: InterviewSession;
     firstQuestion: InterviewQuestion | null;
   }> {
-    // Check interview quota
     await this.quotaService.enforceInterviewQuota(userId);
 
-    const { optimizationId, voiceId } = createSessionDto;
+    const { optimizationId, voiceId, personaId } = createSessionDto;
 
-    // Verify voiceId if provided
     if (voiceId) {
       const voices = await this.voiceService.getVoices(userId);
       const voiceExists = voices.some(
@@ -59,7 +57,17 @@ export class InterviewSessionService {
       }
     }
 
-    // Verify user owns the optimization
+    if (personaId) {
+      const persona = await this.prisma.interviewerPersona.findUnique({
+        where: { id: personaId },
+      });
+      if (!persona || !persona.isActive) {
+        throw new NotFoundException(
+          `Interviewer persona with ID ${personaId} not found or inactive`
+        );
+      }
+    }
+
     const optimization = await this.prisma.optimization.findUnique({
       where: { id: optimizationId },
       include: {
@@ -80,12 +88,12 @@ export class InterviewSessionService {
       );
     }
 
-    // Create session
     const session = await this.prisma.interviewSession.create({
       data: {
         userId,
         optimizationId,
         voiceId: createSessionDto.voiceId,
+        personaId: createSessionDto.personaId,
         status: InterviewStatus.IN_PROGRESS,
       },
       include: {
@@ -93,10 +101,15 @@ export class InterviewSessionService {
       },
     });
 
-    // Increment interview count
     await this.quotaService.incrementInterviewCount(userId);
 
-    // Get first question
+    if (personaId) {
+      await this.prisma.interviewerPersona.update({
+        where: { id: personaId },
+        data: { usageCount: { increment: 1 } },
+      });
+    }
+
     const questions = await this.prisma.interviewQuestion.findMany({
       where: { optimizationId },
       orderBy: { createdAt: 'asc' },

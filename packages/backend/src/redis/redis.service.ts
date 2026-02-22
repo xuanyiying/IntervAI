@@ -72,4 +72,95 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   async decr(key: string): Promise<number> {
     return await this.client.decr(key);
   }
+
+  async keys(pattern: string): Promise<string[]> {
+    return await this.client.keys(pattern);
+  }
+
+  async zadd(key: string, score: number, member: string): Promise<number> {
+    return await this.client.zadd(key, score, member);
+  }
+
+  async zrange(key: string, start: number, stop: number): Promise<string[]> {
+    return await this.client.zrange(key, start, stop);
+  }
+
+  async zrem(key: string, member: string): Promise<number> {
+    return await this.client.zrem(key, member);
+  }
+
+  async zcard(key: string): Promise<number> {
+    return await this.client.zcard(key);
+  }
+
+  async publish(channel: string, message: string): Promise<number> {
+    return await this.client.publish(channel, message);
+  }
+
+  async subscribe(
+    channel: string,
+    callback: (message: string) => void
+  ): Promise<void> {
+    const subscriber = this.client.duplicate();
+    await subscriber.subscribe(channel);
+    subscriber.on('message', (_channel, message) => {
+      callback(message);
+    });
+  }
+
+  async lpush(key: string, value: string): Promise<number> {
+    return await this.client.lpush(key, value);
+  }
+
+  async lrange(key: string, start: number, stop: number): Promise<string[]> {
+    return await this.client.lrange(key, start, stop);
+  }
+
+  async ltrim(key: string, start: number, stop: number): Promise<string> {
+    return await this.client.ltrim(key, start, stop);
+  }
+
+  async rpush(key: string, value: string): Promise<number> {
+    return await this.client.rpush(key, value);
+  }
+
+  async lpop(key: string): Promise<string | null> {
+    return await this.client.lpop(key);
+  }
+
+  async rpop(key: string): Promise<string | null> {
+    return await this.client.rpop(key);
+  }
+
+  async llen(key: string): Promise<number> {
+    return await this.client.llen(key);
+  }
+
+  async hset(key: string, field: string, value: string): Promise<number> {
+    return await this.client.hset(key, field, value);
+  }
+
+  async hget(key: string, field: string): Promise<string | null> {
+    return await this.client.hget(key, field);
+  }
+
+  async hgetall(key: string): Promise<Record<string, string>> {
+    return await this.client.hgetall(key);
+  }
+
+  async hdel(key: string, field: string): Promise<number> {
+    return await this.client.hdel(key, field);
+  }
+
+  async sadd(key: string, member: string): Promise<number> {
+    return await this.client.sadd(key, member);
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    return await this.client.smembers(key);
+  }
+
+  async srem(key: string, member: string): Promise<number> {
+    return await this.client.srem(key, member);
+  }
 }

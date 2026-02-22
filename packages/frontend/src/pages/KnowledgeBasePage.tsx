@@ -43,6 +43,12 @@ import type {
   KBQueryResponse,
 } from '@/types';
 import * as knowledgeBaseService from '@/services/knowledge-base-service';
+import {
+  KB_ACCEPT,
+  KB_ALLOWED_TYPES,
+  MAX_FILE_SIZE_MB,
+  validateFile,
+} from '@/services/upload-service';
 import './admin.css';
 
 const { TextArea } = Input;
@@ -135,25 +141,22 @@ const KnowledgeBasePage: React.FC = () => {
 
   const uploadProps: UploadProps = {
     beforeUpload: (file) => {
-      const isValidType =
-        file.type === 'application/pdf' ||
-        file.type ===
-          'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        file.type === 'text/plain';
-
-      if (!isValidType) {
-        message.error('Only PDF, DOCX, and TXT files are supported');
+      const validation = validateFile(file, {
+        allowedTypes: KB_ALLOWED_TYPES,
+        maxSizeMB: MAX_FILE_SIZE_MB,
+      });
+      if (!validation.valid) {
+        message.error(
+          validation.error === 'type'
+            ? 'Only PDF, DOCX, and TXT files are supported'
+            : 'File must be smaller than 10MB'
+        );
         return false;
       }
 
-      const isLt10M = file.size / 1024 / 1024 < 10;
-      if (!isLt10M) {
-        message.error('File must be smaller than 10MB');
-        return false;
-      }
-
-      return false; // Prevent auto upload
+      return false;
     },
+    accept: KB_ACCEPT,
     fileList,
     onChange: ({ fileList: newFileList }) => {
       setFileList(newFileList.slice(-1)); // Keep only the last file

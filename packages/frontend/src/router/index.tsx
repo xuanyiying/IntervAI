@@ -2,6 +2,7 @@ import React from 'react';
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import ProtectedRoute from '../components/ProtectedRoute';
+import ErrorBoundary from '../components/ErrorBoundary';
 import RegisterPage from '../pages/RegisterPage';
 import ChatPage from '../pages/ChatPage';
 import ProfilePage from '../pages/ProfilePage';
@@ -31,44 +32,54 @@ import AgentMetricsPage from '../pages/AgentMetricsPage';
 import KnowledgeBasePage from '../pages/KnowledgeBasePage';
 import ResumeBuilderPage from '../pages/ResumeBuilderPage';
 import MyResumesPage from '../pages/MyResumesPage';
+import TeamPage from '../pages/TeamPage';
 import LoginPage from '@/pages/LoginPage';
 
 const routes: RouteObject[] = [
   {
     path: '/login',
     element: <LoginPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/oauth/callback',
     element: <OAuthCallbackPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/register',
     element: <RegisterPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/verify-email',
     element: <VerifyEmailPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/forgot-password',
     element: <ForgotPasswordPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/reset-password',
     element: <ResetPasswordPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/terms-of-service',
     element: <TermsOfServicePage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/privacy-policy',
     element: <PrivacyPolicyPage />,
+    errorElement: <ErrorBoundary />,
   },
   {
     path: '/',
     element: <AppLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
@@ -199,10 +210,10 @@ const routes: RouteObject[] = [
         ),
       },
       {
-        path: 'knowledge-base',
+        path: 'team',
         element: (
           <ProtectedRoute>
-            <KnowledgeBasePage />
+            <TeamPage />
           </ProtectedRoute>
         ),
       },
@@ -234,7 +245,7 @@ const routes: RouteObject[] = [
             ),
           },
           {
-            path: 'invites',
+            path: 'invite-codes',
             element: (
               <ProtectedRoute requiredRole="ADMIN">
                 <InviteCodeManagementPage />
@@ -242,7 +253,15 @@ const routes: RouteObject[] = [
             ),
           },
           {
-            path: 'settings',
+            path: 'knowledge-base',
+            element: (
+              <ProtectedRoute requiredRole="ADMIN">
+                <KnowledgeBasePage />
+              </ProtectedRoute>
+            ),
+          },
+          {
+            path: 'system-settings',
             element: (
               <ProtectedRoute requiredRole="ADMIN">
                 <SystemSettingsPage />

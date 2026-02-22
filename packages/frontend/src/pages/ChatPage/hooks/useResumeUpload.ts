@@ -1,6 +1,13 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
+import type { UploadFile } from 'antd/es/upload/interface';
 import { resumeService } from '../../../services/resume-service';
+import {
+  MAX_FILE_SIZE_MB,
+  RESUME_ALLOWED_TYPES,
+  resolveUploadFile,
+  validateFile,
+} from '../../../services/upload-service';
 import { UPLOAD_TIMEOUT_MS, PARSE_TIMEOUT_MS } from '../../../config/app';
 import {
   MessageRole,
@@ -58,7 +65,7 @@ export const useResumeUpload = ({
 
   const handleResumeUpload = useCallback(
     async (
-      file: File,
+      file: File | UploadFile,
       retryMessageId?: string,
       overrideConversationId?: string
     ) => {
@@ -72,17 +79,35 @@ export const useResumeUpload = ({
 
       const messageId = retryMessageId || `msg-upload-${Date.now()}`;
 
+      const resolvedFile = resolveUploadFile(file);
+      if (!resolvedFile) {
+        message.error('上传失败');
+        return;
+      }
+      const validation = validateFile(resolvedFile, {
+        allowedTypes: RESUME_ALLOWED_TYPES,
+        maxSizeMB: MAX_FILE_SIZE_MB,
+      });
+      if (!validation.valid) {
+        message.error(
+          validation.error === 'type'
+            ? '只能上传 PDF 或 Word 文档！'
+            : '文件大小不能超过 10MB！'
+        );
+        return;
+      }
+
       // Store file for potential retry
       setFailedFiles((prev) => {
         const next = new Map(prev);
-        next.set(messageId, file);
+        next.set(messageId, resolvedFile);
         return next;
       });
 
       if (!retryMessageId) {
         const initialStatus: AttachmentStatus = {
-          fileName: file.name,
-          fileSize: file.size,
+          fileName: resolvedFile.name,
+          fileSize: resolvedFile.size,
           uploadProgress: 0,
           parseProgress: 0,
           status: 'uploading',
@@ -94,7 +119,7 @@ export const useResumeUpload = ({
           {
             key: messageId,
             role: MessageRole.USER,
-            content: `上传简历: ${file.name}`,
+            content: `上传简历: ${resolvedFile.name}`,
             type: 'attachment',
             attachmentStatus: initialStatus,
           },
@@ -110,7 +135,7 @@ export const useResumeUpload = ({
       try {
         // Step 1: Upload
         const uploadPromise = resumeService.uploadResume(
-          file,
+          resolvedFile,
           undefined,
           (progressEvent) => {
             if (progressEvent.total) {
@@ -147,8 +172,8 @@ export const useResumeUpload = ({
         // Step 2: Parsing
         const parsingMessageId = `msg-ai-parsing-${resume.id}`;
         const parsingStatus: AttachmentStatus = {
-          fileName: file.name,
-          fileSize: file.size,
+          fileName: resolvedFile.name,
+          fileSize: resolvedFile.size,
           uploadProgress: 100,
           parseProgress: 0,
           status: 'parsing',
@@ -187,7 +212,7 @@ export const useResumeUpload = ({
 
         setFailedFiles((prev) => {
           const next = new Map(prev);
-          next.set(parsingMessageId, file);
+          next.set(parsingMessageId, resolvedFile);
           return next;
         });
 

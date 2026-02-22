@@ -536,10 +536,35 @@ model Storage {
   @@map("storages")
 }
 
+model InterviewerPersona {
+  id                String   @id @default(uuid())
+  name              String
+  style             PersonaStyle
+  company           String?
+  position          String?
+  avatarUrl         String?
+  description       String
+  traits            String[]
+  questionStyle     Json
+  systemPrompt      String
+  isDefault         Boolean  @default(false)
+  isActive          Boolean  @default(true)
+  usageCount        Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  interviewSessions InterviewSession[]
+
+  @@index([style])
+  @@index([isActive])
+  @@index([isDefault])
+  @@map("interviewer_personas")
+}
+
 model InterviewSession {
   id             String             @id @default(uuid())
   userId         String
   optimizationId String
+  personaId      String?
   status         InterviewStatus    @default(IN_PROGRESS)
   startTime      DateTime           @default(now())
   endTime        DateTime?
@@ -551,10 +576,12 @@ model InterviewSession {
   messages       InterviewMessage[]
   optimization   Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persona        InterviewerPersona? @relation(fields: [personaId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, startTime])
   @@index([optimizationId])
+  @@index([personaId])
   @@map("interview_sessions")
 }
 
@@ -624,6 +651,15 @@ enum QuestionType {
   TECHNICAL
   SITUATIONAL
   RESUME_BASED
+}
+
+enum PersonaStyle {
+  STRICT
+  FRIENDLY
+  TECHNICAL
+  HR
+  SUPPORTIVE
+  CHALLENGING
 }
 
 enum Difficulty {

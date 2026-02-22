@@ -108,17 +108,22 @@ async function bootstrap() {
   // CORS configuration with security
   const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
   const allowedOrigins = corsOrigin.split(',').map((origin) => origin.trim());
+  const isProduction = process.env.NODE_ENV === 'production';
 
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
-      } else {
-        // For development, we can be more lenient or log the rejected origin
-        console.warn(`CORS rejected origin: ${origin}`);
-        callback(null, true); // Temporarily allow all for debugging or use allowedOrigins
+        return;
       }
+
+      if (isProduction) {
+        callback(new Error(`CORS rejected origin: ${origin}`), false);
+        return;
+      }
+
+      console.warn(`CORS rejected origin: ${origin}`);
+      callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

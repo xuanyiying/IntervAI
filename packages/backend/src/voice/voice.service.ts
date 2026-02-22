@@ -43,7 +43,7 @@ export class AlibabaVoiceService {
   /**
    * Clone a voice using an audio sample
    */
-  async cloneVoice(userId: string, name: string, audioBuffer: Buffer) {
+  async cloneVoice(userId: string, name: string, _audioBuffer: Buffer) {
     this.logger.log(`Cloning voice "${name}" for user ${userId}`);
     const voiceCode = `cloned_${Date.now()}`;
     return this.prisma.voice.create({

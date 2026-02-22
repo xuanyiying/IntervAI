@@ -106,7 +106,14 @@
     "reset_password_required": "请输入新密码！",
     "reset_password_min": "密码至少需要 8 位！",
     "reset_confirm_required": "请确认密码！",
-    "reset_password_mismatch": "两次输入的密码不一致！"
+    "reset_password_mismatch": "两次输入的密码不一致！",
+    "password_rule_length": "长度至少为8个字符",
+    "password_rule_uppercase": "包含至少一个大写字母",
+    "password_rule_lowercase": "包含至少一个小写字母",
+    "password_rule_number": "包含至少一个数字",
+    "password_rule_special": "包含至少一个特殊字符 (!@#$%^&*)",
+    "password_requirements": "密码要求：",
+    "password_requirements_not_met": "请满足所有密码要求"
   },
   "menu": {
     "new_chat": "新对话",

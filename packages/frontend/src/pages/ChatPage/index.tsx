@@ -287,8 +287,14 @@ const ChatPage: React.FC = () => {
     }
 
     // Check quota for authenticated user
-    if (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit) {
-      message.warning(t('account.usage.no_remaining_uses', '次数已用尽，请升级计划'));
+    if (
+      usage &&
+      usage.quota.optimizationsLimit !== -1 &&
+      usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit
+    ) {
+      message.warning(
+        t('account.usage.no_remaining_uses', '次数已用尽，请升级计划')
+      );
       return;
     }
 
@@ -412,12 +418,20 @@ const ChatPage: React.FC = () => {
       {user && usage && (
         <div className="w-full bg-primary/5 border-b border-primary/10 px-4 py-2 flex items-center justify-between z-20">
           <span className="text-sm text-primary-400">
-            {usage.quota.tier === 'FREE' ? t('account.usage.free_tier', '免费版') : t('account.usage.pro_tier', '专业版')}
+            {usage.quota.tier === 'FREE'
+              ? t('account.usage.free_tier', '免费版')
+              : t('account.usage.pro_tier', '专业版')}
           </span>
           <span className="text-sm font-medium text-primary-400">
             {t('account.usage.remaining_uses', {
-              count: Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
-              remaining: Math.max(0, usage.quota.optimizationsLimit - usage.quota.optimizationsUsed),
+              count: Math.max(
+                0,
+                usage.quota.optimizationsLimit - usage.quota.optimizationsUsed
+              ),
+              remaining: Math.max(
+                0,
+                usage.quota.optimizationsLimit - usage.quota.optimizationsUsed
+              ),
               limit: usage.quota.optimizationsLimit,
             })}
           </span>
@@ -433,7 +447,12 @@ const ChatPage: React.FC = () => {
             value={value}
             onChange={setValue}
             onSubmit={handleSubmit}
-            loading={loading || (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit)}
+            loading={
+              loading ||
+              (usage &&
+                usage.quota.optimizationsLimit !== -1 &&
+                usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit)
+            }
             onFileSelect={handleFileUploadWrapper}
             onActionClick={handleActionClick}
           />
@@ -468,7 +487,13 @@ const ChatPage: React.FC = () => {
               value={value}
               onChange={setValue}
               onSubmit={handleSubmit}
-              loading={loading || (usage && usage.quota.optimizationsLimit !== -1 && usage.quota.optimizationsUsed >= usage.quota.optimizationsLimit)}
+              loading={
+                loading ||
+                (usage &&
+                  usage.quota.optimizationsLimit !== -1 &&
+                  usage.quota.optimizationsUsed >=
+                    usage.quota.optimizationsLimit)
+              }
               onFileSelect={handleFileUploadWrapper}
             />
           </>

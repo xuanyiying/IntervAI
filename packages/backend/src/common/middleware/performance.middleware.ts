@@ -73,25 +73,31 @@ export class RequestSizeLimitMiddleware implements NestMiddleware {
   ) {}
 
   use(req: Request, res: Response, next: NextFunction) {
-    let size = 0;
+    const contentType = req.headers['content-type'] || '';
+    if (contentType.includes('multipart/form-data')) {
+      next();
+      return;
+    }
 
-    req.on('data', (chunk: Buffer) => {
-      size += chunk.length;
+    const contentLengthHeader = req.headers['content-length'];
+    const contentLength = contentLengthHeader
+      ? Number(contentLengthHeader)
+      : undefined;
 
-      if (size > this.maxSize) {
-        this.logger.warn('Request size exceeded', {
-          size: `${(size / 1024 / 1024).toFixed(2)}MB`,
-          maxSize: `${(this.maxSize / 1024 / 1024).toFixed(2)}MB`,
-          timestamp: new Date().toISOString(),
-        });
-        res.status(413).json({
-          error: {
-            code: 'PAYLOAD_TOO_LARGE',
-            message: 'Request payload exceeds maximum allowed size',
-          },
-        });
-      }
-    });
+    if (contentLength !== undefined && contentLength > this.maxSize) {
+      this.logger.warn('Request size exceeded', {
+        size: `${(contentLength / 1024 / 1024).toFixed(2)}MB`,
+        maxSize: `${(this.maxSize / 1024 / 1024).toFixed(2)}MB`,
+        timestamp: new Date().toISOString(),
+      });
+      res.status(413).json({
+        error: {
+          code: 'PAYLOAD_TOO_LARGE',
+          message: 'Request payload exceeds maximum allowed size',
+        },
+      });
+      return;
+    }
 
     next();
   }
