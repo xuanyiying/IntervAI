@@ -6,7 +6,7 @@ import {
   AgentCapability,
   Task,
   TaskResult,
-} from '@/agent/team';
+} from '@/agent/team/interfaces';
 
 const HEARTBEAT_INTERVAL = 30000;
 
@@ -16,7 +16,7 @@ export abstract class BaseWorkerAgent {
   protected currentTaskCount = 0;
   protected completedTasks = 0;
   protected failedTasks = 0;
-  protected heartbeatInterval?: NodeJS.Timeout;
+  protected heartbeatInterval?: ReturnType<typeof setInterval>;
 
   abstract readonly id: string;
   abstract readonly role: AgentRole;

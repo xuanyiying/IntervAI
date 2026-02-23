@@ -8,8 +8,8 @@ import {
   Task,
   TaskResult,
   TaskType,
-} from '@/agent/team';
-import { BaseWorkerAgent } from '@/agent/team';
+} from '@/agent/team/interfaces';
+import { BaseWorkerAgent } from './base.worker';
 
 const ANALYSIS_WORKER_ID = 'analysis-worker-001';
 
