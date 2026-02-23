@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GithubStrategy } from './strategies/github.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { EmailModule } from '@/email/email.module';
 import { InvitationModule } from '@/invitation/invitation.module';
@@ -31,7 +32,7 @@ import { RedisModule } from '@/redis/redis.module';
     }),
   ],
   controllers: [],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy, JwtAuthGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard],
 })
 export class AuthModule {}

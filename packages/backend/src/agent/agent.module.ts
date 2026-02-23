@@ -48,10 +48,10 @@ import {
   MessageQueueService,
   TeamMonitorService,
   TeamOrchestratorService,
-  TeamController,
   TeamTaskService,
   TeamGateway,
 } from './team';
+import { TeamController } from './team/team.controller';
 
 @Module({
   imports: [

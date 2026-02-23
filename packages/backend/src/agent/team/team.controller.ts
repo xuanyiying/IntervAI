@@ -10,10 +10,11 @@ import {
   Logger,
   HttpException,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
-import { TeamOrchestratorService } from '../team/team-orchestrator.service';
-import { TeamMonitorService } from '../team/monitoring/team-monitor.service';
+import { TeamOrchestratorService } from './team-orchestrator.service';
+import { TeamMonitorService } from './monitoring/team-monitor.service';
 import { TaskType, TaskPriority, TaskStatus } from '@/agent/team/interfaces';
 
 export interface SubmitTaskDto {
@@ -53,7 +54,7 @@ export class TeamController {
   constructor(
     private readonly teamOrchestrator: TeamOrchestratorService,
     private readonly teamMonitor: TeamMonitorService
-  ) {}
+  ) { }
 
   @Post('tasks')
   async submitTask(

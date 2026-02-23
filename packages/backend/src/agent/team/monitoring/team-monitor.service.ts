@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { RedisService } from '@/redis/redis.service';
-import { AgentRole, AgentStatus, AgentInfo } from '@/agent/team';
+import { AgentRole, AgentStatus, AgentInfo } from '@/agent/team/interfaces';
 
 const MONITORING_INTERVAL = 10000;
 const HEALTH_CHECK_INTERVAL = 30000;
