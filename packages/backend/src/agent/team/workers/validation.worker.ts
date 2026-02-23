@@ -2,9 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { AIEngineService } from '@/ai-providers/ai-engine.service';
 import { RedisService } from '@/redis/redis.service';
 import { ScenarioType } from '@/ai-providers/interfaces/model.interface';
-import { AgentRole, AgentCapability } from '@/agent/team';
-import { Task, TaskResult, TaskType } from '@/agent/team';
-import { BaseWorkerAgent } from '@/agent/team';
+import {
+  AgentRole,
+  AgentCapability,
+  Task,
+  TaskResult,
+  TaskType,
+} from '@/agent/team/interfaces';
+import { BaseWorkerAgent } from './base.worker';
 
 const VALIDATION_WORKER_ID = 'validation-worker-001';
 

@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from '@/redis/redis.service';
-import { AgentRole, AgentCapability } from '@/agent/team';
-import { Task, TaskResult, TaskType } from '@/agent/team';
-import { BaseWorkerAgent } from '@/agent/team';
+import {
+  AgentRole,
+  AgentCapability,
+  Task,
+  TaskResult,
+  TaskType,
+} from '@/agent/team/interfaces';
+import { BaseWorkerAgent } from './base.worker';
 import { RAGService } from '@/agent/services';
 
 const RETRIEVAL_WORKER_ID = 'retrieval-worker-001';

@@ -1,3 +1,5 @@
+import { Task, TaskResult } from './task.interface';
+
 export enum AgentRole {
   LEADER = 'leader',
   ANALYSIS_WORKER = 'analysis_worker',
@@ -56,5 +58,3 @@ export abstract class BaseAgent {
   abstract getStatus(): AgentStatus;
   abstract heartbeat(): Promise<void>;
 }
-
-import { Task, TaskResult } from './task.interface';
