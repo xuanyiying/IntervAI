@@ -17,8 +17,9 @@ import { InterviewGateway } from './interview.gateway';
 import { QuestionGeneratorService } from './services/question-generator.service';
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
+import { InterviewReportService } from './services/interview-report.service';
 
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AuthModule } from '../auth/auth.module';
     QuestionGeneratorService,
     AnswerEvaluationService,
     EvaluationProcessor,
+    InterviewReportService,
   ],
   controllers: [InterviewController, InterviewerPersonaController],
   exports: [InterviewService, InterviewerPersonaService],

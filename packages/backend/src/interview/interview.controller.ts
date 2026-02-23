@@ -17,6 +17,7 @@ import { Throttle } from '@nestjs/throttler';
 import { InterviewService } from './interview.service';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
+import { InterviewReportService } from './services/interview-report.service';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { InterviewQuestion, InterviewSession } from '@prisma/client';
 import { CreateSessionDto } from './dto/create-session.dto';
@@ -29,7 +30,8 @@ export class InterviewController {
   constructor(
     private interviewService: InterviewService,
     private questionService: InterviewQuestionService,
-    private sessionService: InterviewSessionService
+    private sessionService: InterviewSessionService,
+    private reportService: InterviewReportService
   ) {}
 
   /**
@@ -209,5 +211,15 @@ export class InterviewController {
     @UploadedFile() file: Express.Multer.File
   ): Promise<{ text: string }> {
     return this.interviewService.transcribeAudio(file);
+  }
+
+  @Get('session/:sessionId/report')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async generateReport(
+    @Request() req: any,
+    @Param('sessionId') sessionId: string
+  ) {
+    const userId = req.user.id;
+    return this.reportService.generateReport(sessionId, userId);
   }
 }

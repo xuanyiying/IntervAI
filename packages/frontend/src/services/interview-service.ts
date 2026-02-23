@@ -6,6 +6,54 @@ import type {
   InterviewMessage,
 } from '@/types';
 
+export interface InterviewReportAnalysis {
+  overallScore: number;
+  dimensions: {
+    accuracy: number;
+    fluency: number;
+    logicalThinking: number;
+    professionalKnowledge: number;
+    communication: number;
+    confidence: number;
+  };
+  strengths: string[];
+  improvements: string[];
+  detailedAnalysis: {
+    questionId: string;
+    question: string;
+    answer: string;
+    score: number;
+    feedback: string;
+    keywords: string[];
+    suggestions: string[];
+  }[];
+  recommendations: string[];
+  nextSteps: string[];
+}
+
+export interface InterviewReport {
+  sessionId: string;
+  generatedAt: string;
+  candidateInfo: {
+    name: string;
+    email?: string;
+  };
+  jobInfo: {
+    title: string;
+    company: string;
+  };
+  interviewDuration: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+  transcript: {
+    role: string;
+    content: string;
+    timestamp: string;
+  }[];
+  analysis: InterviewReportAnalysis;
+  markdown: string;
+}
+
 export interface InterviewerPersona {
   id: string;
   name: string;
@@ -299,5 +347,25 @@ export const interviewService = {
       params
     );
     return response.data;
+  },
+
+  getReport: async (sessionId: string): Promise<InterviewReport> => {
+    const response = await axios.get<InterviewReport>(
+      `/interview/session/${sessionId}/report`
+    );
+    return response.data;
+  },
+
+  downloadReport: async (sessionId: string): Promise<void> => {
+    const report = await interviewService.getReport(sessionId);
+    const blob = new Blob([report.markdown], { type: 'text/markdown' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `interview-report-${sessionId}.md`);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
   },
 };

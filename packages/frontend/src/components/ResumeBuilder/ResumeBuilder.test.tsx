@@ -36,22 +36,22 @@ describe('ResumeBuilder', () => {
   it('should render ResumeBuilder component', () => {
     render(<ResumeBuilder />);
     expect(screen.getByText('AI.RESUME')).toBeInTheDocument();
-    expect(screen.getByText('Build')).toBeInTheDocument();
-    expect(screen.getByText('Preview')).toBeInTheDocument();
+    expect(screen.getByText('构建')).toBeInTheDocument();
+    expect(screen.getByText('预览')).toBeInTheDocument();
   });
 
   it('should switch between Build and Preview modes', () => {
     render(<ResumeBuilder />);
 
     // Initially in Build mode
-    expect(screen.getByText('Content Editor')).toBeInTheDocument();
+    expect(screen.getByText('内容编辑')).toBeInTheDocument();
 
     // Switch to Preview
     const previewButton = screen.getByRole('tab', { name: /preview/i });
     fireEvent.click(previewButton);
 
     // Should see Preview content
-    expect(screen.queryByText('Content Editor')).not.toBeInTheDocument();
+    expect(screen.queryByText('内容编辑')).not.toBeInTheDocument();
   });
 
   it('should add a new section', () => {
@@ -59,11 +59,11 @@ describe('ResumeBuilder', () => {
 
     // Use regex to match exact text to avoid multiple matches if they exist
     // But since these are titles, they should be unique enough or at least present
-    expect(screen.getByText('Personal Information')).toBeInTheDocument();
+    expect(screen.getByText(/Personal Information/i)).toBeInTheDocument();
 
-    const addButton = screen.getByLabelText('Add Section');
+    const addButton = screen.getByLabelText(/Add Section/i);
     fireEvent.click(addButton);
 
-    expect(screen.getByText('New Section')).toBeInTheDocument();
+    expect(screen.getByText(/New Section/i)).toBeInTheDocument();
   });
 });

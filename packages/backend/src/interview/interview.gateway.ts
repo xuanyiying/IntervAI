@@ -145,10 +145,8 @@ export class InterviewGateway
         ? data.audioBuffer
         : Buffer.from(data.audioBuffer);
 
-      // Clear the accumulated chunks as we now have the full buffer
       this.audioBuffers.delete(data.sessionId);
 
-      // 1. Upload audio to storage
       const storageFile = await this.storageService.uploadFile({
         userId,
         buffer,
@@ -158,23 +156,20 @@ export class InterviewGateway
         fileType: FileType.AUDIO,
       } as any);
 
-      // 2. ASR
       const transcription = await this.voiceService.transcribeAudio(buffer);
       client.emit('transcription', { text: transcription });
 
-      // 3. Get AI Response
       const result = await this.interviewSessionService.submitAnswer(
         userId,
         data.sessionId,
         transcription,
-        storageFile.url // Save audio URL with the message
+        storageFile.url
       );
 
       if (result.nextQuestion) {
         const nextContent = result.nextQuestion.question;
         client.emit('ai_response', { text: nextContent });
 
-        // 4. TTS
         const session = await this.prisma.interviewSession.findUnique({
           where: { id: data.sessionId },
         });
@@ -191,6 +186,11 @@ export class InterviewGateway
       this.logger.error('Failed to process audio:', error);
       client.emit('error', { message: 'Failed to process voice' });
     }
+  }
+
+  @SubscribeMessage('ping')
+  handlePing(@ConnectedSocket() client: Socket) {
+    client.emit('pong');
   }
 
   private extractToken(client: Socket): string | null {
