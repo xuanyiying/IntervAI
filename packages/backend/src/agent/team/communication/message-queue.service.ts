@@ -10,7 +10,7 @@ import {
   MessageType,
   MessagePriority,
   CommunicationStats,
-} from '@/agent/team';
+} from '@/agent/team/interfaces';
 const MAX_QUEUE_SIZE = 1000;
 const DEADLOCK_CHECK_INTERVAL = 5000;
 

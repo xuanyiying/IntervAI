@@ -3,7 +3,7 @@ export * from './leader.agent';
 export * from './workers';
 export * from './communication/message-queue.service';
 export * from './monitoring/team-monitor.service';
+export * from './team-task.service';
 export * from './team-orchestrator.service';
 export * from './team.controller';
-export * from './team-task.service';
 export * from './team.gateway';
