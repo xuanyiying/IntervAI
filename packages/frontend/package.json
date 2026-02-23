@@ -4,6 +4,13 @@
   "private": true,
   "type": "module",
   "description": "Frontend application for Interview AI",
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all",
+    "last 2 versions",
+    "not IE 11"
+  ],
   "scripts": {
     "dev": "vite",
     "start:dev": "vite",

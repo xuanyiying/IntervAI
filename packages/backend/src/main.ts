@@ -139,8 +139,8 @@ async function bootstrap() {
   });
 
   // API prefix
-  // FIXME: Hardcoded to avoid double prefix issue
-  app.setGlobalPrefix('/api/v1', {
+  const apiPrefix = process.env.API_PREFIX || '/api/v1';
+  app.setGlobalPrefix(apiPrefix, {
     exclude: ['health', '/'],
   });
 
