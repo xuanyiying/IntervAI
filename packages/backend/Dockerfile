@@ -62,7 +62,7 @@ WORKDIR /app
 # Install only necessary runtime dependencies
 # Chromium is required for Puppeteer (PDF generation)
 # OpenSSL is required for Prisma
-RUN apk add --no-cache chromium openssl
+RUN apk add --no-cache chromium openssl curl
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser

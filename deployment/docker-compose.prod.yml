@@ -108,7 +108,7 @@ services:
       dockerfile: packages/backend/Dockerfile
       args:
         NODE_ENV: production
-    # container_name: backend  # Removed to allow scaling with replicas
+    container_name: backend  # Removed to allow scaling with replicas
     depends_on:
       postgres:
         condition: service_healthy
@@ -151,7 +151,7 @@ services:
     restart: always
     logging: *logging
     deploy:
-      replicas: 1
+      # replicas: 1
       resources:
         limits:
           cpus: '2'
@@ -160,7 +160,7 @@ services:
           cpus: '1'
           memory: 1G
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       start_period: 60s
@@ -172,7 +172,7 @@ services:
       context: ..
       dockerfile: packages/frontend/Dockerfile
     image: ${FRONTEND_IMAGE:-ghcr.io/interview-ai/frontend:latest}
-    # container_name: frontend # Removed to allow scaling with replicas
+    container_name: frontend # Removed to allow scaling with replicas
     depends_on:
       backend:
         condition: service_healthy
@@ -183,7 +183,7 @@ services:
     restart: always
     logging: *logging
     deploy:
-      replicas: 1
+      #replicas: 1
       resources:
         limits:
           cpus: '1'
