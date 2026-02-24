@@ -237,135 +237,136 @@ services:
     restart: always
     logging: *logging
 
-  # --- Monitoring Infrastructure ---
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./config/grafana/provisioning:/etc/grafana/provisioning
-    depends_on:
-      - prometheus
-      - loki
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  loki:
-    image: grafana/loki:2.9.0
-    container_name: loki
-    user: "0"
-    ports:
-      - "3100:3100"
-    volumes:
-      - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-      - loki_data:/tmp/loki
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  promtail:
-    image: grafana/promtail:2.9.0
-    container_name: promtail
-    volumes:
-      - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
-      - ../logs:/var/log/app:ro
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    command: -config.file=/etc/promtail/config.yml
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
-    ports:
-      - "9093:9093"
-    volumes:
-      - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - alertmanager_data:/alertmanager
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-      - '--storage.path=/alertmanager'
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.sysfs=/host/sys'
-    ports:
-      - "9100:9100"
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
-  cadvisor:
-    # Using zcube/cadvisor as a reliable Docker Hub mirror for gcr.io/cadvisor/cadvisor
-    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/google/cadvisor:0.54.0
-    container_name: cadvisor
-    ports:
-      - "8080:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      - /dev/disk/:/dev/disk:ro
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-    privileged: true
-    devices:
-      - /dev/kmsg
+  # --- Monitoring Infrastructure (Disabled to save memory) ---
+  # Uncomment below services if monitoring is needed
+  #
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: grafana
+  #   ports:
+  #     - "3001:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./config/grafana/provisioning:/etc/grafana/provisioning
+  #   depends_on:
+  #     - prometheus
+  #     - loki
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # loki:
+  #   image: grafana/loki:2.9.0
+  #   container_name: loki
+  #   user: "0"
+  #   ports:
+  #     - "3100:3100"
+  #   volumes:
+  #     - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+  #     - loki_data:/tmp/loki
+  #   command: -config.file=/etc/loki/local-config.yaml
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # promtail:
+  #   image: grafana/promtail:2.9.0
+  #   container_name: promtail
+  #   volumes:
+  #     - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+  #     - ../logs:/var/log/app:ro
+  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  #   command: -config.file=/etc/promtail/config.yml
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # alertmanager:
+  #   image: prom/alertmanager:latest
+  #   container_name: alertmanager
+  #   ports:
+  #     - "9093:9093"
+  #   volumes:
+  #     - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+  #     - alertmanager_data:/alertmanager
+  #   command:
+  #     - '--config.file=/etc/alertmanager/alertmanager.yml'
+  #     - '--storage.path=/alertmanager'
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # node-exporter:
+  #   image: prom/node-exporter:latest
+  #   container_name: node-exporter
+  #   volumes:
+  #     - /proc:/host/proc:ro
+  #     - /sys:/host/sys:ro
+  #     - /:/rootfs:ro
+  #   command:
+  #     - '--path.procfs=/host/proc'
+  #     - '--path.sysfs=/host/sys'
+  #   ports:
+  #     - "9100:9100"
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #
+  # cadvisor:
+  #   image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/google/cadvisor:0.54.0
+  #   container_name: cadvisor
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk:/dev/disk:ro
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
+  #   privileged: true
+  #   devices:
+  #     - /dev/kmsg
 
 volumes:
   postgres_data:
   redis_data:
   chroma_data:
   minio_data:
-  prometheus_data:
-  grafana_data:
-  loki_data:
-  alertmanager_data:
+  # Monitoring volumes (disabled to save memory)
+  # prometheus_data:
+  # grafana_data:
+  # loki_data:
+  # alertmanager_data:
 
 networks:
   app-network:
