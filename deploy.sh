@@ -170,6 +170,7 @@ main() {
     
     if [ "$ENV" == "prod" ]; then
         # In prod, check via Load Balancer (handles both frontend and backend routing)
+        # nginx /health proxies to backend /api/v1/health
         local lb_url="http://localhost/health"
         if [ "$SETUP_SSL" == true ]; then
              lb_url="https://${DOMAIN:-localhost}/health"
@@ -177,11 +178,12 @@ main() {
         check_urls+=("$lb_url")
     else
         # In Dev, check both services directly
-        check_urls+=("http://localhost:3000/health") # Backend
+        # Backend health endpoint is excluded from API prefix
+        check_urls+=("http://localhost:3000/health")
         
         # Frontend defaults to 80 if not set
         local fe_port="${FRONTEND_PORT:-80}"
-        check_urls+=("http://localhost:${fe_port}/health") # Frontend
+        check_urls+=("http://localhost:${fe_port}/health")
     fi
 
     for url in "${check_urls[@]}"; do
