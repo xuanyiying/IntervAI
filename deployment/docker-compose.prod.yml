@@ -151,7 +151,7 @@ services:
     restart: always
     logging: *logging
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           cpus: '2'
@@ -183,7 +183,7 @@ services:
     restart: always
     logging: *logging
     deploy:
-      replicas: 2
+      replicas: 1
       resources:
         limits:
           cpus: '1'
@@ -218,24 +218,24 @@ services:
     logging: *logging
 
   # Database Backup
-  postgres-backup:
-    image: postgres:15-alpine
-    container_name: backup
-    depends_on:
-      - postgres
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
-    volumes:
-      - ../backups/postgres:/backups
-      - ../scripts/backup-postgres.sh:/backup.sh:ro
-    command: /bin/sh -c "while true; do /backup.sh; sleep 86400; done"
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
+  # postgres-backup:
+  #   image: postgres:15-alpine
+  #   container_name: backup
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  #     BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
+  #   volumes:
+  #     - ../backups/postgres:/backups
+  #     - ../scripts/backup-postgres.sh:/backup.sh:ro
+  #   command: /bin/sh -c "while true; do /backup.sh; sleep 86400; done"
+  #   networks:
+  #     - app-network
+  #   restart: always
+  #   logging: *logging
 
   # --- Monitoring Infrastructure (Disabled to save memory) ---
   # Uncomment below services if monitoring is needed
