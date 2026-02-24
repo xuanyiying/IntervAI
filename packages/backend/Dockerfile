@@ -8,7 +8,6 @@ COPY . .
 RUN pnpm dlx turbo prune --scope=@interview-ai/backend --docker
 
 # Stage 2: Build
-# Stage 2: Build
 FROM node:20-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++ openssl
 WORKDIR /app
@@ -20,10 +19,8 @@ RUN npm config set fetch-retries 5 && \
 COPY --from=pruner /app/out/json/ .
 COPY --from=pruner /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 
-# Set Prisma binary mirror to speed up download
 ENV PRISMA_ENGINES_MIRROR=https://registry.npmmirror.com/-/binary/prisma
 ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
-# Add more mirrors for other binaries
 ENV SHARP_BINARY_HOST=https://npmmirror.com/mirrors/sharp
 ENV SHARP_LIBVIPS_BINARY_HOST=https://npmmirror.com/mirrors/sharp-libvips
 ENV SASS_BINARY_SITE=https://npmmirror.com/mirrors/node-sass
@@ -41,16 +38,13 @@ COPY turbo.json turbo.json
 RUN cd packages/backend && pnpm prisma generate
 RUN cd packages/backend && pnpm run build
 
-# Deploy the package with production dependencies to a specific directory
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN pnpm deploy --filter=@interview-ai/backend --prod /app/deploy
 
-# Copy built artifacts and other necessary files to the deploy directory
 RUN cp -r packages/backend/dist /app/deploy/dist && \
     cp -r packages/backend/prisma /app/deploy/prisma && \
     cp packages/backend/.env.example /app/deploy/.env.example
 
-# Generate Prisma Client in the deploy directory to ensure correct paths
 RUN npm install -g prisma@5.22.0 && \
     cd /app/deploy && \
     prisma generate
@@ -59,10 +53,12 @@ RUN npm install -g prisma@5.22.0 && \
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install only necessary runtime dependencies
-# Chromium is required for Puppeteer (PDF generation)
-# OpenSSL is required for Prisma
-RUN apk add --no-cache chromium openssl curl
+RUN apk add --no-cache \
+    chromium \
+    openssl \
+    curl \
+    && rm -rf /var/cache/apk/* \
+    && rm -rf /tmp/*
 
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
@@ -71,10 +67,8 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy the fully prepared deploy directory
 COPY --from=builder --chown=nestjs:nodejs /app/deploy /app
 
-# Create backups and logs directory with correct permissions
 RUN mkdir -p /app/backups /app/logs && \
     chown -R nestjs:nodejs /app/backups /app/logs
 

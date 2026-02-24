@@ -12,7 +12,7 @@ import { StorageService } from '@/storage/storage.service';
 import { QuotaService } from '@/quota/quota.service';
 import { GeneratedPDF, Template } from '@prisma/client';
 import { ParsedResumeData } from '@/types';
-import * as puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer-core';
 import * as Handlebars from 'handlebars';
 import {
   FileType,
