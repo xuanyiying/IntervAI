@@ -165,12 +165,11 @@ main() {
 
     # 8. 健康检查
     log_step "执行健康检查..."
-    
+
     local check_urls=()
-    
+
     if [ "$ENV" == "prod" ]; then
         # In prod, check via Load Balancer (handles both frontend and backend routing)
-        # nginx /health proxies to backend /api/v1/health
         local lb_url="http://localhost/health"
         if [ "$SETUP_SSL" == true ]; then
              lb_url="https://${DOMAIN:-localhost}/health"
@@ -180,7 +179,7 @@ main() {
         # In Dev, check both services directly
         # Backend health endpoint is excluded from API prefix
         check_urls+=("http://localhost:3000/health")
-        
+
         # Frontend defaults to 80 if not set
         local fe_port="${FRONTEND_PORT:-80}"
         check_urls+=("http://localhost:${fe_port}/health")
@@ -201,14 +200,14 @@ main() {
             sleep 5
         done
         echo ""
-        
+
         if [ "$success" = false ]; then
             log_error "Health check failed for: $url"
             log_warn "服务启动可能超时，请手动检查: docker compose -f $compose_file logs"
             exit 1
         fi
     done
-    
+
     log_info "部署成功! 访问地址: ${check_urls[0]}"
     exit 0
 }
