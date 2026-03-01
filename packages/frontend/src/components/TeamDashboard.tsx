@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { teamService, TeamStatus, TeamMetrics, AgentHealth } from '../services/team-service';
+import {
+  teamService,
+  TeamStatus,
+  TeamMetrics,
+  AgentHealth,
+} from '../services/team-service';
 import './TeamDashboard.css';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -26,7 +31,10 @@ const STATUS_LABELS: Record<string, string> = {
 
 export const TeamDashboard: React.FC = () => {
   const [status, setStatus] = useState<TeamStatus | null>(null);
-  const [metrics, setMetrics] = useState<{ current: TeamMetrics | null; history: TeamMetrics[] } | null>(null);
+  const [metrics, setMetrics] = useState<{
+    current: TeamMetrics | null;
+    history: TeamMetrics[];
+  } | null>(null);
   const [agents, setAgents] = useState<AgentHealth[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,7 +121,9 @@ export const TeamDashboard: React.FC = () => {
       {error && <div className="error-banner">{error}</div>}
 
       <div className="health-indicator">
-        <span className={`health-dot ${status?.healthy ? 'healthy' : 'unhealthy'}`}></span>
+        <span
+          className={`health-dot ${status?.healthy ? 'healthy' : 'unhealthy'}`}
+        ></span>
         <span>系统状态: {status?.healthy ? '✅ 正常' : '⚠️ 异常'}</span>
       </div>
 
@@ -121,28 +131,36 @@ export const TeamDashboard: React.FC = () => {
         <div className="metric-card">
           <div className="metric-icon">👥</div>
           <div className="metric-content">
-            <div className="metric-value">{status?.metrics?.totalAgents || 0}</div>
+            <div className="metric-value">
+              {status?.metrics?.totalAgents || 0}
+            </div>
             <div className="metric-label">总 Agent 数</div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon">⚡</div>
           <div className="metric-content">
-            <div className="metric-value">{status?.metrics?.activeAgents || 0}</div>
+            <div className="metric-value">
+              {status?.metrics?.activeAgents || 0}
+            </div>
             <div className="metric-label">活跃 Agent</div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon">✅</div>
           <div className="metric-content">
-            <div className="metric-value">{status?.metrics?.totalTasksProcessed || 0}</div>
+            <div className="metric-value">
+              {status?.metrics?.totalTasksProcessed || 0}
+            </div>
             <div className="metric-label">已完成任务</div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon">❌</div>
           <div className="metric-content">
-            <div className="metric-value">{status?.metrics?.totalTasksFailed || 0}</div>
+            <div className="metric-value">
+              {status?.metrics?.totalTasksFailed || 0}
+            </div>
             <div className="metric-label">失败任务</div>
           </div>
         </div>
@@ -158,7 +176,9 @@ export const TeamDashboard: React.FC = () => {
         <div className="metric-card">
           <div className="metric-icon">📋</div>
           <div className="metric-content">
-            <div className="metric-value">{status?.metrics?.queueDepth || 0}</div>
+            <div className="metric-value">
+              {status?.metrics?.queueDepth || 0}
+            </div>
             <div className="metric-label">队列深度</div>
           </div>
         </div>
@@ -170,7 +190,9 @@ export const TeamDashboard: React.FC = () => {
           {agents.map((agent) => (
             <div key={agent.agentId} className="agent-card">
               <div className="agent-header">
-                <span className="agent-role">{ROLE_LABELS[agent.role] || agent.role}</span>
+                <span className="agent-role">
+                  {ROLE_LABELS[agent.role] || agent.role}
+                </span>
                 <span className={`agent-status ${STATUS_COLORS[agent.status]}`}>
                   {STATUS_LABELS[agent.status] || agent.status}
                 </span>
@@ -191,11 +213,15 @@ export const TeamDashboard: React.FC = () => {
                 </div>
                 <div className="stat">
                   <span className="stat-label">错误率</span>
-                  <span className="stat-value">{(agent.errorRate * 100).toFixed(1)}%</span>
+                  <span className="stat-value">
+                    {(agent.errorRate * 100).toFixed(1)}%
+                  </span>
                 </div>
               </div>
               <div className="agent-health">
-                <span className={`health-dot ${agent.isHealthy ? 'healthy' : 'unhealthy'}`}></span>
+                <span
+                  className={`health-dot ${agent.isHealthy ? 'healthy' : 'unhealthy'}`}
+                ></span>
                 <span>最后心跳: {formatTime(agent.lastHeartbeat)}</span>
               </div>
             </div>
@@ -211,7 +237,9 @@ export const TeamDashboard: React.FC = () => {
               <div key={idx} className="history-bar">
                 <div
                   className="bar-active"
-                  style={{ height: `${(m.activeAgents / m.totalAgents) * 100}%` }}
+                  style={{
+                    height: `${(m.activeAgents / m.totalAgents) * 100}%`,
+                  }}
                   title={`活跃: ${m.activeAgents}`}
                 ></div>
                 <div className="bar-label">{formatTime(m.timestamp)}</div>

@@ -8,7 +8,8 @@ const defaultPersonas = [
     style: PersonaStyle.STRICT,
     company: 'Google',
     position: 'Senior Tech Lead',
-    description: '经验丰富的技术专家，注重代码质量和系统设计能力，会深入追问技术细节',
+    description:
+      '经验丰富的技术专家，注重代码质量和系统设计能力，会深入追问技术细节',
     traits: ['严谨', '专业', '追求完美', '注重细节'],
     questionStyle: {
       focusAreas: ['系统设计', '算法优化', '代码质量'],

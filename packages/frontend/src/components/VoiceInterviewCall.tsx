@@ -52,7 +52,12 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   const [isCalling, setIsCalling] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [status, setStatus] = useState<
-    'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking' | 'reconnecting'
+    | 'idle'
+    | 'connecting'
+    | 'listening'
+    | 'thinking'
+    | 'speaking'
+    | 'reconnecting'
   >('idle');
   const [userVolume, setUserVolume] = useState(0);
   const [aiVolume, setAiVolume] = useState(0);
@@ -105,9 +110,12 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
 
   useEffect(() => {
     const checkBrowserSupport = () => {
-      const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+      const hasMediaDevices = !!(
+        navigator.mediaDevices && navigator.mediaDevices.getUserMedia
+      );
       const hasMediaRecorder = typeof MediaRecorder !== 'undefined';
-      const hasAudioContext = typeof AudioContext !== 'undefined' || 
+      const hasAudioContext =
+        typeof AudioContext !== 'undefined' ||
         typeof (window as any).webkitAudioContext !== 'undefined';
 
       const ua = navigator.userAgent;
@@ -123,10 +131,14 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       }
 
       setBrowserInfo(browser);
-      setBrowserSupported(hasMediaDevices && hasMediaRecorder && hasAudioContext);
+      setBrowserSupported(
+        hasMediaDevices && hasMediaRecorder && hasAudioContext
+      );
 
       if (!hasMediaDevices || !hasMediaRecorder) {
-        message.error('Your browser does not support audio recording. Please use Chrome, Firefox, or Safari.');
+        message.error(
+          'Your browser does not support audio recording. Please use Chrome, Firefox, or Safari.'
+        );
       }
     };
 
@@ -156,13 +168,14 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     if (audioContextUnlocked) return true;
 
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioContextClass();
-      
+
       if (ctx.state === 'suspended') {
         await ctx.resume();
       }
-      
+
       audioContextRef.current = ctx;
       setAudioContextUnlocked(true);
       return true;
@@ -197,7 +210,10 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       setIsCalling(true);
       setStatus('listening');
 
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== 'closed'
+      ) {
         const source = audioContextRef.current.createMediaStreamSource(stream);
         analyserRef.current = audioContextRef.current.createAnalyser();
         source.connect(analyserRef.current);
@@ -244,15 +260,21 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     } catch (err: any) {
       console.error('Failed to start call:', err);
       setStatus('idle');
-      
+
       if (err.name === 'NotAllowedError') {
-        message.error('Microphone access denied. Please allow microphone access and try again.');
+        message.error(
+          'Microphone access denied. Please allow microphone access and try again.'
+        );
       } else if (err.name === 'NotFoundError') {
-        message.error('No microphone found. Please connect a microphone and try again.');
+        message.error(
+          'No microphone found. Please connect a microphone and try again.'
+        );
       } else if (err.name === 'NotReadableError') {
         message.error('Microphone is being used by another application.');
       } else if (err.name === 'OverconstrainedError') {
-        const fallbackStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const fallbackStream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         streamRef.current = fallbackStream;
         setIsCalling(true);
         setStatus('listening');
@@ -284,7 +306,8 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
 
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
       const aiCtx = new AudioContextClass();
       aiAudioContextRef.current = aiCtx;
 
@@ -311,7 +334,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         setAiVolume(0);
         aiCtx.close();
         URL.revokeObjectURL(url);
-        
+
         if (mediaRecorderRef.current?.state === 'paused') {
           mediaRecorderRef.current.resume();
         } else if (mediaRecorderRef.current?.state === 'inactive') {
@@ -404,23 +427,23 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         <Space>
           <Badge
             status={
-              isReconnecting
-                ? 'warning'
-                : isConnected
-                  ? 'success'
-                  : 'error'
+              isReconnecting ? 'warning' : isConnected ? 'success' : 'error'
             }
           />
           <Text style={{ color: '#8c8c8c' }}>{getStatusText()}</Text>
         </Space>
         <Space>
           {browserInfo && (
-            <Text style={{ color: '#595959', fontSize: 12 }}>{browserInfo}</Text>
+            <Text style={{ color: '#595959', fontSize: 12 }}>
+              {browserInfo}
+            </Text>
           )}
           <Tooltip title={`Latency: ${latency}ms`}>
             <Space style={{ color: getLatencyColor() }}>
               <WifiOutlined />
-              <Text style={{ color: 'inherit', fontSize: 12 }}>{latency}ms</Text>
+              <Text style={{ color: 'inherit', fontSize: 12 }}>
+                {latency}ms
+              </Text>
             </Space>
           </Tooltip>
         </Space>
@@ -573,8 +596,8 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
           }}
         >
           <Text style={{ color: 'white' }}>
-            Your browser may not fully support voice features. 
-            Please use Chrome, Firefox, or Safari for the best experience.
+            Your browser may not fully support voice features. Please use
+            Chrome, Firefox, or Safari for the best experience.
           </Text>
         </div>
       )}

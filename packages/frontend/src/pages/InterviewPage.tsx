@@ -20,7 +20,10 @@ import {
   PhoneOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { interviewService, InterviewerPersona } from '../services/interview-service';
+import {
+  interviewService,
+  InterviewerPersona,
+} from '../services/interview-service';
 import { InterviewQuestion, InterviewSession } from '@/types';
 import { useTranslation } from 'react-i18next';
 import VoiceManager from '../components/VoiceManager';
@@ -53,7 +56,9 @@ const InterviewPage: React.FC = () => {
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false);
 
   const [personas, setPersonas] = useState<InterviewerPersona[]>([]);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | undefined>();
+  const [selectedPersonaId, setSelectedPersonaId] = useState<
+    string | undefined
+  >();
   const [currentStep, setCurrentStep] = useState(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);

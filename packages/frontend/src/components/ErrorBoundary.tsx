@@ -51,8 +51,14 @@ const ErrorBoundary: React.FC<ErrorBoundaryProps> = () => {
         subTitle={
           <span style={{ color: 'var(--text-secondary, #94a3b8)' }}>
             {isNotFoundError
-              ? t('error.404_message', 'The page you are looking for does not exist.')
-              : t('error.500_message', 'An unexpected error occurred. Please try again.')}
+              ? t(
+                  'error.404_message',
+                  'The page you are looking for does not exist.'
+                )
+              : t(
+                  'error.500_message',
+                  'An unexpected error occurred. Please try again.'
+                )}
           </span>
         }
         extra={[
@@ -70,11 +76,16 @@ const ErrorBoundary: React.FC<ErrorBoundaryProps> = () => {
         ].filter(Boolean)}
       >
         {!isNotFoundError && (
-          <div style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
+          <div
+            style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}
+          >
             <Paragraph>
               <Text
                 strong
-                style={{ color: 'var(--text-secondary, #94a3b8)', fontSize: '14px' }}
+                style={{
+                  color: 'var(--text-secondary, #94a3b8)',
+                  fontSize: '14px',
+                }}
               >
                 {t('error.error_details', 'Error Details:')}
               </Text>

@@ -10,13 +10,14 @@ import {
 import { Request, Response } from 'express';
 import { AppException } from '../exceptions/app.exception';
 import { ERROR_CODE_TO_MESSAGE } from '../exceptions/error-codes';
-import { MonitoringService } from '../../monitoring/monitoring.service';
+
+import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { Logger as WinstonLogger } from 'winston';
+import { MonitoringService } from '@/shared/monitoring/monitoring.service';
 import {
   AlertingService,
   AlertSeverity,
-} from '../../monitoring/alerting.service';
-import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { Logger as WinstonLogger } from 'winston';
+} from '@/shared/monitoring/alerting.service';
 
 /**
  * Global exception filter for standardized error responses

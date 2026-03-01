@@ -5,7 +5,7 @@ import { User } from '@/types';
 /**
  * User profile details
  */
-export interface UserProfile extends User { }
+export interface UserProfile extends User {}
 
 /**
  * Data required to update a user profile
