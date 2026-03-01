@@ -55,9 +55,7 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
               key={persona.id}
               hoverable
               className={`transition-all ${
-                isSelected
-                  ? 'ring-2 ring-primary shadow-lg'
-                  : 'hover:shadow-md'
+                isSelected ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
               }`}
               onClick={() => onSelect(persona.id)}
               style={{
@@ -130,9 +128,7 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
 
       {selectedPersonaId && (
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <Text type="secondary">
-            {t('interview.persona_selected_hint')}
-          </Text>
+          <Text type="secondary">{t('interview.persona_selected_hint')}</Text>
         </div>
       )}
     </div>

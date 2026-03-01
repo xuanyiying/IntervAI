@@ -4,14 +4,14 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { IoAdapter } from '@nestjs/platform-socket.io';
-import { RedisIoAdapter } from './chat/redis-io.adapter';
+import { RedisIoAdapter } from '@/core/chat/redis-io.adapter';
 import helmet from 'helmet';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { MonitoringInterceptor } from './monitoring/monitoring.interceptor';
-import { MonitoringGuard } from './monitoring/monitoring.guard';
-import { initOpenTelemetry } from './monitoring/otel';
+import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
+import { MonitoringInterceptor } from '@/shared/monitoring/monitoring.interceptor';
+import { MonitoringGuard } from '@/shared/monitoring/monitoring.guard';
+import { initOpenTelemetry } from '@/shared/monitoring/otel';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);

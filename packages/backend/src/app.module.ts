@@ -4,38 +4,39 @@ import { BullModule } from '@nestjs/bull';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
-import { RedisModule } from './redis/redis.module';
-import { HealthModule } from './health/health.module';
-import { UserModule } from './user/user.module';
-import { ResumeModule } from './resume/resume.module';
-import { JobModule } from './job/job.module';
-import { StorageModule } from './storage/storage.module';
-import { TasksModule } from './tasks/tasks.module';
-import { InterviewModule } from './interview/interview.module';
-import { CommonModule } from './common/common.module';
-import { QuotaModule } from './quota/quota.module';
-import { LoggerModule } from './logger/logger.module';
-import { MonitoringModule } from './monitoring/monitoring.module';
-import { ConversationModule } from './conversation/conversation.module';
-import { EmailModule } from './email/email.module';
-import { PaymentModule } from './payment/payment.module';
-import { AIProvidersModule } from './ai-providers/ai-providers.module';
-import { InvitationModule } from './invitation/invitation.module';
-import { ChatModule } from './chat/chat.module';
-import { AgentModule } from './agent/agent.module';
-import { AccountModule } from './account/account.module';
-import { VoiceModule } from './voice/voice.module';
-import { loggerConfig } from './logger/logger.config';
+import { PrismaModule } from '@/shared/database/prisma.module';
+import { RedisModule } from '@/shared/cache/redis.module';
+import { HealthModule } from '@/core/health/health.module';
+import { UserModule } from '@/core/user/user.module';
+import { ResumeModule } from '@/features/resume/resume.module';
+import { JobModule } from '@/features/job/job.module';
+import { TasksModule } from '@/features/tasks/tasks.module';
+import { InterviewModule } from '@/features/interview/interview.module';
+import { CommonModule } from '@/common/common.module';
+import { QuotaModule } from '@/core/quota/quota.module';
+import { LoggerModule } from '@/shared/logger/logger.module';
+import { MonitoringModule } from '@/shared/monitoring/monitoring.module';
+import { ConversationModule } from '@/core/conversation/conversation.module';
+import { EmailModule } from '@/shared/notification/email.module';
+import { PaymentModule } from './features/payment/payment.module';
+import { AIProvidersModule } from './core/ai-provider/ai-providers.module';
+import { InvitationModule } from './features/invitation/invitation.module';
+import { ChatModule } from '@/core/chat/chat.module';
+import { JobSearchModule } from '@/features/job-search';
+import { AgentModule } from '@/core/agent/agent.module';
+import { AccountModule } from '@/core/account/account.module';
+import { VoiceModule } from '@/features/voice/voice.module';
+import { loggerConfig } from '@/shared/logger/logger.config';
 import {
   PerformanceMiddleware,
   CacheControlMiddleware,
   RequestSizeLimitMiddleware,
-} from './common/middleware/performance.middleware';
-import { RequestLoggingMiddleware } from './common/middleware/request-logging.middleware';
+} from '@/common/middleware/performance.middleware';
+import { RequestLoggingMiddleware } from '@/common/middleware/request-logging.middleware';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { AuthModule } from './auth/auth.module';
+import { AuthModule } from './core/auth/auth.module';
+import { StorageModule } from '@/core/storage/storage.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { AuthModule } from './auth/auth.module';
     AIProvidersModule,
     InvitationModule,
     ChatModule,
+    JobSearchModule,
     AgentModule,
     AccountModule,
     VoiceModule,
@@ -81,7 +83,6 @@ import { AuthModule } from './auth/auth.module';
           port: configService.get('REDIS_PORT', 6379),
           password: configService.get('REDIS_PASSWORD'),
         },
-        // Add queue processing options to prevent overload
         defaultJobOptions: {
           attempts: 3,
           backoff: {
@@ -98,10 +99,7 @@ import { AuthModule } from './auth/auth.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply request logging middleware first to capture all requests
     consumer.apply(RequestLoggingMiddleware).forRoutes('*');
-
-    // Apply performance monitoring middleware to all routes
     consumer
       .apply(
         RequestSizeLimitMiddleware,

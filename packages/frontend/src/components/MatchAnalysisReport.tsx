@@ -144,10 +144,19 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
           />
           <Paragraph className="mt-4 text-gray-600">
             {analysis.overallScore >= 80
-              ? t('match_analysis.excellent_match', '优秀匹配！你有很大机会获得面试机会')
+              ? t(
+                  'match_analysis.excellent_match',
+                  '优秀匹配！你有很大机会获得面试机会'
+                )
               : analysis.overallScore >= 60
-                ? t('match_analysis.good_match', '良好匹配，建议针对差距进行优化')
-                : t('match_analysis.needs_improvement', '需要改进，建议加强相关技能')}
+                ? t(
+                    'match_analysis.good_match',
+                    '良好匹配，建议针对差距进行优化'
+                  )
+                : t(
+                    'match_analysis.needs_improvement',
+                    '需要改进，建议加强相关技能'
+                  )}
           </Paragraph>
         </div>
       </Card>
@@ -157,7 +166,8 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
           <div>
             <Title level={5} className="mb-3">
               <CheckCircleOutlined className="text-green-500 mr-2" />
-              {t('match_analysis.matched_skills', '已匹配技能')} ({analysis.skillMatch.matched.length})
+              {t('match_analysis.matched_skills', '已匹配技能')} (
+              {analysis.skillMatch.matched.length})
             </Title>
             <Space wrap>
               {analysis.skillMatch.matched.map((item, index) => (
@@ -171,7 +181,8 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
           <div>
             <Title level={5} className="mb-3">
               <CloseCircleOutlined className="text-red-500 mr-2" />
-              {t('match_analysis.missing_skills', '缺失技能')} ({analysis.skillMatch.missing.length})
+              {t('match_analysis.missing_skills', '缺失技能')} (
+              {analysis.skillMatch.missing.length})
             </Title>
             <Space wrap>
               {analysis.skillMatch.missing.map((item, index) => (
@@ -185,7 +196,8 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
           <div>
             <Title level={5} className="mb-3">
               <ExclamationCircleOutlined className="text-blue-500 mr-2" />
-              {t('match_analysis.additional_skills', '额外技能')} ({analysis.skillMatch.additional.length})
+              {t('match_analysis.additional_skills', '额外技能')} (
+              {analysis.skillMatch.additional.length})
             </Title>
             <Space wrap>
               {analysis.skillMatch.additional.map((item, index) => (
@@ -295,10 +307,13 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
               <List.Item>
                 <Title level={5}>{item.skill}</Title>
                 <Text type="secondary" className="block mb-2">
-                  {t('match_analysis.estimated_time', '预计时间')}: {item.estimatedTime}
+                  {t('match_analysis.estimated_time', '预计时间')}:{' '}
+                  {item.estimatedTime}
                 </Text>
                 <div>
-                  <Text strong>{t('match_analysis.resources', '推荐资源')}:</Text>
+                  <Text strong>
+                    {t('match_analysis.resources', '推荐资源')}:
+                  </Text>
                   <ul className="mt-2">
                     {item.resources.map((resource, idx) => (
                       <li key={idx}>{resource}</li>

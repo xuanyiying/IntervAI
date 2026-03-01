@@ -1,0 +1,59 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false, // Enforce token expiration
+      secretOrKey: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+    });
+  }
+
+  async validate(payload: JwtPayload) {
+    // Validate payload structure
+    if (!payload.sub) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    try {
+      // Fetch user from database
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.isActive === false) {
+        throw new UnauthorizedException('User account is inactive');
+      }
+
+      // Return user object (will be attached to request.user)
+      return user;
+    } catch (error: any) {
+      // Handle database connection errors specifically
+      if (
+        error.message &&
+        error.message.includes(
+          'Timed out fetching a new connection from the connection pool'
+        )
+      ) {
+        throw new Error(
+          'Service temporarily unavailable due to high load. Please try again later.'
+        );
+      }
+      // Re-throw other errors
+      throw error;
+    }
+  }
+}

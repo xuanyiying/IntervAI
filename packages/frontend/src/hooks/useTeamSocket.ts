@@ -130,12 +130,15 @@ export const useTeamSocket = (options: UseTeamSocketOptions = {}) => {
     };
   }, [token]);
 
-  const submitTask = useCallback((type: string, data: Record<string, any>, priority?: number) => {
-    if (!socketRef.current?.connected) {
-      throw new Error('Socket not connected');
-    }
-    socketRef.current.emit('task:submit', { type, data, priority });
-  }, []);
+  const submitTask = useCallback(
+    (type: string, data: Record<string, any>, priority?: number) => {
+      if (!socketRef.current?.connected) {
+        throw new Error('Socket not connected');
+      }
+      socketRef.current.emit('task:submit', { type, data, priority });
+    },
+    []
+  );
 
   const getTaskStatus = useCallback((taskId: string) => {
     if (!socketRef.current?.connected) {

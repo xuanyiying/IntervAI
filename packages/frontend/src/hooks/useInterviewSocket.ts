@@ -32,7 +32,9 @@ const RECONNECTION_ATTEMPTS = 5;
 const RECONNECTION_DELAY = 1000;
 const LATENCY_CHECK_INTERVAL = 5000;
 
-export const useInterviewSocket = (options?: InterviewSocketOptions): InterviewSocketReturn => {
+export const useInterviewSocket = (
+  options?: InterviewSocketOptions
+): InterviewSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [reconnectAttempt, setReconnectAttempt] = useState(0);
@@ -65,75 +67,82 @@ export const useInterviewSocket = (options?: InterviewSocketOptions): InterviewS
     }
   }, []);
 
-  const setupSocketEvents = useCallback((socket: Socket) => {
-    socket.on('connect', () => {
-      setIsConnected(true);
-      setIsReconnecting(false);
-      setReconnectAttempt(0);
-      options?.onConnected?.();
-      startLatencyCheck();
+  const setupSocketEvents = useCallback(
+    (socket: Socket) => {
+      socket.on('connect', () => {
+        setIsConnected(true);
+        setIsReconnecting(false);
+        setReconnectAttempt(0);
+        options?.onConnected?.();
+        startLatencyCheck();
 
-      if (currentSessionIdRef.current) {
-        socket.emit('join_interview', { sessionId: currentSessionIdRef.current });
-      }
-    });
+        if (currentSessionIdRef.current) {
+          socket.emit('join_interview', {
+            sessionId: currentSessionIdRef.current,
+          });
+        }
+      });
 
-    socket.on('disconnect', (reason) => {
-      setIsConnected(false);
-      options?.onDisconnected?.();
+      socket.on('disconnect', (reason) => {
+        setIsConnected(false);
+        options?.onDisconnected?.();
 
-      if (reason === 'io server disconnect') {
-        socket.connect();
-      }
-    });
+        if (reason === 'io server disconnect') {
+          socket.connect();
+        }
+      });
 
-    socket.io.on('reconnect_attempt', (attempt) => {
-      setIsReconnecting(true);
-      setReconnectAttempt(attempt);
-      options?.onReconnecting?.(attempt);
-    });
+      socket.io.on('reconnect_attempt', (attempt) => {
+        setIsReconnecting(true);
+        setReconnectAttempt(attempt);
+        options?.onReconnecting?.(attempt);
+      });
 
-    socket.io.on('reconnect', () => {
-      setIsReconnecting(false);
-      setReconnectAttempt(0);
-      options?.onReconnected?.();
-    });
+      socket.io.on('reconnect', () => {
+        setIsReconnecting(false);
+        setReconnectAttempt(0);
+        options?.onReconnected?.();
+      });
 
-    socket.io.on('reconnect_failed', () => {
-      setIsReconnecting(false);
-      options?.onError?.({ message: 'Connection lost. Please refresh the page.' });
-    });
+      socket.io.on('reconnect_failed', () => {
+        setIsReconnecting(false);
+        options?.onError?.({
+          message: 'Connection lost. Please refresh the page.',
+        });
+      });
 
-    socket.on('pong', () => {
-      const currentLatency = Date.now() - pingStartTimeRef.current;
-      setLatency(currentLatency);
-      options?.onLatencyUpdate?.(currentLatency);
-    });
+      socket.on('pong', () => {
+        const currentLatency = Date.now() - pingStartTimeRef.current;
+        setLatency(currentLatency);
+        options?.onLatencyUpdate?.(currentLatency);
+      });
 
-    socket.on('transcription', (data) => {
-      options?.onTranscription?.(data);
-    });
+      socket.on('transcription', (data) => {
+        options?.onTranscription?.(data);
+      });
 
-    socket.on('transcription_partial', (data) => {
-      options?.onTranscriptionPartial?.(data);
-    });
+      socket.on('transcription_partial', (data) => {
+        options?.onTranscriptionPartial?.(data);
+      });
 
-    socket.on('ai_response', (data) => {
-      options?.onAiResponse?.(data);
-    });
+      socket.on('ai_response', (data) => {
+        options?.onAiResponse?.(data);
+      });
 
-    socket.on('ai_audio', (data) => {
-      options?.onAiAudio?.(data);
-    });
+      socket.on('ai_audio', (data) => {
+        options?.onAiAudio?.(data);
+      });
 
-    socket.on('interview_completed', () => {
-      options?.onCompleted?.();
-    });
+      socket.on('interview_completed', () => {
+        options?.onCompleted?.();
+      });
 
-    socket.on('error', (data) => {
-      options?.onError?.(data);
-    });
-  }, [options, startLatencyCheck]);
+      socket.on('error', (data) => {
+        options?.onError?.(data);
+      });
+    },
+    [options, startLatencyCheck]
+  );
 
   useEffect(() => {
     if (!user?.id) return;
