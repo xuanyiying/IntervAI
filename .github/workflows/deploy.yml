@@ -99,7 +99,7 @@ jobs:
 
       - name: Create GitHub Deployment
         id: create_deployment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const { data: deployment } = await github.rest.repos.createDeployment({
@@ -156,7 +156,7 @@ jobs:
 
       - name: Update Deployment Status
         if: always()
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           script: |
             const deploymentId = ${{ steps.create_deployment.outputs.result }};
