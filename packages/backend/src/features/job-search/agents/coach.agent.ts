@@ -4,8 +4,6 @@ import { JobPosting, UserProfile } from '../interfaces/job-search.interface';
 import { AIEngine } from '../../../core/ai/ai.engine';
 import { PromptScenario } from '../../../core/ai-provider/interfaces/prompt-template.interface';
 
-// ─── Domain Types ─────────────────────────────────────────────────────────────
-
 export enum TopicCategory {
   TECHNICAL_SKILLS = 'TECHNICAL_SKILLS',
   BEHAVIORAL_QUESTIONS = 'BEHAVIORAL_QUESTIONS',
@@ -52,27 +50,17 @@ export interface StudyPlan {
   id: string;
   userId: string;
   jobId: string;
-
-  // Job context
   jobTitle: string;
   company: string;
   interviewDate?: Date;
-
-  // Plan structure
   totalDays: number;
   milestones: DailyMilestone[];
   prioritySkillGaps: string[];
-
-  // Overall mock questions
   mockInterviewQuestions: PracticeQuestion[];
-
-  // Metadata
   generatedAt: Date;
   estimatedTotalHours: number;
-  progress: number; // 0–1
+  progress: number;
 }
-
-// ─── CoachAgent ────────────────────────────────────────────────────────────────
 
 @Injectable()
 export class CoachAgent {
@@ -82,10 +70,6 @@ export class CoachAgent {
     @Optional() @Inject(AIEngine) private readonly aiEngine?: AIEngine
   ) {}
 
-  /**
-   * Try to generate an LLM-enhanced description for a topic.
-   * Falls back to the provided default description on any failure.
-   */
   private async enrichWithLLM(
     topicTitle: string,
     job: JobPosting,
@@ -116,10 +100,6 @@ export class CoachAgent {
     }
   }
 
-  /**
-   * Generates a personalized N-day interview preparation study plan
-   * based on the JobPosting and UserProfile.
-   */
   async generateStudyPlan(
     userId: string,
     job: JobPosting,
@@ -128,20 +108,18 @@ export class CoachAgent {
     daysUntilInterview?: number
   ): Promise<StudyPlan> {
     const days = daysUntilInterview ?? this.calcDaysUntil(interviewDate);
-    const actualDays = Math.max(1, Math.min(14, days)); // clamp 1–14
+    const actualDays = Math.max(1, Math.min(14, days));
 
     this.logger.log(
       `Generating ${actualDays}-day study plan for user ${userId} targeting ${job.title} @ ${job.company}`
     );
 
-    // 1. Identify skill gaps against preferred skills
-    const userSkillNames = userProfile.skills.map((s) => s.name.toLowerCase());
-    const jobSkills = job.preferredSkills ?? [];
+    const userSkillNames = (userProfile.skills || []).map((s) => s.toLowerCase());
+    const jobSkills = job.skills ?? [];
     const skillGaps = jobSkills.filter(
       (s) => !userSkillNames.includes(s.toLowerCase())
     );
 
-    // 2. Build daily milestones
     const milestones = this.buildMilestones(
       actualDays,
       job,
@@ -149,7 +127,6 @@ export class CoachAgent {
       userProfile
     );
 
-    // 3. Generate top mock interview questions
     const mockQuestions = this.generateMockQuestions(job, skillGaps);
 
     const totalHours = milestones.reduce((acc, m) => acc + m.estimatedHours, 0);
@@ -176,8 +153,6 @@ export class CoachAgent {
 
     return plan;
   }
-
-  // ─── Private Helpers ──────────────────────────────────────────────────────
 
   private calcDaysUntil(date?: Date): number {
     if (!date) return 7;
@@ -217,13 +192,13 @@ export class CoachAgent {
   }
 
   private getDayTitle(day: number, total: number): string {
-    if (day === 1) return '🚀 Kickoff – Company & Role Research';
-    if (day === total) return '🎯 Final Day – Full Mock Interview Run-through';
+    if (day === 1) return 'Kickoff - Company & Role Research';
+    if (day === total) return 'Final Day - Full Mock Interview Run-through';
     const phase = day / total;
-    if (phase < 0.35) return `📚 Day ${day} – Technical Deep-Dive`;
-    if (phase < 0.65) return `💬 Day ${day} – Behavioral & Situational Prep`;
-    if (phase < 0.85) return `🧠 Day ${day} – Mock Interview Practice`;
-    return `🔄 Day ${day} – Review & Consolidation`;
+    if (phase < 0.35) return `Day ${day} - Technical Deep-Dive`;
+    if (phase < 0.65) return `Day ${day} - Behavioral & Situational Prep`;
+    if (phase < 0.85) return `Day ${day} - Mock Interview Practice`;
+    return `Day ${day} - Review & Consolidation`;
   }
 
   private getTopicsForDay(
@@ -237,7 +212,6 @@ export class CoachAgent {
     const phase = day / total;
 
     if (day === 1) {
-      // Day 1: always company research + role analysis
       topics.push(
         this.buildTopic(
           TopicCategory.COMPANY_RESEARCH,
@@ -261,7 +235,6 @@ export class CoachAgent {
             `${job.company} official website`,
             'LinkedIn company page',
             'Glassdoor reviews',
-            'Crunchbase profile',
           ]
         )
       );
@@ -286,10 +259,9 @@ export class CoachAgent {
         )
       );
     } else if (phase < 0.4) {
-      // Early phase: technical skills
       const gap =
         skillGaps[day % Math.max(skillGaps.length, 1)] ??
-        job.preferredSkills?.[0] ??
+        job.skills?.[0] ??
         'core technical skills';
       topics.push(
         this.buildTopic(
@@ -333,12 +305,11 @@ export class CoachAgent {
                 category: TopicCategory.CODING_PRACTICE,
               },
             ],
-            ['LeetCode (Easy → Medium)', 'NeetCode.io roadmap']
+            ['LeetCode (Easy to Medium)', 'NeetCode.io roadmap']
           )
         );
       }
     } else if (phase < 0.7) {
-      // Mid phase: behavioral + situational
       topics.push(
         this.buildTopic(
           TopicCategory.BEHAVIORAL_QUESTIONS,
@@ -369,7 +340,6 @@ export class CoachAgent {
         )
       );
     } else if (phase < 0.9) {
-      // Late phase: mock interviews
       topics.push(
         this.buildTopic(
           TopicCategory.SYSTEM_DESIGN,
@@ -391,7 +361,6 @@ export class CoachAgent {
         )
       );
     } else {
-      // Final day: full run-through
       topics.push(
         this.buildTopic(
           TopicCategory.BEHAVIORAL_QUESTIONS,
@@ -468,7 +437,7 @@ export class CoachAgent {
         category: TopicCategory.COMPANY_RESEARCH,
       },
       {
-        question: `Walk me through a project where you used ${job.preferredSkills?.[0] ?? 'your core skills'}.`,
+        question: `Walk me through a project where you used ${job.skills?.[0] ?? 'your core skills'}.`,
         difficulty: 'medium',
         category: TopicCategory.TECHNICAL_SKILLS,
       },
@@ -486,7 +455,6 @@ export class CoachAgent {
       },
     ];
 
-    // Add skill-gap-specific mock questions
     skillGaps.slice(0, 3).forEach((skill) => {
       questions.push({
         question: `We use ${skill} heavily. Describe your experience and how you'd ramp up quickly.`,

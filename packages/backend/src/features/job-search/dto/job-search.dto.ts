@@ -16,7 +16,6 @@ import {
   RemotePolicy,
   EmploymentType,
   ExperienceLevel,
-  CompanySize,
 } from '../interfaces/job-search.interface';
 
 export class SearchCriteriaDto {
@@ -71,7 +70,7 @@ export class SearchCriteriaDto {
 
   @IsOptional()
   @IsNumber()
-  postedWithin?: number; // hours
+  postedWithin?: number;
 
   @IsOptional()
   @IsArray()
@@ -100,20 +99,13 @@ export class JobPreferencesDto {
   @IsString({ each: true })
   preferredLocations: string[];
 
+  @IsOptional()
   @IsEnum(RemotePolicy)
-  remotePreference: RemotePolicy;
-
-  @IsArray()
-  @IsEnum(CompanySize, { each: true })
-  companySizePrefs: CompanySize[];
+  remotePreference?: RemotePolicy;
 
   @IsArray()
   @IsString({ each: true })
   excludedCompanies: string[];
-
-  @IsOptional()
-  @IsNumber()
-  workLifeBalancePriority?: number;
 }
 
 export class UpdatePreferencesDto {
@@ -141,8 +133,9 @@ export class JobMatchResponseDto {
   @IsString()
   company: string;
 
+  @IsOptional()
   @IsString()
-  location: string;
+  location?: string;
 
   @IsNumber()
   matchScore: number;
@@ -155,14 +148,13 @@ export class JobMatchResponseDto {
   @IsString({ each: true })
   missingSkills: string[];
 
-  @IsString()
-  explanation: string;
+  @IsArray()
+  @IsString({ each: true })
+  matchReasons: string[];
 
+  @IsOptional()
   @IsString()
-  applicationUrl: string;
-
-  @IsString()
-  postedDate: string;
+  applicationUrl?: string;
 }
 
 export class SearchResultsDto {
@@ -238,7 +230,7 @@ export class AnalyticsDto {
   interviewToOfferRate: number;
 
   @IsNumber()
-  avgResponseTime: number; // hours
+  avgResponseTime: number;
 
   @IsNumber()
   successRate: number;

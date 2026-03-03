@@ -22,7 +22,7 @@ describe('JobSearch Integration Test', () => {
 
     const criteria: SearchCriteria = {
       keywords: ['developer', 'engineer'],
-      location: { city: 'Berlin', country: 'Germany' },
+      location: 'Berlin',
     };
 
     const jobs = await jobAggregationService.aggregateJobs(criteria);
@@ -33,12 +33,10 @@ describe('JobSearch Integration Test', () => {
       console.log(JSON.stringify(jobs[0], null, 2));
     }
 
-    // Validate basic MVP setup
     expect(jobs).toBeDefined();
-    // Even if empty, it shouldn't throw an error
     if (jobs.length > 0) {
       expect(jobs[0]).toHaveProperty('title');
       expect(jobs[0]).toHaveProperty('company');
     }
-  }, 30000); // Allow up to 30s for API fetching
+  }, 30000);
 });

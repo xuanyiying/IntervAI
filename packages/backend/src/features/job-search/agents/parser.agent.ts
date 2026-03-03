@@ -1,68 +1,47 @@
-/**
- * Parser Agent
- *
- * Responsible for extracting and structuring job data from raw HTML/content
- * using NLP and entity extraction techniques
- */
-
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   RawJob,
   JobPosting,
   ParserResult,
   ParserError,
-  Skill,
-  SkillCategory,
-  SkillLevel,
-  Location,
   SalaryRange,
-  EmploymentType,
-  ExperienceLevel,
   RemotePolicy,
   ApplicationMethod,
 } from '../interfaces/job-search.interface';
+import { JobSearchConfig } from '../config';
+
+interface ParsedHtmlData {
+  title: string | null;
+  company: string | null;
+  location: string | null;
+  description: string | null;
+  salary: string | null;
+  requirements: string[];
+}
+
+interface SkillPattern {
+  name: string;
+  pattern: RegExp;
+  aliases: string[];
+}
 
 @Injectable()
 export class ParserAgent {
   private readonly logger = new Logger(ParserAgent.name);
+  private readonly skillPatterns: SkillPattern[];
+  private readonly config: JobSearchConfig['scraper'];
 
-  // Common skill patterns
-  private readonly skillPatterns: Map<string, RegExp> = new Map([
-    ['JavaScript', /\bjavascript\b|\bjs\b|\bnode\.?js\b|\bes6\b/i],
-    ['TypeScript', /\btypescript\b|\bts\b/i],
-    ['React', /\breact\b|\breact\.?js\b/i],
-    ['Angular', /\bangular\b|\bangularjs\b/i],
-    ['Vue', /\bvue\b|\bvue\.?js\b/i],
-    ['Python', /\bpython\b|\bpy\b/i],
-    ['Java', /\bjava\b(?!script)/i],
-    ['Go', /\bgolang\b|\bgo\b/i],
-    ['Rust', /\brust\b/i],
-    ['AWS', /\baws\b|\bamazon web services\b/i],
-    ['Docker', /\bdocker\b/i],
-    ['Kubernetes', /\bkubernetes\b|\bk8s\b/i],
-    ['PostgreSQL', /\bpostgresql\b|\bpostgres\b/i],
-    ['MongoDB', /\bmongodb\b|\bmongo\b/i],
-    ['GraphQL', /\bgraphql\b/i],
-    ['REST', /\brest\b|\brestful\b/i],
-    ['Git', /\bgit\b/i],
-    ['CI/CD', /\bci\/cd\b|\bcontinuous integration\b/i],
-    ['Agile', /\bagile\b|\bscrum\b/i],
-    ['Machine Learning', /\bmachine learning\b|\bml\b/i],
-    ['Deep Learning', /\bdeep learning\b/i],
-    ['TensorFlow', /\btensorflow\b/i],
-    ['PyTorch', /\bpytorch\b/i],
-  ]);
+  constructor(private readonly configService: ConfigService) {
+    this.config = this.configService.get<JobSearchConfig['scraper']>('jobSearch.scraper')!;
+    this.skillPatterns = this.initializeSkillPatterns();
+  }
 
-  /**
-   * Parse a raw job into structured format
-   */
   async parseJob(rawJob: RawJob): Promise<ParserResult> {
-    this.logger.debug(`Parsing job: ${rawJob.id}`);
+    this.logger.debug(`Parsing job: ${rawJob.id} from platform: ${rawJob.platform}`);
 
     try {
       const errors: ParserError[] = [];
-
-      // Extract basic information
       const jobPosting: Partial<JobPosting> = {
         id: rawJob.id,
         externalId: rawJob.externalId,
@@ -70,91 +49,54 @@ export class ParserAgent {
         scrapedAt: rawJob.scrapedAt,
         lastUpdated: new Date(),
         isActive: true,
+        tags: [],
+        requirements: [],
+        skills: [],
+        benefits: [],
       };
 
-      // In production, this would fetch the actual job page and parse HTML
-      // For now, we'll simulate with mock data
-      const parsedData = await this.extractJobData(rawJob);
+      let parsedData: ParsedHtmlData;
 
-      // Extract title
-      jobPosting.title =
-        parsedData.title || this.extractTitle(rawJob) || undefined;
-      if (!jobPosting.title) {
-        errors.push({
-          field: 'title',
-          error: 'Title not found',
-          severity: 'critical',
-        });
+      if (rawJob.rawJson) {
+        parsedData = this.parseJsonData(rawJob.rawJson, rawJob.platform);
+      } else if (rawJob.rawHtml) {
+        parsedData = this.parseHtmlData(rawJob.rawHtml, rawJob.platform);
+      } else {
+        parsedData = this.getEmptyParsedData();
       }
 
-      // Extract company
-      jobPosting.company =
-        parsedData.company || this.extractCompany(rawJob) || undefined;
-      if (!jobPosting.company) {
-        errors.push({
-          field: 'company',
-          error: 'Company not found',
-          severity: 'critical',
-        });
-      }
-
-      // Extract location
-      jobPosting.location =
-        parsedData.location || this.extractLocation(rawJob) || undefined;
-
-      // Extract remote policy
-      jobPosting.remotePolicy =
-        parsedData.remotePolicy || this.extractRemotePolicy(rawJob);
-
-      // Extract salary
-      jobPosting.salary =
-        parsedData.salary || this.extractSalary(rawJob) || undefined;
-      jobPosting.currency = parsedData.currency || 'USD';
-
-      // Extract description
+      jobPosting.title = this.validateAndSetTitle(parsedData.title, errors);
+      jobPosting.company = this.validateAndSetCompany(parsedData.company, errors);
+      jobPosting.location = parsedData.location || undefined;
+      jobPosting.remotePolicy = this.extractRemotePolicy(parsedData.description || '', rawJob);
+      jobPosting.salary = this.parseSalary(parsedData.salary || parsedData.description || '');
       jobPosting.description = parsedData.description || '';
-      if (!jobPosting.description) {
-        errors.push({
-          field: 'description',
-          error: 'Description not found',
-          severity: 'critical',
-        });
-      }
+      jobPosting.requirements = parsedData.requirements.length > 0
+        ? parsedData.requirements
+        : this.extractRequirements(parsedData.description || '');
 
-      // Extract and identify skills
-      const skills = this.identifySkills(jobPosting.description);
-      jobPosting.preferredSkills = skills.map((s) => s.name);
+      const skills = this.identifySkills(jobPosting.description || '');
+      jobPosting.skills = skills;
 
-      // Extract requirements
-      jobPosting.requirements = this.extractRequirements(rawJob);
-
-      // Extract experience level
-      jobPosting.experienceLevel = this.extractExperienceLevel(rawJob);
-
-      // Extract employment type
-      jobPosting.employmentType = this.extractEmploymentType(rawJob);
-
-      // Extract application URL and method
       jobPosting.applicationUrl = rawJob.url;
-      jobPosting.applicationMethod = this.determineApplicationMethod(rawJob);
+      jobPosting.applicationMethod = this.determineApplicationMethod(rawJob, parsedData.description || '');
+      jobPosting.postedAt = this.extractPostedDate(rawJob);
 
-      // Calculate quality score
       const qualityScore = this.calculateQualityScore(jobPosting, errors);
 
-      // Create final job posting
-      const result: ParserResult = {
-        success: errors.filter((e) => e.severity === 'critical').length === 0,
+      const hasCriticalErrors = errors.filter((e) => e.severity === 'critical').length > 0;
+
+      this.logger.debug(
+        `Parsing complete for job ${rawJob.id}, quality score: ${qualityScore}, errors: ${errors.length}`
+      );
+
+      return {
+        success: !hasCriticalErrors,
         job: jobPosting as JobPosting,
         qualityScore,
         missingFields: errors.map((e) => e.field),
         errors,
       };
-
-      this.logger.debug(
-        `Parsing complete for job ${rawJob.id}, quality score: ${qualityScore}`
-      );
-
-      return result;
     } catch (error) {
       this.logger.error(`Failed to parse job ${rawJob.id}:`, error);
 
@@ -173,110 +115,232 @@ export class ParserAgent {
     }
   }
 
-  /**
-   * Extract job data from raw job
-   */
-  private async extractJobData(rawJob: RawJob): Promise<Partial<JobPosting>> {
-    // If it's from Arbeitnow or similar JSON API, use rawJson
-    if (rawJob.rawJson) {
-      const json = rawJob.rawJson;
-      return {
-        title: json.title,
-        company: json.company_name,
-        location: {
-          city: json.location || 'Unknown',
-          country: 'Unknown',
-        },
-        remotePolicy: json.remote ? RemotePolicy.REMOTE : RemotePolicy.ONSITE,
-        description: json.description,
-        // Optional fields could be extracted here if available
-      };
+  private parseJsonData(json: Record<string, any>, platform: string): ParsedHtmlData {
+    switch (platform) {
+      case 'arbeitnow':
+        return this.parseArbeitnowJson(json);
+      case 'linkedin':
+        return this.parseLinkedInJson(json);
+      case 'indeed':
+        return this.parseIndeedJson(json);
+      case 'glassdoor':
+        return this.parseGlassdoorJson(json);
+      default:
+        return this.parseGenericJson(json);
     }
+  }
 
-    // Fallback Mock implementation for HTML pages
+  private parseArbeitnowJson(json: Record<string, any>): ParsedHtmlData {
     return {
-      title: 'Unknown Title',
-      company: 'Unknown Company',
-      location: {
-        city: 'Unknown',
-        country: 'Unknown',
-      },
-      remotePolicy: RemotePolicy.FLEXIBLE,
-      description: 'No description provided.',
+      title: json.title || null,
+      company: json.company_name || null,
+      location: json.location || null,
+      description: json.description || null,
+      salary: null,
+      requirements: [],
     };
   }
 
-  /**
-   * Extract job title from raw job
-   */
-  private extractTitle(rawJob: RawJob): string | undefined {
-    // Implementation would parse HTML to extract title
+  private parseLinkedInJson(json: Record<string, any>): ParsedHtmlData {
+    return {
+      title: json.title || null,
+      company: json.companyName || json.company || null,
+      location: json.location || json.formattedLocation || null,
+      description: json.description || json.jobDescription || null,
+      salary: json.salary || json.compensation || null,
+      requirements: json.requirements || [],
+    };
+  }
+
+  private parseIndeedJson(json: Record<string, any>): ParsedHtmlData {
+    return {
+      title: json.title || null,
+      company: json.company || json.companyName || null,
+      location: json.location || json.formattedLocation || null,
+      description: json.description || json.jobDescription || null,
+      salary: json.salary || json.compensation || null,
+      requirements: json.requirements || [],
+    };
+  }
+
+  private parseGlassdoorJson(json: Record<string, any>): ParsedHtmlData {
+    return {
+      title: json.jobTitle || json.title || null,
+      company: json.employer || json.company || null,
+      location: json.location || null,
+      description: json.description || json.jobDescription || null,
+      salary: json.salary || null,
+      requirements: [],
+    };
+  }
+
+  private parseGenericJson(json: Record<string, any>): ParsedHtmlData {
+    return {
+      title: this.findFirstValue(json, ['title', 'jobTitle', 'position']),
+      company: this.findFirstValue(json, ['company', 'companyName', 'employer', 'organization']),
+      location: this.findFirstValue(json, ['location', 'city', 'address', 'place']),
+      description: this.findFirstValue(json, ['description', 'jobDescription', 'summary', 'content']),
+      salary: this.findFirstValue(json, ['salary', 'compensation', 'pay', 'wage']),
+      requirements: json.requirements || json.qualifications || [],
+    };
+  }
+
+  private parseHtmlData(html: string, platform: string): ParsedHtmlData {
+    const sanitized = this.sanitizeHtml(html);
+
+    switch (platform) {
+      case 'linkedin':
+        return this.parseLinkedInHtml(sanitized);
+      case 'indeed':
+        return this.parseIndeedHtml(sanitized);
+      case 'glassdoor':
+        return this.parseGlassdoorHtml(sanitized);
+      default:
+        return this.parseGenericHtml(sanitized);
+    }
+  }
+
+  private parseLinkedInHtml(html: string): ParsedHtmlData {
+    const titleMatch = html.match(/<h1[^>]*class="[^"]*top-card-layout__title[^"]*"[^>]*>(.*?)<\/h1>/i);
+    const companyMatch = html.match(/<a[^>]*class="[^"]*topcard__org-name-link[^"]*"[^>]*>(.*?)<\/a>/i);
+    const locationMatch = html.match(/<span[^>]*class="[^"]*topcard__flavor--bullet[^"]*"[^>]*>(.*?)<\/span>/i);
+    const descMatch = html.match(/<div[^>]*class="[^"]*description__text[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+
+    return {
+      title: titleMatch ? this.cleanText(titleMatch[1]) : null,
+      company: companyMatch ? this.cleanText(companyMatch[1]) : null,
+      location: locationMatch ? this.cleanText(locationMatch[1]) : null,
+      description: descMatch ? this.cleanText(descMatch[1]) : null,
+      salary: null,
+      requirements: [],
+    };
+  }
+
+  private parseIndeedHtml(html: string): ParsedHtmlData {
+    const titleMatch = html.match(/<h1[^>]*class="[^"]*jobsearch-JobInfoHeader-title[^"]*"[^>]*>(.*?)<\/h1>/i);
+    const companyMatch = html.match(/<div[^>]*class="[^"]*jobsearch-InlineCompanyRating[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const locationMatch = html.match(/<div[^>]*class="[^"]*jobsearch-JobInfoHeader-subtitle[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+    const descMatch = html.match(/<div[^>]*id="jobDescriptionText"[^>]*>([\s\S]*?)<\/div>/i);
+
+    return {
+      title: titleMatch ? this.cleanText(titleMatch[1]) : null,
+      company: companyMatch ? this.cleanText(companyMatch[1]) : null,
+      location: locationMatch ? this.cleanText(locationMatch[1]) : null,
+      description: descMatch ? this.cleanText(descMatch[1]) : null,
+      salary: null,
+      requirements: [],
+    };
+  }
+
+  private parseGlassdoorHtml(html: string): ParsedHtmlData {
+    const titleMatch = html.match(/<h2[^>]*class="[^"]*job-title[^"]*"[^>]*>(.*?)<\/h2>/i);
+    const companyMatch = html.match(/<span[^>]*class="[^"]*employer-name[^"]*"[^>]*>(.*?)<\/span>/i);
+    const locationMatch = html.match(/<span[^>]*class="[^"]*location[^"]*"[^>]*>(.*?)<\/span>/i);
+    const descMatch = html.match(/<div[^>]*class="[^"]*jobDescriptionContent[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+
+    return {
+      title: titleMatch ? this.cleanText(titleMatch[1]) : null,
+      company: companyMatch ? this.cleanText(companyMatch[1]) : null,
+      location: locationMatch ? this.cleanText(locationMatch[1]) : null,
+      description: descMatch ? this.cleanText(descMatch[1]) : null,
+      salary: null,
+      requirements: [],
+    };
+  }
+
+  private parseGenericHtml(html: string): ParsedHtmlData {
+    const titleMatch = html.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    const companyMatch = html.match(/<span[^>]*class="[^"]*company[^"]*"[^>]*>(.*?)<\/span>/i);
+    const locationMatch = html.match(/<span[^>]*class="[^"]*location[^"]*"[^>]*>(.*?)<\/span>/i);
+    const descMatch = html.match(/<div[^>]*class="[^"]*description[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+
+    return {
+      title: titleMatch ? this.cleanText(titleMatch[1]) : null,
+      company: companyMatch ? this.cleanText(companyMatch[1]) : null,
+      location: locationMatch ? this.cleanText(locationMatch[1]) : null,
+      description: descMatch ? this.cleanText(descMatch[1]) : null,
+      salary: null,
+      requirements: [],
+    };
+  }
+
+  private validateAndSetTitle(title: string | null, errors: ParserError[]): string {
+    if (!title || title.trim().length === 0) {
+      errors.push({
+        field: 'title',
+        error: 'Job title is missing',
+        severity: 'critical',
+      });
+      return 'Unknown Title';
+    }
+    return title.trim();
+  }
+
+  private validateAndSetCompany(company: string | null, errors: ParserError[]): string {
+    if (!company || company.trim().length === 0) {
+      errors.push({
+        field: 'company',
+        error: 'Company name is missing',
+        severity: 'critical',
+      });
+      return 'Unknown Company';
+    }
+    return company.trim();
+  }
+
+  private parseLocation(location: string | null): string | undefined {
+    if (!location) return undefined;
+    return location.trim();
+  }
+
+  private extractRemotePolicy(description: string, rawJob: RawJob): string | undefined {
+    const lowerDesc = description.toLowerCase();
+
+    if (lowerDesc.includes('fully remote') || lowerDesc.includes('100% remote') || lowerDesc.includes('work from anywhere')) {
+      return 'remote';
+    }
+    if (lowerDesc.includes('hybrid') || lowerDesc.includes('partially remote')) {
+      return 'hybrid';
+    }
+    if (lowerDesc.includes('on-site') || lowerDesc.includes('onsite') || lowerDesc.includes('in office')) {
+      return 'onsite';
+    }
+    if (lowerDesc.includes('remote') || lowerDesc.includes('work from home') || lowerDesc.includes('wfh')) {
+      return 'remote';
+    }
+
     return undefined;
   }
 
-  /**
-   * Extract company name from raw job
-   */
-  private extractCompany(rawJob: RawJob): string | undefined {
-    // Implementation would parse HTML to extract company
-    return undefined;
-  }
+  private parseSalary(salaryText: string): SalaryRange | undefined {
+    if (!salaryText) return undefined;
 
-  /**
-   * Extract location from raw job
-   */
-  private extractLocation(rawJob: RawJob): Location | undefined {
-    // Implementation would parse HTML to extract location
-    return undefined;
-  }
-
-  /**
-   * Extract remote policy from job description
-   */
-  private extractRemotePolicy(rawJob: RawJob): RemotePolicy {
-    const text = JSON.stringify(rawJob).toLowerCase();
-
-    if (text.includes('fully remote') || text.includes('100% remote')) {
-      return RemotePolicy.REMOTE;
-    }
-    if (text.includes('hybrid') || text.includes('partially remote')) {
-      return RemotePolicy.HYBRID;
-    }
-    if (text.includes('onsite') || text.includes('in-office')) {
-      return RemotePolicy.ONSITE;
-    }
-
-    return RemotePolicy.FLEXIBLE;
-  }
-
-  /**
-   * Extract salary information from job description
-   */
-  private extractSalary(rawJob: RawJob): SalaryRange | undefined {
-    const text = JSON.stringify(rawJob);
-
-    // Regex to match salary ranges
-    const salaryPatterns = [
-      /\$(\d{1,3}(?:,\d{3})*)\s*[-–to]+\s*\$(\d{1,3}(?:,\d{3})*)/i,
-      /\$(\d{1,3}(?:,\d{3})*)\s*(?:k|K)/i,
-      /(\d{1,3}(?:,\d{3})*)\s*[-–to]+\s*(\d{1,3}(?:,\d{3})*)\s*(?:k|K)/i,
+    const patterns = [
+      /\$(\d+(?:,\d+)*)\s*[-–to]+\s*\$(\d+(?:,\d+)*)\s*(?:per\s*)?(year|yr|hour|hr|month|mo|annum)/i,
+      /\$(\d+(?:,\d+)*)k?\s*[-–to]+\s*\$(\d+(?:,\d+)*)k?\s*(?:per\s*)?(year|yr|hour|hr|month|mo|annum)?/i,
+      /(\d+(?:,\d+)*)\s*[-–to]+\s*(\d+(?:,\d+)*)\s*(?:per\s*)?(year|yr|hour|hr|month|mo|annum)/i,
     ];
 
-    for (const pattern of salaryPatterns) {
-      const match = text.match(pattern);
+    for (const pattern of patterns) {
+      const match = salaryText.match(pattern);
       if (match) {
-        const min = parseInt(match[1].replace(/,/g, ''));
-        const max = match[2] ? parseInt(match[2].replace(/,/g, '')) : min;
+        const min = parseInt(match[1].replace(/,/g, ''), 10);
+        const max = parseInt(match[2].replace(/,/g, ''), 10);
+        const periodText = (match[3] || 'year').toLowerCase();
 
-        // Adjust if in thousands
-        const multiplier = text.includes('k') || text.includes('K') ? 1000 : 1;
+        let period: 'hourly' | 'daily' | 'monthly' | 'yearly' = 'yearly';
+        if (periodText.includes('hour') || periodText.includes('hr')) {
+          period = 'hourly';
+        } else if (periodText.includes('month') || periodText.includes('mo')) {
+          period = 'monthly';
+        }
 
         return {
-          min: min * multiplier,
-          max: max * multiplier,
-          period: 'yearly',
+          min,
+          max,
+          period,
           currency: 'USD',
-          isEstimated: false,
+          isEstimated: true,
         };
       }
     }
@@ -284,222 +348,201 @@ export class ParserAgent {
     return undefined;
   }
 
-  /**
-   * Identify skills in job description using pattern matching
-   */
-  private identifySkills(description: string): Skill[] {
-    const skills: Skill[] = [];
-    const lowerDescription = description.toLowerCase();
+  private extractRequirements(description: string): string[] {
+    const requirements: string[] = [];
+    const sections = description.split(/\n\n+/);
 
-    this.skillPatterns.forEach((pattern, skillName) => {
-      if (pattern.test(lowerDescription)) {
-        skills.push({
-          name: skillName,
-          category: this.categorizeSkill(skillName),
-          isRequired: this.isSkillRequired(description, skillName),
-        });
+    for (const section of sections) {
+      const lowerSection = section.toLowerCase();
+      if (
+        lowerSection.includes('requirement') ||
+        lowerSection.includes('qualification') ||
+        lowerSection.includes('what you') ||
+        lowerSection.includes('what we') ||
+        lowerSection.includes('you have') ||
+        lowerSection.includes('you should')
+      ) {
+        const lines = section.split('\n');
+        for (const line of lines) {
+          const cleaned = line.replace(/^[\s\-\•\*\d\.]+/, '').trim();
+          if (cleaned.length > 10 && cleaned.length < 500) {
+            requirements.push(cleaned);
+          }
+        }
       }
-    });
-
-    return skills;
-  }
-
-  /**
-   * Categorize a skill
-   */
-  private categorizeSkill(skillName: string): SkillCategory {
-    const technicalSkills = [
-      'JavaScript',
-      'TypeScript',
-      'React',
-      'Angular',
-      'Vue',
-      'Python',
-      'Java',
-      'Go',
-      'Rust',
-      'AWS',
-      'Docker',
-      'Kubernetes',
-      'PostgreSQL',
-      'MongoDB',
-      'GraphQL',
-      'REST',
-      'Git',
-      'CI/CD',
-      'Machine Learning',
-      'Deep Learning',
-      'TensorFlow',
-      'PyTorch',
-    ];
-
-    if (technicalSkills.includes(skillName)) {
-      return SkillCategory.TECHNICAL;
     }
 
-    return SkillCategory.TECHNICAL; // Default
+    return requirements.slice(0, 20);
   }
 
-  /**
-   * Determine if a skill is required or preferred
-   */
-  private isSkillRequired(description: string, skillName: string): boolean {
+  private identifySkills(description: string): string[] {
+    const foundSkills: Set<string> = new Set();
+
+    for (const skillPattern of this.skillPatterns) {
+      if (skillPattern.pattern.test(description)) {
+        foundSkills.add(skillPattern.name);
+      }
+    }
+
+    return Array.from(foundSkills);
+  }
+
+  private determineApplicationMethod(rawJob: RawJob, description: string): string {
     const lowerDesc = description.toLowerCase();
-    const skillLower = skillName.toLowerCase();
 
-    // Check for strong requirement indicators
-    const requiredPatterns = [
-      new RegExp(`required.*${skillLower}`, 'i'),
-      new RegExp(`must have.*${skillLower}`, 'i'),
-      new RegExp(`essential.*${skillLower}`, 'i'),
-      new RegExp(`needs.*${skillLower}`, 'i'),
-    ];
+    if (lowerDesc.includes('easy apply') || lowerDesc.includes('quick apply')) {
+      return 'easy_apply';
+    }
+    if (lowerDesc.includes('apply now') && !lowerDesc.includes('external')) {
+      return 'direct';
+    }
+    if (lowerDesc.includes('external') || lowerDesc.includes('company website')) {
+      return 'external';
+    }
+    if (lowerDesc.includes('@') && lowerDesc.includes('send') && lowerDesc.includes('resume')) {
+      return 'email';
+    }
 
-    const preferredPatterns = [
-      new RegExp(`preferred.*${skillLower}`, 'i'),
-      new RegExp(`nice to have.*${skillLower}`, 'i'),
-      new RegExp(`bonus.*${skillLower}`, 'i'),
-      new RegExp(`familiarity with.*${skillLower}`, 'i'),
-    ];
+    return 'direct';
+  }
 
-    for (const pattern of requiredPatterns) {
-      if (pattern.test(lowerDesc)) {
-        return true;
+  private extractPostedDate(rawJob: RawJob): Date | undefined {
+    if (rawJob.rawJson?.posted_date || rawJob.rawJson?.postedDate || rawJob.rawJson?.date) {
+      const dateStr = rawJob.rawJson.posted_date || rawJob.rawJson.postedDate || rawJob.rawJson.date;
+      const parsed = new Date(dateStr);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
       }
     }
 
-    for (const pattern of preferredPatterns) {
-      if (pattern.test(lowerDesc)) {
-        return false;
-      }
-    }
-
-    // Default to required if mentioned in requirements section
-    return (
-      lowerDesc.includes('requirements') &&
-      lowerDesc.indexOf('requirements') < lowerDesc.indexOf(skillLower)
-    );
+    return rawJob.scrapedAt;
   }
 
-  /**
-   * Extract requirements from job description
-   */
-  private extractRequirements(rawJob: RawJob): string[] {
-    // In production, would parse HTML structure
-    // For now, return empty array
-    return [];
-  }
-
-  /**
-   * Extract experience level from job description
-   */
-  private extractExperienceLevel(rawJob: RawJob): ExperienceLevel {
-    const text = JSON.stringify(rawJob).toLowerCase();
-
-    if (
-      text.includes('executive') ||
-      text.includes('vp') ||
-      text.includes('chief')
-    ) {
-      return ExperienceLevel.EXECUTIVE;
-    }
-    if (text.includes('director')) {
-      return ExperienceLevel.DIRECTOR;
-    }
-    if (text.includes('manager') || text.includes('lead')) {
-      return ExperienceLevel.MANAGER;
-    }
-    if (text.includes('senior')) {
-      return ExperienceLevel.SENIOR;
-    }
-    if (text.includes('mid') || text.includes('middle')) {
-      return ExperienceLevel.MID;
-    }
-    if (text.includes('entry') || text.includes('junior')) {
-      return ExperienceLevel.ENTRY;
-    }
-
-    return ExperienceLevel.MID; // Default
-  }
-
-  /**
-   * Extract employment type from job description
-   */
-  private extractEmploymentType(rawJob: RawJob): EmploymentType {
-    const text = JSON.stringify(rawJob).toLowerCase();
-
-    if (text.includes('intern') || text.includes('internship')) {
-      return EmploymentType.INTERNSHIP;
-    }
-    if (text.includes('contract') || text.includes('contractor')) {
-      return EmploymentType.CONTRACT;
-    }
-    if (text.includes('part-time') || text.includes('part time')) {
-      return EmploymentType.PART_TIME;
-    }
-    if (text.includes('temporary') || text.includes('temp')) {
-      return EmploymentType.TEMPORARY;
-    }
-
-    return EmploymentType.FULL_TIME; // Default
-  }
-
-  /**
-   * Determine application method
-   */
-  private determineApplicationMethod(rawJob: RawJob): ApplicationMethod {
-    const text = JSON.stringify(rawJob).toLowerCase();
-
-    if (text.includes('easy apply') || text.includes('quick apply')) {
-      return ApplicationMethod.EASY_APPLY;
-    }
-    if (text.includes('email')) {
-      return ApplicationMethod.EMAIL;
-    }
-    if (text.includes('external')) {
-      return ApplicationMethod.EXTERNAL;
-    }
-
-    return ApplicationMethod.DIRECT;
-  }
-
-  /**
-   * Calculate quality score for parsed job
-   */
-  private calculateQualityScore(
-    job: Partial<JobPosting>,
-    errors: ParserError[]
-  ): number {
+  private calculateQualityScore(job: Partial<JobPosting>, errors: ParserError[]): number {
     let score = 100;
 
-    // Deduct for critical errors
     const criticalErrors = errors.filter((e) => e.severity === 'critical');
-    score -= criticalErrors.length * 20;
+    score -= criticalErrors.length * 25;
 
-    // Deduct for warnings
     const warnings = errors.filter((e) => e.severity === 'warning');
     score -= warnings.length * 10;
 
-    // Bonus for complete information
-    const fields: (keyof JobPosting)[] = [
+    const importantFields: (keyof JobPosting)[] = [
       'title',
       'company',
       'location',
       'description',
       'salary',
-      'preferredSkills',
+      'skills',
     ];
-    const presentFields = fields.filter(
-      (f) => job[f] !== undefined && job[f] !== null
-    );
-    score += (presentFields.length / fields.length) * 20;
 
-    // Bonus for skills identified
-    if (job.preferredSkills && job.preferredSkills.length > 0) {
-      score += Math.min(10, job.preferredSkills.length);
+    const presentFields = importantFields.filter(
+      (f) => job[f] !== undefined && job[f] !== null && String(job[f]).length > 0
+    );
+    score += (presentFields.length / importantFields.length) * 20;
+
+    if (job.skills && job.skills.length > 0) {
+      score += Math.min(10, job.skills.length);
     }
 
-    // Ensure score is between 0 and 100
+    if (job.salary) {
+      score += 5;
+    }
+
     return Math.max(0, Math.min(100, score));
+  }
+
+  private sanitizeHtml(html: string): string {
+    return html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  private cleanText(text: string): string {
+    return text
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private findFirstValue(obj: Record<string, any>, keys: string[]): string | null {
+    for (const key of keys) {
+      if (obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim().length > 0) {
+        return String(obj[key]).trim();
+      }
+    }
+    return null;
+  }
+
+  private getEmptyParsedData(): ParsedHtmlData {
+    return {
+      title: null,
+      company: null,
+      location: null,
+      description: null,
+      salary: null,
+      requirements: [],
+    };
+  }
+
+  private initializeSkillPatterns(): SkillPattern[] {
+    return [
+      { name: 'JavaScript', pattern: /\bjavascript\b|\bjs\b|\bnode\.?js\b|\bes6\b|\bes2015\b/i, aliases: ['JS', 'Node.js', 'ES6'] },
+      { name: 'TypeScript', pattern: /\btypescript\b|\bts\b/i, aliases: ['TS'] },
+      { name: 'React', pattern: /\breact\b|\breact\.?js\b|\breactjs\b/i, aliases: ['ReactJS'] },
+      { name: 'Angular', pattern: /\bangular\b|\bangularjs\b|\bangular\s*2\b/i, aliases: ['AngularJS'] },
+      { name: 'Vue.js', pattern: /\bvue\b|\bvue\.?js\b|\bvuejs\b/i, aliases: ['Vue', 'VueJS'] },
+      { name: 'Python', pattern: /\bpython\b|\bpy\b/i, aliases: ['py'] },
+      { name: 'Java', pattern: /\bjava\b(?!script)|\bjdk\b|\bjvm\b/i, aliases: ['JDK', 'JVM'] },
+      { name: 'Go', pattern: /\bgolang\b|\bgo\b(?!ogle)/i, aliases: ['Golang'] },
+      { name: 'Rust', pattern: /\brust\b/i, aliases: [] },
+      { name: 'C++', pattern: /\bc\+\+\b|\bcpp\b/i, aliases: ['CPP'] },
+      { name: 'C#', pattern: /\bc[#]\b|\bcsharp\b/i, aliases: ['CSharp'] },
+      { name: 'Ruby', pattern: /\bruby\b|\brails\b/i, aliases: ['Rails'] },
+      { name: 'PHP', pattern: /\bphp\b/i, aliases: [] },
+      { name: 'Swift', pattern: /\bswift\b/i, aliases: [] },
+      { name: 'Kotlin', pattern: /\bkotlin\b/i, aliases: [] },
+      { name: 'Scala', pattern: /\bscala\b/i, aliases: [] },
+      { name: 'AWS', pattern: /\baws\b|\bamazon web services\b|\bec2\b|\bs3\b|\blambda\b/i, aliases: ['Amazon Web Services', 'EC2', 'S3'] },
+      { name: 'Azure', pattern: /\bazure\b|\bmicrosoft azure\b/i, aliases: ['Microsoft Azure'] },
+      { name: 'GCP', pattern: /\bgcp\b|\bgoogle cloud\b|\bgoogle cloud platform\b/i, aliases: ['Google Cloud'] },
+      { name: 'Docker', pattern: /\bdocker\b|\bcontainerization\b/i, aliases: [] },
+      { name: 'Kubernetes', pattern: /\bkubernetes\b|\bk8s\b/i, aliases: ['K8s'] },
+      { name: 'PostgreSQL', pattern: /\bpostgresql\b|\bpostgres\b|\bpsql\b/i, aliases: ['Postgres'] },
+      { name: 'MySQL', pattern: /\bmysql\b/i, aliases: [] },
+      { name: 'MongoDB', pattern: /\bmongodb\b|\bmongo\b/i, aliases: ['Mongo'] },
+      { name: 'Redis', pattern: /\bredis\b/i, aliases: [] },
+      { name: 'GraphQL', pattern: /\bgraphql\b/i, aliases: [] },
+      { name: 'REST API', pattern: /\brest\b|\brestful\b|\bapi\b/i, aliases: ['RESTful'] },
+      { name: 'Git', pattern: /\bgit\b|\bgithub\b|\bgitlab\b/i, aliases: ['GitHub', 'GitLab'] },
+      { name: 'CI/CD', pattern: /\bci\/cd\b|\bcontinuous integration\b|\bcontinuous deployment\b|\bjenkins\b|\bgithub actions\b/i, aliases: ['Jenkins', 'GitHub Actions'] },
+      { name: 'Agile', pattern: /\bagile\b|\bscrum\b|\bkanban\b/i, aliases: ['Scrum', 'Kanban'] },
+      { name: 'Machine Learning', pattern: /\bmachine learning\b|\bml\b/i, aliases: ['ML'] },
+      { name: 'Deep Learning', pattern: /\bdeep learning\b|\bneural network\b/i, aliases: ['Neural Networks'] },
+      { name: 'TensorFlow', pattern: /\btensorflow\b/i, aliases: [] },
+      { name: 'PyTorch', pattern: /\bpytorch\b/i, aliases: [] },
+      { name: 'Data Science', pattern: /\bdata science\b|\bdata scientist\b/i, aliases: [] },
+      { name: 'SQL', pattern: /\bsql\b/i, aliases: [] },
+      { name: 'Linux', pattern: /\blinux\b|\bubuntu\b|\bcentos\b|\bdebian\b/i, aliases: ['Ubuntu', 'CentOS'] },
+      { name: 'Node.js', pattern: /\bnode\.?js\b|\bnode\b/i, aliases: ['Node'] },
+      { name: 'Next.js', pattern: /\bnext\.?js\b|\bnextjs\b/i, aliases: ['NextJS'] },
+      { name: 'Express.js', pattern: /\bexpress\b|\bexpress\.?js\b/i, aliases: ['Express'] },
+      { name: 'HTML/CSS', pattern: /\bhtml\b|\bcss\b|\bhtml5\b|\bcss3\b/i, aliases: ['HTML5', 'CSS3'] },
+      { name: 'Sass', pattern: /\bsass\b|\bscss\b/i, aliases: ['SCSS'] },
+      { name: 'Tailwind CSS', pattern: /\btailwind\b/i, aliases: [] },
+      { name: 'Figma', pattern: /\bfigma\b/i, aliases: [] },
+      { name: 'Jira', pattern: /\bjira\b/i, aliases: [] },
+      { name: 'Communication', pattern: /\bcommunication\b/i, aliases: [] },
+      { name: 'Leadership', pattern: /\bleadership\b|\blead\b/i, aliases: [] },
+      { name: 'Problem Solving', pattern: /\bproblem solving\b|\bproblem-solving\b/i, aliases: [] },
+    ];
   }
 }

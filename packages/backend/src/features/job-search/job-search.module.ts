@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AIModule } from '@/core/ai';
+import { JOB_SEARCH_CONFIG } from './config/job-search.config';
 import { ScraperAgent } from './agents/scraper.agent';
 import { ParserAgent } from './agents/parser.agent';
 import { MatcherAgent } from './agents/matcher.agent';
@@ -13,7 +14,7 @@ import { ApplicationTrackingService } from './services/application-tracking.serv
 import { InterviewPrepService } from './services/interview-prep.service';
 
 @Module({
-  imports: [ConfigModule, AIModule],
+  imports: [ConfigModule.forFeature(JOB_SEARCH_CONFIG), ConfigModule, AIModule],
   providers: [
     ScraperAgent,
     ParserAgent,

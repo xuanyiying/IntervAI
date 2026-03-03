@@ -57,103 +57,62 @@ export interface RawJob {
   url: string;
 }
 
+export interface SalaryRange {
+  min?: number;
+  max?: number;
+  period?: 'hourly' | 'daily' | 'monthly' | 'yearly';
+  currency?: string;
+  isEstimated?: boolean;
+}
+
 export interface JobPosting {
   id: string;
-  externalId: string;
+  externalId?: string;
   platform: string;
   title: string;
   company: string;
-  location: Location;
-  remotePolicy: RemotePolicy;
+  location?: string;
+  remotePolicy?: string;
   salary?: SalaryRange;
-  currency: string;
-  description: string;
-  requirements: string[];
-  preferredSkills: string[];
-  experienceLevel: ExperienceLevel;
-  employmentType: EmploymentType;
-  postedDate: Date;
-  applicationUrl: string;
-  applicationMethod: ApplicationMethod;
-  companyInfo?: CompanyInfo;
-
-  // AI-enriched fields
-  skillsVector?: number[];
-  matchScore?: number;
-  tags: string[];
-
-  // Metadata
-  scrapedAt: Date;
-  lastUpdated: Date;
-  isActive: boolean;
-  qualityScore: number;
-}
-
-export interface Location {
-  city: string;
-  state?: string;
-  country: string;
-  postalCode?: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-}
-
-export interface SalaryRange {
-  min: number;
-  max: number;
-  period: 'hourly' | 'daily' | 'monthly' | 'yearly';
-  currency: string;
-  isEstimated: boolean;
-}
-
-export interface CompanyInfo {
-  name: string;
-  industry?: string;
-  size?: string;
-  founded?: number;
-  headquarters?: string;
-  website?: string;
+  jobType?: string;
   description?: string;
-  logoUrl?: string;
+  requirements: string[];
+  skills: string[];
+  benefits: string[];
+  applicationUrl?: string;
+  applicationMethod?: string;
+  postedAt?: Date;
+  expiresAt?: Date;
+  scrapedAt: Date;
+  lastUpdated?: Date;
+  isActive: boolean;
+  tags: string[];
+  metadata?: Record<string, any>;
 }
 
 export interface Skill {
   name: string;
-  category: SkillCategory;
-  level?: SkillLevel;
+  category: string;
+  level?: string;
   yearsOfExperience?: number;
   isRequired: boolean;
 }
 
-export enum SkillCategory {
-  TECHNICAL = 'technical',
-  SOFT_SKILL = 'soft_skill',
-  LANGUAGE = 'language',
-  CERTIFICATION = 'certification',
-  DOMAIN_KNOWLEDGE = 'domain_knowledge',
-}
-
-export enum SkillLevel {
-  BEGINNER = 'beginner',
-  INTERMEDIATE = 'intermediate',
-  ADVANCED = 'advanced',
-  EXPERT = 'expert',
-}
-
 export interface UserProfile {
-  id: string;
+  id?: string;
   userId: string;
-  skills: Skill[];
+  skills: string[];
   experience: WorkExperience[];
   education: Education[];
-  preferences: JobPreferences;
-
-  // AI-enriched
-  skillsVector?: number[];
-  experienceSummary?: string;
-  careerGoals?: string;
+  preferences?: JobPreferences;
+  targetRoles?: string[];
+  targetLocations?: string[];
+  salaryExpectation?: {
+    min?: number;
+    max?: number;
+    currency?: string;
+  };
+  availability?: string;
 }
 
 export interface JobPreferences {
@@ -162,18 +121,8 @@ export interface JobPreferences {
   minSalary?: number;
   maxSalary?: number;
   preferredLocations: string[];
-  remotePreference: RemotePolicy;
-  companySizePrefs: CompanySize[];
+  remotePreference?: RemotePolicy;
   excludedCompanies: string[];
-  workLifeBalancePriority?: number; // 1-10
-}
-
-export enum CompanySize {
-  STARTUP = 'startup', // 1-50
-  SMALL = 'small', // 51-200
-  MEDIUM = 'medium', // 201-1000
-  LARGE = 'large', // 1001-10000
-  ENTERPRISE = 'enterprise', // 10001+
 }
 
 export interface WorkExperience {
@@ -182,9 +131,9 @@ export interface WorkExperience {
   startDate: Date;
   endDate?: Date;
   isCurrent: boolean;
-  description: string;
+  description?: string;
   skillsUsed: string[];
-  achievements: string[];
+  achievements?: string[];
 }
 
 export interface Education {
@@ -196,6 +145,7 @@ export interface Education {
 }
 
 export interface JobMatch {
+  id?: string;
   jobId: string;
   userId: string;
   matchScore: number;
@@ -206,20 +156,21 @@ export interface JobMatch {
 
   matchedSkills: string[];
   missingSkills: string[];
-  skillGaps: SkillGap[];
+  skillGaps?: SkillGap[];
 
   strengths: string[];
   concerns: string[];
-  explanation: string;
+  recommendations: string[];
+  matchReasons: string[];
 
-  job: JobPosting;
-  createdAt: Date;
+  job?: JobPosting;
+  createdAt?: Date;
 }
 
 export interface SkillGap {
   skill: string;
-  requiredLevel: SkillLevel;
-  userLevel: SkillLevel;
+  requiredLevel: string;
+  userLevel: string;
   gap: number;
   priority: 'high' | 'medium' | 'low';
 }
@@ -228,7 +179,7 @@ export interface SearchCriteria {
   keywords?: string[];
   title?: string;
   company?: string;
-  location?: Location;
+  location?: string;
   remotePolicy?: RemotePolicy;
   salaryMin?: number;
   salaryMax?: number;
@@ -236,7 +187,7 @@ export interface SearchCriteria {
   employmentType?: EmploymentType[];
   skills?: string[];
   industries?: string[];
-  postedWithin?: number; // hours
+  postedWithin?: number;
   platforms?: string[];
 }
 
@@ -246,17 +197,15 @@ export interface Application {
   jobId: string;
   status: ApplicationStatus;
   submittedAt: Date;
-  platform: string;
+  platform?: string;
   applicationUrl?: string;
-  resumeVersion: string;
+  resumeVersion?: string;
   coverLetter?: string;
-  followUpDate?: Date;
   lastStatusCheck: Date;
-
-  // Tracking
   viewCount: number;
-  responseTime?: number; // in hours
+  responseTime?: number;
   notes?: string;
+  job?: JobPosting;
 }
 
 export interface ScraperConfig {
@@ -276,15 +225,15 @@ export interface ProxyConfig {
   enabled: boolean;
   provider: 'brightdata' | 'oxylabs' | 'smartproxy' | 'custom';
   rotationStrategy: 'per_request' | 'per_session' | 'timed';
-  rotationInterval?: number; // ms
+  rotationInterval?: number;
   fallbackChain: string[];
 }
 
 export interface RetryConfig {
   maxRetries: number;
   backoffStrategy: 'exponential' | 'linear' | 'fixed';
-  initialDelay: number; // ms
-  maxDelay: number; // ms;
+  initialDelay: number;
+  maxDelay: number;
 }
 
 export interface ParsingConfig {

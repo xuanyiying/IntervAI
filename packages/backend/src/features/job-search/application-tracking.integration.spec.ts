@@ -6,9 +6,6 @@ import {
   UserProfile,
   JobPosting,
   RemotePolicy,
-  EmploymentType,
-  ExperienceLevel,
-  ApplicationMethod,
   ApplicationStatus,
 } from './interfaces/job-search.interface';
 
@@ -31,7 +28,7 @@ describe('Application Tracking Integration Test', () => {
     const mockUser: UserProfile = {
       id: 'user_456',
       userId: 'user_456',
-      skills: [],
+      skills: ['Node.js', 'TypeScript', 'PostgreSQL'],
       experience: [],
       education: [],
       preferences: {
@@ -39,7 +36,6 @@ describe('Application Tracking Integration Test', () => {
         preferredIndustries: [],
         preferredLocations: [],
         remotePreference: RemotePolicy.REMOTE,
-        companySizePrefs: [],
         excludedCompanies: [],
       },
     };
@@ -50,26 +46,19 @@ describe('Application Tracking Integration Test', () => {
       platform: 'test_platform',
       title: 'Test Software Engineer',
       company: 'Test Corp',
-      location: { city: 'Remote', country: 'Global' },
+      location: 'Remote',
       remotePolicy: RemotePolicy.REMOTE,
-      currency: 'USD',
       description: 'Test Description',
       requirements: [],
-      preferredSkills: [],
-      experienceLevel: ExperienceLevel.MID,
-      employmentType: EmploymentType.FULL_TIME,
-      postedDate: new Date(),
-      // Providing a fast-loading mock URL that Playwright can successfully visit
+      skills: ['Node.js', 'TypeScript'],
+      benefits: [],
+      postedAt: new Date(),
       applicationUrl: 'https://example.com',
-      applicationMethod: ApplicationMethod.EXTERNAL,
       scrapedAt: new Date(),
-      lastUpdated: new Date(),
       isActive: true,
-      qualityScore: 100,
       tags: [],
     };
 
-    // 1. Submit Application
     console.log(`Applying to job ${mockJob.id}...`);
     const application = await trackingService.applyToJob(
       mockJob,
@@ -81,7 +70,6 @@ describe('Application Tracking Integration Test', () => {
     expect(application).toBeDefined();
     expect(application.id).toBeDefined();
 
-    // 2. Simulate Tracking Event (Interview)
     console.log(`Simulating an interview invitation email...`);
     const updated1 = await trackingService.receiveTrackingUpdate(
       application.id,
@@ -92,7 +80,6 @@ describe('Application Tracking Integration Test', () => {
     console.log(`Status after email 1: ${updated1.status}`);
     expect(updated1.status).toBe(ApplicationStatus.INTERVIEW_REQUESTED);
 
-    // 3. Simulate Tracking Event (Rejection)
     console.log(`Simulating a rejection email...`);
     const updated2 = await trackingService.receiveTrackingUpdate(
       application.id,
@@ -103,7 +90,6 @@ describe('Application Tracking Integration Test', () => {
     console.log(`Status after email 2: ${updated2.status}`);
     expect(updated2.status).toBe(ApplicationStatus.REJECTED);
 
-    // Ensure there are notes attached
     console.log(`Application Notes Matrix:\n${updated2.notes}`);
     expect(updated2.notes).toContain('Interview requested');
     expect(updated2.notes).toContain('Rejected');
