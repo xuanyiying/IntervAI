@@ -7,14 +7,7 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    // Configure Prisma Client with appropriate connection pooling settings
     super({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
-      },
-      // Connection pool settings to prevent timeouts
       transactionOptions: {
         isolationLevel: 'ReadCommitted',
       },

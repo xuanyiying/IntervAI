@@ -5,26 +5,25 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
-  id                    String             @id @default(uuid())
-  email                 String             @unique
+  id                    String              @id @default(uuid())
+  email                 String              @unique
   passwordHash          String?
   username              String?
   name                  String?
   image                 String?
-  role                  Role               @default(USER)
+  role                  Role                @default(USER)
   phone                 String?
   avatarUrl             String?
-  subscriptionTier      SubscriptionTier   @default(FREE)
+  subscriptionTier      SubscriptionTier    @default(FREE)
   subscriptionExpiresAt DateTime?
-  createdAt             DateTime           @default(now())
-  updatedAt             DateTime           @updatedAt
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
   lastLoginAt           DateTime?
-  isActive              Boolean            @default(true)
-  emailVerified         Boolean            @default(false)
+  isActive              Boolean             @default(true)
+  emailVerified         Boolean             @default(false)
   verificationToken     String?
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
@@ -33,7 +32,7 @@ model User {
   paddleCustomerId      String?
   paddleSubscriptionId  String?
   subscriptionProvider  String?
-  status                String             @default("ACTIVE")
+  status                String              @default("ACTIVE")
   avatar                String?
   accounts              Account[]
   agentSessions         AgentSession[]
@@ -49,23 +48,24 @@ model User {
   storages              Storage[]
   subscriptionEvents    SubscriptionEvent[]
   voices                Voice[]
+  jobPostings           JobPosting[]
 
   @@index([email])
   @@map("users")
 }
 
 model Voice {
-  id          String   @id @default(uuid())
-  userId      String?  // Null for system default voices
-  name        String
-  voiceType   String   // e.g., "DEFAULT", "CLONED"
-  style       String?  // e.g., "Professional", "Friendly", "Serious"
-  avatarUrl   String?
-  sampleUrl   String?  // Sample audio URL for preview
-  voiceCode   String   @unique // Code used by Alibaba TTS
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  userId    String? // Null for system default voices
+  name      String
+  voiceType String // e.g., "DEFAULT", "CLONED"
+  style     String? // e.g., "Professional", "Friendly", "Serious"
+  avatarUrl String?
+  sampleUrl String? // Sample audio URL for preview
+  voiceCode String   @unique // Code used by Alibaba TTS
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("voices")
@@ -537,7 +537,7 @@ model Storage {
 }
 
 model InterviewerPersona {
-  id                String   @id @default(uuid())
+  id                String             @id @default(uuid())
   name              String
   style             PersonaStyle
   company           String?
@@ -547,11 +547,11 @@ model InterviewerPersona {
   traits            String[]
   questionStyle     Json
   systemPrompt      String
-  isDefault         Boolean  @default(false)
-  isActive          Boolean  @default(true)
-  usageCount        Int      @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  isDefault         Boolean            @default(false)
+  isActive          Boolean            @default(true)
+  usageCount        Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   interviewSessions InterviewSession[]
 
   @@index([style])
@@ -561,21 +561,21 @@ model InterviewerPersona {
 }
 
 model InterviewSession {
-  id             String             @id @default(uuid())
+  id             String              @id @default(uuid())
   userId         String
   optimizationId String
   personaId      String?
-  status         InterviewStatus    @default(IN_PROGRESS)
-  startTime      DateTime           @default(now())
+  status         InterviewStatus     @default(IN_PROGRESS)
+  startTime      DateTime            @default(now())
   endTime        DateTime?
   score          Int?
   feedback       String?
   voiceId        String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   messages       InterviewMessage[]
-  optimization   Optimization       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
-  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  optimization   Optimization        @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   persona        InterviewerPersona? @relation(fields: [personaId], references: [id], onDelete: SetNull)
 
   @@index([userId])
@@ -694,4 +694,141 @@ enum InterviewStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+model JobPosting {
+  id                String        @id @default(uuid())
+  userId            String?
+  externalId        String?
+  platform          String
+  title             String
+  company           String
+  location          String?
+  remotePolicy      String?
+  salary            Json?
+  jobType           String?
+  description       String?
+  requirements      String[]
+  skills            String[]
+  benefits          String[]
+  applicationUrl    String?
+  applicationMethod String?
+  postedAt          DateTime?
+  expiresAt         DateTime?
+  scrapedAt         DateTime
+  lastUpdated       DateTime      @default(now())
+  isActive          Boolean       @default(true)
+  tags              String[]
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  applications      Application[]
+  jobMatches        JobMatch[]
+
+  @@unique([platform, externalId])
+  @@index([userId])
+  @@index([platform])
+  @@index([company])
+  @@index([isActive])
+  @@index([postedAt])
+  @@map("job_postings")
+}
+
+model JobMatch {
+  id              String     @id @default(uuid())
+  userId          String
+  jobId           String
+  matchScore      Float
+  semanticScore   Float
+  skillMatchScore Float
+  preferenceScore Float
+  temporalScore   Float
+  matchedSkills   String[]
+  missingSkills   String[]
+  skillGaps       Json?
+  strengths       String[]
+  concerns        String[]
+  recommendations String[]
+  matchReasons    String[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  job             JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
+  @@index([matchScore])
+  @@map("job_matches")
+}
+
+model Application {
+  id              String                     @id @default(uuid())
+  userId          String
+  jobId           String
+  status          ApplicationStatus          @default(SUBMITTED)
+  submittedAt     DateTime                   @default(now())
+  platform        String?
+  applicationUrl  String?
+  resumeVersion   String?
+  coverLetter     String?
+  lastStatusCheck DateTime                   @default(now())
+  viewCount       Int                        @default(0)
+  responseTime    Int?
+  notes           String?
+  metadata        Json?
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  job             JobPosting                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  statusHistory   ApplicationStatusHistory[]
+
+  @@index([userId])
+  @@index([jobId])
+  @@index([status])
+  @@index([submittedAt])
+  @@map("applications")
+}
+
+model ApplicationStatusHistory {
+  id             String             @id @default(uuid())
+  applicationId  String
+  previousStatus ApplicationStatus?
+  newStatus      ApplicationStatus
+  changedAt      DateTime           @default(now())
+  source         String?
+  notes          String?
+  application    Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([changedAt])
+  @@map("application_status_history")
+}
+
+model UserProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  skills            String[]
+  experience        Json?
+  education         Json?
+  preferences       Json?
+  targetRoles       String[]
+  targetLocations   String[]
+  salaryExpectation Json?
+  availability      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_profiles")
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  VIEWED
+  UNDER_REVIEW
+  INTERVIEW_REQUESTED
+  INTERVIEW_COMPLETED
+  OFFER
+  REJECTED
+  WITHDRAWN
 }
