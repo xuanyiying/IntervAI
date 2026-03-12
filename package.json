@@ -46,7 +46,31 @@
       "serialize-javascript": ">=7.0.0",
       "hono": ">=4.7.0",
       "@hono/node-server": ">=1.14.0",
-      "file-type": ">=20.0.0"
+      "file-type": ">=20.0.0",
+      "multer": ">=2.0.0",
+      "axios": ">=1.8.0",
+      "rollup": ">=4.22.0",
+      "basic-ftp": ">=5.0.0",
+      "ajv": ">=6.12.4",
+      "qs": ">=6.14.0",
+      "lodash": ">=4.17.21",
+      "jws": ">=4.0.0",
+      "undici": ">=6.21.0",
+      "tar-fs": ">=3.0.8",
+      "glob": ">=11.0.0",
+      "ws": ">=8.18.0",
+      "tough-cookie": ">=5.0.0",
+      "nodemailer": ">=6.10.0",
+      "mjml": ">=4.15.0",
+      "js-yaml": ">=4.1.0",
+      "diff": ">=5.2.0",
+      "tmp": ">=0.2.3",
+      "webpack": ">=5.98.0",
+      "@langchain/community": ">=0.3.0",
+      "langchain": ">=0.3.0",
+      "langsmith": ">=0.3.0",
+      "@remix-run/router": ">=1.21.0",
+      "expr-eval": ">=2.0.2"
     }
   }
 }
