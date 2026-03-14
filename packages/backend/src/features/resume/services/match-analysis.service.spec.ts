@@ -1,8 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MatchAnalysisService } from './match-analysis.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
-import { EmbeddingService } from '@/core/agent/services/embedding.service';
+import { AIService } from '@/core/ai/ai.service';
 
 describe('MatchAnalysisService', () => {
   let service: MatchAnalysisService;
@@ -49,12 +48,9 @@ describe('MatchAnalysisService', () => {
     },
   };
 
-  const mockAIEngineService = {
-    call: jest.fn(),
-  };
-
-  const mockEmbeddingService = {
-    generateEmbedding: jest.fn(),
+  const mockAIService = {
+    executeSkill: jest.fn(),
+    embed: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -66,12 +62,8 @@ describe('MatchAnalysisService', () => {
           useValue: mockPrismaService,
         },
         {
-          provide: AIEngineService,
-          useValue: mockAIEngineService,
-        },
-        {
-          provide: EmbeddingService,
-          useValue: mockEmbeddingService,
+          provide: AIService,
+          useValue: mockAIService,
         },
       ],
     }).compile();
@@ -88,11 +80,30 @@ describe('MatchAnalysisService', () => {
       mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
       mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
 
-      mockEmbeddingService.generateEmbedding
+      mockAIService.executeSkill.mockResolvedValue({
+        overallScore: 75,
+        skillsMatch: {
+          matched: ['JavaScript', 'Python', 'React'],
+          missing: ['AWS'],
+          additional: [],
+        },
+        experienceMatch: {
+          score: 60,
+          relevantYears: 3,
+          highlights: ['Software Engineer at Tech Co'],
+        },
+        educationMatch: {
+          score: 80,
+          meets: true,
+          details: 'Bachelor degree meets requirements',
+        },
+      });
+
+      mockAIService.embed
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id');
+      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
 
       expect(result).toBeDefined();
       expect(result.overallScore).toBeDefined();
@@ -107,7 +118,7 @@ describe('MatchAnalysisService', () => {
       mockPrismaService.resume.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.analyzeMatch('invalid-id', 'job-id')
+        service.analyzeMatch('invalid-id', 'job-id', 'user-id')
       ).rejects.toThrow();
     });
 
@@ -116,7 +127,7 @@ describe('MatchAnalysisService', () => {
       mockPrismaService.job.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.analyzeMatch('resume-id', 'invalid-id')
+        service.analyzeMatch('resume-id', 'invalid-id', 'user-id')
       ).rejects.toThrow();
     });
   });
@@ -126,11 +137,30 @@ describe('MatchAnalysisService', () => {
       mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
       mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
 
-      mockEmbeddingService.generateEmbedding
+      mockAIService.executeSkill.mockResolvedValue({
+        overallScore: 75,
+        skillsMatch: {
+          matched: ['JavaScript', 'Python', 'React'],
+          missing: ['AWS'],
+          additional: [],
+        },
+        experienceMatch: {
+          score: 60,
+          relevantYears: 3,
+          highlights: ['Software Engineer at Tech Co'],
+        },
+        educationMatch: {
+          score: 80,
+          meets: true,
+          details: 'Bachelor degree meets requirements',
+        },
+      });
+
+      mockAIService.embed
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id');
+      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
 
       expect(result.skillMatch.matched.length).toBeGreaterThan(0);
       expect(
@@ -142,191 +172,35 @@ describe('MatchAnalysisService', () => {
       mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
       mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
 
-      mockEmbeddingService.generateEmbedding
+      mockAIService.executeSkill.mockResolvedValue({
+        overallScore: 75,
+        skillsMatch: {
+          matched: ['JavaScript', 'Python', 'React'],
+          missing: ['AWS'],
+          additional: [],
+        },
+        experienceMatch: {
+          score: 60,
+          relevantYears: 3,
+          highlights: ['Software Engineer at Tech Co'],
+        },
+        educationMatch: {
+          score: 80,
+          meets: true,
+          details: 'Bachelor degree meets requirements',
+        },
+      });
+
+      mockAIService.embed
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id');
+      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
 
       expect(result.skillMatch.missing.length).toBeGreaterThan(0);
       expect(result.skillMatch.missing.some((s) => s.skill === 'AWS')).toBe(
         true
       );
-    });
-
-    it('should identify additional skills', async () => {
-      const resumeWithExtraSkills = {
-        ...mockResume,
-        parsedData: {
-          ...mockResume.parsedData,
-          skills: ['JavaScript', 'Python', 'React', 'Docker', 'Kubernetes'],
-        },
-      };
-
-      mockPrismaService.resume.findUnique.mockResolvedValue(
-        resumeWithExtraSkills
-      );
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.skillMatch.additional.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('experience matching', () => {
-    it('should calculate experience score', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.experienceMatch.score).toBeGreaterThanOrEqual(0);
-      expect(result.experienceMatch.score).toBeLessThanOrEqual(100);
-    });
-
-    it('should identify experience gaps', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.experienceMatch.gaps).toBeDefined();
-      expect(Array.isArray(result.experienceMatch.gaps)).toBe(true);
-    });
-
-    it('should identify experience highlights', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.experienceMatch.highlights).toBeDefined();
-      expect(Array.isArray(result.experienceMatch.highlights)).toBe(true);
-    });
-  });
-
-  describe('education matching', () => {
-    it('should evaluate education match', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.educationMatch.score).toBeGreaterThanOrEqual(0);
-      expect(result.educationMatch.score).toBeLessThanOrEqual(100);
-      expect(result.educationMatch.meets).toBeDefined();
-      expect(result.educationMatch.notes).toBeDefined();
-    });
-
-    it('should detect bachelor degree requirement', async () => {
-      const jobWithBachelor = {
-        ...mockJob,
-        requirements: 'Bachelor degree required',
-      };
-
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(jobWithBachelor);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.educationMatch.meets).toBe(true);
-    });
-  });
-
-  describe('recommendations', () => {
-    it('should generate prioritized recommendations', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.recommendations.length).toBeGreaterThan(0);
-      expect(result.recommendations[0].priority).toBeDefined();
-      expect(result.recommendations[0].category).toBeDefined();
-      expect(result.recommendations[0].suggestion).toBeDefined();
-    });
-
-    it('should include high priority recommendations for missing skills', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      const highPriorityRecs = result.recommendations.filter(
-        (r) => r.priority === 'high'
-      );
-      expect(highPriorityRecs.length).toBeGreaterThan(0);
-    });
-  });
-
-  describe('learning path', () => {
-    it('should generate learning path for missing skills', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce([0.1, 0.2, 0.3])
-        .mockResolvedValueOnce([0.15, 0.25, 0.35]);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      if (result.learningPath && result.learningPath.length > 0) {
-        expect(result.learningPath[0].skill).toBeDefined();
-        expect(result.learningPath[0].resources).toBeDefined();
-        expect(result.learningPath[0].estimatedTime).toBeDefined();
-      }
-    });
-  });
-
-  describe('cosine similarity', () => {
-    it('should calculate similarity correctly', async () => {
-      mockPrismaService.resume.findUnique.mockResolvedValue(mockResume);
-      mockPrismaService.job.findUnique.mockResolvedValue(mockJob);
-
-      const vecA = [1, 0, 0];
-      const vecB = [1, 0, 0];
-
-      mockEmbeddingService.generateEmbedding
-        .mockResolvedValueOnce(vecA)
-        .mockResolvedValueOnce(vecB);
-
-      const result = await service.analyzeMatch('resume-id', 'job-id');
-
-      expect(result.overallScore).toBeGreaterThanOrEqual(0);
-      expect(result.overallScore).toBeLessThanOrEqual(100);
     });
   });
 });

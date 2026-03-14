@@ -1,41 +1,97 @@
-import { Module } from '@nestjs/common';
+import { Module, Global, OnModuleInit } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AIEngine } from './ai.engine';
+import { AIService } from './ai.service';
 import { DegradationService } from './degradation.service';
 import { RedisModule } from '@/shared/cache/redis.module';
-import { AIProvidersModule } from '@/core/ai-provider/ai-providers.module';
+import { PrismaModule } from '@/shared/database/prisma.module';
+import { AIEngine } from './ai.engine';
+
+// Utils
+import { UsageTrackerService } from './utils/usage-tracker.service';
+
+// Skills Engine
+import {
+  SkillRegistry,
+  SkillLoader,
+  SkillMarkdownParser,
+  SkillInstallerService,
+} from './skills';
 
 /**
  * AI Module
- * Provides AI services with multi-provider support
+ * Simplified AI module with unified AIService and skill engine
  *
  * Architecture:
- * - AIEngine: Unified service that uses AIEngineService for multi-provider AI calls
- *   - Supports 5 AI providers: OpenAI, Qwen, DeepSeek, Gemini, Ollama
- *   - Automatic model selection based on scenario
- *   - Built-in caching, retry, and monitoring
- *   - File extraction utilities (PDF, DOCX, TXT)
+ * - AIService: Unified AI service with multi-provider support
+ *   - Supports 6 AI providers: OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud
+ *   - Simple model configuration via environment variables
+ *   - Built-in retry logic with circuit breaker
+ *   - Rate limiting per provider
+ *   - Skill extension system
+ *   - Usage tracking and cost monitoring
  *
  * - DegradationService: Provides fallback when AI services are unavailable
  *
- * - AIProvidersModule: Complete AI provider infrastructure
- *   - AIEngineService: Core multi-provider service
- *   - Provider implementations
- *   - Model selection, usage tracking, performance monitoring
+ * - AIEngine: Backward-compatible facade that uses AIService internally
+ *
+ * - UsageTrackerService: Tracks AI usage for cost monitoring and analytics
+ *
+ * - SkillRegistry: Central registry for all skills
+ * - SkillLoader: Loads skills from directories and files
+ * - SkillMarkdownParser: Parses Markdown skill definitions
+ * - SkillInstallerService: Install skills from network sources
+ *
+ * Skills Directory Structure:
+ * - skills/                    # User skills directory
+ *   ├── resume-analyzer.md     # Markdown skill definition
+ *   ├── jd-matcher.md
+ *   └── ...
+ * - skills/builtin/            # Built-in skills
+ *   └── ...
+ *
+ * Production Features:
+ * - Circuit breaker pattern for fault tolerance
+ * - Token bucket rate limiting
+ * - Exponential backoff retry with jitter
+ * - Usage tracking with database persistence
+ * - Redis caching for usage statistics
+ * - Markdown-based skill definitions
+ * - Network skill installation
  */
+@Global()
 @Module({
-  imports: [
-    ConfigModule,
-    RedisModule,
-    AIProvidersModule, // Provides AIEngineService and all providers
-  ],
+  imports: [ConfigModule, RedisModule, PrismaModule],
   providers: [
-    AIEngine, // Unified AI service with multi-provider support
-    DegradationService, // Fallback service for graceful degradation
+    // Core AI services
+    AIService,
+    DegradationService,
+    AIEngine,
+
+    // Usage tracking
+    UsageTrackerService,
+
+    // Skills Engine
+    SkillRegistry,
+    SkillMarkdownParser,
+    SkillLoader,
+    SkillInstallerService,
   ],
   exports: [
-    AIEngine, // Export unified AI service
-    DegradationService, // Export degradation service
+    AIService,
+    DegradationService,
+    AIEngine,
+    UsageTrackerService,
+    // Skills Engine
+    SkillRegistry,
+    SkillLoader,
+    SkillInstallerService,
   ],
 })
-export class AIModule {}
+export class AIModule implements OnModuleInit {
+  constructor(private readonly skillLoader: SkillLoader) { }
+
+  async onModuleInit(): Promise<void> {
+    // Initialize skill loader
+    await this.skillLoader.initialize();
+  }
+}

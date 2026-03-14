@@ -28,12 +28,14 @@ export interface ChatMessage {
 }
 
 export interface ChatResponse {
-  type: 'message' | 'chunk' | 'done' | 'error' | 'typing' | 'system';
+  type: 'message' | 'chunk' | 'done' | 'error' | 'typing' | 'system' | 'text';
   messageId?: string;
   content?: string;
   role?: MessageRole;
   timestamp: number;
   metadata?: Record<string, any>;
+  suggestions?: string[];
+  data?: Record<string, any>;
 }
 
 @WebSocketGateway({
@@ -58,7 +60,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly chatIntentService: ChatIntentService
-  ) {}
+  ) { }
 
   /**
    * Handle client connection with JWT authentication
@@ -247,7 +249,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userId,
         conversationId,
         content,
-        metadata,
+        metadata || {},
         // Callback for streaming chunks
         (chunk: ChatResponse) => {
           if (this.activeStreams.get(client.id)) {

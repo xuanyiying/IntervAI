@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MatcherAgent } from '../agents/matcher.agent';
+import { AIService } from '@/core/ai/ai.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { UserProfile, JobPosting, JobMatch } from '../interfaces/job-search.interface';
 
@@ -8,7 +8,7 @@ export class JobMatchingService {
   private readonly logger = new Logger(JobMatchingService.name);
 
   constructor(
-    private readonly matcherAgent: MatcherAgent,
+    private readonly aiService: AIService,
     private readonly prisma: PrismaService
   ) { }
 
@@ -19,11 +19,24 @@ export class JobMatchingService {
   ): Promise<JobMatch[]> {
     this.logger.log(`Starting job matching process for user: ${userId}`);
 
-    const matches = await this.matcherAgent.matchJobs(
-      jobs,
-      userId,
-      userProfile
+    const matcherResult = await this.aiService.executeSkill(
+      'jd-matcher',
+      {
+        jobs,
+        userProfile,
+      },
+      userId
     );
+
+    const matches: any[] = [];
+    if (matcherResult.success && matcherResult.data) {
+      const data = matcherResult.data as any;
+      if (Array.isArray(data)) {
+        matches.push(...data);
+      } else if (data.matches) {
+        matches.push(...data.matches);
+      }
+    }
 
     this.logger.log(`Generated ${matches.length} matches for user: ${userId}`);
 
@@ -31,42 +44,7 @@ export class JobMatchingService {
 
     for (const match of matches) {
       try {
-        const saved = await this.prisma.jobMatch.upsert({
-          where: {
-            userId_jobId: { userId, jobId: match.jobId },
-          },
-          create: {
-            userId,
-            jobId: match.jobId,
-            matchScore: match.matchScore,
-            semanticScore: match.semanticScore,
-            skillMatchScore: match.skillMatchScore,
-            preferenceScore: match.preferenceScore,
-            temporalScore: match.temporalScore,
-            matchedSkills: match.matchedSkills,
-            missingSkills: match.missingSkills,
-            skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : null,
-            strengths: match.strengths,
-            concerns: match.concerns,
-            recommendations: match.recommendations,
-            matchReasons: match.matchReasons,
-          },
-          update: {
-            matchScore: match.matchScore,
-            semanticScore: match.semanticScore,
-            skillMatchScore: match.skillMatchScore,
-            preferenceScore: match.preferenceScore,
-            temporalScore: match.temporalScore,
-            matchedSkills: match.matchedSkills,
-            missingSkills: match.missingSkills,
-            skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : null,
-            strengths: match.strengths,
-            concerns: match.concerns,
-            recommendations: match.recommendations,
-            matchReasons: match.matchReasons,
-          },
-        });
-
+        const saved = await this.saveMatch(userId, match);
         savedMatches.push({
           ...match,
           id: saved.id,
@@ -80,6 +58,44 @@ export class JobMatchingService {
     return savedMatches;
   }
 
+  private async saveMatch(userId: string, match: JobMatch) {
+    return this.prisma.jobMatch.upsert({
+      where: {
+        userId_jobId: { userId, jobId: match.jobId },
+      },
+      create: {
+        userId,
+        jobId: match.jobId,
+        matchScore: match.matchScore,
+        semanticScore: match.semanticScore || 0,
+        skillMatchScore: match.skillMatchScore || 0,
+        preferenceScore: match.preferenceScore || 0,
+        temporalScore: match.temporalScore || 0,
+        matchedSkills: match.matchedSkills || [],
+        missingSkills: match.missingSkills || [],
+        skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : undefined,
+        strengths: match.strengths || [],
+        concerns: match.concerns || [],
+        recommendations: match.recommendations || [],
+        matchReasons: match.matchReasons || [],
+      },
+      update: {
+        matchScore: match.matchScore,
+        semanticScore: match.semanticScore || 0,
+        skillMatchScore: match.skillMatchScore || 0,
+        preferenceScore: match.preferenceScore || 0,
+        temporalScore: match.temporalScore || 0,
+        matchedSkills: match.matchedSkills || [],
+        missingSkills: match.missingSkills || [],
+        skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : undefined,
+        strengths: match.strengths || [],
+        concerns: match.concerns || [],
+        recommendations: match.recommendations || [],
+        matchReasons: match.matchReasons || [],
+      },
+    });
+  }
+
   async getMatchesForUser(params: {
     userId: string;
     minScore?: number;
@@ -91,84 +107,33 @@ export class JobMatchingService {
       take: params.take,
       where: {
         userId: params.userId,
-        ...(params.minScore !== undefined
-          ? { matchScore: { gte: params.minScore } }
-          : {}),
+        ...(params.minScore !== undefined ? { matchScore: { gte: params.minScore } } : {}),
       },
       include: { job: true },
       orderBy: { matchScore: 'desc' },
     });
 
-    return matches.map((match) => this.mapToJobMatch(match));
-  }
-
-  async getMatchById(matchId: string): Promise<JobMatch | null> {
-    const match = await this.prisma.jobMatch.findUnique({
-      where: { id: matchId },
-      include: { job: true },
-    });
-    return match ? this.mapToJobMatch(match) : null;
-  }
-
-  async deleteMatchesForUser(userId: string): Promise<number> {
-    const result = await this.prisma.jobMatch.deleteMany({
-      where: { userId },
-    });
-    this.logger.log(`Deleted ${result.count} matches for user: ${userId}`);
-    return result.count;
+    return matches.map((m) => this.mapPrismaMatchToInterface(m));
   }
 
   async getTopMatches(userId: string, limit: number = 10): Promise<JobMatch[]> {
-    const matches = await this.prisma.jobMatch.findMany({
+    return this.getMatchesForUser({
+      userId,
+      minScore: 60,
       take: limit,
-      where: { userId },
-      include: { job: true },
-      orderBy: { matchScore: 'desc' },
     });
-
-    return matches.map((match) => this.mapToJobMatch(match));
   }
 
-  async getMatchStats(userId: string): Promise<{
-    total: number;
-    avgScore: number;
-    topSkills: string[];
-  }> {
-    const matches = await this.prisma.jobMatch.findMany({
-      where: { userId },
-      select: { matchScore: true, matchedSkills: true },
-    });
-
-    const total = matches.length;
-    const avgScore = total > 0
-      ? matches.reduce((sum, m) => sum + m.matchScore, 0) / total
-      : 0;
-
-    const skillCounts: Record<string, number> = {};
-    for (const match of matches) {
-      for (const skill of match.matchedSkills) {
-        skillCounts[skill] = (skillCounts[skill] || 0) + 1;
-      }
-    }
-
-    const topSkills = Object.entries(skillCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([skill]) => skill);
-
-    return { total, avgScore, topSkills };
-  }
-
-  private mapToJobMatch(match: any): JobMatch {
+  private mapPrismaMatchToInterface(match: any): JobMatch {
     return {
       id: match.id,
       jobId: match.jobId,
       userId: match.userId,
       matchScore: match.matchScore,
-      semanticScore: match.semanticScore,
-      skillMatchScore: match.skillMatchScore,
-      preferenceScore: match.preferenceScore,
-      temporalScore: match.temporalScore,
+      semanticScore: match.semanticScore || 0,
+      skillMatchScore: match.skillMatchScore || 0,
+      preferenceScore: match.preferenceScore || 0,
+      temporalScore: match.temporalScore || 0,
       matchedSkills: match.matchedSkills || [],
       missingSkills: match.missingSkills || [],
       skillGaps: match.skillGaps || undefined,
@@ -176,35 +141,8 @@ export class JobMatchingService {
       concerns: match.concerns || [],
       recommendations: match.recommendations || [],
       matchReasons: match.matchReasons || [],
-      job: match.job ? this.mapToJobPosting(match.job) : undefined,
+      job: match.job,
       createdAt: match.createdAt,
-    };
-  }
-
-  private mapToJobPosting(job: any): JobPosting {
-    return {
-      id: job.id,
-      externalId: job.externalId || undefined,
-      platform: job.platform,
-      title: job.title,
-      company: job.company,
-      location: job.location || undefined,
-      remotePolicy: job.remotePolicy || undefined,
-      salary: job.salary || undefined,
-      jobType: job.jobType || undefined,
-      description: job.description || undefined,
-      requirements: job.requirements || [],
-      skills: job.skills || [],
-      benefits: job.benefits || [],
-      applicationUrl: job.applicationUrl || undefined,
-      applicationMethod: job.applicationMethod || undefined,
-      postedAt: job.postedAt || undefined,
-      expiresAt: job.expiresAt || undefined,
-      scrapedAt: job.scrapedAt,
-      lastUpdated: job.lastUpdated,
-      isActive: job.isActive,
-      tags: job.tags || [],
-      metadata: job.metadata || undefined,
     };
   }
 }

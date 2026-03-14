@@ -1,87 +1,83 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ScraperAgent } from '../agents/scraper.agent';
-import { ParserAgent } from '../agents/parser.agent';
+import { AIService } from '@/core/ai/ai.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { SearchCriteria, JobPosting } from '../interfaces/job-search.interface';
 import { Prisma } from '@prisma/client';
+
+export interface ScraperConfig {
+  platform: string;
+  baseUrl: string;
+  rateLimit: {
+    requestsPerSecond: number;
+    maxRetries: number;
+  };
+  selectors: Record<string, string>;
+}
 
 @Injectable()
 export class JobAggregationService {
   private readonly logger = new Logger(JobAggregationService.name);
 
   constructor(
-    private readonly scraperAgent: ScraperAgent,
-    private readonly parserAgent: ParserAgent,
+    private readonly aiService: AIService,
     private readonly prisma: PrismaService
   ) { }
 
   async aggregateJobs(criteria: SearchCriteria, userId?: string): Promise<JobPosting[]> {
     this.logger.log('Starting job aggregation process...');
 
-    const scraperResult = await this.scraperAgent.collectJobs(criteria);
-    this.logger.log(`Scraper collected ${scraperResult.jobs.length} raw jobs`);
+    const scraperConfigs = this.getScraperConfigs();
+
+    const scraperResult = await this.aiService.executeSkill(
+      'job-scraper',
+      {
+        jobListingText: JSON.stringify({ criteria, configs: scraperConfigs }),
+      },
+      userId || 'system'
+    );
+
+    const jobs: any[] = [];
+    if (scraperResult.success && scraperResult.data) {
+      const data = scraperResult.data as any;
+      if (Array.isArray(data)) {
+        jobs.push(...data);
+      } else if (data.jobs) {
+        jobs.push(...data.jobs);
+      }
+    }
+
+    this.logger.log(`Scraper collected ${jobs.length} raw jobs`);
 
     const parsedJobs: JobPosting[] = [];
     const errors: Array<{ jobId: string; error: string }> = [];
 
-    for (const rawJob of scraperResult.jobs) {
+    for (const rawJob of jobs) {
       try {
-        const parserResult = await this.parserAgent.parseJob(rawJob);
+        const parserResult = await this.aiService.executeSkill(
+          'job-parser',
+          {
+            rawJob,
+          },
+          userId || 'system'
+        );
 
-        if (parserResult.success && parserResult.job) {
-          const savedJob = await this.prisma.jobPosting.upsert({
-            where: {
-              platform_externalId: {
-                platform: parserResult.job.platform,
-                externalId: parserResult.job.externalId || parserResult.job.id,
-              },
-            },
-            create: {
-              externalId: parserResult.job.externalId,
-              platform: parserResult.job.platform,
-              title: parserResult.job.title,
-              company: parserResult.job.company,
-              location: parserResult.job.location || null,
-              remotePolicy: parserResult.job.remotePolicy || null,
-              salary: (parserResult.job.salary as Prisma.JsonObject) || null,
-              jobType: parserResult.job.jobType || null,
-              description: parserResult.job.description || null,
-              requirements: parserResult.job.requirements || [],
-              skills: parserResult.job.skills || [],
-              benefits: parserResult.job.benefits || [],
-              applicationUrl: parserResult.job.applicationUrl || null,
-              applicationMethod: parserResult.job.applicationMethod || null,
-              postedAt: parserResult.job.postedAt || null,
-              expiresAt: parserResult.job.expiresAt || null,
-              scrapedAt: parserResult.job.scrapedAt,
-              isActive: true,
-              tags: parserResult.job.tags || [],
-              metadata: (parserResult.job.metadata as Prisma.JsonObject) || null,
-              userId: userId || null,
-            },
-            update: {
-              title: parserResult.job.title,
-              company: parserResult.job.company,
-              location: parserResult.job.location || null,
-              description: parserResult.job.description || null,
-              lastUpdated: new Date(),
-            },
-          });
-
+        if (parserResult.success && parserResult.data) {
+          const jobData = parserResult.data as any;
+          const savedJob = await this.saveJob(jobData, userId);
           parsedJobs.push({
-            ...parserResult.job,
+            ...jobData,
             id: savedJob.id,
           });
         } else if (!parserResult.success) {
           errors.push({
-            jobId: rawJob.id,
-            error: parserResult.errors?.map((e) => e.error).join('; ') || 'Unknown error',
+            jobId: rawJob.id || 'unknown',
+            error: parserResult.error?.message || 'Unknown error',
           });
         }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error(`Failed to save job ${rawJob.id}: ${errorMessage}`);
-        errors.push({ jobId: rawJob.id, error: errorMessage });
+        errors.push({ jobId: rawJob.id || 'unknown', error: errorMessage });
       }
     }
 
@@ -93,102 +89,147 @@ export class JobAggregationService {
     return parsedJobs;
   }
 
+  private async saveJob(job: JobPosting, userId?: string) {
+    return this.prisma.jobPosting.upsert({
+      where: {
+        platform_externalId: {
+          platform: job.platform,
+          externalId: job.externalId || job.id,
+        },
+      },
+      create: {
+        externalId: job.externalId,
+        platform: job.platform,
+        title: job.title,
+        company: job.company,
+        location: job.location || null,
+        remotePolicy: job.remotePolicy || null,
+        salary: (job.salary as Prisma.JsonObject) || null,
+        description: job.description || null,
+        requirements: job.requirements || [],
+        skills: job.skills || [],
+        benefits: job.benefits || [],
+        applicationUrl: job.applicationUrl || null,
+        applicationMethod: job.applicationMethod || null,
+        postedAt: job.postedAt || null,
+        scrapedAt: job.scrapedAt,
+        isActive: true,
+        tags: job.tags || [],
+        userId: userId || null,
+      },
+      update: {
+        title: job.title,
+        company: job.company,
+        location: job.location || null,
+        description: job.description || null,
+        lastUpdated: new Date(),
+      },
+    });
+  }
+
+  private getScraperConfigs(): ScraperConfig[] {
+    return [
+      {
+        platform: 'linkedin',
+        baseUrl: 'https://www.linkedin.com/jobs/search',
+        rateLimit: {
+          requestsPerSecond: 1,
+          maxRetries: 3,
+        },
+        selectors: {
+          title: '.job-title',
+          company: '.company-name',
+          location: '.job-location',
+          description: '.job-description',
+          salary: '.salary',
+          requirements: '.requirements',
+        },
+      },
+      {
+        platform: 'indeed',
+        baseUrl: 'https://www.indeed.com/jobs',
+        rateLimit: {
+          requestsPerSecond: 2,
+          maxRetries: 3,
+        },
+        selectors: {
+          title: '.jobTitle',
+          company: '.companyName',
+          location: '.companyLocation',
+          description: '.jobDescription',
+          salary: '.salary-snippet',
+          requirements: '.job-requirements',
+        },
+      },
+    ];
+  }
+
   async getJobs(params: {
     userId?: string;
     platforms?: string[];
     keywords?: string[];
     location?: string;
-    remoteOnly?: boolean;
-    skip?: number;
-    take?: number;
-  }): Promise<JobPosting[]> {
-    const jobs = await this.prisma.jobPosting.findMany({
-      skip: params.skip,
-      take: params.take,
-      where: {
-        isActive: true,
-        ...(params.platforms && params.platforms.length > 0
-          ? { platform: { in: params.platforms } }
-          : {}),
-        ...(params.keywords && params.keywords.length > 0
-          ? {
-            OR: params.keywords.map((keyword) => ({
-              OR: [
-                { title: { contains: keyword, mode: 'insensitive' } },
-                { description: { contains: keyword, mode: 'insensitive' } },
-                { company: { contains: keyword, mode: 'insensitive' } },
-              ],
-            })),
-          }
-          : {}),
-        ...(params.location ? { location: { contains: params.location, mode: 'insensitive' } } : {}),
-        ...(params.remoteOnly ? { remotePolicy: { not: null } } : {}),
-      },
-      orderBy: { postedAt: 'desc' },
-    });
+    remote?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ jobs: JobPosting[]; total: number }> {
+    const { userId, platforms, keywords, location, remote, limit = 20, offset = 0 } = params;
 
-    return jobs.map(this.mapToJobPosting);
+    const where: Prisma.JobPostingWhereInput = {
+      isActive: true,
+      ...(userId && { userId }),
+      ...(platforms && platforms.length > 0 && { platform: { in: platforms } }),
+      ...(location && { location: { contains: location, mode: 'insensitive' } }),
+      ...(remote !== undefined && { remotePolicy: remote ? 'remote' : { not: 'remote' } }),
+      ...(keywords &&
+        keywords.length > 0 && {
+        OR: keywords.map((keyword) => ({
+          OR: [
+            { title: { contains: keyword, mode: 'insensitive' } },
+            { description: { contains: keyword, mode: 'insensitive' } },
+            { skills: { has: keyword } },
+          ],
+        })),
+      }),
+    };
+
+    const [jobs, total] = await Promise.all([
+      this.prisma.jobPosting.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { scrapedAt: 'desc' },
+      }),
+      this.prisma.jobPosting.count({ where }),
+    ]);
+
+    return {
+      jobs: jobs.map((job) => this.mapPrismaJobToInterface(job)),
+      total,
+    };
   }
 
-  async getJobById(id: string): Promise<JobPosting | null> {
-    const job = await this.prisma.jobPosting.findUnique({
-      where: { id },
-    });
-    return job ? this.mapToJobPosting(job) : null;
-  }
-
-  async cleanupExpiredJobs(): Promise<number> {
-    const result = await this.prisma.jobPosting.updateMany({
-      where: {
-        expiresAt: { lt: new Date() },
-        isActive: true,
-      },
-      data: {
-        isActive: false,
-        lastUpdated: new Date(),
-      },
-    });
-    this.logger.log(`Deactivated ${result.count} expired jobs`);
-    return result.count;
-  }
-
-  async cleanupOldJobs(daysToKeep: number = 30): Promise<number> {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-
-    const result = await this.prisma.jobPosting.deleteMany({
-      where: {
-        scrapedAt: { lt: cutoffDate },
-      },
-    });
-    this.logger.log(`Deleted ${result.count} jobs older than ${daysToKeep} days`);
-    return result.count;
-  }
-
-  private mapToJobPosting(job: any): JobPosting {
+  private mapPrismaJobToInterface(job: any): JobPosting {
     return {
       id: job.id,
-      externalId: job.externalId || undefined,
+      externalId: job.externalId,
       platform: job.platform,
       title: job.title,
       company: job.company,
       location: job.location || undefined,
-      remotePolicy: job.remotePolicy || undefined,
-      salary: job.salary || undefined,
-      jobType: job.jobType || undefined,
-      description: job.description || undefined,
+      remotePolicy: job.remotePolicy as any,
+      salary: job.salary as any,
+      description: job.description || '',
       requirements: job.requirements || [],
       skills: job.skills || [],
       benefits: job.benefits || [],
-      applicationUrl: job.applicationUrl || undefined,
-      applicationMethod: job.applicationMethod || undefined,
+      applicationUrl: job.applicationUrl || '',
+      applicationMethod: job.applicationMethod as any,
       postedAt: job.postedAt || undefined,
-      expiresAt: job.expiresAt || undefined,
       scrapedAt: job.scrapedAt,
       lastUpdated: job.lastUpdated,
       isActive: job.isActive,
       tags: job.tags || [],
-      metadata: job.metadata || undefined,
     };
   }
 }

@@ -26,7 +26,7 @@ flowchart TB
     subgraph Backend["后端 (NestJS)"]
         ResumeController["ResumeOptimizer Controller"]
         DocumentParser["Document Parser Service"]
-        ResumeOptimizer["Resume Optimizer Service"]
+        ResumeOptimizer["IntervAI Service"]
         PDFGenerator["PDF Generator Service"]
         AIEngine["AI Engine Service"]
     end

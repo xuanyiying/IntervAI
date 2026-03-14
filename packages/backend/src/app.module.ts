@@ -18,12 +18,11 @@ import { LoggerModule } from '@/shared/logger/logger.module';
 import { MonitoringModule } from '@/shared/monitoring/monitoring.module';
 import { ConversationModule } from '@/core/conversation/conversation.module';
 import { EmailModule } from '@/shared/notification/email.module';
-import { PaymentModule } from './features/payment/payment.module';
-import { AIProvidersModule } from './core/ai-provider/ai-providers.module';
-import { InvitationModule } from './features/invitation/invitation.module';
+import { PaymentModule } from './core/payment/payment.module';
+import { AIModule } from './core/ai/ai.module';
+import { InvitationModule } from './core/invitation/invitation.module';
 import { ChatModule } from '@/core/chat/chat.module';
 import { JobSearchModule } from '@/features/job-search';
-import { AgentModule } from '@/core/agent/agent.module';
 import { AccountModule } from '@/core/account/account.module';
 import { VoiceModule } from '@/features/voice/voice.module';
 import { loggerConfig } from '@/shared/logger/logger.config';
@@ -68,11 +67,10 @@ import { StorageModule } from '@/core/storage/storage.module';
     MonitoringModule,
     EmailModule,
     PaymentModule,
-    AIProvidersModule,
+    AIModule, // Unified AI module with skills system
     InvitationModule,
     ChatModule,
     JobSearchModule,
-    AgentModule,
     AccountModule,
     VoiceModule,
     BullModule.forRootAsync({

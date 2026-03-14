@@ -1,307 +1,182 @@
-# Admin Dashboard & Management Interface - Requirements Document
+# 需求文档
 
-## Introduction
+## 介绍
 
-This document defines the requirements for a comprehensive web-based Admin Dashboard & Management Interface for the AI Resume Optimization platform. The dashboard will provide administrators with tools to monitor system health, manage AI models and providers, configure prompt templates, analyze costs and performance, and troubleshoot issues. The interface will leverage existing backend APIs from the AIController and related services.
+管理端Dashboard是一个综合性的管理平台，为系统管理员提供AI使用统计、用量监控、用户管理、系统统计和数据导出等核心管理功能。该系统基于现有的NestJS后端和React前端架构，利用已有的用户认证、配额管理、AI providers和监控模块，提供实时的系统洞察和管理能力。
 
-## Glossary
+## 术语表
 
-- **Admin Dashboard**: The web-based administrative interface for system management
-- **System Administrator**: A user with elevated privileges to manage the AI system
-- **AI Provider**: A service that provides large language models (OpenAI, Qwen, DeepSeek, etc.)
-- **Model Configuration**: Settings for individual AI models including API keys, endpoints, and parameters
-- **Prompt Template**: Reusable text templates for specific scenarios with variable placeholders
-- **Cost Report**: Aggregated data showing AI usage costs by model, scenario, or user
-- **Performance Metrics**: Statistics about model response times, success rates, and availability
-- **Alert**: A notification triggered when system metrics exceed defined thresholds
-- **Log Entry**: A recorded event from AI operations including requests, responses, and errors
-- **Template Version**: A specific iteration of a prompt template with change history
-- **Selection Statistics**: Data about which models are chosen by the model selector
-- **Usage Quota**: Limits on AI usage for different user tiers or time periods
+- **System**: 管理端Dashboard系统
+- **Admin**: 具有管理员角色(Role.ADMIN)的用户
+- **AI_Call**: AI模型调用记录，包含请求和响应信息
+- **Usage_Record**: 用量记录，包含token使用和成本信息
+- **Quota**: 用户配额限制，包括API调用次数、token使用量等
+- **Performance_Metrics**: 性能指标，包含模型调用成功率、延迟等统计数据
+- **Time_Range**: 时间范围过滤器，支持今天、本周、本月、自定义等
+- **Export_Format**: 导出格式，支持CSV和Excel
+- **Alert_Threshold**: 告警阈值，用于监控用量超限
+- **Dashboard_Widget**: Dashboard组件，展示关键指标的可视化卡片
 
-## Requirements
+## 需求
 
-### Requirement 1: Dashboard Overview and Navigation
+### 需求 1: 权限控制
 
-**User Story:** As a system administrator, I want a centralized dashboard with clear navigation, so that I can quickly access different management functions and view system status at a glance.
+**用户故事:** 作为系统管理员，我希望只有管理员角色才能访问管理端功能，以确保系统安全和数据隐私。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN an administrator logs into the dashboard THEN the System SHALL display an overview page with key metrics
-2. THE System SHALL provide a navigation sidebar with sections for Models, Templates, Costs, Performance, Logs, and Settings
-3. WHEN displaying the overview page THEN the System SHALL show total active models, total API calls today, total cost today, and average response time
-4. WHEN displaying the overview page THEN the System SHALL show a list of recent alerts and warnings
-5. THE System SHALL provide breadcrumb navigation showing the current location in the dashboard
-6. WHEN the administrator clicks a navigation item THEN the System SHALL load the corresponding page without full page reload
-7. THE System SHALL display the administrator's username and provide a logout option in the header
+1. WHEN 用户访问管理端任何API端点 THEN THE System SHALL 验证用户是否具有ADMIN角色
+2. IF 用户不具有ADMIN角色 THEN THE System SHALL 返回403 Forbidden错误
+3. WHEN 用户登录成功且具有ADMIN角色 THEN THE System SHALL 允许访问所有管理端功能
+4. THE System SHALL 在AuditLog中记录所有管理员操作
 
-### Requirement 2: Model Management Interface
+### 需求 2: AI使用统计
 
-**User Story:** As a system administrator, I want to view and manage all configured AI models, so that I can ensure the system has access to the right models and troubleshoot connectivity issues.
+**用户故事:** 作为系统管理员，我希望查看所有用户的AI调用统计，以便了解系统使用情况和优化资源分配。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Models page THEN the System SHALL display a list of all configured models grouped by provider
-2. WHEN displaying model information THEN the System SHALL show model name, provider, status (available/unavailable), and last checked time
-3. WHEN the administrator clicks on a model THEN the System SHALL display detailed information including configuration parameters and cost settings
-4. THE System SHALL provide a filter to show only models from a specific provider
-5. THE System SHALL provide a search function to find models by name
-6. WHEN the administrator clicks "Reload Models" THEN the System SHALL call the reload endpoint and refresh the model list
-7. WHEN a model is unavailable THEN the System SHALL display it with a warning indicator and show the error message
-8. THE System SHALL display the total number of available and unavailable models
+1. WHEN Admin请求AI调用统计 THEN THE System SHALL 返回按模型分组的调用次数、成功率和失败率
+2. WHEN Admin指定时间范围 THEN THE System SHALL 返回该时间范围内的统计数据
+3. WHEN Admin请求按用户统计 THEN THE System SHALL 返回每个用户的AI调用次数和token使用量
+4. THE System SHALL 计算并返回平均响应时间(基于AICallLog.latency字段)
+5. THE System SHALL 统计并返回总输入token数和总输出token数(基于UsageRecord表)
+6. WHEN Admin请求按provider统计 THEN THE System SHALL 返回每个provider的调用分布
+7. THE System SHALL 提供按scenario(场景)分组的统计数据
 
-### Requirement 3: Model Configuration Editor
+### 需求 3: 用量监控
 
-**User Story:** As a system administrator, I want to view and edit model configurations, so that I can update API keys, endpoints, and parameters without restarting the system.
+**用户故事:** 作为系统管理员，我希望实时监控系统资源使用情况，以便及时发现异常和防止资源耗尽。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator clicks "Edit" on a model THEN the System SHALL display a configuration form
-2. WHEN displaying the configuration form THEN the System SHALL show fields for API endpoint, default temperature, max tokens, and cost parameters
-3. THE System SHALL mask API keys by default and provide a "Show" button to reveal them
-4. WHEN the administrator saves configuration changes THEN the System SHALL validate the inputs before submitting
-5. WHEN configuration is saved successfully THEN the System SHALL display a success message and refresh the model information
-6. WHEN configuration save fails THEN the System SHALL display specific error messages for each invalid field
-7. THE System SHALL provide a "Test Connection" button to verify model availability before saving
+1. THE System SHALL 提供实时的系统资源使用情况(基于现有monitoring模块)
+2. WHEN Admin查看用户配额使用情况 THEN THE System SHALL 显示每个用户的配额使用百分比
+3. THE System SHALL 计算并显示API调用频率趋势(按小时、按天)
+4. WHEN Admin设置告警阈值 THEN THE System SHALL 保存阈值配置到SystemSettings表
+5. WHEN 用户用量超过阈值 THEN THE System SHALL 触发告警通知
+6. THE System SHALL 显示接近配额限制的用户列表(使用率>80%)
+7. THE System SHALL 提供按时间段的用量趋势图数据
 
-### Requirement 4: Prompt Template Management
+### 需求 4: 用户管理
 
-**User Story:** As a system administrator, I want to view, create, edit, and manage prompt templates, so that I can optimize AI responses for different scenarios.
+**用户故事:** 作为系统管理员，我希望管理所有用户的信息和权限，以便维护系统秩序和用户体验。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Templates page THEN the System SHALL display a list of all prompt templates
-2. WHEN displaying template information THEN the System SHALL show template name, scenario, provider (if specific), and current version number
-3. WHEN the administrator clicks "Create Template" THEN the System SHALL display a template creation form
-4. WHEN creating a template THEN the System SHALL provide fields for name, scenario, template content, and variable placeholders
-5. WHEN the administrator clicks on a template THEN the System SHALL display the template editor with syntax highlighting for variables
-6. THE System SHALL provide a preview function to render the template with sample variable values
-7. WHEN the administrator saves template changes THEN the System SHALL create a new version and preserve the previous version
-8. THE System SHALL provide a search function to find templates by name or scenario
+1. WHEN Admin请求用户列表 THEN THE System SHALL 返回所有用户的基本信息(id, email, username, role, subscriptionTier, createdAt, lastLoginAt, isActive)
+2. THE System SHALL 支持按email、username、role、subscriptionTier筛选用户
+3. THE System SHALL 支持分页查询用户列表
+4. WHEN Admin更新用户配额 THEN THE System SHALL 更新用户的subscriptionTier并记录到AuditLog
+5. WHEN Admin更新用户角色 THEN THE System SHALL 更新User.role字段并记录到AuditLog
+6. WHEN Admin禁用用户 THEN THE System SHALL 设置User.isActive为false
+7. THE System SHALL 计算并显示用户活跃度(基于lastLoginAt和messageCount)
+8. WHEN Admin查看用户详情 THEN THE System SHALL 返回用户的完整信息包括统计数据(消息数、简历数、优化次数)
 
-### Requirement 5: Template Version Control
+### 需求 5: 系统统计Dashboard
 
-**User Story:** As a system administrator, I want to view template version history and rollback to previous versions, so that I can track changes and recover from mistakes.
+**用户故事:** 作为系统管理员，我希望在Dashboard上查看关键指标总览，以便快速了解系统整体状况。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator clicks "Version History" on a template THEN the System SHALL display a list of all versions
-2. WHEN displaying version history THEN the System SHALL show version number, modification time, modifier, and change summary
-3. WHEN the administrator clicks on a version THEN the System SHALL display a diff view comparing it to the current version
-4. WHEN the administrator clicks "Rollback" on a version THEN the System SHALL prompt for confirmation
-5. WHEN rollback is confirmed THEN the System SHALL restore the selected version as the current version and create a new version entry
-6. THE System SHALL display a success message after successful rollback
-7. THE System SHALL allow the administrator to add notes when creating or modifying templates
+1. THE System SHALL 在Dashboard显示总用户数、活跃用户数(最近7天登录)、新增用户数(最近30天)
+2. THE System SHALL 显示总AI调用次数、今日调用次数、调用成功率
+3. THE System SHALL 显示总token使用量、今日token使用量、总成本
+4. THE System SHALL 显示系统健康状态(基于PerformanceMetrics表的successRate)
+5. WHEN 系统健康状态异常(successRate < 95%) THEN THE System SHALL 在Dashboard显示警告标识
+6. THE System SHALL 显示最近的错误日志数量(基于AICallLog中success=false的记录)
+7. THE System SHALL 提供快速访问链接到各个管理功能模块
 
-### Requirement 6: Template Testing and Rendering
+### 需求 6: 错误日志和异常追踪
 
-**User Story:** As a system administrator, I want to test prompt templates with sample data, so that I can verify they work correctly before deploying them.
+**用户故事:** 作为系统管理员，我希望查看和分析错误日志，以便快速定位和解决系统问题。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator clicks "Test Template" THEN the System SHALL display a testing interface
-2. WHEN displaying the testing interface THEN the System SHALL show input fields for all template variables
-3. WHEN the administrator provides variable values and clicks "Render" THEN the System SHALL call the render endpoint and display the result
-4. WHEN rendering succeeds THEN the System SHALL display the rendered template with syntax highlighting
-5. WHEN rendering fails THEN the System SHALL display the error message and highlight missing or invalid variables
-6. THE System SHALL provide sample values for common variables to speed up testing
-7. THE System SHALL allow the administrator to save test cases for reuse
+1. WHEN Admin查看错误日志 THEN THE System SHALL 返回AICallLog中success=false的记录
+2. THE System SHALL 支持按errorCode、provider、model筛选错误日志
+3. THE System SHALL 支持按时间范围筛选错误日志
+4. WHEN Admin查看错误详情 THEN THE System SHALL 显示完整的errorMessage和stackTrace
+5. THE System SHALL 统计并显示最常见的错误类型(按errorCode分组)
+6. THE System SHALL 显示错误趋势图(按时间统计错误数量)
+7. THE System SHALL 提供错误日志的分页查询
 
-### Requirement 7: Cost Analytics Dashboard
+### 需求 7: 重试和降级日志
 
-**User Story:** As a system administrator, I want to view detailed cost analytics, so that I can understand spending patterns and optimize costs.
+**用户故事:** 作为系统管理员，我希望查看AI调用的重试和降级情况，以便评估系统稳定性和优化策略。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Costs page THEN the System SHALL display cost overview metrics
-2. WHEN displaying cost overview THEN the System SHALL show total cost for today, this week, and this month
-3. THE System SHALL provide a date range picker to filter cost data
-4. THE System SHALL provide a dropdown to group costs by model, scenario, or user
-5. WHEN cost data is loaded THEN the System SHALL display a bar chart showing costs over time
-6. WHEN cost data is loaded THEN the System SHALL display a pie chart showing cost distribution by the selected grouping
-7. THE System SHALL display a table with detailed cost breakdown including model name, total calls, input tokens, output tokens, and total cost
-8. THE System SHALL sort the cost table by total cost in descending order by default
+1. WHEN Admin查看重试日志 THEN THE System SHALL 返回AIRetryLog表中的所有记录
+2. THE System SHALL 统计并显示重试成功率(attempt < maxAttempts的比例)
+3. WHEN Admin查看降级日志 THEN THE System SHALL 返回AIDegradationLog表中的所有记录
+4. THE System SHALL 统计并显示各个model的降级频率
+5. THE System SHALL 显示降级原因分布(按reason分组)
+6. THE System SHALL 支持按时间范围筛选重试和降级日志
 
-### Requirement 8: Cost Report Export
+### 需求 8: 数据导出
 
-**User Story:** As a system administrator, I want to export cost reports in CSV or JSON format, so that I can analyze data in external tools or share with stakeholders.
+**用户故事:** 作为系统管理员，我希望导出统计数据和报表，以便进行离线分析和汇报。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator clicks "Export" on the Costs page THEN the System SHALL display export options
-2. THE System SHALL provide format options for CSV and JSON
-3. THE System SHALL apply the current date range and grouping filters to the export
-4. WHEN the administrator selects a format and clicks "Download" THEN the System SHALL call the export endpoint
-5. WHEN export succeeds THEN the System SHALL trigger a file download with an appropriate filename
-6. WHEN export fails THEN the System SHALL display an error message
-7. THE System SHALL include all relevant columns in the export including timestamps, model names, token counts, and costs
+1. WHEN Admin请求导出AI使用统计 THEN THE System SHALL 生成包含所有统计数据的CSV文件
+2. WHEN Admin请求导出用户列表 THEN THE System SHALL 生成包含用户信息的Excel文件
+3. THE System SHALL 支持导出指定时间范围的数据
+4. THE System SHALL 在导出文件中包含列标题和数据说明
+5. WHEN 导出任务完成 THEN THE System SHALL 返回下载链接
+6. THE System SHALL 在AuditLog中记录所有数据导出操作
+7. THE System SHALL 支持导出错误日志数据
 
-### Requirement 9: Performance Monitoring Dashboard
+### 需求 9: 数据可视化
 
-**User Story:** As a system administrator, I want to monitor AI model performance metrics, so that I can identify slow or failing models and take corrective action.
+**用户故事:** 作为系统管理员，我希望通过图表查看数据趋势，以便更直观地理解系统状况。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Performance page THEN the System SHALL display performance overview metrics
-2. WHEN displaying performance overview THEN the System SHALL show average response time, total requests, success rate, and failure rate
-3. THE System SHALL provide a model selector to filter metrics for a specific model
-4. THE System SHALL provide a date range picker to filter performance data
-5. WHEN performance data is loaded THEN the System SHALL display a line chart showing response times over time
-6. WHEN performance data is loaded THEN the System SHALL display a table with per-model metrics including average, min, and max response times
-7. THE System SHALL display success rate and failure rate as percentages with visual indicators (green for good, yellow for warning, red for critical)
-8. THE System SHALL highlight models with failure rates above 10% or average response times above 30 seconds
+1. THE System SHALL 提供API调用趋势的时间序列数据(按小时/天/周/月)
+2. THE System SHALL 提供模型使用分布的饼图数据
+3. THE System SHALL 提供用户活跃度的柱状图数据
+4. THE System SHALL 提供token使用量的趋势线数据
+5. THE System SHALL 提供成功率和失败率的对比图数据
+6. THE System SHALL 提供成本统计的趋势图数据
+7. FOR ALL 图表数据 THE System SHALL 返回标准化的JSON格式(包含labels和datasets)
 
-### Requirement 10: Performance Alerts Management
+### 需求 10: 实时数据更新
 
-**User Story:** As a system administrator, I want to view and manage performance alerts, so that I can quickly respond to system issues.
+**用户故事:** 作为系统管理员，我希望Dashboard数据能够实时更新，以便及时发现和响应系统变化。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Alerts section THEN the System SHALL display a list of active alerts
-2. WHEN displaying alerts THEN the System SHALL show alert type, model name, metric value, threshold, and timestamp
-3. THE System SHALL sort alerts by severity (critical, warning, info) and then by timestamp
-4. THE System SHALL provide a filter to show only alerts of a specific severity level
-5. WHEN the administrator clicks on an alert THEN the System SHALL display detailed information and suggested actions
-6. THE System SHALL provide an "Acknowledge" button to mark alerts as reviewed
-7. WHEN an alert is acknowledged THEN the System SHALL update its status and move it to the acknowledged alerts list
+1. WHERE WebSocket连接可用 THE System SHALL 通过WebSocket推送实时统计数据更新
+2. THE System SHALL 每30秒推送一次Dashboard关键指标更新
+3. WHEN 发生严重错误(连续失败>10次) THEN THE System SHALL 立即推送告警通知
+4. WHEN 用户用量超过阈值 THEN THE System SHALL 立即推送告警通知
+5. WHERE WebSocket不可用 THE System SHALL 支持轮询方式获取最新数据
+6. THE System SHALL 在前端显示最后更新时间戳
 
-### Requirement 11: Log Viewer and Search
+### 需求 11: 性能优化
 
-**User Story:** As a system administrator, I want to view and search AI operation logs, so that I can troubleshoot issues and audit system usage.
+**用户故事:** 作为系统管理员，我希望管理端查询响应快速，以便高效地完成管理工作。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Logs page THEN the System SHALL display recent log entries
-2. WHEN displaying log entries THEN the System SHALL show timestamp, model, provider, scenario, status, and response time
-3. THE System SHALL provide filters for model, provider, scenario, and date range
-4. THE System SHALL provide a search box to find logs by keyword
-5. WHEN the administrator applies filters or search THEN the System SHALL update the log list without full page reload
-6. WHEN the administrator clicks on a log entry THEN the System SHALL display detailed information including request parameters and response content
-7. THE System SHALL paginate log results with 50 entries per page
-8. THE System SHALL provide a "Refresh" button to load the latest logs
+1. WHEN Admin查询统计数据 THEN THE System SHALL 在2秒内返回结果
+2. THE System SHALL 使用Redis缓存频繁查询的统计数据(缓存时间5分钟)
+3. THE System SHALL 对大数据量查询使用数据库索引优化
+4. WHEN 查询历史数据(>30天) THEN THE System SHALL 使用聚合表或预计算结果
+5. THE System SHALL 限制单次查询返回的记录数(最多10000条)
+6. WHEN 导出大量数据 THEN THE System SHALL 使用异步任务处理
 
-### Requirement 12: Log Statistics and Analytics
+### 需求 12: 审计日志
 
-**User Story:** As a system administrator, I want to view log statistics, so that I can understand usage patterns and identify trends.
+**用户故事:** 作为系统管理员，我希望所有管理操作都被记录，以便追溯和审计。
 
-#### Acceptance Criteria
+#### 验收标准
 
-1. WHEN the administrator navigates to the Log Statistics section THEN the System SHALL display aggregated statistics
-2. WHEN displaying statistics THEN the System SHALL show total requests, unique users, most used models, and most common scenarios
-3. THE System SHALL provide a date range picker to filter statistics
-4. THE System SHALL display a bar chart showing request volume by hour or day
-5. THE System SHALL display a pie chart showing request distribution by model
-6. THE System SHALL display a table with top scenarios by request count
-7. THE System SHALL display average response time trends over the selected period
-
-### Requirement 13: Model Selection Statistics
-
-**User Story:** As a system administrator, I want to view model selection statistics, so that I can understand how the model selector is routing requests.
-
-#### Acceptance Criteria
-
-1. WHEN the administrator navigates to the Selection Statistics page THEN the System SHALL display selection overview metrics
-2. WHEN displaying selection overview THEN the System SHALL show total selections, most selected model, and selection success rate
-3. THE System SHALL display a table showing selection counts by model
-4. THE System SHALL display a table showing recent selections with timestamp, scenario, selected model, and selection reason
-5. THE System SHALL provide a filter to show selections for a specific scenario
-6. THE System SHALL display a pie chart showing selection distribution by model
-7. THE System SHALL highlight models that are frequently selected but have high failure rates
-
-### Requirement 14: Real-time Dashboard Updates
-
-**User Story:** As a system administrator, I want the dashboard to update automatically, so that I can monitor the system in real-time without manual refreshing.
-
-#### Acceptance Criteria
-
-1. WHEN the administrator is viewing the overview page THEN the System SHALL refresh key metrics every 30 seconds
-2. WHEN the administrator is viewing the performance page THEN the System SHALL refresh metrics every 60 seconds
-3. WHEN the administrator is viewing the alerts page THEN the System SHALL check for new alerts every 15 seconds
-4. WHEN new data is available THEN the System SHALL update the display smoothly without disrupting user interaction
-5. THE System SHALL display a timestamp showing when data was last updated
-6. THE System SHALL provide a manual refresh button on each page
-7. WHEN the administrator navigates away from a page THEN the System SHALL stop automatic updates for that page
-
-### Requirement 15: Responsive Design and Accessibility
-
-**User Story:** As a system administrator, I want the dashboard to work well on different screen sizes and be accessible, so that I can manage the system from various devices.
-
-#### Acceptance Criteria
-
-1. WHEN the dashboard is viewed on a desktop THEN the System SHALL display the full navigation sidebar and content area
-2. WHEN the dashboard is viewed on a tablet THEN the System SHALL collapse the sidebar into a hamburger menu
-3. WHEN the dashboard is viewed on a mobile device THEN the System SHALL stack content vertically and optimize for touch interaction
-4. THE System SHALL use responsive charts that adapt to screen size
-5. THE System SHALL provide keyboard navigation for all interactive elements
-6. THE System SHALL use sufficient color contrast for text and UI elements
-7. THE System SHALL provide alt text for all images and icons
-
-### Requirement 16: User Authentication and Authorization
-
-**User Story:** As a system administrator, I want secure authentication and role-based access control, so that only authorized users can access the admin dashboard.
-
-#### Acceptance Criteria
-
-1. WHEN a user attempts to access the dashboard THEN the System SHALL require authentication
-2. WHEN a user provides valid admin credentials THEN the System SHALL grant access to the dashboard
-3. WHEN a user provides invalid credentials THEN the System SHALL display an error message and deny access
-4. WHEN a user's session expires THEN the System SHALL redirect to the login page
-5. THE System SHALL use JWT tokens for authentication
-6. THE System SHALL verify that the authenticated user has admin role before allowing access
-7. WHEN a non-admin user attempts to access the dashboard THEN the System SHALL display an unauthorized error
-
-### Requirement 17: System Settings Management
-
-**User Story:** As a system administrator, I want to configure system-wide settings, so that I can customize behavior and thresholds.
-
-#### Acceptance Criteria
-
-1. WHEN the administrator navigates to the Settings page THEN the System SHALL display configurable settings
-2. THE System SHALL provide settings for performance alert thresholds (failure rate, response time)
-3. THE System SHALL provide settings for cost alert thresholds (daily, weekly, monthly limits)
-4. THE System SHALL provide settings for automatic refresh intervals
-5. THE System SHALL provide settings for log retention period
-6. WHEN the administrator changes a setting THEN the System SHALL validate the input
-7. WHEN the administrator saves settings THEN the System SHALL apply them immediately without requiring restart
-
-### Requirement 18: Error Handling and User Feedback
-
-**User Story:** As a system administrator, I want clear error messages and feedback, so that I can understand what went wrong and how to fix it.
-
-#### Acceptance Criteria
-
-1. WHEN an API call fails THEN the System SHALL display a user-friendly error message
-2. WHEN displaying error messages THEN the System SHALL include specific details about what failed
-3. WHEN a form submission fails validation THEN the System SHALL highlight invalid fields and show error messages
-4. WHEN an operation succeeds THEN the System SHALL display a success notification
-5. THE System SHALL automatically dismiss success notifications after 5 seconds
-6. THE System SHALL keep error notifications visible until dismissed by the user
-7. WHEN the System encounters a network error THEN the System SHALL display a retry option
-
-### Requirement 19: Data Visualization and Charts
-
-**User Story:** As a system administrator, I want clear and interactive data visualizations, so that I can quickly understand trends and patterns.
-
-#### Acceptance Criteria
-
-1. THE System SHALL use consistent chart types across the dashboard (line charts for trends, bar charts for comparisons, pie charts for distributions)
-2. WHEN displaying charts THEN the System SHALL use a consistent color scheme
-3. WHEN the administrator hovers over chart elements THEN the System SHALL display detailed tooltips with exact values
-4. THE System SHALL provide zoom and pan functionality for time-series charts
-5. THE System SHALL provide legend toggles to show/hide specific data series
-6. WHEN chart data is loading THEN the System SHALL display a loading indicator
-7. WHEN chart data is empty THEN the System SHALL display a "No data available" message
-
-### Requirement 20: Bulk Operations
-
-**User Story:** As a system administrator, I want to perform bulk operations on models and templates, so that I can manage multiple items efficiently.
-
-#### Acceptance Criteria
-
-1. WHEN the administrator is viewing the models list THEN the System SHALL provide checkboxes to select multiple models
-2. WHEN models are selected THEN the System SHALL display bulk action buttons (Test Connection, Enable, Disable)
-3. WHEN the administrator clicks a bulk action THEN the System SHALL prompt for confirmation
-4. WHEN bulk action is confirmed THEN the System SHALL execute the action on all selected items and display progress
-5. WHEN bulk action completes THEN the System SHALL display a summary showing successes and failures
-6. THE System SHALL provide a "Select All" checkbox to select all items on the current page
-7. THE System SHALL provide the same bulk operation capabilities for templates
+1. WHEN Admin执行任何管理操作 THEN THE System SHALL 在AuditLog表中创建记录
+2. THE AuditLog记录 SHALL 包含action(操作类型)、resource(资源类型)、userId(操作者)、details(详细信息)、timestamp(时间戳)
+3. WHEN Admin查看审计日志 THEN THE System SHALL 返回按时间倒序排列的日志列表
+4. THE System SHALL 支持按action、resource、userId筛选审计日志
+5. THE System SHALL 支持按时间范围筛选审计日志
+6. THE System SHALL 保留审计日志至少90天

@@ -60,16 +60,48 @@ docker compose -f deployment/docker-compose.yml down       # Stop services
 
 The backend follows a layered architecture with clear separation:
 
-- **`core/`** - Core business logic modules (auth, user, chat, conversation, storage, quota, agent, ai-provider)
-- **`features/`** - Feature-specific modules (resume, job, interview, payment, voice, job-search, invitation)
-- **`shared/`** - Shared infrastructure (database/prisma, cache/redis, logger, notification/email, monitoring)
-- **`common/`** - Common utilities, middleware, guards, decorators
+- **`common/`** - Shared utilities, middleware, guards, decorators, exceptions
+- **`core/`** - Core business logic modules (auth, user, chat, conversation, storage, quota, ai)
+- **`features/`** - Feature-specific modules (resume, job, interview, payment, job-search, invitation)
+- **`e2e/`** - End-to-end tests
 
 Key architectural patterns:
-- **AI Provider Factory**: Multi-provider abstraction supporting OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud. See `core/ai-provider/factory/`
-- **Agent System**: LangChain-based agent orchestration with tools (JD analyzer, resume parser, keyword matcher, RAG retrieval). See `core/agent/`
+- **Skills Engine**: Pluggable AI capabilities system. Engine in `core/ai/skills/`, skills in `skills/` directory
+- **AI Provider Factory**: Multi-provider abstraction supporting OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud
 - **WebSocket Gateway**: Real-time chat via Socket.IO with Redis adapter for scaling
 - **Queue System**: Bull queues for async AI processing (`core/ai/queue/`)
+
+### Core AI Module (`packages/backend/src/core/ai/`)
+
+```
+core/ai/
+├── providers/          # AI provider implementations
+├── skills/             # Skills engine
+│   ├── skill.interface.ts        # Core interfaces
+│   ├── skill-registry.ts         # Skill registration & execution
+│   ├── skill-loader.ts           # Load skills from directories
+│   ├── skill-markdown-parser.ts  # Parse Markdown skill definitions
+│   └── skill-installer.service.ts # Install skills from remote sources
+├── utils/              # Circuit breaker, rate limiter, usage tracker
+├── memory/             # Conversation memory (Redis-backed)
+├── queue/              # BullMQ queue for async processing
+├── ai.service.ts       # Main AI service
+├── ai.engine.ts        # AI engine with provider selection
+└── degradation.service.ts # Graceful degradation
+```
+
+### Skills Directory (`packages/backend/skills/`)
+
+Skills are defined in Markdown format with YAML frontmatter:
+
+```
+skills/
+├── resume-analyzer.md      # Resume parsing & analysis
+├── jd-matcher.md           # Job description matching
+├── interview-prep.md       # Interview preparation
+├── job-scraper.md          # Job posting extraction
+└── answer-evaluator.md     # Interview answer evaluation
+```
 
 ### Frontend Structure (`packages/frontend/src/`)
 
@@ -98,25 +130,34 @@ Both packages use `@/*` for absolute imports:
 
 ## Key Integration Points
 
-### AI Engine Service (`core/ai-provider/ai-engine.service.ts`)
+### AI Service (`core/ai/ai.service.ts`)
 Central service for all AI calls. Handles:
 - Model selection based on scenario
-- Prompt template management
-- Retry logic with exponential backoff
+- Skill execution via `executeSkill(name, inputs, userId)`
+- Streaming responses
+- Embeddings generation
 - Usage tracking and cost monitoring
-- Performance metrics
+
+### Skills Engine
+The skills engine provides a pluggable architecture for AI capabilities:
+
+1. **Skill Definition**: Markdown files with YAML frontmatter
+2. **Skill Loading**: Automatic loading from `skills/` directory
+3. **Skill Execution**: `aiService.executeSkill('skill-name', inputs, userId)`
+4. **Skill Installation**: Install from URL, NPM, or GitHub
 
 ### Chat Flow
 1. Frontend sends message via WebSocket or REST
 2. Backend creates/retrieves conversation context
-3. Agent orchestrator selects appropriate tools
-4. AI engine processes with selected model
-5. Response streamed back via WebSocket
+3. Intent service classifies the message
+4. Appropriate skill is executed (resume-analyzer, jd-matcher, etc.)
+5. AI engine processes with selected model
+6. Response streamed back via WebSocket
 
 ### Resume Optimization Flow
 1. User uploads resume (stored via StorageModule)
-2. Resume parsed and analyzed
-3. Job description matched against resume
+2. `resume-analyzer` skill parses and extracts structured info
+3. `jd-matcher` skill matches job description against resume
 4. AI generates optimization suggestions
 5. PDF generated with optimized content
 
@@ -128,6 +169,7 @@ Backend requires (see `packages/backend/.env.example`):
 - `JWT_SECRET`, `ENCRYPTION_KEY`
 - OAuth credentials (`GOOGLE_CLIENT_ID`, `GITHUB_CLIENT_ID`, etc.)
 - AI provider API keys configured via admin UI (stored encrypted in ModelConfig table)
+- `SKILLS_DIR` - Skills directory path (default: `skills/`)
 
 ## Development Notes
 
@@ -136,3 +178,63 @@ Backend requires (see `packages/backend/.env.example`):
 - **API Docs**: Swagger available at `/api/docs` when backend running
 - **Admin Routes**: Protected by `requiredRole="ADMIN"` in router
 - **i18n**: Frontend supports zh-CN and en-US via react-i18next
+
+## Skills Development
+
+### Creating a New Skill
+
+1. Create a Markdown file in `skills/` directory:
+
+```markdown
+---
+name: my-skill
+version: 1.0.0
+description: Skill description
+author: Your Name
+tags: [tag1, tag2]
+inputs:
+  inputName:
+    type: string
+    required: true
+    description: Input description
+outputs:
+  type: object
+---
+
+# System Prompt
+
+Your skill's prompt template goes here. Use {{inputName}} for variable substitution.
+```
+
+2. The skill will be automatically loaded on server startup
+
+3. Execute the skill:
+```typescript
+const result = await aiService.executeSkill('my-skill', {
+  inputName: 'value'
+}, userId);
+```
+
+### Skill Interface
+
+```typescript
+interface SkillDefinition {
+  name: string;
+  version: string;
+  description: string;
+  author?: string;
+  tags: string[];
+  inputs: Record<string, SkillInputDefinition>;
+  outputs?: SkillOutputDefinition;
+  prompt?: string;
+  timeout?: number;
+  retryConfig?: {
+    maxRetries: number;
+    backoffMs: number;
+  };
+  rateLimit?: {
+    maxCalls: number;
+    windowMs: number;
+  };
+}
+```

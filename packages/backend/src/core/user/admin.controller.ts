@@ -20,7 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from '@prisma/client';
-import { InvitationService } from '@/features/invitation/invitation.service';
+import { InvitationService } from '@/core/invitation/invitation.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 
 @ApiTags('admin')
@@ -32,7 +32,7 @@ export class AdminController {
   constructor(
     private readonly invitationService: InvitationService,
     private readonly prisma: PrismaService
-  ) {}
+  ) { }
 
   // ==================== User Management ====================
 

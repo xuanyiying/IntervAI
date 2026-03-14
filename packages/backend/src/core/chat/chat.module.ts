@@ -10,18 +10,16 @@ import { ChatGateway } from './chat.gateway';
 import { ChatIntentService } from './chat-intent.service';
 import { SceneAnalysisService } from './scene-analysis.service';
 import { PrismaModule } from '@/shared/database/prisma.module';
-import { AIProvidersModule } from '@/core/ai-provider/ai-providers.module';
+import { AIModule } from '@/core/ai/ai.module';
 import { RedisModule } from '@/shared/cache/redis.module';
 import { ResumeModule } from '@/features/resume/resume.module';
-import { AgentModule } from '@/core/agent/agent.module';
 
 @Module({
   imports: [
     PrismaModule,
-    AIProvidersModule,
+    AIModule,
     RedisModule,
     forwardRef(() => ResumeModule),
-    forwardRef(() => AgentModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

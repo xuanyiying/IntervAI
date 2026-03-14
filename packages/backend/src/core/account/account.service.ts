@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { PaymentService } from '@/features/payment/payment.service';
+import { PaymentService } from '@/core/payment/payment.service';
 import { QuotaService } from '@/core/quota/quota.service';
-import { UsageTrackerService } from '@/core/ai-provider/tracking';
+import { AIService } from '@/core/ai/ai.service';
 
 type UsageQuery = { start?: string; end?: string };
 
@@ -12,8 +12,8 @@ export class AccountService {
     private readonly prisma: PrismaService,
     private readonly paymentService: PaymentService,
     private readonly quotaService: QuotaService,
-    private readonly usageTrackerService: UsageTrackerService
-  ) {}
+    private readonly aiService: AIService
+  ) { }
 
   async getSubscription(userId: string) {
     const [current, billingHistory, subscriptionEvents] = await Promise.all([
@@ -29,14 +29,14 @@ export class AccountService {
     return {
       current: current
         ? {
-            ...current,
-            expiresAt: current.expiresAt
-              ? new Date(current.expiresAt).toISOString()
-              : undefined,
-            currentPeriodEnd: current.currentPeriodEnd
-              ? new Date(current.currentPeriodEnd).toISOString()
-              : undefined,
-          }
+          ...current,
+          expiresAt: current.expiresAt
+            ? new Date(current.expiresAt).toISOString()
+            : undefined,
+          currentPeriodEnd: current.currentPeriodEnd
+            ? new Date(current.currentPeriodEnd).toISOString()
+            : undefined,
+        }
         : null,
       subscriptionRecords: subscriptionEvents.map((e) => ({
         id: e.id,
@@ -63,7 +63,7 @@ export class AccountService {
     const { startDate, endDate } = await this.resolveUsagePeriod(userId, query);
 
     const [ai, quota, dailySeries] = await Promise.all([
-      this.usageTrackerService.getUserUsageStats(userId, startDate, endDate),
+      this.aiService.getUsageStats(userId, startDate, endDate),
       this.quotaService.getQuotaInfo(userId),
       this.getDailySeries(userId, startDate, endDate),
     ]);

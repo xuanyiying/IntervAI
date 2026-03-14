@@ -6,7 +6,7 @@ import { UserNotificationsController } from './user-notifications.controller';
 import { AdminController } from './admin.controller';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { EmailModule } from '@/shared/notification/email.module';
-import { InvitationModule } from '@/features/invitation/invitation.module';
+import { InvitationModule } from '@/core/invitation/invitation.module';
 import { RedisModule } from '@/shared/cache/redis.module';
 import { AuthModule } from '@/core/auth/auth.module';
 
@@ -28,4 +28,4 @@ import { AuthModule } from '@/core/auth/auth.module';
   providers: [UserService],
   exports: [UserService],
 })
-export class UserModule {}
+export class UserModule { }

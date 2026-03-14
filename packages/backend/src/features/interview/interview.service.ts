@@ -14,8 +14,7 @@ import { SendMessageDto } from './dto/send-message.dto';
 import { EndSessionDto } from './dto/end-session.dto';
 import { QuestionGeneratorService } from './services/question-generator.service';
 import { InterviewSessionService } from './services/interview-session.service';
-import { AIEngine } from '@/core/ai';
-import { PromptScenario } from '@/core/ai-provider/interfaces/prompt-template.interface';
+import { AIService, Models, AIEngine } from '@/core/ai';
 import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
 
 @Injectable()
@@ -24,25 +23,30 @@ export class InterviewService {
     private prisma: PrismaService,
     private questionGenerator: QuestionGeneratorService,
     private sessionService: InterviewSessionService,
+    private aiService: AIService,
     private aiEngine: AIEngine
-  ) {}
+  ) { }
 
   async getPreparationGuide(dto: GetPreparationGuideDto): Promise<string> {
-    const variables: Record<string, any> = {
-      resume_content: dto.resumeData ? JSON.stringify(dto.resumeData) : '',
-      job_description: dto.jobDescription || '',
-      experience_description: dto.question || '', // reusing question field for STAR scenario input
-      question: dto.question || '',
-    };
+    const systemPrompt = `You are an expert interview coach. Provide comprehensive interview preparation guidance.`;
 
-    return this.aiEngine.generateContent(
-      PromptScenario.INTERVIEW_PREPARATION,
-      variables,
-      {
-        variant: dto.type,
-        language: dto.language,
-      }
+    const userPrompt = `Please provide interview preparation guidance based on:
+
+Resume: ${dto.resumeData ? JSON.stringify(dto.resumeData) : 'Not provided'}
+Job Description: ${dto.jobDescription || 'Not provided'}
+Question/Scenario: ${dto.question || 'General preparation'}
+Type: ${dto.type || 'general'}
+Language: ${dto.language || 'en'}`;
+
+    const result = await this.aiService.chat(
+      Models.InterviewPrep,
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      { temperature: 0.7 }
     );
+    return result.content;
   }
 
   async generateQuestions(
@@ -139,111 +143,119 @@ export class InterviewService {
       <strong>Suggested Answer:</strong>
       <p>${this.escapeHtml(q.suggestedAnswer).replace(/\n/g, '<br>')}</p>
     </div>
-    ${
-      q.tips && q.tips.length > 0
-        ? `
+    ${q.tips && q.tips.length > 0
+            ? `
     <div class="tips">
       <div class="tips-title">Tips:</div>
       <ul>
         ${q.tips.map((tip) => `<li>${this.escapeHtml(tip)}</li>`).join('')}
       </ul>
-    </div>
-    `
-        : ''
-    }
-  </div>
-`;
+    </div>`
+            : ''
+          }
+  </div>`;
       });
     }
 
     html += `
 </body>
-</html>
-`;
+</html>`;
 
     return html;
   }
 
-  async startSession(
-    userId: string,
-    createSessionDto: CreateSessionDto
-  ): Promise<{
-    session: InterviewSession;
-    firstQuestion: InterviewQuestion | null;
-  }> {
-    return this.sessionService.startSession(userId, createSessionDto);
+  private groupQuestionsByType(
+    questions: InterviewQuestion[]
+  ): Record<string, InterviewQuestion[]> {
+    return questions.reduce((acc, question) => {
+      const type = question.questionType;
+      if (!acc[type]) {
+        acc[type] = [];
+      }
+      acc[type].push(question);
+      return acc;
+    }, {} as Record<string, InterviewQuestion[]>);
   }
 
-  async handleMessage(
+  private formatQuestionType(type: string): string {
+    return type
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  private escapeHtml(text: string): string {
+    const div = { toString: () => '' };
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  async createSession(
     userId: string,
+    dto: CreateSessionDto
+  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion | null }> {
+    return this.sessionService.startSession(userId, dto);
+  }
+
+  async sendMessage(
     sessionId: string,
-    sendMessageDto: SendMessageDto
-  ): Promise<{
-    userMessage: InterviewMessage;
-    aiMessage: InterviewMessage;
-  }> {
-    return this.sessionService.handleMessage(userId, sessionId, sendMessageDto);
+    userId: string,
+    dto: SendMessageDto
+  ): Promise<{ userMessage: InterviewMessage; aiMessage: InterviewMessage }> {
+    return this.sessionService.handleMessage(userId, sessionId, dto);
   }
 
   async endSession(
+    sessionId: string,
     userId: string,
-    endSessionDto: EndSessionDto
   ): Promise<InterviewSession> {
-    return this.sessionService.endSession(userId, endSessionDto);
+    return this.sessionService.endSession(userId, { sessionId });
   }
 
-  async getSession(
-    userId: string,
-    sessionId: string
-  ): Promise<InterviewSession> {
+  async getSession(sessionId: string, userId: string): Promise<InterviewSession> {
     return this.sessionService.getSession(userId, sessionId);
+  }
+
+  async getSessionMessages(
+    sessionId: string,
+    userId: string
+  ): Promise<InterviewMessage[]> {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: { messages: true },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${sessionId} not found`);
+    }
+
+    if (session.userId !== userId) {
+      throw new ForbiddenException('You do not have permission to access this session');
+    }
+
+    return session.messages;
+  }
+
+  async getUserSessions(userId: string): Promise<InterviewSession[]> {
+    return this.prisma.interviewSession.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   async getActiveSessionByOptimization(
     userId: string,
     optimizationId: string
   ): Promise<InterviewSession | null> {
-    return this.sessionService.getActiveSessionByOptimization(
-      userId,
-      optimizationId
-    );
+    return this.sessionService.getActiveSessionByOptimization(userId, optimizationId);
   }
 
   async transcribeAudio(file: Express.Multer.File): Promise<{ text: string }> {
-    return this.sessionService.transcribeAudio(file);
-  }
-
-  private groupQuestionsByType(
-    questions: InterviewQuestion[]
-  ): Record<string, InterviewQuestion[]> {
-    const grouped: Record<string, InterviewQuestion[]> = {};
-    for (const question of questions) {
-      if (!grouped[question.questionType]) {
-        grouped[question.questionType] = [];
-      }
-      grouped[question.questionType].push(question);
-    }
-    return grouped;
-  }
-
-  private formatQuestionType(type: string): string {
-    const typeMap: Record<string, string> = {
-      BEHAVIORAL: 'Behavioral',
-      TECHNICAL: 'Technical',
-      SITUATIONAL: 'Situational',
-      RESUME_BASED: 'Resume-Based',
-    };
-    return typeMap[type] || type;
-  }
-
-  private escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
-    };
-    return text.replace(/[&<>"']/g, (char) => map[char]);
+    const text = await this.aiEngine.transcribeAudio(file.buffer);
+    return { text };
   }
 }

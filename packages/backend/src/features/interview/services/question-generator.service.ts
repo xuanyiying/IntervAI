@@ -16,7 +16,7 @@ export class QuestionGeneratorService {
   constructor(
     private prisma: PrismaService,
     private aiEngine: AIEngine
-  ) {}
+  ) { }
 
   /**
    * Generate interview questions based on resume and job
@@ -104,9 +104,10 @@ export class QuestionGeneratorService {
   ): Promise<Omit<InterviewQuestion, 'id' | 'createdAt' | 'optimizationId'>[]> {
     try {
       const jobDescription = JSON.stringify(jobData);
+      const resumeContent = JSON.stringify(resumeData);
       const questions = await this.aiEngine.generateInterviewQuestions(
-        resumeData,
-        jobDescription
+        jobDescription,
+        resumeContent
       );
 
       if (!Array.isArray(questions)) {
