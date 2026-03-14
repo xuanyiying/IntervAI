@@ -32,7 +32,7 @@ export class InterviewController {
     private questionService: InterviewQuestionService,
     private sessionService: InterviewSessionService,
     private reportService: InterviewReportService
-  ) {}
+  ) { }
 
   /**
    * Get interview preparation guide or strategy
@@ -167,7 +167,7 @@ export class InterviewController {
     @Param('sessionId') sessionId: string
   ): Promise<void> {
     const userId = req.user.id;
-    await this.interviewService.endSession(userId, { sessionId });
+    await this.interviewService.endSession(sessionId, userId);
   }
 
   /**

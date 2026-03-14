@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
+import { AIService, Models } from '@/core/ai';
 import { RedisService } from '@/shared/cache/redis.service';
-import { ScenarioType } from '@/core/ai-provider/interfaces/model.interface';
 
 export interface SceneAnalysisResult {
   scene: string;
@@ -28,7 +27,7 @@ export class SceneAnalysisService {
   private readonly logger = new Logger(SceneAnalysisService.name);
 
   constructor(
-    private readonly aiEngineService: AIEngineService,
+    private readonly aiService: AIService,
     private readonly redisService: RedisService
   ) {}
 
@@ -69,9 +68,7 @@ export class SceneAnalysisService {
     const systemPrompt = this.buildSystemPrompt(context);
     const contextInfo = this.buildContextInfo(context);
 
-    const prompt = `${systemPrompt}
-
-${contextInfo}
+    const userPrompt = `${contextInfo}
 
 User Message: "${content}"
 
@@ -85,15 +82,17 @@ Analyze this message and determine the user's intent/scene. Return a JSON object
 
 Return JSON only, no markdown.`;
 
-    const response = await this.aiEngineService.call(
+    const response = await this.aiService.chat(
+      Models.Chat,
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
       {
-        model: '',
-        prompt,
         temperature: 0.3,
         maxTokens: 500,
-      },
-      context.userId,
-      ScenarioType.AGENT_RESPONSE_ANALYSIS
+        userId: context.userId,
+      }
     );
 
     try {

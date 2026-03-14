@@ -45,10 +45,6 @@ RUN cp -r packages/backend/dist /app/deploy/dist && \
     cp -r packages/backend/prisma /app/deploy/prisma && \
     cp packages/backend/.env.example /app/deploy/.env.example
 
-RUN npm install -g prisma@5.22.0 && \
-    cd /app/deploy && \
-    prisma generate
-
 # Stage 3: Runtime
 FROM node:20-alpine AS runner
 WORKDIR /app

@@ -11,12 +11,10 @@ import { PdfGenerationController } from './controllers/pdf-generation.controller
 import { TemplatesController } from './controllers/templates.controller';
 import { MatchAnalysisController } from './controllers/match-analysis.controller';
 import { PrismaModule } from '@/shared/database/prisma.module';
-import { AIModule } from '../../core/ai/ai.module';
-import { AIQueueModule } from '../../core/ai/queue/ai-queue.module';
-import { StorageModule } from '../../core/storage/storage.module';
-import { QuotaModule } from '../../core/quota/quota.module';
-import { AIProvidersModule } from '../../core/ai-provider/ai-providers.module';
-import { AgentModule } from '@/core/agent/agent.module';
+import { AIModule } from '@/core/ai/ai.module';
+import { AIQueueModule } from '@/core/ai/queue/ai-queue.module';
+import { StorageModule } from '@/core/storage/storage.module';
+import { QuotaModule } from '@/core/quota/quota.module';
 import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
 
 @Module({
@@ -32,8 +30,6 @@ import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
     StorageModule,
     forwardRef(() => AIQueueModule),
     QuotaModule,
-    AIProvidersModule,
-    forwardRef(() => AgentModule),
   ],
   providers: [
     ResumeService,
@@ -48,11 +44,6 @@ import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
     TemplatesController,
     MatchAnalysisController,
   ],
-  exports: [
-    ResumeService,
-    ResumeOptimizerService,
-    PdfGenerationService,
-    MatchAnalysisService,
-  ],
+  exports: [ResumeService, ResumeOptimizerService, MatchAnalysisService],
 })
 export class ResumeModule {}

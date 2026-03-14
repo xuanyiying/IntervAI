@@ -9,7 +9,7 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { EmailModule } from '@/shared/notification/email.module';
-import { InvitationModule } from '@/features/invitation/invitation.module';
+import { InvitationModule } from '@/core/invitation/invitation.module';
 import { RedisModule } from '@/shared/cache/redis.module';
 
 @Module({
@@ -41,4 +41,4 @@ import { RedisModule } from '@/shared/cache/redis.module';
   ],
   exports: [AuthService, JwtModule, JwtAuthGuard],
 })
-export class AuthModule {}
+export class AuthModule { }

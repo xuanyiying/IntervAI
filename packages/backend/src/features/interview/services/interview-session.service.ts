@@ -29,7 +29,7 @@ export class InterviewSessionService {
     private aiEngine: AIEngine,
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService
-  ) {}
+  ) { }
 
   /**
    * Start a new interview session
@@ -319,13 +319,11 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
       history
     );
 
-    // Save AI message
     const aiMessage = await this.prisma.interviewMessage.create({
       data: {
         sessionId,
         role: MessageRole.ASSISTANT,
-        content: aiResponse.content,
-        audioUrl: aiResponse.audioUrl,
+        content: aiResponse,
       },
     });
 

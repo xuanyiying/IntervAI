@@ -116,9 +116,10 @@ export class InterviewQuestionService {
   ): Promise<Omit<InterviewQuestion, 'id' | 'createdAt' | 'optimizationId'>[]> {
     try {
       const jobDescription = JSON.stringify(jobData);
+      const resumeContent = JSON.stringify(resumeData);
       const questions = await this.aiEngine.generateInterviewQuestions(
-        resumeData,
-        jobDescription
+        jobDescription,
+        resumeContent
       );
 
       if (!Array.isArray(questions)) {

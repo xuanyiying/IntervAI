@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
-import { EmbeddingService } from '@/core/agent/services/embedding.service';
+import { AIService } from '@/core/ai/ai.service';
+import { Models } from '@/core/ai/models';
 
 export interface MatchAnalysisResult {
   overallScore: number;
@@ -39,13 +39,13 @@ export class MatchAnalysisService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly aiEngine: AIEngineService,
-    private readonly embeddingService: EmbeddingService
+    private readonly aiService: AIService
   ) {}
 
   async analyzeMatch(
     resumeId: string,
-    jobId: string
+    jobId: string,
+    userId: string
   ): Promise<MatchAnalysisResult> {
     const resume = await this.prisma.resume.findUnique({
       where: { id: resumeId },
@@ -60,32 +60,54 @@ export class MatchAnalysisService {
       throw new Error('Resume or Job not found');
     }
 
+    const matchResult = await this.aiService.executeSkill(
+      'jd-matcher',
+      {
+        resumeText: resume.extractedText || '',
+        jobDescription: job.jobDescription,
+      },
+      userId
+    );
+
     const resumeText = resume.extractedText || '';
     const jobDescription = job.jobDescription || '';
-    const requirements = job.requirements || '';
 
-    const resumeEmbedding =
-      await this.embeddingService.generateEmbedding(resumeText);
-    const jobEmbedding = await this.embeddingService.generateEmbedding(
-      `${jobDescription} ${requirements}`
-    );
+    let overallScore = 50;
+    const matchData = matchResult.success && matchResult.data ? (matchResult.data as any) : {};
 
-    const overallScore = this.cosineSimilarity(resumeEmbedding, jobEmbedding);
+    if (matchData.overallScore !== undefined) {
+      overallScore = matchData.overallScore;
+    } else if (matchData.breakdown?.skills?.score !== undefined) {
+      overallScore = matchData.breakdown.skills.score;
+    }
 
-    const skillMatch = await this.analyzeSkillMatch(
-      resume.parsedData as any,
-      job.parsedRequirements as any
-    );
+    try {
+      const resumeEmbedding = await this.aiService.embed(Models.Embedding, resumeText);
+      const jobEmbedding = await this.aiService.embed(Models.Embedding, jobDescription);
+      const similarity = this.cosineSimilarity(resumeEmbedding, jobEmbedding);
+      overallScore = Math.round(overallScore * 0.7 + similarity * 100 * 0.3);
+    } catch (error) {
+      this.logger.warn(`Embedding calculation failed: ${error}`);
+    }
 
-    const experienceMatch = await this.analyzeExperienceMatch(
-      resume.parsedData as any,
-      job
-    );
+    const skillsMatch = matchData.breakdown?.skills || {};
+    const skillMatch = {
+      matched: (skillsMatch.matched || []).map((skill: string) => ({
+        skill,
+        relevance: 0.85,
+      })),
+      missing: (skillsMatch.missing || []).map((skill: string) => ({
+        skill,
+        importance: 0.7,
+      })),
+      additional: (skillsMatch.partial || []).map((skill: string) => ({
+        skill,
+        value: 0.6,
+      })),
+    };
 
-    const educationMatch = await this.analyzeEducationMatch(
-      resume.parsedData as any,
-      job
-    );
+    const experienceMatch = matchData.breakdown?.experience || { score: 50 };
+    const educationMatch = matchData.breakdown?.education || { score: 50, meets: true };
 
     const recommendations = await this.generateRecommendations(
       skillMatch,
@@ -97,10 +119,18 @@ export class MatchAnalysisService {
     const learningPath = await this.generateLearningPath(skillMatch.missing);
 
     return {
-      overallScore: Math.round(overallScore * 100),
+      overallScore,
       skillMatch,
-      experienceMatch,
-      educationMatch,
+      experienceMatch: {
+        score: experienceMatch.score || 50,
+        gaps: [],
+        highlights: experienceMatch.relevantExperience || [],
+      },
+      educationMatch: {
+        score: educationMatch.score || 50,
+        meets: educationMatch.score >= 50,
+        notes: educationMatch.gap?.join(', ') || '',
+      },
       recommendations,
       learningPath,
     };
@@ -128,282 +158,39 @@ export class MatchAnalysisService {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
   }
 
-  private async analyzeSkillMatch(
-    resumeData: any,
-    jobRequirements: any
-  ): Promise<MatchAnalysisResult['skillMatch']> {
-    const resumeSkills = this.extractSkills(resumeData);
-    const jobSkills = this.extractSkills(jobRequirements);
-
-    const matched: Array<{ skill: string; relevance: number }> = [];
-    const missing: Array<{ skill: string; importance: number }> = [];
-    const additional: Array<{ skill: string; value: number }> = [];
-
-    for (const jobSkill of jobSkills) {
-      const match = resumeSkills.find(
-        (rs) =>
-          rs.toLowerCase().includes(jobSkill.toLowerCase()) ||
-          jobSkill.toLowerCase().includes(rs.toLowerCase())
-      );
-
-      if (match) {
-        matched.push({ skill: jobSkill, relevance: 0.85 });
-      } else {
-        missing.push({ skill: jobSkill, importance: 0.7 });
-      }
-    }
-
-    for (const resumeSkill of resumeSkills) {
-      const isMatched = matched.some(
-        (m) =>
-          m.skill.toLowerCase() === resumeSkill.toLowerCase() ||
-          m.skill.toLowerCase().includes(resumeSkill.toLowerCase())
-      );
-
-      if (!isMatched) {
-        additional.push({ skill: resumeSkill, value: 0.5 });
-      }
-    }
-
-    return { matched, missing, additional };
-  }
-
-  private extractSkills(data: any): string[] {
-    if (!data) return [];
-
-    const skills: string[] = [];
-
-    if (data.skills) {
-      if (Array.isArray(data.skills)) {
-        skills.push(...data.skills);
-      } else if (typeof data.skills === 'string') {
-        skills.push(...data.skills.split(',').map((s: string) => s.trim()));
-      }
-    }
-
-    if (data.technicalSkills) {
-      skills.push(...data.technicalSkills);
-    }
-
-    if (data.requirements) {
-      const reqText =
-        typeof data.requirements === 'string'
-          ? data.requirements
-          : JSON.stringify(data.requirements);
-
-      const techKeywords = [
-        'JavaScript',
-        'Python',
-        'Java',
-        'React',
-        'Node.js',
-        'TypeScript',
-        'SQL',
-        'AWS',
-        'Docker',
-        'Kubernetes',
-        'Git',
-        'Linux',
-        'MongoDB',
-        'PostgreSQL',
-        'Redis',
-        'GraphQL',
-        'REST',
-        'CI/CD',
-        'Agile',
-        'Scrum',
-      ];
-
-      techKeywords.forEach((keyword) => {
-        if (reqText.toLowerCase().includes(keyword.toLowerCase())) {
-          if (!skills.includes(keyword)) {
-            skills.push(keyword);
-          }
-        }
-      });
-    }
-
-    return [...new Set(skills)];
-  }
-
-  private async analyzeExperienceMatch(
-    resumeData: any,
-    job: any
-  ): Promise<MatchAnalysisResult['experienceMatch']> {
-    const gaps: string[] = [];
-    const highlights: string[] = [];
-
-    if (!resumeData || !resumeData.experience) {
-      return {
-        score: 0,
-        gaps: ['No experience data available'],
-        highlights: [],
-      };
-    }
-
-    const experiences = Array.isArray(resumeData.experience)
-      ? resumeData.experience
-      : [];
-
-    const totalYears = experiences.reduce((sum: number, exp: any) => {
-      const duration = exp.duration || '';
-      const years = this.parseYearsFromDuration(duration);
-      return sum + years;
-    }, 0);
-
-    const requiredYears = this.extractRequiredYears(
-      job.requirements || job.jobDescription
-    );
-
-    if (requiredYears > 0 && totalYears < requiredYears) {
-      gaps.push(
-        `Experience gap: ${requiredYears - totalYears} years short of required ${requiredYears} years`
-      );
-    } else {
-      highlights.push(`Meets experience requirement: ${totalYears} years`);
-    }
-
-    if (experiences.length > 0) {
-      highlights.push(`Diverse experience across ${experiences.length} roles`);
-    }
-
-    const score = Math.min(100, (totalYears / (requiredYears || 3)) * 100);
-
-    return { score: Math.round(score), gaps, highlights };
-  }
-
-  private parseYearsFromDuration(duration: string): number {
-    const yearMatch = duration.match(/(\d+)\s*(?:years?|y)/i);
-    if (yearMatch) {
-      return parseInt(yearMatch[1]);
-    }
-    return 0;
-  }
-
-  private extractRequiredYears(text: string): number {
-    const yearMatch = text.match(/(\d+)\+?\s*years?\s*(?:of\s+)?experience/i);
-    if (yearMatch) {
-      return parseInt(yearMatch[1]);
-    }
-    return 0;
-  }
-
-  private async analyzeEducationMatch(
-    resumeData: any,
-    job: any
-  ): Promise<MatchAnalysisResult['educationMatch']> {
-    if (!resumeData || !resumeData.education) {
-      return {
-        score: 0,
-        meets: false,
-        notes: 'No education data available',
-      };
-    }
-
-    const education = Array.isArray(resumeData.education)
-      ? resumeData.education
-      : [resumeData.education];
-
-    const jobRequirements = (
-      job.requirements ||
-      job.jobDescription ||
-      ''
-    ).toLowerCase();
-
-    const hasBachelor = education.some(
-      (edu: any) =>
-        (edu.degree || '').toLowerCase().includes('bachelor') ||
-        (edu.degree || '').toLowerCase().includes('bs') ||
-        (edu.degree || '').toLowerCase().includes('ba')
-    );
-
-    const hasMaster = education.some(
-      (edu: any) =>
-        (edu.degree || '').toLowerCase().includes('master') ||
-        (edu.degree || '').toLowerCase().includes('ms') ||
-        (edu.degree || '').toLowerCase().includes('ma')
-    );
-
-    let meets = false;
-    let notes = '';
-
-    if (jobRequirements.includes('master') || jobRequirements.includes('ms')) {
-      meets = hasMaster;
-      notes = meets
-        ? "Meets Master's degree requirement"
-        : "Master's degree preferred but not required";
-    } else if (
-      jobRequirements.includes('bachelor') ||
-      jobRequirements.includes('bs') ||
-      jobRequirements.includes('ba')
-    ) {
-      meets = hasBachelor || hasMaster;
-      notes = meets
-        ? "Meets Bachelor's degree requirement"
-        : "Bachelor's degree required";
-    } else {
-      meets = hasBachelor || hasMaster;
-      notes = hasMaster
-        ? 'Has advanced degree'
-        : hasBachelor
-          ? "Has Bachelor's degree"
-          : 'No formal degree requirement specified';
-    }
-
-    const score = meets ? 100 : hasBachelor ? 70 : 40;
-
-    return { score, meets, notes };
-  }
-
   private async generateRecommendations(
     skillMatch: MatchAnalysisResult['skillMatch'],
-    experienceMatch: MatchAnalysisResult['experienceMatch'],
-    educationMatch: MatchAnalysisResult['educationMatch'],
+    experienceMatch: any,
+    educationMatch: any,
     overallScore: number
   ): Promise<MatchAnalysisResult['recommendations']> {
     const recommendations: MatchAnalysisResult['recommendations'] = [];
 
     if (skillMatch.missing.length > 0) {
-      const topMissing = skillMatch.missing
-        .sort((a, b) => b.importance - a.importance)
-        .slice(0, 3);
-
+      const topMissing = skillMatch.missing.slice(0, 3);
       recommendations.push({
         priority: 'high',
-        category: 'Technical Skills',
-        suggestion: `Focus on acquiring: ${topMissing.map((s) => s.skill).join(', ')}`,
-        impact: 'Critical for passing ATS screening and technical interviews',
+        category: 'Skills',
+        suggestion: `Focus on learning: ${topMissing.map((s) => s.skill).join(', ')}`,
+        impact: 'High impact on job match score',
       });
     }
 
-    if (experienceMatch.gaps.length > 0) {
+    if ((experienceMatch.score || 50) < 70) {
       recommendations.push({
         priority: 'medium',
         category: 'Experience',
-        suggestion:
-          'Highlight relevant projects or freelance work to bridge experience gap',
-        impact:
-          'Can compensate for years of experience with demonstrated skills',
+        suggestion: 'Highlight relevant projects that demonstrate required skills',
+        impact: 'Medium impact on candidate appeal',
       });
     }
 
-    if (!educationMatch.meets) {
-      recommendations.push({
-        priority: 'low',
-        category: 'Education',
-        suggestion:
-          'Consider online certifications or courses to strengthen profile',
-        impact: 'May help with initial screening but less critical than skills',
-      });
-    }
-
-    if (overallScore < 0.6) {
+    if (overallScore < 60) {
       recommendations.push({
         priority: 'high',
-        category: 'Overall Fit',
-        suggestion:
-          'Consider tailoring resume more specifically to this job description',
-        impact: 'Could significantly improve match score and interview chances',
+        category: 'Overall',
+        suggestion: 'Consider positions that better match your current skill set',
+        impact: 'Improves application success rate',
       });
     }
 
@@ -412,25 +199,15 @@ export class MatchAnalysisService {
 
   private async generateLearningPath(
     missingSkills: Array<{ skill: string; importance: number }>
-  ): Promise<
-    Array<{ skill: string; resources: string[]; estimatedTime: string }>
-  > {
-    if (missingSkills.length === 0) {
-      return [];
-    }
-
-    const topSkills = missingSkills
-      .sort((a, b) => b.importance - a.importance)
-      .slice(0, 5);
-
-    return topSkills.map((skill) => ({
+  ): Promise<MatchAnalysisResult['learningPath']> {
+    return missingSkills.slice(0, 5).map((skill) => ({
       skill: skill.skill,
       resources: [
         `Official ${skill.skill} documentation`,
-        `Online courses (Coursera, Udemy, etc.)`,
-        `Practice projects on GitHub`,
+        `${skill.skill} tutorials on YouTube`,
+        `Practice projects using ${skill.skill}`,
       ],
-      estimatedTime: '2-4 weeks',
+      estimatedTime: `${Math.ceil(skill.importance * 4)} weeks`,
     }));
   }
 }

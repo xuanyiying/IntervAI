@@ -11,10 +11,8 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
+import { AIService, Models } from '@/core/ai';
 import { QuotaService } from '@/core/quota/quota.service';
-import { AIRequest } from '@/core/ai-provider/interfaces';
-import { PromptScenario } from '@/core/ai-provider/interfaces/prompt-template.interface';
 import { Optimization, OptimizationStatus } from '@prisma/client';
 import {
   ParsedResumeData,
@@ -33,7 +31,7 @@ export class ResumeOptimizerService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly aiEngineService: AIEngineService,
+    private readonly aiService: AIService,
     private readonly quotaService: QuotaService
   ) {}
 
@@ -131,14 +129,6 @@ export class ResumeOptimizerService {
         timestamp: Date.now(),
       };
 
-      // Create AI request
-      const aiRequest: AIRequest = {
-        model: '', // Will be selected by AI engine based on scenario
-        prompt: optimizationPrompt,
-        temperature: 0.7,
-        maxTokens: 4000,
-      };
-
       const maxRetries = 3;
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -154,11 +144,14 @@ export class ResumeOptimizerService {
           }
 
           // Start streaming optimization
-          const stream = this.aiEngineService.stream(
-            aiRequest,
-            userId,
-            PromptScenario.RESUME_CONTENT_OPTIMIZATION,
-            language
+          const stream = this.aiService.stream(
+            Models.ResumeOptimization,
+            [{ role: 'user', content: optimizationPrompt }],
+            {
+              temperature: 0.7,
+              maxTokens: 4000,
+              userId,
+            }
           );
 
           let buffer = '';
@@ -166,7 +159,7 @@ export class ResumeOptimizerService {
 
           // Process stream chunks with semantic segmentation
           for await (const chunk of stream) {
-            buffer += chunk.content;
+            buffer += chunk;
 
             // Send chunks when buffer reaches threshold using semantic breaks
             while (buffer.length >= CHUNK_SIZE) {

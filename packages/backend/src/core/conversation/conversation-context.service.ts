@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
+import { AIService, Models } from '@/core/ai';
 import { MessageRole } from '@prisma/client';
 
 export interface ConversationContext {
@@ -38,7 +38,7 @@ export class ConversationContextService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly aiEngine: AIEngineService
+    private readonly aiService: AIService
   ) {}
 
   async buildContext(
@@ -115,14 +115,13 @@ If the user wants to make changes, provide the specific content they can use.
 
 Format your response in a clear, structured way.`;
 
-    const response = await this.aiEngine.call(
+    const response = await this.aiService.chat(
+      Models.Chat,
+      [{ role: 'user', content: prompt }],
       {
-        model: '',
-        prompt,
         temperature: 0.7,
         maxTokens: 2000,
-      },
-      'system'
+      }
     );
 
     const suggestions = await this.extractSuggestions(response.content);

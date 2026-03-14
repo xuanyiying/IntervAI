@@ -1,6 +1,6 @@
 /**
  * AI Engine - Refactored Version
- * Now uses AIEngineService for multi-provider support
+ * Now uses AIService for unified AI operations
  * This class serves as a facade providing backward compatibility
  * and file extraction utilities
  */
@@ -8,14 +8,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
-import {
-  PromptTemplateManager,
-  PREDEFINED_TEMPLATES,
-} from '@/core/ai-provider/config';
-import { AIRequest } from '@/core/ai-provider';
-import { PromptScenario } from '@/core/ai-provider/interfaces/prompt-template.interface';
-import { ScenarioType } from '@/core/ai-provider/interfaces/model.interface';
+import { AIService } from './ai.service';
+import { Models } from './models';
 import {
   ParsedResumeData,
   ParsedJobDescription,
@@ -23,10 +17,6 @@ import {
   InterviewQuestion,
 } from '@/types';
 import { z } from 'zod';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import OpenAI from 'openai';
 
 // Define Zod schema for ParsedResumeData for validation and potential fixing
 const ParsedResumeDataSchema = z.object({
@@ -106,10 +96,7 @@ const ParsedResumeDataSchema = z.object({
 export class AIEngine {
   private readonly logger = new Logger(AIEngine.name);
 
-  constructor(
-    private aiEngineService: AIEngineService,
-    private promptTemplateManager: PromptTemplateManager
-  ) {}
+  constructor(private aiService: AIService) { }
 
   /**
    * Extract text content from a file buffer based on file type
@@ -174,910 +161,334 @@ export class AIEngine {
 
   /**
    * Parse resume content using AI
-   * Delegates to AIEngineService with multi-provider support
+   * Delegates to AIService with unified AI support
    */
   async parseResumeContent(content: string): Promise<ParsedResumeData> {
-    const MAX_RETRIES = 2;
-    let lastError: Error | null = null;
+    this.logger.log('Parsing resume content');
 
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        this.logger.debug(
-          `Parsing resume content using AI engine service (attempt ${attempt + 1}/${MAX_RETRIES + 1})`
-        );
+    const systemPrompt = `You are a resume parsing expert. Extract structured information from the resume text provided.
+Return valid JSON matching the expected schema with personalInfo, education, experience, skills, projects, certifications, and languages.`;
 
-        // Use a more explicit prompt that emphasizes JSON-only output
-        const jsonOnlyPrompt =
-          attempt > 0
-            ? `你是一个JSON生成器。你的输出必须是纯JSON，不能包含任何其他文字。
-不要写"这份简历"、"根据"等任何中文解释。
-不要写任何markdown标记如\`\`\`。
-直接输出JSON对象，以{开头，以}结尾。
+    const userPrompt = `Parse this resume and return structured JSON data:\n\n${content}`;
 
-请从以下简历中提取信息，返回JSON格式：
-${content}
-
-必须返回的JSON结构：
-{"personalInfo":{"name":"","email":"","phone":""},"education":[],"experience":[],"skills":[],"projects":[]}`
-            : undefined;
-
-        const request: AIRequest = {
-          model: '', // Will be auto-selected based on scenario
-          prompt:
-            jsonOnlyPrompt ||
-            `Extract structured information from the following resume and return it in valid JSON format.
-CRITICAL: ONLY return the JSON object. Do not include any conversational text or markdown formatting.
-
-Resume Content:
-${content}`,
-          metadata: {
-            templateName:
-              attempt === 0 ? PromptScenario.RESUME_PARSING : undefined,
-            templateVariables: {
-              resume_content: content,
-            },
-            // Attempt to enforce JSON if the provider supports it
-            response_format: { type: 'json_object' },
-          },
-        };
-
-        const response = await this.aiEngineService.call(
-          request,
-          'system',
-          ScenarioType.RESUME_PARSING,
-          'zh-CN'
-        );
-
-        this.logger.debug(`AI raw response length: ${response.content.length}`);
-
-        // Check if response looks like conversational text instead of JSON
-        const trimmedContent = response.content.trim();
-        if (this.isConversationalResponse(trimmedContent)) {
-          this.logger.warn(
-            `AI returned conversational text instead of JSON: "${trimmedContent.substring(0, 100)}..."`
-          );
-          if (attempt < MAX_RETRIES) {
-            this.logger.log(`Retrying with more explicit JSON-only prompt...`);
-            continue;
-          }
-          throw new Error(
-            'AI model returned conversational text instead of JSON after all retries'
-          );
-        }
-
-        const jsonToParse = this.extractJson(response.content);
-
-        if (!jsonToParse || !jsonToParse.trim().startsWith('{')) {
-          this.logger.warn(
-            `Could not extract valid JSON from response: "${response.content.substring(0, 100)}..."`
-          );
-          if (attempt < MAX_RETRIES) {
-            continue;
-          }
-          throw new Error('Could not extract JSON from AI response');
-        }
-
-        this.logger.debug(
-          `Extracted JSON to parse: ${jsonToParse.substring(0, 200)}...`
-        );
-
-        try {
-          const rawParsed = JSON.parse(jsonToParse);
-          // Use Zod to validate and fill in defaults
-          const parsedData = ParsedResumeDataSchema.parse(rawParsed);
-          this.logger.log('Resume parsing completed successfully');
-          return parsedData as ParsedResumeData;
-        } catch (parseError: any) {
-          this.logger.warn(
-            `Failed to parse or validate JSON: ${parseError.message}. Attempting recovery...`
-          );
-
-          // Try to fix common JSON issues
-          const fixedJson = this.attemptJsonFix(jsonToParse);
-          if (fixedJson) {
-            try {
-              const rawFixed = JSON.parse(fixedJson);
-              const parsedData = ParsedResumeDataSchema.parse(rawFixed);
-              this.logger.log(
-                'Recovered JSON parsing after fixing common issues'
-              );
-              return parsedData as ParsedResumeData;
-            } catch (fixError: any) {
-              this.logger.warn(`Recovery attempt failed: ${fixError.message}`);
-            }
-          }
-
-          lastError = parseError;
-          if (attempt < MAX_RETRIES) {
-            this.logger.log(
-              `JSON parse failed, retrying with explicit prompt...`
-            );
-            continue;
-          }
-
-          this.logger.error(
-            `Failed to parse resume content: ${parseError.message}`,
-            { stack: parseError.stack }
-          );
-          throw parseError;
-        }
-      } catch (error: any) {
-        lastError = error;
-        if (attempt < MAX_RETRIES) {
-          this.logger.warn(
-            `Attempt ${attempt + 1} failed: ${error.message}. Retrying...`
-          );
-          continue;
-        }
-      }
-    }
-
-    this.logger.error(
-      `Failed to parse resume content after ${MAX_RETRIES + 1} attempts: ${lastError?.message}`
-    );
-    // Return a basic structure on error
-    return this.createEmptyResumeData();
-  }
-
-  /**
-   * Check if the response is conversational text rather than JSON
-   */
-  private isConversationalResponse(text: string): boolean {
-    // Common patterns that indicate conversational response instead of JSON
-    const conversationalPatterns = [
-      /^这份简历/,
-      /^根据/,
-      /^以下是/,
-      /^好的/,
-      /^我来/,
-      /^让我/,
-      /^首先/,
-      /^简历内容/,
-      /^分析结果/,
-      /^Here is/i,
-      /^Based on/i,
-      /^The resume/i,
-      /^I will/i,
-      /^Let me/i,
-    ];
-
-    const trimmed = text.trim();
-
-    // If it starts with { or [, it's likely JSON
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      return false;
-    }
-
-    // Check for conversational patterns
-    for (const pattern of conversationalPatterns) {
-      if (pattern.test(trimmed)) {
-        return true;
-      }
-    }
-
-    // If first 50 chars don't contain { or [, likely conversational
-    const first50 = trimmed.substring(0, 50);
-    if (!first50.includes('{') && !first50.includes('[')) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Attempt to fix common JSON issues
-   */
-  private attemptJsonFix(jsonStr: string): string | null {
     try {
-      let fixed = jsonStr
-        .replace(/,\s*([\]}])/g, '$1') // Remove trailing commas
-        // eslint-disable-next-line no-control-regex
-        .replace(/[\u0000-\u001F\u007F]/g, ' ') // Remove control characters
-        .replace(/\n/g, '\\n') // Escape newlines in strings
-        .replace(/\r/g, '\\r') // Escape carriage returns
-        .replace(/\t/g, '\\t'); // Escape tabs
-
-      // Try to fix unquoted keys (but be careful with URLs)
-      fixed = fixed.replace(
-        /([{,]\s*)(\w+)(\s*:)/g,
-        (match, prefix, key, suffix) => {
-          if (key === 'http' || key === 'https') return match;
-          return `${prefix}"${key}"${suffix}`;
-        }
+      const response = await this.aiService.generate(
+        Models.ResumeParser,
+        systemPrompt,
+        userPrompt
       );
 
-      return fixed;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Helper function to extract JSON from text - more robust
-   */
-  private extractJson(text: string): string {
-    // 1. Try to find JSON in markdown code blocks first
-    const markdownMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (markdownMatch && markdownMatch[1]) {
-      const extracted = markdownMatch[1].trim();
-      this.logger.debug('Extracted JSON from markdown block');
-      return extracted;
-    }
-
-    const trimmed = text.trim();
-
-    // 2. If text starts with [ or {, it's likely already JSON
-    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
-      // Find matching closing bracket/brace
-      if (trimmed.startsWith('[')) {
-        const lastBracket = trimmed.lastIndexOf(']');
-        if (lastBracket !== -1) {
-          return trimmed.substring(0, lastBracket + 1);
-        }
-      } else {
-        const lastBrace = trimmed.lastIndexOf('}');
-        if (lastBrace !== -1) {
-          return trimmed.substring(0, lastBrace + 1);
+      // Try to parse the JSON response
+      let parsedData: any;
+      try {
+        // Try direct JSON parsing first
+        parsedData = JSON.parse(response);
+      } catch (e) {
+        // Try to extract JSON from markdown code blocks
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[1].trim());
+        } else {
+          throw new Error('Could not parse JSON from AI response');
         }
       }
+
+      // Validate and fix the parsed data using Zod
+      const validatedData = ParsedResumeDataSchema.parse(parsedData);
+
+      this.logger.log('Resume parsed successfully');
+      return validatedData;
+    } catch (error) {
+      this.logger.error('Error parsing resume:', error);
+      throw new Error('Failed to parse resume content');
     }
-
-    // 3. Try to find the first { and last } for objects
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-
-    // 4. Try to find the first [ and last ] for arrays
-    const firstBracket = text.indexOf('[');
-    const lastBracket = text.lastIndexOf(']');
-
-    // Determine which comes first and is valid
-    const hasBrace =
-      firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace;
-    const hasBracket =
-      firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket;
-
-    if (hasBrace && hasBracket) {
-      // Both exist, use whichever comes first
-      if (firstBracket < firstBrace) {
-        const extracted = text.substring(firstBracket, lastBracket + 1);
-        this.logger.debug('Extracted JSON array between brackets');
-        return extracted;
-      } else {
-        const extracted = text.substring(firstBrace, lastBrace + 1);
-        this.logger.debug('Extracted JSON object between braces');
-        return extracted;
-      }
-    } else if (hasBrace) {
-      const extracted = text.substring(firstBrace, lastBrace + 1);
-      this.logger.debug('Extracted JSON between braces');
-      return extracted;
-    } else if (hasBracket) {
-      const extracted = text.substring(firstBracket, lastBracket + 1);
-      this.logger.debug('Extracted JSON between brackets');
-      return extracted;
-    }
-
-    // 5. Handle case where AI might use full-width braces or other oddities
-    const cleaned = text.replace(/[\uFF5B]/g, '{').replace(/[\uFF5D]/g, '}');
-    const firstBraceClean = cleaned.indexOf('{');
-    const lastBraceClean = cleaned.lastIndexOf('}');
-    if (
-      firstBraceClean !== -1 &&
-      lastBraceClean !== -1 &&
-      lastBraceClean > firstBraceClean
-    ) {
-      const extracted = cleaned.substring(firstBraceClean, lastBraceClean + 1);
-      this.logger.debug('Extracted JSON between cleaned braces');
-      return extracted;
-    }
-
-    this.logger.warn('Could not find any JSON-like structure in AI response');
-    return text.trim();
   }
 
   /**
    * Parse job description using AI
-   * Delegates to AIEngineService with multi-provider support
    */
-  async parseJobDescription(
-    description: string
-  ): Promise<ParsedJobDescription> {
+  async parseJobDescription(content: string): Promise<ParsedJobDescription> {
+    this.logger.log('Parsing job description');
+
+    const systemPrompt = `You are a job description parsing expert. Extract structured information from the job description provided.
+Return valid JSON with title, company, location, description, requirements, responsibilities, skills, experience, education, salary, and benefits.`;
+
+    const userPrompt = `Parse this job description and return structured JSON data:\n\n${content}`;
+
     try {
-      this.logger.debug('Parsing job description using AI engine service');
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: `Extract structured information from the following job description and return it in valid JSON format.
-CRITICAL: ONLY return the JSON object. Do not include any conversational text or markdown formatting.
-
-Job Description Content:
-${description}`,
-        metadata: {
-          templateName: PromptScenario.JOB_DESCRIPTION_PARSING,
-          templateVariables: {
-            job_description: description,
-          },
-          // Attempt to enforce JSON
-          response_format: { type: 'json_object' },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        ScenarioType.JOB_DESCRIPTION_PARSING,
-        'zh-CN'
+      const response = await this.aiService.generate(
+        Models.JobParser,
+        systemPrompt,
+        userPrompt
       );
 
-      const jsonToParse = this.extractJson(response.content);
-
+      // Try to parse the JSON response
+      let parsedData: any;
       try {
-        const parsedData: ParsedJobDescription = JSON.parse(jsonToParse);
-        this.logger.log('Job description parsing completed successfully');
-        return parsedData;
-      } catch (parseError: any) {
-        this.logger.warn(
-          `Failed to parse JSON: ${parseError.message}. Content starts with: ${jsonToParse.substring(0, 100)}...`
-        );
-        throw parseError;
-      }
-    } catch (error: any) {
-      this.logger.error(`Failed to parse job description: ${error.message}`);
-      return {
-        title: '',
-        company: '',
-        requiredSkills: [],
-        preferredSkills: [],
-        responsibilities: [],
-        keywords: [],
-      };
-    }
-  }
-
-  /**
-   * Generate optimization suggestions using AI
-   * Delegates to AIEngineService with multi-provider support
-   */
-  async generateOptimizationSuggestions(
-    resumeData: ParsedResumeData,
-    jobDescription: string
-  ): Promise<OptimizationSuggestion[]> {
-    try {
-      this.logger.debug(
-        'Generating optimization suggestions using AI engine service'
-      );
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: '', // Will be filled by template
-        metadata: {
-          templateName: PromptScenario.RESUME_OPTIMIZATION,
-          templateVariables: {
-            resume_data: JSON.stringify(resumeData, null, 2),
-            job_description: jobDescription,
-          },
-          response_format: { type: 'json_object' },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        ScenarioType.RESUME_OPTIMIZATION,
-        'zh-CN'
-      );
-
-      const jsonToParse = this.extractJson(response.content);
-
-      try {
-        const suggestions: OptimizationSuggestion[] = JSON.parse(jsonToParse);
-        this.logger.debug(
-          `Generated ${suggestions.length} optimization suggestions`
-        );
-        return suggestions;
-      } catch (parseError) {
-        this.logger.warn(
-          `Failed to parse optimization suggestions JSON: ${response.content.substring(0, 200)}...`
-        );
-        return [];
-      }
-    } catch (error) {
-      this.logger.error('Failed to generate optimization suggestions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Analyze resume without a specific job description
-   * Provides general scoring and improvement suggestions
-   */
-  async analyzeParsedResume(resumeData: ParsedResumeData): Promise<any> {
-    try {
-      this.logger.debug('Analyzing resume using AI engine service');
-
-      // Get system prompt template
-      const systemTemplate = await this.promptTemplateManager.getTemplate(
-        PromptScenario.RESUME_ANALYSIS_SYSTEM,
-        'zh-CN'
-      );
-
-      // Get user prompt template
-      const userTemplate = await this.promptTemplateManager.getTemplate(
-        PromptScenario.RESUME_ANALYSIS_USER,
-        'zh-CN'
-      );
-
-      if (!systemTemplate || !userTemplate) {
-        this.logger.warn(
-          'Resume analysis templates not found, falling back to default single prompt'
-        );
-        // Fallback logic could go here, or just proceed with default
-      }
-
-      let systemPrompt = '';
-      let userPrompt = '';
-
-      if (systemTemplate) {
-        systemPrompt = await this.promptTemplateManager.renderTemplate(
-          systemTemplate,
-          {}
-        );
-      }
-
-      if (userTemplate) {
-        userPrompt = await this.promptTemplateManager.renderTemplate(
-          userTemplate,
-          {
-            resume_content: JSON.stringify(resumeData, null, 2),
-          }
-        );
-      }
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: '', // Will be filled by messages
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        metadata: {
-          response_format: { type: 'json_object' },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        ScenarioType.RESUME_ANALYSIS,
-        'zh-CN'
-      );
-
-      const jsonToParse = this.extractJson(response.content);
-
-      try {
-        const analysisResult = JSON.parse(jsonToParse);
-        this.logger.log('Resume analysis completed successfully');
-        return analysisResult;
-      } catch (parseError) {
-        this.logger.warn(
-          `Failed to parse analysis JSON: ${response.content.substring(0, 200)}...`
-        );
-        // Return raw content if parsing fails, but wrapped in an object
-        return {
-          raw_content: response.content,
-          error: 'Failed to parse JSON response',
-        };
-      }
-    } catch (error) {
-      this.logger.error('Failed to analyze resume:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate interview questions using AI
-   * Delegates to AIEngineService with multi-provider support
-   */
-  async generateInterviewQuestions(
-    resumeData: ParsedResumeData,
-    jobDescription: string
-  ): Promise<InterviewQuestion[]> {
-    try {
-      this.logger.debug(
-        'Generating interview questions using AI engine service'
-      );
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: '', // Will be filled by template
-        metadata: {
-          templateName: PromptScenario.INTERVIEW_QUESTION_GENERATION,
-          templateVariables: {
-            resume_data: JSON.stringify(resumeData, null, 2),
-            job_description: jobDescription,
-          },
-          response_format: { type: 'json_object' },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        ScenarioType.INTERVIEW_QUESTION_GENERATION,
-        'zh-CN'
-      );
-
-      const jsonToParse = this.extractJson(response.content);
-
-      try {
-        const questions: InterviewQuestion[] = JSON.parse(jsonToParse);
-        this.logger.debug(`Generated ${questions.length} interview questions`);
-        return questions;
-      } catch (parseError) {
-        this.logger.warn(
-          `Failed to parse interview questions JSON: ${response.content.substring(0, 200)}...`
-        );
-        return [];
-      }
-    } catch (error) {
-      this.logger.error('Failed to generate interview questions:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Create empty resume data structure
-   * Used as fallback when parsing fails
-   */
-  private createEmptyResumeData(): ParsedResumeData {
-    return {
-      personalInfo: {
-        name: '',
-        email: '',
-      },
-      education: [],
-      experience: [],
-      skills: [],
-      projects: [],
-    };
-  }
-
-  /**
-   * Chat with interviewer persona
-   * Delegates to AIEngineService with multi-provider support
-   */
-  async chatWithInterviewer(
-    context: string,
-    message: string,
-    history: { role: string; content: string }[]
-  ): Promise<{ content: string; audioUrl?: string }> {
-    try {
-      this.logger.debug(
-        'Generating interviewer response using AI engine service'
-      );
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: message,
-        messages: [
-          {
-            role: 'system',
-            content: context,
-          },
-          ...history.map((h) => ({
-            role: h.role as 'user' | 'assistant',
-            content: h.content,
-          })),
-          {
-            role: 'user',
-            content: message,
-          },
-        ],
-        metadata: {
-          templateName: 'interviewer_chat',
-          templateVariables: {
-            context,
-            message,
-          },
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'chat',
-        'interview-chat'
-      );
-
-      return {
-        content: response.content,
-      };
-    } catch (error) {
-      this.logger.error('Failed to generate interviewer response:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate content for specific scenarios with variants
-   */
-  async generateContent(
-    scenario: PromptScenario,
-    variables: Record<string, any>,
-    options: {
-      language?: string;
-      variant?: string;
-      model?: string;
-    } = {}
-  ): Promise<string> {
-    try {
-      const language = options.language || 'zh-CN';
-      // Default variants per scenario could be defined, but we use 'default' or specific one
-      // For new scenarios, we expect a variant or default to concise/strict etc based on logic
-      let variant = options.variant;
-
-      if (!variant) {
-        // Set defaults for new scenarios
-        switch (scenario) {
-          case PromptScenario.GENERAL_QA:
-            variant = 'concise';
-            break;
-          case PromptScenario.SMART_QA:
-            variant = 'tech_expert';
-            break;
-          case PromptScenario.TECHNICAL_LEARNING:
-            variant = 'roadmap';
-            break;
-          case PromptScenario.JOB_MATCHING:
-            variant = 'strict';
-            break;
-          case PromptScenario.INTERVIEW_PREPARATION:
-            variant = 'mock';
-            break;
-          default:
-            variant = 'default';
+        parsedData = JSON.parse(response);
+      } catch (e) {
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[1].trim());
+        } else {
+          throw new Error('Could not parse JSON from AI response');
         }
       }
 
-      const langSuffix = language === 'zh-CN' ? 'zh' : 'en';
-
-      // Construct expected template name
-      // e.g. general_qa_concise_zh
-      const templateName = `${scenario}_${variant}_${langSuffix}`;
-
-      // Handle legacy/default templates that don't follow the pattern
-      if (variant === 'default') {
-        // Some defaults might be just scenario + '_default'
-        // But wait, my new templates rely on the pattern.
-        // Legacy ones like 'resume_parsing_default' don't have lang suffix in name but have language field.
-        // Here we focus on the new scenarios.
-      }
-
-      this.logger.debug(`Generating content using template: ${templateName}`);
-
-      // Find template definition
-      // In a real app, this should come from PromptTemplateManager which loads from DB/Cache
-      // Here we fallback to PREDEFINED_TEMPLATES if manager doesn't support name lookup
-
-      const templateDef = PREDEFINED_TEMPLATES.find(
-        (t) => t.name === templateName
-      );
-
-      if (!templateDef) {
-        this.logger.warn(
-          `Template ${templateName} not found, falling back to simple generation`
-        );
-        return this.generate(variables.question || JSON.stringify(variables));
-      }
-
-      // Render template
-      let prompt = templateDef.template;
-      for (const [key, value] of Object.entries(variables)) {
-        prompt = prompt.replace(new RegExp(`{${key}}`, 'g'), String(value));
-      }
-
-      const request: AIRequest = {
-        model: options.model || '',
-        prompt: prompt,
-        metadata: {
-          templateName: templateName,
-          templateVariables: variables,
-        },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'chat', // Use chat mode for these scenarios
-        scenario,
-        language
-      );
-
-      return response.content;
+      this.logger.log('Job description parsed successfully');
+      return parsedData;
     } catch (error) {
-      this.logger.error(`Failed to generate content for ${scenario}:`, error);
-      throw error;
+      this.logger.error('Error parsing job description:', error);
+      throw new Error('Failed to parse job description');
     }
   }
 
   /**
-   * Generic generation method
+   * Generate optimization suggestions
+   */
+  async generateOptimizationSuggestions(
+    resumeContent: string,
+    jobDescription: string
+  ): Promise<OptimizationSuggestion[]> {
+    this.logger.log('Generating optimization suggestions');
+
+    const systemPrompt = `You are a resume optimization expert. Analyze the resume against the job description and provide specific suggestions for improvement.
+Return an array of JSON objects with type, priority, section, original, suggestion, and reason fields.`;
+
+    const userPrompt = `Resume:\n${resumeContent}\n\nJob Description:\n${jobDescription}\n\nProvide optimization suggestions as a JSON array.`;
+
+    try {
+      const response = await this.aiService.generate(
+        Models.Optimization,
+        systemPrompt,
+        userPrompt
+      );
+
+      let suggestions: any;
+      try {
+        suggestions = JSON.parse(response);
+      } catch (e) {
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          suggestions = JSON.parse(jsonMatch[1].trim());
+        } else {
+          throw new Error('Could not parse JSON from AI response');
+        }
+      }
+
+      this.logger.log(`Generated ${suggestions.length} optimization suggestions`);
+      return suggestions;
+    } catch (error) {
+      this.logger.error('Error generating optimization suggestions:', error);
+      throw new Error('Failed to generate optimization suggestions');
+    }
+  }
+
+  /**
+   * Generate interview questions
+   */
+  async generateInterviewQuestions(
+    jobDescription: string,
+    resumeContent: string
+  ): Promise<InterviewQuestion[]> {
+    this.logger.log('Generating interview questions');
+
+    const systemPrompt = `You are an interview preparation expert. Based on the job description and resume, generate relevant interview questions.
+Return an array of JSON objects with category, question, suggestedAnswer, and tips fields.`;
+
+    const userPrompt = `Job Description:\n${jobDescription}\n\nResume:\n${resumeContent}\n\nGenerate interview questions as a JSON array.`;
+
+    try {
+      const response = await this.aiService.generate(
+        Models.InterviewPrep,
+        systemPrompt,
+        userPrompt
+      );
+
+      let questions: any;
+      try {
+        questions = JSON.parse(response);
+      } catch (e) {
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          questions = JSON.parse(jsonMatch[1].trim());
+        } else {
+          throw new Error('Could not parse JSON from AI response');
+        }
+      }
+
+      this.logger.log(`Generated ${questions.length} interview questions`);
+      return questions;
+    } catch (error) {
+      this.logger.error('Error generating interview questions:', error);
+      throw new Error('Failed to generate interview questions');
+    }
+  }
+
+  /**
+   * Generate embeddings for text
+   */
+  async generateEmbedding(text: string): Promise<number[]> {
+    return this.aiService.embed(Models.Embedding, text);
+  }
+
+  /**
+   * Generate chat completion
+   */
+  async generateChatCompletion(
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
+    options?: { temperature?: number; maxTokens?: number }
+  ): Promise<string> {
+    const result = await this.aiService.chat(Models.Default, messages, options);
+    return result.content;
+  }
+
+  /**
+   * Generate completion from a prompt (simplified API)
    */
   async generate(
     prompt: string,
     options?: { temperature?: number; maxTokens?: number }
   ): Promise<string> {
-    try {
-      const request: AIRequest = {
-        model: '',
-        prompt,
-        temperature: options?.temperature,
-        maxTokens: options?.maxTokens,
-        metadata: {
-          templateName: 'generic_generate',
+    const result = await this.aiService.chat(
+      Models.Default,
+      [{ role: 'user', content: prompt }],
+      options
+    );
+    return result.content;
+  }
+
+  /**
+   * Chat with interviewer persona
+   */
+  async chatWithInterviewer(
+    context: string,
+    message: string,
+    history: Array<{ role: string; content: string }>
+  ): Promise<string> {
+    const systemPrompt = `You are an experienced interviewer. ${context}
+    
+Conduct a professional interview. Ask follow-up questions, probe for details, and provide constructive feedback.
+Be encouraging but thorough. Keep responses concise and focused.`;
+
+    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+      { role: 'system', content: systemPrompt },
+      ...history.map(h => ({
+        role: h.role as 'user' | 'assistant',
+        content: h.content,
+      })),
+      { role: 'user', content: message },
+    ];
+
+    const result = await this.aiService.chat(Models.InterviewChat, messages, {
+      temperature: 0.7,
+    });
+    return result.content;
+  }
+
+  /**
+   * Transcribe audio (placeholder - requires Whisper API)
+   */
+  async transcribeAudio(audioBuffer: Buffer): Promise<string> {
+    this.logger.log('Transcribing audio...');
+    const result = await this.aiService.chat(
+      Models.Default,
+      [
+        {
+          role: 'system',
+          content: 'You are a transcription assistant. The user will provide audio context.',
         },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'chat',
-        'generic-generation'
-      );
-
-      return response.content;
-    } catch (error) {
-      this.logger.error('Failed to generate content:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Optimize resume content using AI
-   * Returns optimized resume in Markdown format
-   */
-  async optimizeResumeContent(resumeContent: string): Promise<string> {
-    try {
-      this.logger.debug('Optimizing resume content using AI engine service');
-
-      // Validate input
-      if (!resumeContent || resumeContent.trim().length === 0) {
-        throw new Error('Resume content is required for optimization');
-      }
-
-      // Build optimization prompt
-      const prompt = `请优化以下简历内容，保持核心信息不变，优化表达方式和格式，以 Markdown 格式输出：
-
-${resumeContent}
-
-要求：
-1. 保留所有关键信息（姓名、联系方式、工作经历、教育背景等）
-2. 使用专业的表达方式
-3. 突出成就和量化结果
-4. 使用清晰的 Markdown 格式
-5. 适当使用项目符号和标题层级
-6. 确保内容结构清晰，易于阅读
-
-请直接输出优化后的简历内容，不需要额外的说明文字。`;
-
-      const request: AIRequest = {
-        model: '',
-        prompt: prompt,
-        temperature: 0.7,
-        maxTokens: 4000,
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        PromptScenario.RESUME_CONTENT_OPTIMIZATION,
-        'zh-CN'
-      );
-
-      this.logger.log('Resume content optimization completed successfully');
-      return response.content;
-    } catch (error) {
-      this.logger.error('Failed to optimize resume content:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Analyze resume content using AI
-   * Delegates to AIEngineService with multi-provider support
-   */
-  async analyzeResume(content: string): Promise<any> {
-    try {
-      this.logger.debug('Analyzing resume using AI engine service');
-
-      const request: AIRequest = {
-        model: '', // Will be auto-selected based on scenario
-        prompt: '', // Will be filled by template
-        metadata: {
-          templateName: PromptScenario.RESUME_ANALYSIS,
-          templateVariables: {
-            resume_content: content,
-          },
-          response_format: { type: 'json_object' },
+        {
+          role: 'user',
+          content: 'Please transcribe the following audio content. (Note: This is a placeholder - actual transcription requires Whisper API integration)',
         },
-      };
-
-      const response = await this.aiEngineService.call(
-        request,
-        'system',
-        PromptScenario.RESUME_ANALYSIS,
-        'zh-CN'
-      );
-
-      const jsonToParse = this.extractJson(response.content);
-
-      try {
-        const analysisResult = JSON.parse(jsonToParse);
-        this.logger.debug('Resume analysis completed successfully');
-        return analysisResult;
-      } catch (parseError) {
-        this.logger.warn(
-          `Failed to parse resume analysis JSON: ${response.content.substring(0, 200)}...`
-        );
-        return {
-          error: 'Failed to parse analysis result',
-          raw: response.content,
-        };
-      }
-    } catch (error) {
-      this.logger.error('Failed to analyze resume:', error);
-      throw error;
-    }
+      ],
+      { temperature: 0.3 }
+    );
+    return result.content;
   }
 
   /**
-   * Transcribe audio using OpenAI Whisper
+   * Analyze parsed resume data
    */
-  async transcribeAudio(buffer: Buffer): Promise<string> {
+  async analyzeParsedResume(parsedData: ParsedResumeData): Promise<{
+    strengths: string[];
+    weaknesses: string[];
+    suggestions: string[];
+    overallScore: number;
+  }> {
+    this.logger.log('Analyzing parsed resume data');
+
+    const systemPrompt = `You are a resume analysis expert. Analyze the parsed resume data and provide:
+1. A list of strengths (what makes this resume strong)
+2. A list of weaknesses (areas that need improvement)
+3. Specific suggestions for improvement
+4. An overall score from 0-100
+
+Return valid JSON with keys: strengths (string[]), weaknesses (string[]), suggestions (string[]), overallScore (number).`;
+
+    const userPrompt = `Analyze this resume data:\n\n${JSON.stringify(parsedData, null, 2)}`;
+
     try {
-      this.logger.debug('Transcribing audio...');
+      const response = await this.aiService.generate(
+        Models.ResumeParser,
+        systemPrompt,
+        userPrompt
+      );
 
-      // Check if API key is available
-      if (!process.env.OPENAI_API_KEY) {
-        throw new Error('OPENAI_API_KEY is not set');
-      }
-
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-      // Create a temporary file
-      const tempFilePath = path.join(os.tmpdir(), `audio-${Date.now()}.mp3`);
-      fs.writeFileSync(tempFilePath, buffer);
-
+      let analysis: any;
       try {
-        const transcription = await openai.audio.transcriptions.create({
-          file: fs.createReadStream(tempFilePath),
-          model: 'whisper-1',
-        });
-
-        this.logger.debug('Audio transcription completed');
-        return transcription.text;
-      } finally {
-        // Clean up temp file
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
+        analysis = JSON.parse(response);
+      } catch (e) {
+        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[1].trim());
+        } else {
+          throw new Error('Could not parse JSON from AI response');
         }
       }
+
+      this.logger.log('Resume analysis completed');
+      return {
+        strengths: analysis.strengths || [],
+        weaknesses: analysis.weaknesses || [],
+        suggestions: analysis.suggestions || [],
+        overallScore: analysis.overallScore || 0,
+      };
     } catch (error) {
-      this.logger.error('Failed to transcribe audio:', error);
-      throw error;
+      this.logger.error('Error analyzing resume:', error);
+      throw new Error('Failed to analyze resume');
     }
   }
 
   /**
-   * Clear cache (delegated to AIEngineService)
+   * Optimize resume content
    */
-  async clearCache(_cacheKey: string): Promise<void> {
-    this.logger.debug('Cache management is now handled by AIEngineService');
-    // Cache is managed by AIEngineService via Redis
-  }
+  async optimizeResumeContent(content: string): Promise<string> {
+    this.logger.log('Optimizing resume content');
 
-  /**
-   * Clear all AI engine cache (delegated to AIEngineService)
-   */
-  async clearAllCache(): Promise<void> {
-    this.logger.log('Cache management is now handled by AIEngineService');
-    // Cache is managed by AIEngineService via Redis
+    const systemPrompt = `You are a resume optimization expert. Improve the given resume content to:
+1. Use strong action verbs
+2. Quantify achievements where possible
+3. Highlight relevant skills and experiences
+4. Improve clarity and conciseness
+5. Maintain the original structure and format
+
+Return the optimized resume content as plain text.`;
+
+    const userPrompt = `Optimize this resume content:\n\n${content}`;
+
+    try {
+      const response = await this.aiService.generate(
+        Models.ResumeOptimization,
+        systemPrompt,
+        userPrompt
+      );
+      this.logger.log('Resume content optimized');
+      return response;
+    } catch (error) {
+      this.logger.error('Error optimizing resume content:', error);
+      throw new Error('Failed to optimize resume content');
+    }
   }
 }

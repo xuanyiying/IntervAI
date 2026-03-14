@@ -16,7 +16,7 @@ import { RegisterDto } from '@/core/user/dto/register.dto';
 import { LoginDto } from '@/core/user/dto/login.dto';
 import { AuthResponseDto } from '@/core/user/dto/auth-response.dto';
 import { EmailService } from '@/shared/notification/email.service';
-import { InvitationService } from '@/features/invitation/invitation.service';
+import { InvitationService } from '@/core/invitation/invitation.service';
 import { RedisService } from '@/shared/cache/redis.service';
 import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
 import { ErrorCode } from '@/common/exceptions/error-codes';
@@ -32,7 +32,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly invitationService: InvitationService,
     private readonly redisService: RedisService
-  ) {}
+  ) { }
 
   private validatePassword(password: string) {
     if (password.length < PASSWORD_POLICY.minLength) {

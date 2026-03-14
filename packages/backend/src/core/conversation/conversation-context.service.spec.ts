@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConversationContextService } from './conversation-context.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngineService } from '@/core/ai-provider/ai-engine.service';
+import { AIService } from '@/core/ai';
 import { MessageRole } from '@prisma/client';
 
 describe('ConversationContextService', () => {
@@ -47,8 +47,8 @@ describe('ConversationContextService', () => {
     },
   };
 
-  const mockAIEngineService = {
-    call: jest.fn(),
+  const mockAIService = {
+    chat: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -60,8 +60,8 @@ describe('ConversationContextService', () => {
           useValue: mockPrismaService,
         },
         {
-          provide: AIEngineService,
-          useValue: mockAIEngineService,
+          provide: AIService,
+          useValue: mockAIService,
         },
       ],
     }).compile();
@@ -143,9 +143,10 @@ describe('ConversationContextService', () => {
         },
       };
 
-      mockAIEngineService.call.mockResolvedValue({
+      mockAIService.chat.mockResolvedValue({
         content:
           'I recommend highlighting your JavaScript experience by adding specific project examples.',
+        usage: { input: 0, output: 0 },
       });
 
       const result = await service.generateContextualResponse(
@@ -155,7 +156,7 @@ describe('ConversationContextService', () => {
 
       expect(result).toBeDefined();
       expect(result.response).toBeDefined();
-      expect(mockAIEngineService.call).toHaveBeenCalled();
+      expect(mockAIService.chat).toHaveBeenCalled();
     });
 
     it('should extract suggestions from response', async () => {
@@ -171,12 +172,13 @@ describe('ConversationContextService', () => {
         },
       };
 
-      mockAIEngineService.call.mockResolvedValue({
+      mockAIService.chat.mockResolvedValue({
         content: `Here are my suggestions:
 
 Suggestion: Add quantifiable achievements to your experience section.
 Recommend: Use action verbs to start each bullet point.
 Should: Include relevant keywords from the job description.`,
+        usage: { input: 0, output: 0 },
       });
 
       const result = await service.generateContextualResponse(
@@ -201,8 +203,9 @@ Should: Include relevant keywords from the job description.`,
         },
       };
 
-      mockAIEngineService.call.mockResolvedValue({
+      mockAIService.chat.mockResolvedValue({
         content: 'I can help you optimize your resume.',
+        usage: { input: 0, output: 0 },
       });
 
       const result = await service.generateContextualResponse(
