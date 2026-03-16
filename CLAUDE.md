@@ -50,7 +50,7 @@ pnpm format                 # Format with Prettier
 
 ### Docker (Infrastructure)
 ```bash
-docker compose -f deployment/docker-compose.yml up -d      # Start PostgreSQL, Redis, MinIO, ChromaDB
+docker compose -f deployment/docker-compose.yml up -d      # Start PostgreSQL, Redis, MinIO
 docker compose -f deployment/docker-compose.yml down       # Stop services
 ```
 

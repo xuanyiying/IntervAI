@@ -12,7 +12,7 @@
 
 ## 2. 依赖服务启动
 
-项目依赖 PostgreSQL, Redis, MinIO 和 ChromaDB。我们提供了一键启动脚本：
+项目依赖 PostgreSQL, Redis 和 MinIO。我们提供了一键启动脚本：
 
 ```bash
 # 在项目根目录执行
@@ -23,7 +23,6 @@ docker compose -f deployment/docker-compose.yml up -d
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
 - MinIO: `localhost:9000` (Console: `localhost:9001`)
-- ChromaDB: `localhost:8000`
 
 ## 3. 项目安装
 

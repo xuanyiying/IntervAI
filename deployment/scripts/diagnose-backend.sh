@@ -74,14 +74,6 @@ else
     fi
 fi
 
-# ChromaDB
-echo -n "ChromaDB: "
-if docker exec chromadb curl -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
-    echo -e "${GREEN}✓ 运行正常${NC}"
-else
-    echo -e "${RED}✗ 连接失败${NC}"
-fi
-
 # MinIO
 echo -n "MinIO: "
 if docker exec minio curl -s http://localhost:9000/minio/health/live >/dev/null 2>&1; then

@@ -175,9 +175,6 @@ importers:
       cheerio:
         specifier: ^1.0.0-rc.12
         version: 1.1.2
-      chromadb:
-        specifier: ^3.1.7
-        version: 3.1.7
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -15856,6 +15853,7 @@ snapshots:
       chromadb-js-bindings-linux-arm64-gnu: 1.1.1
       chromadb-js-bindings-linux-x64-gnu: 1.1.1
       chromadb-js-bindings-win32-x64-msvc: 1.1.1
+    optional: true
 
   chrome-trace-event@1.0.4: {}
 

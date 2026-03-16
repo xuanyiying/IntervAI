@@ -34,9 +34,6 @@ docker exec postgres pg_isready -U postgres 2>/dev/null && echo "✓ OK" || echo
 echo -n "  Redis: "
 docker exec redis redis-cli -a secure_redis_2025 ping 2>/dev/null | grep -q PONG && echo "✓ OK" || echo "✗ FAILED"
 
-echo -n "  ChromaDB: "
-docker exec chromadb curl -s http://localhost:8000/api/v1/heartbeat 2>/dev/null | grep -q "heartbeat" && echo "✓ OK" || echo "✓ OK (running)"
-
 echo -n "  MinIO: "
 docker exec minio curl -s http://localhost:9000/minio/health/live 2>/dev/null && echo "✓ OK" || echo "✗ FAILED"
 echo ""

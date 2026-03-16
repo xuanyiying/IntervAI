@@ -64,7 +64,6 @@
     "bcryptjs": "^2.4.3",
     "bull": "^4.11.0",
     "cheerio": "^1.0.0-rc.12",
-    "chromadb": "^3.1.7",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
     "cos-nodejs-sdk-v5": "^2.15.4",
