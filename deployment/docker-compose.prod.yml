@@ -68,21 +68,6 @@ services:
           cpus: '1'
           memory: 1G
 
-  # ChromaDB Vector Database
-  chromadb:
-    image: chromadb/chroma:latest
-    container_name: chromadb
-    environment:
-      - IS_PERSISTENT=TRUE
-    ports:
-      - "8000:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    networks:
-      - app-network
-    restart: always
-    logging: *logging
-
   # Object Storage (MinIO)
   minio:
     image: minio/minio:latest
@@ -116,8 +101,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      chromadb:
-        condition: service_started
       minio:
         condition: service_started
     environment:
@@ -128,7 +111,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      CHROMA_DB_URL: http://chromadb:8000
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
@@ -362,7 +344,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  chroma_data:
   minio_data:
   # Monitoring volumes (disabled to save memory)
   # prometheus_data:

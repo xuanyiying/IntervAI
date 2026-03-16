@@ -38,19 +38,6 @@ services:
     networks:
       - app-network
 
-  # ChromaDB Vector Database
-  chromadb:
-    image: chromadb/chroma:latest
-    container_name: chromadb
-    environment:
-      - IS_PERSISTENT=TRUE
-    ports:
-      - "8000:8000"
-    volumes:
-      - chroma_data:/chroma/chroma
-    networks:
-      - app-network
-
   # Object Storage (MinIO)
   minio:
     image: elestio/minio:latest
@@ -75,7 +62,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  chroma_data:
   minio_data:
 networks:
   app-network:

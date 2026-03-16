@@ -1,12 +1,8 @@
 import 'dotenv/config';
+import 'reflect-metadata';
 import 'tsconfig-paths/register';
 import { PrismaClient } from '@prisma/client';
 import { seedAdmin } from './seeds/seed-admin';
-import { seedModelConfigs } from './seeds/seed-models';
-import { seedPromptsTemplates } from './seeds/seed-prompts';
-import { seedKnowledgeBase } from './seeds/seed-knowledge-base';
-import { seedResumeTemplates } from './seeds/seed-resume-templates';
-
 // Initialize Prisma Client
 const prisma = new PrismaClient();
 
@@ -18,18 +14,6 @@ async function main() {
   try {
     // 1. Seed Admin User
     await seedAdmin(prisma);
-
-    // 2. Seed Model Configurations
-    await seedModelConfigs(prisma);
-
-    // 3. Seed Prompt Templates
-    await seedPromptsTemplates(prisma);
-
-    // 4. Seed Knowledge Base
-    await seedKnowledgeBase(prisma);
-
-    // 5. Seed Resume Templates
-    await seedResumeTemplates(prisma);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(

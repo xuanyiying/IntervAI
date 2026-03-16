@@ -65,6 +65,10 @@ RUN adduser --system --uid 1001 nestjs
 
 COPY --from=builder --chown=nestjs:nodejs /app/deploy /app
 
+RUN npm install -g prisma@5.22.0 && \
+    cd /app && prisma generate && \
+    npm uninstall -g prisma
+
 RUN mkdir -p /app/backups /app/logs && \
     chown -R nestjs:nodejs /app/backups /app/logs
 

@@ -101,7 +101,7 @@ case $choice in
         
         # 删除数据卷
         echo "删除数据卷..."
-        docker volume rm deployment_postgres_data deployment_redis_data deployment_chroma_data deployment_minio_data 2>/dev/null || true
+        docker volume rm deployment_postgres_data deployment_redis_data deployment_minio_data 2>/dev/null || true
         
         # 重新构建
         echo "重新构建所有镜像..."
@@ -109,7 +109,7 @@ case $choice in
         
         # 启动依赖服务
         echo "启动依赖服务..."
-        docker compose -f "$COMPOSE_FILE" up -d postgres redis chromadb minio
+        docker compose -f "$COMPOSE_FILE" up -d postgres redis minio
         
         # 等待服务就绪
         echo "等待服务就绪（30秒）..."

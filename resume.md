@@ -47,7 +47,7 @@
 设计并实现 AI 驱动的智能求职平台后端系统，聚焦多 Agent 协作、LLM 集成、高并发处理与企业级安全架构。
 
 **技术栈**:
-`NestJS` `TypeScript` `Prisma` `PostgreSQL` `Redis` `BullMQ` `LangChain` `ChromaDB` `Docker`
+`NestJS` `TypeScript` `Prisma` `PostgreSQL` `Redis` `BullMQ` `LangChain` `pgvector` `Docker`
 
 **核心职责与成果**:
 
@@ -67,7 +67,7 @@
 - 配置数据库连接池优化、慢查询监控 (1s 阈值)、核心表索引全覆盖
 
 **RAG 检索增强系统**
-- 集成 ChromaDB/pgvector 向量数据库，实现简历与 JD 语义相似度匹配
+- 集成 pgvector 向量数据库，实现简历与 JD 语义相似度匹配
 - 开发 Embedding 服务 + 文档处理管道，支持知识库检索增强生成
 - 实现上下文压缩服务，减少 Token 消耗 40%
 

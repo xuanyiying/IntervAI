@@ -86,7 +86,7 @@ The `WorkflowOrchestrator` handles the complexity of LLM operations:
 
 The project uses RAG to ground AI responses in factual career knowledge:
 
-- **`VectorDbService`**: Interfaces with a vector database (e.g., ChromaDB or pgvector) for similarity searches.
+- **`VectorDbService`**: Interfaces with a vector database (pgvector) for similarity searches.
 - **`EmbeddingService`**: Converts text into numerical vectors.
 - **`RAGService`**: Combines retrieval with generation to provide context-aware answers.
 
