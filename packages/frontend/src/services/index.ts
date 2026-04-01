@@ -5,6 +5,7 @@ export { jobService } from './job-service';
 export { optimizationService } from './optimization-service';
 export { generateService } from './generate-service';
 export { interviewService } from './interview-service';
+export { realtimeInterviewService } from './realtime-interview-service';
 export { userService } from './user-service';
 export { adminService } from './admin-service';
 export { default as knowledgeBaseService } from './knowledge-base-service';
