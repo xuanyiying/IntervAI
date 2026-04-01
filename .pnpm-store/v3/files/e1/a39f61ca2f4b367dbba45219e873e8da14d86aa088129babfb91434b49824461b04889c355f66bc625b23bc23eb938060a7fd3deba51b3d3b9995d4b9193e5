@@ -1,0 +1,57 @@
+import { Tooltip } from 'antd';
+import classnames from 'classnames';
+import React from 'react';
+import ActionsMenu from "./ActionsMenu";
+import { ActionsContext } from "./context";
+const Item = props => {
+  const {
+    item,
+    onClick,
+    dropdownProps = {}
+  } = props;
+  const {
+    prefixCls,
+    classNames = {},
+    styles = {}
+  } = React.useContext(ActionsContext) || {};
+  const id = React.useId();
+  const itemKey = item?.key || id;
+  if (!item) {
+    return null;
+  }
+  if (item.actionRender) {
+    return typeof item.actionRender === 'function' ? item.actionRender(item) : item.actionRender;
+  }
+  if (item.subItems) {
+    return /*#__PURE__*/React.createElement(ActionsMenu, {
+      key: itemKey,
+      item: item,
+      onClick: onClick,
+      dropdownProps: dropdownProps
+    });
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-item`, classNames.item, {
+      [`${prefixCls}-list-danger`]: item?.danger
+    }),
+    style: styles.item,
+    onClick: domEvent => {
+      if (item?.onItemClick) {
+        item.onItemClick(item);
+        return;
+      }
+      onClick?.({
+        key: itemKey,
+        item: item,
+        keyPath: [itemKey],
+        domEvent
+      });
+    },
+    key: itemKey
+  }, /*#__PURE__*/React.createElement(Tooltip, {
+    title: item.label
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `${prefixCls}-icon`
+  }, item?.icon)));
+};
+export default Item;

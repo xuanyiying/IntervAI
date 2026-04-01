@@ -1,0 +1,56 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { RightOutlined } from '@ant-design/icons';
+import classnames from 'classnames';
+import CSSMotion from 'rc-motion';
+import React from 'react';
+export const GroupTitleContext = /*#__PURE__*/React.createContext(null);
+const GroupTitle = ({
+  className,
+  children
+}) => {
+  const {
+    prefixCls,
+    groupInfo,
+    enableCollapse,
+    expandedKeys,
+    onItemExpand,
+    collapseMotion
+  } = React.useContext(GroupTitleContext) || {};
+  const {
+    label,
+    name,
+    collapsible
+  } = groupInfo || {};
+  const labelNode = typeof label === 'function' ? label(name, {
+    groupInfo
+  }) : label || name;
+  const mergeCollapsible = collapsible && enableCollapse;
+  const expandFun = () => {
+    if (mergeCollapsible) {
+      onItemExpand?.(groupInfo.name);
+    }
+  };
+  const groupOpen = mergeCollapsible && !!expandedKeys?.includes?.(name);
+  return /*#__PURE__*/React.createElement("li", {
+    className: className
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-group-title`, {
+      [`${prefixCls}-group-title-collapsible`]: mergeCollapsible
+    }),
+    onClick: expandFun
+  }, labelNode && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-group-label`)
+  }, labelNode), mergeCollapsible && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-group-collapse-trigger `, `${prefixCls}-group-collapse-trigger-${groupOpen ? 'open' : 'close'}`)
+  }, /*#__PURE__*/React.createElement(RightOutlined, null))), /*#__PURE__*/React.createElement(CSSMotion, _extends({}, collapseMotion, {
+    visible: mergeCollapsible ? groupOpen : true
+  }), ({
+    className: motionClassName,
+    style
+  }, motionRef) => /*#__PURE__*/React.createElement("div", {
+    className: classnames(motionClassName),
+    ref: motionRef,
+    style: style
+  }, children)));
+};
+export default GroupTitle;

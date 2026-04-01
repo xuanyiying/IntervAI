@@ -1,0 +1,21 @@
+import React from 'react';
+import type { ActionsItemProps } from './ActionsItem';
+export interface ActionsAudioProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+    /**
+     * @desc 状态
+     * @descEN status
+     */
+    status?: ActionsItemProps['status'];
+    /**
+     * @desc 自定义样式前缀
+     * @descEN Customize the component's prefixCls
+     */
+    prefixCls?: string;
+    /**
+     * @desc 根节点样式类
+     * @descEN Root node style class.
+     */
+    rootClassName?: string;
+}
+declare const ActionsAudio: React.FC<ActionsAudioProps>;
+export default ActionsAudio;

@@ -1,0 +1,38 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.genSystemBubbleStyle = void 0;
+var _cssinjs = require("@ant-design/cssinjs");
+const genSystemBubbleStyle = token => {
+  const {
+    componentCls,
+    paddingSM,
+    paddingXS,
+    lineHeight,
+    fontSize,
+    fontSizeSM,
+    calc
+  } = token;
+  return {
+    [componentCls]: {
+      '&-system': {
+        width: '100%',
+        justifyContent: 'center',
+        [`& ${componentCls}-content`]: {
+          display: 'flex',
+          gap: `${(0, _cssinjs.unit)(fontSizeSM)}`,
+          alignItems: 'center',
+          minHeight: calc(paddingXS).mul(2).add(calc(lineHeight).mul(fontSize)).equal(),
+          fontSize: `${(0, _cssinjs.unit)(fontSize)}`,
+          paddingInline: `${(0, _cssinjs.unit)(paddingSM)}`,
+          paddingBlock: `${(0, _cssinjs.unit)(paddingXS)}`
+        },
+        [`& ${componentCls}-system-content`]: {},
+        [`& ${componentCls}-system-extra`]: {}
+      }
+    }
+  };
+};
+exports.genSystemBubbleStyle = genSystemBubbleStyle;

@@ -1,0 +1,14 @@
+const genActionsFeedbackStyle = token => {
+  const {
+    componentCls
+  } = token;
+  const feedbackCls = `${componentCls}-feedback`;
+  return {
+    [feedbackCls]: {
+      '&-rtl': {
+        direction: 'rtl'
+      }
+    }
+  };
+};
+export default genActionsFeedbackStyle;

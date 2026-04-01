@@ -1,0 +1,73 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { EllipsisOutlined } from '@ant-design/icons';
+import { Dropdown } from 'antd';
+import classnames from 'classnames';
+import React from 'react';
+import { ActionsContext } from "./context";
+/** Tool function: Find data item by path */
+export const findItem = (keyPath, items) => {
+  const keyToFind = keyPath[0];
+  for (const item of items) {
+    if (!item) return null;
+    if (item.key === keyToFind) {
+      if (keyPath.length === 1) return item;
+      if (item.subItems) {
+        return findItem(keyPath.slice(1), item?.subItems);
+      }
+    }
+  }
+  return null;
+};
+const ActionsMenu = props => {
+  const {
+    onClick: onMenuClick,
+    item,
+    dropdownProps = {}
+  } = props;
+  const {
+    prefixCls,
+    classNames = {},
+    styles = {}
+  } = React.useContext(ActionsContext) || {};
+  const {
+    subItems = [],
+    triggerSubMenuAction = 'hover'
+  } = item;
+  const icon = item?.icon ?? /*#__PURE__*/React.createElement(EllipsisOutlined, null);
+  const menuProps = {
+    items: subItems,
+    onClick: ({
+      key,
+      keyPath,
+      domEvent
+    }) => {
+      if (findItem(keyPath, subItems)?.onItemClick) {
+        findItem(keyPath, subItems)?.onItemClick?.(findItem(keyPath, subItems));
+        return;
+      }
+      onMenuClick?.({
+        key,
+        keyPath: [...keyPath, item?.key || ''],
+        domEvent,
+        item: findItem(keyPath, subItems)
+      });
+    }
+  };
+  return /*#__PURE__*/React.createElement(Dropdown, _extends({
+    menu: menuProps,
+    classNames: {
+      root: classnames(`${prefixCls}-dropdown`, classNames?.itemDropdown)
+    },
+    styles: {
+      root: styles?.itemDropdown
+    },
+    arrow: true,
+    trigger: [triggerSubMenuAction]
+  }, dropdownProps), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-item`, `${prefixCls}-sub-item`, classNames?.item),
+    style: styles?.item
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `${prefixCls}-icon`
+  }, icon)));
+};
+export default ActionsMenu;

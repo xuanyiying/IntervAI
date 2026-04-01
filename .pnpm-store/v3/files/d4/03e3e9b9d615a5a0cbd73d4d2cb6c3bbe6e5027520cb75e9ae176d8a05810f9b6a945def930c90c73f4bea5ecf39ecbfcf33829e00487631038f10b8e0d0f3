@@ -1,0 +1,26 @@
+import { type CurrencyCode, type DiscountMode, type DiscountStatus, type DiscountType } from '../../enums/index.js';
+import { type ICustomData, type IImportMetaResponse } from '../shared/index.js';
+import { IDiscountGroupResponse } from '../discount-group/index.js';
+export interface IDiscountResponse {
+    id: string;
+    status: DiscountStatus;
+    description: string;
+    enabled_for_checkout: boolean;
+    code?: string | null;
+    mode: DiscountMode;
+    type: DiscountType;
+    amount: string;
+    currency_code?: CurrencyCode | null;
+    recur: boolean;
+    maximum_recurring_intervals?: number | null;
+    usage_limit?: number | null;
+    restrict_to?: string[] | null;
+    expires_at?: string | null;
+    custom_data?: ICustomData | null;
+    times_used: number;
+    created_at: string;
+    updated_at: string;
+    import_meta: IImportMetaResponse | null;
+    discount_group_id: string | null;
+    discount_group: IDiscountGroupResponse | null;
+}

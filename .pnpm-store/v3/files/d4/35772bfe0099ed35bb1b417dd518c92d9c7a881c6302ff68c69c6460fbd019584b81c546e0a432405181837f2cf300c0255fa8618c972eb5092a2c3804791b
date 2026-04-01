@@ -1,0 +1,14 @@
+import { type TrafficSource, type NotificationSettingsType } from '../../enums/index.js';
+import { type IEventTypeResponse } from '../event-types/index.js';
+export interface INotificationSettingsResponse {
+    id: string;
+    description: string;
+    type: NotificationSettingsType;
+    destination: string;
+    active: boolean;
+    api_version: number;
+    include_sensitive_fields: boolean;
+    traffic_source: TrafficSource;
+    subscribed_events: IEventTypeResponse[];
+    endpoint_secret_key: string;
+}

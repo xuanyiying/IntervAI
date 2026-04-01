@@ -1,0 +1,1 @@
+export type ReportFilterName = 'action' | 'collection_mode' | 'currency_code' | 'origin' | 'status' | 'updated_at' | 'type' | 'product_status' | 'price_status' | 'product_type' | 'price_type' | 'product_updated_at' | 'price_updated_at';

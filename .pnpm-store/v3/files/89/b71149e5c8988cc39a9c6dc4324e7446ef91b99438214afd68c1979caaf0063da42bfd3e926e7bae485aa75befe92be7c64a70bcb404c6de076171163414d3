@@ -1,0 +1,18 @@
+const genActionsAudioStyle = token => {
+  const {
+    componentCls
+  } = token;
+  const audioCls = `${componentCls}-audio`;
+  return {
+    [audioCls]: {
+      '&-rtl': {
+        direction: 'rtl'
+      },
+      '&-recording-icon': {
+        width: token.fontSize,
+        height: token.fontSize
+      }
+    }
+  };
+};
+export default genActionsAudioStyle;

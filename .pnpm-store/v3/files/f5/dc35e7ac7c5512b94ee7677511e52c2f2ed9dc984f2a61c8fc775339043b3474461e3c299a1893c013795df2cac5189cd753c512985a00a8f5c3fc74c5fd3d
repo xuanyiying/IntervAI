@@ -1,0 +1,63 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.GroupTitleContext = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _icons = require("@ant-design/icons");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _rcMotion = _interopRequireDefault(require("rc-motion"));
+var _react = _interopRequireDefault(require("react"));
+const GroupTitleContext = exports.GroupTitleContext = /*#__PURE__*/_react.default.createContext(null);
+const GroupTitle = ({
+  className,
+  children
+}) => {
+  const {
+    prefixCls,
+    groupInfo,
+    enableCollapse,
+    expandedKeys,
+    onItemExpand,
+    collapseMotion
+  } = _react.default.useContext(GroupTitleContext) || {};
+  const {
+    label,
+    name,
+    collapsible
+  } = groupInfo || {};
+  const labelNode = typeof label === 'function' ? label(name, {
+    groupInfo
+  }) : label || name;
+  const mergeCollapsible = collapsible && enableCollapse;
+  const expandFun = () => {
+    if (mergeCollapsible) {
+      onItemExpand?.(groupInfo.name);
+    }
+  };
+  const groupOpen = mergeCollapsible && !!expandedKeys?.includes?.(name);
+  return /*#__PURE__*/_react.default.createElement("li", {
+    className: className
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${prefixCls}-group-title`, {
+      [`${prefixCls}-group-title-collapsible`]: mergeCollapsible
+    }),
+    onClick: expandFun
+  }, labelNode && /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${prefixCls}-group-label`)
+  }, labelNode), mergeCollapsible && /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${prefixCls}-group-collapse-trigger `, `${prefixCls}-group-collapse-trigger-${groupOpen ? 'open' : 'close'}`)
+  }, /*#__PURE__*/_react.default.createElement(_icons.RightOutlined, null))), /*#__PURE__*/_react.default.createElement(_rcMotion.default, (0, _extends2.default)({}, collapseMotion, {
+    visible: mergeCollapsible ? groupOpen : true
+  }), ({
+    className: motionClassName,
+    style
+  }, motionRef) => /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(motionClassName),
+    ref: motionRef,
+    style: style
+  }, children)));
+};
+var _default = exports.default = GroupTitle;

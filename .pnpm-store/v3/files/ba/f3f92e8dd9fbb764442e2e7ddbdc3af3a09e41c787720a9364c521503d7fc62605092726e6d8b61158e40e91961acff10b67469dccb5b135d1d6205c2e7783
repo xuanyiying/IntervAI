@@ -1,0 +1,95 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.prepareComponentToken = exports.default = void 0;
+var _cssinjs = require("@ant-design/cssinjs");
+var _cssinjsUtils = require("@ant-design/cssinjs-utils");
+var _style = require("../../style");
+var _genStyleUtils = require("../../theme/genStyleUtils");
+var _audio = _interopRequireDefault(require("./audio"));
+var _copy = _interopRequireDefault(require("./copy"));
+var _feedback = _interopRequireDefault(require("./feedback"));
+// biome-ignore lint/suspicious/noEmptyInterface: ComponentToken need to be empty by default
+
+const genActionsStyle = token => {
+  const {
+    componentCls,
+    antCls,
+    calc
+  } = token;
+  return {
+    [`${componentCls}-item`]: {
+      cursor: 'pointer',
+      fontSize: token.fontSize,
+      paddingInline: (0, _cssinjs.unit)(calc(token.paddingXXS).add(1).equal()),
+      paddingBlock: token.paddingXXS,
+      borderRadius: token.borderRadiusSM,
+      height: token.controlHeightSM,
+      boxSizing: 'border-box',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      lineHeight: token.lineHeight,
+      transition: `all ${token.motionDurationMid} ${token.motionEaseInOut}`,
+      '&-icon': {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: token.fontSize
+      },
+      '&:hover': {
+        background: token.colorBgTextHover
+      }
+    },
+    [`${componentCls}-list`]: {
+      display: 'inline-flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      color: token.colorText,
+      gap: token.paddingXS
+    },
+    [componentCls]: {
+      [`& ${antCls}-pagination-item-link`]: {
+        width: token.controlHeightSM
+      },
+      [`&${componentCls}-rtl`]: {
+        direction: 'rtl'
+      },
+      '&-variant-outlined': {
+        paddingInline: (0, _cssinjs.unit)(calc(token.paddingXXS).add(1).equal()),
+        paddingBlock: token.paddingXXS,
+        borderRadius: token.borderRadius,
+        border: `${(0, _cssinjs.unit)(token.lineWidth)} ${token.lineType}, ${token.colorBorderSecondary}`
+      },
+      '&-variant-filled': {
+        paddingInline: (0, _cssinjs.unit)(calc(token.paddingXXS).add(1).equal()),
+        paddingBlock: token.paddingXXS,
+        borderRadius: token.borderRadius,
+        backgroundColor: token.colorBorderSecondary,
+        [`${componentCls}-item`]: {
+          paddingInline: (0, _cssinjs.unit)(calc(token.paddingXXS).add(1).equal()),
+          paddingBlock: token.paddingXXS,
+          '&-icon': {
+            fontSize: token.fontSize
+          },
+          '&:hover': {
+            color: token.colorTextSecondary,
+            background: 'transparent'
+          }
+        }
+      },
+      '&-list-danger': {
+        color: token.colorError
+      }
+    }
+  };
+};
+const prepareComponentToken = () => ({});
+exports.prepareComponentToken = prepareComponentToken;
+var _default = exports.default = (0, _genStyleUtils.genStyleHooks)('Actions', token => {
+  const compToken = (0, _cssinjsUtils.mergeToken)(token, {});
+  return [genActionsStyle(compToken), (0, _copy.default)(compToken), (0, _feedback.default)(compToken), (0, _audio.default)(compToken), (0, _style.initFadeLeftMotion)(compToken), (0, _style.initFadeMotion)(compToken)];
+}, prepareComponentToken);

@@ -1,0 +1,7 @@
+import type { LocaleComponentName as AntdLocaleContextProps } from 'antd/es/locale/useLocale';
+import type { Locale, xLocale, xMarkdownLocale } from '.';
+type LocaleComponentName = Exclude<keyof xLocale, 'locale'>;
+type MarkdownComponentName = Exclude<keyof xMarkdownLocale, 'locale'>;
+type mergeLocaleComponentName = LocaleComponentName | AntdLocaleContextProps | MarkdownComponentName;
+declare const useLocale: <C extends mergeLocaleComponentName = LocaleComponentName>(componentName: C, defaultLocale?: Locale[C] | (() => Locale[C])) => readonly [NonNullable<Locale[C]>, string];
+export default useLocale;

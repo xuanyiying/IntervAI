@@ -1,0 +1,29 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var React = _interopRequireWildcard(require("react"));
+var _warning = require("../../_util/warning");
+var _context = require("../context");
+function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (const t in e) "default" !== t && {}.hasOwnProperty.call(e, t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, t)) && (i.get || i.set) ? o(f, t, i) : f[t] = e[t]); return f; })(e, t); }
+const useFormItemStatus = () => {
+  const {
+    status,
+    errors = [],
+    warnings = []
+  } = React.useContext(_context.FormItemInputContext);
+  if (process.env.NODE_ENV !== 'production') {
+    const warning = (0, _warning.devUseWarning)('Form.Item');
+    process.env.NODE_ENV !== "production" ? warning(status !== undefined, 'usage', 'Form.Item.useStatus should be used under Form.Item component. For more information: https://u.ant.design/form-item-usestatus') : void 0;
+  }
+  return {
+    status,
+    errors,
+    warnings
+  };
+};
+// Only used for compatible package. Not promise this will work on future version.
+useFormItemStatus.Context = _context.FormItemInputContext;
+var _default = exports.default = useFormItemStatus;

@@ -1,0 +1,11 @@
+import { type ReportStatus, type ReportType } from '../../../enums/index.js';
+import { type IReportFiltersNotification } from './report-filters-notification-response.js';
+export interface IReportNotificationResponse {
+    id: string;
+    status: ReportStatus;
+    rows?: number | null;
+    type: ReportType;
+    filters: IReportFiltersNotification[];
+    expires_at?: string | null;
+    created_at: string;
+}

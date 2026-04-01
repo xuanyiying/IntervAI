@@ -1,0 +1,24 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+const genActionsAudioStyle = token => {
+  const {
+    componentCls
+  } = token;
+  const audioCls = `${componentCls}-audio`;
+  return {
+    [audioCls]: {
+      '&-rtl': {
+        direction: 'rtl'
+      },
+      '&-recording-icon': {
+        width: token.fontSize,
+        height: token.fontSize
+      }
+    }
+  };
+};
+var _default = exports.default = genActionsAudioStyle;

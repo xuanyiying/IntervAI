@@ -1,0 +1,12 @@
+import { type ITransactionProrationNotificationResponse } from './transaction-proration-notification-response.js';
+import { type ISharedProductNotificationResponse, type ITotalsNotification, type IUnitTotalsNotification } from '../shared/index.js';
+export interface ITransactionLineItemNotificationResponse {
+    id: string;
+    price_id: string;
+    quantity: number;
+    proration?: ITransactionProrationNotificationResponse | null;
+    tax_rate: string;
+    unit_totals?: IUnitTotalsNotification | null;
+    totals?: ITotalsNotification | null;
+    product?: ISharedProductNotificationResponse | null;
+}

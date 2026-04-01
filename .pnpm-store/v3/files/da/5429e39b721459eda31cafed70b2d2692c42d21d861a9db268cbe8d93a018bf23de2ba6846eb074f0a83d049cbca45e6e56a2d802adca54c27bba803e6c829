@@ -1,0 +1,57 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _useXComponentConfig = _interopRequireDefault(require("../_util/hooks/use-x-component-config"));
+var _xProvider = require("../x-provider");
+var _Bubble = _interopRequireDefault(require("./Bubble"));
+const DividerBubble = ({
+  prefixCls: customizePrefixCls,
+  content = '',
+  rootClassName,
+  style,
+  className,
+  styles = {},
+  classNames = {},
+  dividerProps,
+  ...restProps
+}, ref) => {
+  // ============================ Prefix ============================
+  const {
+    getPrefixCls
+  } = (0, _xProvider.useXProviderContext)();
+
+  // ===================== Component Config =========================
+  const contextConfig = (0, _useXComponentConfig.default)('bubble');
+  const prefixCls = getPrefixCls('bubble', customizePrefixCls);
+
+  // ============================ Styles ============================
+
+  const rootMergedCls = (0, _classnames.default)(prefixCls, `${prefixCls}-divider`, contextConfig.className, contextConfig.classNames.root, className, classNames.root, rootClassName);
+  const dividerContentRender = content => {
+    return /*#__PURE__*/_react.default.createElement(_antd.Divider, dividerProps, content);
+  };
+  return /*#__PURE__*/_react.default.createElement(_Bubble.default, (0, _extends2.default)({
+    ref: ref,
+    style: style,
+    styles: styles,
+    className: rootMergedCls,
+    classNames: classNames,
+    prefixCls: prefixCls,
+    variant: "borderless",
+    content: content,
+    contentRender: dividerContentRender
+  }, restProps));
+};
+const ForwardDividerBubble = /*#__PURE__*/_react.default.forwardRef(DividerBubble);
+if (process.env.NODE_ENV !== 'production') {
+  ForwardDividerBubble.displayName = 'DividerBubble';
+}
+var _default = exports.default = ForwardDividerBubble;

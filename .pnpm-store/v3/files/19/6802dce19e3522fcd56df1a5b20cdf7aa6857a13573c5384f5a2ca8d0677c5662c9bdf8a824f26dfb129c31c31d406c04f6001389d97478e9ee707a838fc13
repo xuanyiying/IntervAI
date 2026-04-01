@@ -1,0 +1,10 @@
+import { type ITaxRatesUsedNotificationResponse, type ITransactionPayoutTotalsAdjustedNotificationResponse, type ITransactionPayoutTotalsNotificationResponse, type ITransactionTotalsAdjustedNotificationResponse, type ITransactionTotalsNotificationResponse } from '../shared/index.js';
+import { type ITransactionLineItemNotificationResponse } from './transaction-line-item-notification-response.js';
+export interface ITransactionDetailsNotificationResponse {
+    tax_rates_used: ITaxRatesUsedNotificationResponse[];
+    totals?: ITransactionTotalsNotificationResponse | null;
+    adjusted_totals?: ITransactionTotalsAdjustedNotificationResponse | null;
+    payout_totals?: ITransactionPayoutTotalsNotificationResponse | null;
+    adjusted_payout_totals?: ITransactionPayoutTotalsAdjustedNotificationResponse | null;
+    line_items: ITransactionLineItemNotificationResponse[];
+}

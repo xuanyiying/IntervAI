@@ -1,0 +1,178 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _KeyCode = _interopRequireDefault(require("rc-util/lib/KeyCode"));
+var _react = require("react");
+var _warning = _interopRequireDefault(require("../warning"));
+var _useXComponentConfig = _interopRequireDefault(require("./use-x-component-config"));
+const PrefixKeys = {
+  Alt: ['altKey', '⌥', 'Alt'],
+  Ctrl: ['ctrlKey', '⌃', 'Ctrl'],
+  Meta: ['metaKey', '⌘', 'Win'],
+  Shift: ['shiftKey', '⇧', 'Shift']
+};
+const NumberKeyCode = Array.from({
+  length: 9
+}, (_, i) => _KeyCode.default.ONE + i);
+const isAppleDevice = /(mac|iphone|ipod|ipad)/i.test(typeof navigator !== 'undefined' ? navigator?.platform : '');
+
+// ======================== Shortcut Keys Icon ========================
+
+const getShortcutKeysIcon = key => {
+  if (key === 'number') {
+    return key;
+  }
+  if (typeof key === 'string' && PrefixKeys?.[key]?.[isAppleDevice ? 1 : 2]) {
+    return PrefixKeys[key][isAppleDevice ? 1 : 2];
+  }
+  return Object.entries(_KeyCode.default || {})?.find(([_, v]) => v === key)?.[0] || '';
+};
+
+// ======================== Determine if the shortcut key has been hit, And return the corresponding data ========================
+const getShortcutAction = (shortcutKey, event) => {
+  const copyShortcutKey = [...shortcutKey];
+  const keyCode = copyShortcutKey.pop();
+  const signKeys = copyShortcutKey;
+  const hitKey = signKeys.reduce((value, signKey) => {
+    if (!value) return value;
+    return event[PrefixKeys?.[signKey]?.[0]] || false;
+  }, keyCode === event.keyCode);
+  if (hitKey) return {
+    actionShortcutKey: shortcutKey,
+    actionKeyCodeNumber: NumberKeyCode.indexOf(event.keyCode) > -1 ? NumberKeyCode.indexOf(event.keyCode) : false,
+    actionKeyCode: event.keyCode,
+    timeStamp: event.timeStamp
+  };
+  return false;
+};
+
+// ======================== Get the decomposed shortcut keys ========================
+const getDecomposedShortcutKeys = shortcutKeys => {
+  const copyShortcutKey = [...shortcutKeys];
+  const keyCode = copyShortcutKey.pop();
+  const prefixKeys = copyShortcutKey;
+  const keyCodeDict = keyCode === 'number' ? NumberKeyCode : [keyCode];
+  return {
+    keyCodeDict,
+    prefixKeys
+  };
+};
+
+// ======================== Use shortcut keys with the same configuration to waring ========================
+const waringConfig = (flattenShortcutKeys, shortcutKey, component) => {
+  const sameShortcutKeys = !!flattenShortcutKeys.find(({
+    shortcutKey: oriShortcutKey
+  }) => oriShortcutKey.toString() === shortcutKey.toString());
+  (0, _warning.default)(!sameShortcutKeys, component, `Same shortcutKey ${shortcutKey.toString()}`);
+};
+
+// ======================== Flatten shortcut key data ========================
+const getFlattenShortcutKeys = (component, contextShortcutKeys, componentShortcutKeys) => {
+  const mergeShortcutKeys = Object.assign({}, contextShortcutKeys || {}, componentShortcutKeys);
+  return Object.keys(mergeShortcutKeys).reduce(({
+    flattenShortcutKeys,
+    shortcutKeysInfo
+  }, subName) => {
+    const subShortcutKeys = mergeShortcutKeys[subName];
+    if (!Array.isArray(subShortcutKeys)) {
+      return {
+        flattenShortcutKeys,
+        shortcutKeysInfo
+      };
+    }
+    shortcutKeysInfo = {
+      ...shortcutKeysInfo,
+      [subName]: {
+        shortcutKeys: subShortcutKeys,
+        shortcutKeysIcon: []
+      }
+    };
+    if (subShortcutKeys.every(item => Array.isArray(item))) {
+      subShortcutKeys.forEach((shortcutKey, index) => {
+        const shortcutKeyArr = shortcutKey;
+        waringConfig(flattenShortcutKeys, shortcutKeyArr, component);
+        flattenShortcutKeys.push({
+          name: subName,
+          shortcutKey: shortcutKeyArr,
+          index
+        });
+        shortcutKeysInfo[subName].shortcutKeysIcon.push(shortcutKeyArr?.map(key => getShortcutKeysIcon(key)));
+      });
+    } else {
+      const {
+        keyCodeDict,
+        prefixKeys
+      } = getDecomposedShortcutKeys(subShortcutKeys);
+      keyCodeDict.forEach(keyCode => {
+        waringConfig(flattenShortcutKeys, [...prefixKeys, keyCode], component);
+        flattenShortcutKeys.push({
+          name: subName,
+          shortcutKey: [...prefixKeys, keyCode]
+        });
+      });
+      shortcutKeysInfo[subName].shortcutKeysIcon = subShortcutKeys.map(key => getShortcutKeysIcon(key));
+    }
+    return {
+      flattenShortcutKeys,
+      shortcutKeysInfo
+    };
+  }, {
+    flattenShortcutKeys: [],
+    shortcutKeysInfo: {}
+  });
+};
+const useObservable = () => {
+  const observer = (0, _react.useRef)(undefined);
+  const subscribe = fn => {
+    observer.current = fn;
+  };
+  return [observer, subscribe];
+};
+
+// ================== Monitor shortcut key triggering ======================
+const useShortcutKeys = (component, shortcutKeys) => {
+  const contextConfig = (0, _useXComponentConfig.default)(component);
+  const {
+    flattenShortcutKeys,
+    shortcutKeysInfo
+  } = getFlattenShortcutKeys(component, contextConfig.shortcutKeys, shortcutKeys);
+  const [shortcutAction, setShortcutAction] = (0, _react.useState)(null);
+  const [observer, subscribe] = useObservable();
+  const keyLockRef = (0, _react.useRef)(false);
+  const onKeydown = event => {
+    for (const shortcutKeyInfo of flattenShortcutKeys) {
+      const activeKeyInfo = getShortcutAction(shortcutKeyInfo.shortcutKey, event);
+      if (activeKeyInfo) {
+        const info = {
+          ...activeKeyInfo,
+          name: shortcutKeyInfo.name,
+          index: shortcutKeyInfo?.index
+        };
+        if (keyLockRef.current) {
+          return;
+        }
+        keyLockRef.current = true;
+        setShortcutAction(info);
+        observer?.current?.(info);
+      }
+    }
+  };
+  const onKeyup = () => {
+    keyLockRef.current = false;
+  };
+  (0, _react.useEffect)(() => {
+    if (flattenShortcutKeys.length === 0) return;
+    document.addEventListener('keydown', onKeydown);
+    document.addEventListener('keyup', onKeyup);
+    return () => {
+      document.removeEventListener('keydown', onKeydown);
+      document.addEventListener('keyup', onKeyup);
+    };
+  }, [flattenShortcutKeys.length, observer]);
+  return [shortcutAction, shortcutKeysInfo, subscribe];
+};
+var _default = exports.default = useShortcutKeys;

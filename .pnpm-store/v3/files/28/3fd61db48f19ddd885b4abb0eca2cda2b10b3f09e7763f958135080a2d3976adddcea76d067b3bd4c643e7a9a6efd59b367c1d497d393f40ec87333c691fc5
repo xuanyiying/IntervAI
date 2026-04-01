@@ -1,0 +1,127 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { LoadingOutlined, RightOutlined } from '@ant-design/icons';
+import classnames from 'classnames';
+import CSSMotion from 'rc-motion';
+import useMergedState from 'rc-util/lib/hooks/useMergedState';
+import pickAttrs from 'rc-util/lib/pickAttrs';
+import React from 'react';
+import useProxyImperativeHandle from "../_util/hooks/use-proxy-imperative-handle";
+import useXComponentConfig from "../_util/hooks/use-x-component-config";
+import initCollapseMotion from "../_util/motion";
+import { useXProviderContext } from "../x-provider";
+import ThinkIcon from "./icons/think";
+import useStyle from "./style";
+const StatusIcon = ({
+  loading,
+  icon
+}) => {
+  if (loading) {
+    return loading === true ? /*#__PURE__*/React.createElement(LoadingOutlined, null) : loading;
+  }
+  return icon || /*#__PURE__*/React.createElement(ThinkIcon, null);
+};
+const Think = /*#__PURE__*/React.forwardRef((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    style,
+    styles = {},
+    className,
+    rootClassName,
+    classNames = {},
+    children,
+    title,
+    icon,
+    loading,
+    defaultExpanded = true,
+    expanded,
+    onExpand,
+    blink,
+    ...restProps
+  } = props;
+
+  // ============================ Prefix ============================
+
+  const {
+    direction,
+    getPrefixCls
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('think', customizePrefixCls);
+  const [hashId, cssVarCls] = useStyle(prefixCls);
+
+  // ======================= Component Config =======================
+
+  const contextConfig = useXComponentConfig('think');
+  const domProps = pickAttrs(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+
+  // ============================= Refs =============================
+  const thinkRef = React.useRef(null);
+  useProxyImperativeHandle(ref, () => {
+    return {
+      nativeElement: thinkRef.current
+    };
+  });
+  const mergedCls = classnames(prefixCls, contextConfig.className, className, rootClassName, classNames.root, hashId, cssVarCls, {
+    [`${prefixCls}-rtl`]: direction === 'rtl'
+  });
+
+  // ============================  Collapsible ============================
+
+  const [isExpand, setIsExpand] = useMergedState(defaultExpanded, {
+    value: expanded,
+    onChange: onExpand
+  });
+  const collapseMotion = {
+    ...initCollapseMotion(),
+    motionAppear: false,
+    leavedClassName: `${prefixCls}-content-hidden`
+  };
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("div", _extends({
+    ref: thinkRef
+  }, domProps, {
+    className: mergedCls,
+    style: {
+      ...contextConfig.style,
+      ...contextConfig.styles.root,
+      ...style,
+      ...styles.root
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-status-wrapper`, classNames.status),
+    onClick: () => setIsExpand(!isExpand),
+    style: styles.status
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `${prefixCls}-status-icon`
+  }, /*#__PURE__*/React.createElement(StatusIcon, {
+    loading: loading,
+    icon: icon
+  })), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-status-text`, {
+      [`${prefixCls}-motion-blink`]: blink
+    })
+  }, title), /*#__PURE__*/React.createElement(RightOutlined, {
+    className: `${prefixCls}-status-down-icon`,
+    rotate: isExpand ? 90 : 0
+  })), /*#__PURE__*/React.createElement(CSSMotion, _extends({}, collapseMotion, {
+    visible: isExpand
+  }), ({
+    className: motionClassName,
+    style
+  }, motionRef) => /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-content`, motionClassName, classNames.content),
+    ref: motionRef,
+    style: {
+      ...style,
+      ...styles.content
+    }
+  }, children)));
+});
+if (process.env.NODE_ENV !== 'production') {
+  Think.displayName = 'Think';
+}
+export default Think;
