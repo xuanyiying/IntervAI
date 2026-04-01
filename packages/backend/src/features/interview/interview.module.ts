@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bull';
 import { InterviewService } from './interview.service';
 import { InterviewController } from './interview.controller';
 import { InterviewerPersonaController } from './interviewer-persona.controller';
+import { InterviewAssistantController } from './interview-assistant.controller';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { AIModule } from '@/core/ai/ai.module';
 import { RedisModule } from '@/shared/cache/redis.module';
@@ -44,7 +45,7 @@ import { AuthModule } from '@/core/auth/auth.module';
     EvaluationProcessor,
     InterviewReportService,
   ],
-  controllers: [InterviewController, InterviewerPersonaController],
+  controllers: [InterviewController, InterviewerPersonaController, InterviewAssistantController],
   exports: [InterviewService, InterviewerPersonaService],
 })
 export class InterviewModule {}
