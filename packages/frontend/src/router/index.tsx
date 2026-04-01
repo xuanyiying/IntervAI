@@ -25,6 +25,7 @@ import SubscriptionManagementPage from '../pages/SubscriptionManagementPage';
 import AccountSubscriptionPage from '../pages/AccountSubscriptionPage';
 import AccountUsagePage from '../pages/AccountUsagePage';
 import InterviewPage from '../pages/InterviewPage';
+import RealtimeInterviewPage from '../pages/RealtimeInterviewPage';
 import PitchPerfectPage from '../pages/PitchPerfectPage';
 import StrategistPage from '../pages/StrategistPage';
 import RolePlayPage from '../pages/RolePlayPage';
@@ -174,6 +175,14 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute>
             <InterviewPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'realtime-interview',
+        element: (
+          <ProtectedRoute>
+            <RealtimeInterviewPage />
           </ProtectedRoute>
         ),
       },
