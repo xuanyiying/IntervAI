@@ -49,6 +49,7 @@ model User {
   subscriptionEvents    SubscriptionEvent[]
   voices                Voice[]
   jobPostings           JobPosting[]
+  realtimeInterviewSessions RealtimeInterviewSession[]
 
   @@index([email])
   @@map("users")
@@ -831,4 +832,71 @@ enum ApplicationStatus {
   OFFER
   REJECTED
   WITHDRAWN
+}
+
+enum RealtimeInterviewStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AnswerStyle {
+  CONCISE
+  DETAILED
+  PROFESSIONAL
+  CASUAL
+}
+
+model RealtimeInterviewSession {
+  id                  String                     @id @default(uuid())
+  userId              String
+  title               String
+  resumeId            String?
+  jobId               String?
+  resumeData          Json?
+  jobDescription      String?
+  answerStyle         AnswerStyle                @default(PROFESSIONAL)
+  status              RealtimeInterviewStatus    @default(IN_PROGRESS)
+  startTime           DateTime                   @default(now())
+  endTime             DateTime?
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  user                User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resume              Resume?                    @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  job                 Job?                       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  questions           RealtimeInterviewQuestion[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@map("realtime_interview_sessions")
+}
+
+model RealtimeInterviewQuestion {
+  id          String                     @id @default(uuid())
+  sessionId   String
+  question    String
+  questionType String?
+  audioUrl    String?
+  createdAt   DateTime                   @default(now())
+  session     RealtimeInterviewSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  answers     RealtimeInterviewAnswer[]
+
+  @@index([sessionId])
+  @@index([sessionId, createdAt])
+  @@map("realtime_interview_questions")
+}
+
+model RealtimeInterviewAnswer {
+  id          String                     @id @default(uuid())
+  questionId  String
+  content     String
+  audioUrl    String?
+  isGenerated Boolean                    @default(true)
+  createdAt   DateTime                   @default(now())
+  question    RealtimeInterviewQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([questionId, createdAt])
+  @@map("realtime_interview_answers")
 }
