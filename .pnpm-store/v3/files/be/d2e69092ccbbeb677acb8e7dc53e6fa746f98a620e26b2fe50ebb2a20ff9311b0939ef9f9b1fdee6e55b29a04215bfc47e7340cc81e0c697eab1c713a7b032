@@ -1,0 +1,69 @@
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard").default;
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireWildcard(require("react"));
+var _utils = require("../utils");
+const File = props => {
+  const {
+    styles = {},
+    classNames = {},
+    prefixCls,
+    name,
+    ext,
+    size,
+    byte,
+    description,
+    icon,
+    iconColor,
+    onClick,
+    mask
+  } = props;
+  const compCls = `${prefixCls}-file`;
+  const mergedCls = (0, _classnames.default)(compCls, classNames.file, {
+    [`${compCls}-pointer`]: !!onClick,
+    [`${compCls}-small`]: size === 'small'
+  });
+  const desc = (0, _react.useMemo)(() => {
+    if (description) {
+      return description;
+    }
+    if (typeof byte === 'number') {
+      return (0, _utils.getSize)(byte);
+    }
+    return '';
+  }, [description, byte]);
+  return /*#__PURE__*/_react.default.createElement("div", {
+    className: mergedCls,
+    style: styles.file,
+    onClick: onClick
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${compCls}-icon`, classNames.icon),
+    style: {
+      color: iconColor,
+      ...styles.icon
+    }
+  }, icon), /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-content`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${compCls}-name`, classNames.name),
+    style: styles.name
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: `${compCls}-name-prefix`
+  }, name), /*#__PURE__*/_react.default.createElement("span", {
+    className: `${compCls}-name-suffix`
+  }, ext)), desc && /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${compCls}-description`, classNames.description),
+    style: styles.description
+  }, desc)), mask && /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-mask`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-mask-info`
+  }, mask)));
+};
+var _default = exports.default = File;

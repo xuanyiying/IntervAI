@@ -1,0 +1,18 @@
+import type { CSSMotionProps } from 'rc-motion';
+import React from 'react';
+import type { ThoughtChainItemType, ThoughtChainProps } from './interface';
+export declare const ThoughtChainContext: React.Context<{
+    prefixCls?: string | undefined;
+    expandedKeys?: string[] | undefined;
+    collapseMotion?: CSSMotionProps | undefined;
+    onItemExpand?: ((curKey: string) => void) | undefined;
+    styles?: ThoughtChainProps['styles'];
+    classNames?: ThoughtChainProps['classNames'];
+}>;
+interface ThoughtChainNodeProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
+    info?: ThoughtChainItemType;
+    line?: ThoughtChainProps['line'];
+    index: number;
+}
+declare const ThoughtChainNode: React.FC<ThoughtChainNodeProps>;
+export default ThoughtChainNode;

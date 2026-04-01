@@ -1,0 +1,11 @@
+import { type ReportStatus, type ReportType } from '../../enums/index.js';
+import { type IReportFilters } from './report-filters.js';
+export interface IReportResponse {
+    id: string;
+    status: ReportStatus;
+    rows?: number | null;
+    type: ReportType;
+    filters: IReportFilters[];
+    expires_at?: string | null;
+    created_at: string;
+}

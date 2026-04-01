@@ -1,0 +1,64 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _ActionsMenu = _interopRequireDefault(require("./ActionsMenu"));
+var _context = require("./context");
+const Item = props => {
+  const {
+    item,
+    onClick,
+    dropdownProps = {}
+  } = props;
+  const {
+    prefixCls,
+    classNames = {},
+    styles = {}
+  } = _react.default.useContext(_context.ActionsContext) || {};
+  const id = _react.default.useId();
+  const itemKey = item?.key || id;
+  if (!item) {
+    return null;
+  }
+  if (item.actionRender) {
+    return typeof item.actionRender === 'function' ? item.actionRender(item) : item.actionRender;
+  }
+  if (item.subItems) {
+    return /*#__PURE__*/_react.default.createElement(_ActionsMenu.default, {
+      key: itemKey,
+      item: item,
+      onClick: onClick,
+      dropdownProps: dropdownProps
+    });
+  }
+  return /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${prefixCls}-item`, classNames.item, {
+      [`${prefixCls}-list-danger`]: item?.danger
+    }),
+    style: styles.item,
+    onClick: domEvent => {
+      if (item?.onItemClick) {
+        item.onItemClick(item);
+        return;
+      }
+      onClick?.({
+        key: itemKey,
+        item: item,
+        keyPath: [itemKey],
+        domEvent
+      });
+    },
+    key: itemKey
+  }, /*#__PURE__*/_react.default.createElement(_antd.Tooltip, {
+    title: item.label
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${prefixCls}-icon`
+  }, item?.icon)));
+};
+var _default = exports.default = Item;

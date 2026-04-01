@@ -1,0 +1,18 @@
+import { type CurrencyCode, type DiscountMode, type DiscountType } from '../../../enums/index.js';
+import { type ICustomData } from '../../../types/index.js';
+export interface CreateDiscountRequestBody {
+    amount: string;
+    description: string;
+    type: DiscountType;
+    enabledForCheckout?: boolean;
+    code?: string | null;
+    mode?: DiscountMode;
+    currencyCode?: CurrencyCode | null;
+    recur?: boolean;
+    maximumRecurringIntervals?: number | null;
+    usageLimit?: number | null;
+    restrictTo?: string[] | null;
+    expiresAt?: string | null;
+    customData?: ICustomData | null;
+    discountGroupId?: string | null;
+}

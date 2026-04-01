@@ -1,0 +1,33 @@
+import { type PaddleOptions } from './internal/index.js';
+import { AddressesResource, AdjustmentsResource, BusinessesResource, CustomerPortalSessionsResource, CustomersResource, DiscountGroupsResource, DiscountsResource, EventTypesResource, NotificationSettingsResource, NotificationsResource, PaymentMethodsResource, PricesResource, PricingPreviewResource, ProductsResource, ReportsResource, SimulationRunEventsResource, SimulationRunsResource, SimulationsResource, SimulationTypesResource, SubscriptionsResource, TransactionsResource, ClientTokensResource } from './resources/index.js';
+import { EventsResource } from './resources/events/index.js';
+import { Webhooks } from './notifications/index.js';
+export declare class Paddle {
+    private readonly client;
+    private readonly defaultPaddleOptions;
+    products: ProductsResource;
+    prices: PricesResource;
+    transactions: TransactionsResource;
+    adjustments: AdjustmentsResource;
+    customers: CustomersResource;
+    customerPortalSessions: CustomerPortalSessionsResource;
+    addresses: AddressesResource;
+    businesses: BusinessesResource;
+    discounts: DiscountsResource;
+    discountGroups: DiscountGroupsResource;
+    subscriptions: SubscriptionsResource;
+    paymentMethods: PaymentMethodsResource;
+    pricingPreview: PricingPreviewResource;
+    events: EventsResource;
+    webhooks: Webhooks;
+    eventTypes: EventTypesResource;
+    notificationSettings: NotificationSettingsResource;
+    notifications: NotificationsResource;
+    reports: ReportsResource;
+    simulationTypes: SimulationTypesResource;
+    simulations: SimulationsResource;
+    simulationRuns: SimulationRunsResource;
+    simulationRunEvents: SimulationRunEventsResource;
+    clientTokens: ClientTokensResource;
+    constructor(apiKey: string, options?: PaddleOptions);
+}

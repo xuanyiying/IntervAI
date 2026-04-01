@@ -1,0 +1,16 @@
+import { type CatalogType, type Status, type TaxCategory } from '../../../enums/index.js';
+import { type ICustomData } from '../../../types/index.js';
+import { type IImportMetaNotificationResponse } from './import-meta-notification-response.js';
+export interface ISharedProductNotificationResponse {
+    id: string;
+    name: string;
+    type?: CatalogType | null;
+    description?: string | null;
+    tax_category: TaxCategory;
+    image_url?: string | null;
+    custom_data?: ICustomData | null;
+    status: Status;
+    created_at: string;
+    updated_at?: string | null;
+    import_meta?: IImportMetaNotificationResponse | null;
+}

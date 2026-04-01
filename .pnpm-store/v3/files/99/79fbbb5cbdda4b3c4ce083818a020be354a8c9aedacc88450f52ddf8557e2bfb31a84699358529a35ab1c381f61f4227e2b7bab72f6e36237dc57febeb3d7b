@@ -1,0 +1,11 @@
+import { DiscountType } from '../../../enums/index.js';
+import { type ICustomData } from '../../../types/index.js';
+export interface NonCatalogDiscount {
+    amount: string;
+    description: string;
+    type: DiscountType;
+    recur?: boolean;
+    maximumRecurringIntervals?: number | null;
+    customData?: ICustomData | null;
+    restrictTo?: string[] | null;
+}

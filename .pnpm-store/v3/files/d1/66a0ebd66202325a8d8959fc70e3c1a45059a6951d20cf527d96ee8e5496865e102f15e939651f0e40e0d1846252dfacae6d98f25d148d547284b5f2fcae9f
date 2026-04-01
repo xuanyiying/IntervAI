@@ -1,0 +1,44 @@
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard").default;
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _classnames = _interopRequireDefault(require("classnames"));
+var React = _interopRequireWildcard(require("react"));
+var _useCreation = _interopRequireDefault(require("./hooks/useCreation"));
+const Creation = ({
+  className,
+  icon,
+  label,
+  align,
+  style,
+  disabled,
+  onClick,
+  prefixCls,
+  shortcutKeyInfo
+}) => {
+  const [iconNode, labelNode, mergeAlign] = (0, _useCreation.default)({
+    prefixCls,
+    label,
+    icon,
+    align,
+    shortcutKeyInfo
+  });
+  return /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: e => {
+      if (disabled) {
+        return;
+      }
+      onClick?.(e);
+    },
+    style: style,
+    className: (0, _classnames.default)(prefixCls, className, `${prefixCls}-${mergeAlign}`, {
+      [`${prefixCls}-disabled`]: disabled
+    })
+  }, iconNode, labelNode);
+};
+var _default = exports.default = Creation;

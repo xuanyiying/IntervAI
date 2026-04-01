@@ -1,0 +1,20 @@
+import { type ISubscriptionNonCatalogPriceRequest } from '../../../types/index.js';
+import { type SubscriptionEffectiveFrom, type SubscriptionOnPaymentFailure } from '../../../enums/index.js';
+interface ITransactionItemBase {
+    quantity: number;
+}
+interface ITransactionItemWithPriceId extends ITransactionItemBase {
+    priceId: string;
+    price?: never;
+}
+interface ITransactionItemWithPrice extends ITransactionItemBase {
+    priceId?: never;
+    price: ISubscriptionNonCatalogPriceRequest;
+}
+type ITransactionItem = ITransactionItemWithPriceId | ITransactionItemWithPrice;
+export interface CreateSubscriptionCharge {
+    effectiveFrom: SubscriptionEffectiveFrom;
+    items: ITransactionItem[];
+    onPaymentFailure?: SubscriptionOnPaymentFailure;
+}
+export {};

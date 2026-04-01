@@ -1,0 +1,63 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _icons = require("@ant-design/icons");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _locale = require("../../locale");
+var _en_US = _interopRequireDefault(require("../../locale/en_US"));
+const CreationLabel = ({
+  shortcutKeysIcon,
+  prefixCls
+}) => {
+  const [contextLocale] = (0, _locale.useLocale)('Conversations', _en_US.default.Conversations);
+  const showShortcutKeys = !!shortcutKeysIcon?.length;
+  return /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(prefixCls, {
+      [`${prefixCls}-shortcut-keys-show`]: showShortcutKeys
+    })
+  }, /*#__PURE__*/_react.default.createElement("span", null, contextLocale.create), showShortcutKeys && /*#__PURE__*/_react.default.createElement("span", {
+    className: (0, _classnames.default)(`${prefixCls}-shortcut-keys`)
+  }, shortcutKeysIcon.map(keyIcon => /*#__PURE__*/_react.default.createElement("span", {
+    className: (0, _classnames.default)(`${prefixCls}-shortcut-key`),
+    key: keyIcon
+  }, keyIcon))));
+};
+const useCreation = ({
+  icon,
+  label,
+  align,
+  shortcutKeyInfo,
+  prefixCls
+}) => {
+  const {
+    shortcutKeysIcon
+  } = shortcutKeyInfo || {};
+  const creationConfig = {
+    label: /*#__PURE__*/_react.default.createElement(CreationLabel, {
+      prefixCls: `${prefixCls}-label`,
+      shortcutKeysIcon: shortcutKeysIcon
+    }),
+    icon: /*#__PURE__*/_react.default.createElement(_icons.PlusOutlined, {
+      className: `${prefixCls}-icon`
+    }),
+    align: 'center'
+  };
+  if (label) {
+    creationConfig.label = typeof label === 'function' ? label({
+      shortcutKeyInfo,
+      components: {
+        CreationLabel
+      }
+    }) : label;
+  }
+  if (icon) {
+    creationConfig.icon = typeof icon === 'function' ? icon() : icon;
+  }
+  return [creationConfig.icon, creationConfig.label, align || creationConfig.align];
+};
+var _default = exports.default = useCreation;

@@ -1,0 +1,8 @@
+/// <reference types="react" />
+import { SlotConfigType } from '../../sender';
+declare function useGetState(slotConfig: SlotConfigType[]): [
+    Map<string, SlotConfigType>,
+    () => Record<string, any>,
+    React.Dispatch<React.SetStateAction<Record<string, any>>>
+];
+export default useGetState;

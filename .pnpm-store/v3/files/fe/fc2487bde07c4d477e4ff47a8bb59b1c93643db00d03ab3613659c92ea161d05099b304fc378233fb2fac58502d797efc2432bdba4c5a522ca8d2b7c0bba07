@@ -1,0 +1,19 @@
+import { type AdjustmentAction, type AdjustmentStatus, type CurrencyCode } from '../../enums/index.js';
+import { type ITransactionAdjustmentItemResponse } from './transaction-adjustment-item-response.js';
+import { type IPayoutTotalsAdjustmentResponse, type ITotalAdjustmentsResponse } from '../shared/index.js';
+export interface ITransactionAdjustmentResponse {
+    id: string;
+    action: AdjustmentAction;
+    transaction_id: string;
+    subscription_id?: string | null;
+    customer_id: string;
+    reason: string;
+    credit_applied_to_balance: boolean;
+    currency_code: CurrencyCode;
+    status: AdjustmentStatus;
+    items: ITransactionAdjustmentItemResponse[];
+    totals?: ITotalAdjustmentsResponse | null;
+    payout_totals?: IPayoutTotalsAdjustmentResponse | null;
+    created_at: string;
+    updated_at: string;
+}

@@ -1,0 +1,29 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _useToken = _interopRequireDefault(require("../../theme/useToken"));
+const useInputHeight = (styles, autoSize) => {
+  const {
+    token
+  } = (0, _useToken.default)();
+  const lineHeight = parseFloat(`${styles.lineHeight || token.lineHeight}`);
+  const fontSize = parseFloat(`${styles.fontSize || token.fontSize}`);
+  if (autoSize === false || !autoSize) {
+    return {};
+  }
+  if (autoSize === true) {
+    return {
+      height: 'auto'
+    };
+  }
+  return {
+    minHeight: autoSize.minRows ? lineHeight * fontSize * autoSize.minRows : 'auto',
+    maxHeight: autoSize.maxRows ? lineHeight * fontSize * autoSize.maxRows : 'auto',
+    overflowY: 'auto'
+  };
+};
+var _default = exports.default = useInputHeight;

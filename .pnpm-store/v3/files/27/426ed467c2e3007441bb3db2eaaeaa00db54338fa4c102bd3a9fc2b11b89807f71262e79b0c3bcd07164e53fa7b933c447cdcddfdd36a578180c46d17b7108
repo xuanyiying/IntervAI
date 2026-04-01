@@ -1,0 +1,33 @@
+import { type CollectionMode, type CurrencyCode, type SubscriptionStatus } from '../../../enums/index.js';
+import { SubscriptionDiscountNotification } from './subscription-discount-notification.js';
+import { BillingDetailsNotification, ImportMetaNotification, TimePeriodNotification } from '../shared/index.js';
+import { SubscriptionTimePeriodNotification } from './subscription-time-period-notification.js';
+import { SubscriptionScheduledChangeNotification } from './subscription-scheduled-change-notification.js';
+import { SubscriptionItemNotification } from './subscription-item-notification.js';
+import { type CustomData } from '../../../entities/index.js';
+import { type ISubscriptionNotificationResponse } from '../../types/index.js';
+export declare class SubscriptionNotification {
+    readonly id: string;
+    readonly status: SubscriptionStatus;
+    readonly customerId: string;
+    readonly addressId: string;
+    readonly businessId: string | null;
+    readonly currencyCode: CurrencyCode;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    readonly startedAt: string | null;
+    readonly firstBilledAt: string | null;
+    readonly nextBilledAt: string | null;
+    readonly pausedAt: string | null;
+    readonly canceledAt: string | null;
+    readonly discount: SubscriptionDiscountNotification | null;
+    readonly collectionMode: CollectionMode;
+    readonly billingDetails: BillingDetailsNotification | null;
+    readonly currentBillingPeriod: SubscriptionTimePeriodNotification | null;
+    readonly billingCycle: TimePeriodNotification;
+    readonly scheduledChange: SubscriptionScheduledChangeNotification | null;
+    readonly items: SubscriptionItemNotification[];
+    readonly customData: CustomData | null;
+    readonly importMeta: ImportMetaNotification | null;
+    constructor(subscription: ISubscriptionNotificationResponse);
+}

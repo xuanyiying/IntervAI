@@ -1,0 +1,198 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { Divider } from 'antd';
+import classnames from 'classnames';
+import useMergedState from 'rc-util/lib/hooks/useMergedState';
+import pickAttrs from 'rc-util/lib/pickAttrs';
+import React from 'react';
+import useCollapsible from "../_util/hooks/use-collapsible";
+import useProxyImperativeHandle from "../_util/hooks/use-proxy-imperative-handle";
+import useShortcutKeys from "../_util/hooks/use-shortcut-keys";
+import useXComponentConfig from "../_util/hooks/use-x-component-config";
+import { useXProviderContext } from "../x-provider";
+import Creation from "./Creation";
+import GroupTitle, { GroupTitleContext } from "./GroupTitle";
+import useGroupable from "./hooks/useGroupable";
+import ConversationsItem from "./Item";
+import useStyle from "./style";
+
+/**
+ * @desc 会话列表组件参数
+ * @descEN Props for the conversation list component
+ */
+
+const ForwardConversations = /*#__PURE__*/React.forwardRef((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    shortcutKeys: customizeShortcutKeys,
+    rootClassName,
+    items,
+    activeKey,
+    defaultActiveKey,
+    onActiveChange,
+    menu,
+    styles = {},
+    classNames = {},
+    groupable,
+    className,
+    style,
+    creation,
+    ...restProps
+  } = props;
+  const domProps = pickAttrs(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+
+  // ============================= Refs =============================
+  const containerRef = React.useRef(null);
+  useProxyImperativeHandle(ref, () => {
+    return {
+      nativeElement: containerRef.current
+    };
+  });
+
+  // ============================ ActiveKey ============================
+
+  const [mergedActiveKey, setMergedActiveKey] = useMergedState(defaultActiveKey, {
+    value: activeKey,
+    onChange: key => {
+      if (key) {
+        onActiveChange?.(key);
+      }
+    }
+  });
+
+  // ============================ Groupable ============================
+  const [groupList, collapsibleOptions, keyList] = useGroupable(groupable, items);
+
+  // ============================ Prefix ============================
+  const {
+    getPrefixCls,
+    direction
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('conversations', customizePrefixCls);
+
+  // ===================== Component Config =========================
+  const contextConfig = useXComponentConfig('conversations');
+
+  // ============================ Style ============================
+  const [hashId, cssVarCls] = useStyle(prefixCls);
+  const mergedCls = classnames(prefixCls, contextConfig.className, contextConfig.classNames.root, className, classNames.root, rootClassName, hashId, cssVarCls, {
+    [`${prefixCls}-rtl`]: direction === 'rtl'
+  });
+
+  // ============================ Events ============================
+  const onConversationItemClick = key => {
+    setMergedActiveKey(key);
+  };
+
+  // ============================ Short Key =========================
+  const [_, shortcutKeysInfo, subscribe] = useShortcutKeys('conversations', customizeShortcutKeys);
+  const shortKeyAction = shortcutKeyAction => {
+    switch (shortcutKeyAction?.name) {
+      case 'items':
+        {
+          const index = shortcutKeyAction?.actionKeyCodeNumber ?? shortcutKeyAction?.index;
+          if (typeof index === 'number' && !keyList?.[index]?.disabled && keyList?.[index]?.key) {
+            setMergedActiveKey(keyList?.[index]?.key);
+          }
+        }
+        break;
+      case 'creation':
+        {
+          if (typeof creation?.onClick === 'function' && !creation?.disabled) {
+            creation.onClick();
+          }
+        }
+        break;
+    }
+  };
+  subscribe(shortKeyAction);
+
+  // ============================ Item Node ============================
+  const getItemNode = itemData => itemData.map((conversationInfo, conversationIndex) => {
+    if (conversationInfo.type === 'divider') {
+      return /*#__PURE__*/React.createElement(Divider, {
+        key: `key-divider-${conversationIndex}`,
+        className: `${prefixCls}-divider`,
+        dashed: conversationInfo.dashed
+      });
+    }
+    const baseConversationInfo = conversationInfo;
+    const {
+      label: _,
+      disabled: __,
+      icon: ___,
+      ...restInfo
+    } = baseConversationInfo;
+    return /*#__PURE__*/React.createElement(ConversationsItem, _extends({}, restInfo, {
+      key: baseConversationInfo.key || `key-${conversationIndex}`,
+      info: baseConversationInfo,
+      prefixCls: prefixCls,
+      direction: direction,
+      className: classnames(classNames.item, contextConfig.classNames.item, baseConversationInfo.className),
+      style: {
+        ...contextConfig.styles.item,
+        ...styles.item,
+        ...baseConversationInfo.style
+      },
+      menu: typeof menu === 'function' ? menu(baseConversationInfo) : menu,
+      active: mergedActiveKey === baseConversationInfo.key,
+      onClick: onConversationItemClick
+    }));
+  });
+
+  //  ============================ Item Collapsible ============================
+  const rootPrefixCls = getPrefixCls();
+  const [enableCollapse, expandedKeys, onItemExpand, collapseMotion] = useCollapsible(collapsibleOptions, prefixCls, rootPrefixCls);
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("ul", _extends({}, domProps, {
+    style: {
+      ...contextConfig.style,
+      ...style,
+      ...contextConfig.styles.root,
+      ...styles.root
+    },
+    className: mergedCls,
+    ref: containerRef
+  }), !!creation && /*#__PURE__*/React.createElement(Creation, _extends({
+    className: classnames(contextConfig.classNames.creation, classNames.creation),
+    style: {
+      ...contextConfig.styles.creation,
+      ...styles.creation
+    },
+    shortcutKeyInfo: shortcutKeysInfo?.creation,
+    prefixCls: `${prefixCls}-creation`
+  }, creation)), groupList.map((groupInfo, groupIndex) => {
+    const itemNode = getItemNode(groupInfo.data);
+    return groupInfo.enableGroup ? /*#__PURE__*/React.createElement(GroupTitleContext.Provider, {
+      key: groupInfo.name || `key-${groupIndex}`,
+      value: {
+        prefixCls,
+        groupInfo,
+        enableCollapse,
+        expandedKeys,
+        onItemExpand,
+        collapseMotion
+      }
+    }, /*#__PURE__*/React.createElement(GroupTitle, {
+      className: classnames(contextConfig.classNames.group, classNames.group)
+    }, /*#__PURE__*/React.createElement("ul", {
+      className: classnames(`${prefixCls}-list`, {
+        [`${prefixCls}-group-collapsible-list`]: groupInfo.collapsible
+      }),
+      style: {
+        ...contextConfig.styles.group,
+        ...styles.group
+      }
+    }, itemNode))) : itemNode;
+  }));
+});
+const Conversations = ForwardConversations;
+if (process.env.NODE_ENV !== 'production') {
+  Conversations.displayName = 'Conversations';
+}
+Conversations.Creation = Creation;
+export default Conversations;

@@ -1,0 +1,1 @@
+export type PaymentType = 'alipay' | 'apple_pay' | 'bancontact' | 'blik' | 'card' | 'google_pay' | 'ideal' | 'kakao_pay' | 'korea_local' | 'south_korea_local_card' | 'mb_way' | 'naver_pay' | 'offline' | 'payco' | 'paypal' | 'pix' | 'samsung_pay' | 'unknown' | 'upi' | 'wire_transfer';

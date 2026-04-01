@@ -1,0 +1,81 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.findItem = exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _icons = require("@ant-design/icons");
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _context = require("./context");
+/** Tool function: Find data item by path */
+const findItem = (keyPath, items) => {
+  const keyToFind = keyPath[0];
+  for (const item of items) {
+    if (!item) return null;
+    if (item.key === keyToFind) {
+      if (keyPath.length === 1) return item;
+      if (item.subItems) {
+        return findItem(keyPath.slice(1), item?.subItems);
+      }
+    }
+  }
+  return null;
+};
+exports.findItem = findItem;
+const ActionsMenu = props => {
+  const {
+    onClick: onMenuClick,
+    item,
+    dropdownProps = {}
+  } = props;
+  const {
+    prefixCls,
+    classNames = {},
+    styles = {}
+  } = _react.default.useContext(_context.ActionsContext) || {};
+  const {
+    subItems = [],
+    triggerSubMenuAction = 'hover'
+  } = item;
+  const icon = item?.icon ?? /*#__PURE__*/_react.default.createElement(_icons.EllipsisOutlined, null);
+  const menuProps = {
+    items: subItems,
+    onClick: ({
+      key,
+      keyPath,
+      domEvent
+    }) => {
+      if (findItem(keyPath, subItems)?.onItemClick) {
+        findItem(keyPath, subItems)?.onItemClick?.(findItem(keyPath, subItems));
+        return;
+      }
+      onMenuClick?.({
+        key,
+        keyPath: [...keyPath, item?.key || ''],
+        domEvent,
+        item: findItem(keyPath, subItems)
+      });
+    }
+  };
+  return /*#__PURE__*/_react.default.createElement(_antd.Dropdown, (0, _extends2.default)({
+    menu: menuProps,
+    classNames: {
+      root: (0, _classnames.default)(`${prefixCls}-dropdown`, classNames?.itemDropdown)
+    },
+    styles: {
+      root: styles?.itemDropdown
+    },
+    arrow: true,
+    trigger: [triggerSubMenuAction]
+  }, dropdownProps), /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${prefixCls}-item`, `${prefixCls}-sub-item`, classNames?.item),
+    style: styles?.item
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${prefixCls}-icon`
+  }, icon)));
+};
+var _default = exports.default = ActionsMenu;

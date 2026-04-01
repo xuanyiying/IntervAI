@@ -1,0 +1,49 @@
+import type { Locale as antdLocale } from 'antd/es/locale';
+import * as React from 'react';
+export { default as useLocale } from './useLocale';
+export declare const ANT_MARK = "internalMark";
+export interface xLocale {
+    locale: string;
+    Conversations?: {
+        create: string;
+    };
+    Actions?: {
+        feedbackLike: string;
+        feedbackDislike: string;
+        audio: string;
+        audioRunning: string;
+        audioError: string;
+        audioLoading: string;
+    };
+    Sender?: {
+        stopLoading: string;
+        speechRecording: string;
+    };
+    Bubble?: {
+        editableOk: string;
+        editableCancel: string;
+    };
+}
+export interface xMarkdownLocale {
+    Mermaid?: {
+        copySuccess: string;
+        copy: string;
+        zoomIn: string;
+        zoomOut: string;
+        zoomReset: string;
+        download: string;
+        code: string;
+        image: string;
+    };
+    HighlightCode?: {
+        copySuccess: string;
+        copy: string;
+    };
+}
+export type Locale = xLocale & antdLocale & xMarkdownLocale;
+export interface LocaleProviderProps {
+    locale: Locale;
+    children?: React.ReactNode;
+}
+declare const LocaleProvider: React.FC<LocaleProviderProps>;
+export default LocaleProvider;
