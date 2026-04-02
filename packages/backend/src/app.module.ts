@@ -12,6 +12,7 @@ import { ResumeModule } from '@/features/resume/resume.module';
 import { JobModule } from '@/features/job/job.module';
 import { TasksModule } from '@/features/tasks/tasks.module';
 import { InterviewModule } from '@/features/interview/interview.module';
+import { RealtimeInterviewModule } from '@/features/interview/realtime-interview.module';
 import { CommonModule } from '@/common/common.module';
 import { QuotaModule } from '@/core/quota/quota.module';
 import { LoggerModule } from '@/shared/logger/logger.module';
@@ -63,6 +64,7 @@ import { StorageModule } from '@/core/storage/storage.module';
     StorageModule,
     TasksModule,
     InterviewModule,
+    RealtimeInterviewModule,
     QuotaModule,
     MonitoringModule,
     EmailModule,
