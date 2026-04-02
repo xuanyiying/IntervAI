@@ -1,0 +1,1 @@
+export type KoreanMarketUnderlyingPaymentMethodType = 'bc' | 'citi' | 'hana' | 'hyundai' | 'jeju' | 'jeonbuk' | 'kakaobank' | 'kakaopay' | 'kbank' | 'kdbbank' | 'kookmin' | 'kwangju' | 'lotte' | 'mg' | 'naverpaycard' | 'naverpaypoint' | 'nh' | 'payco' | 'post' | 'samsung' | 'samsungpay' | 'savingsbank' | 'shinhan' | 'shinhyup' | 'suhyup' | 'tossbank' | 'unknown' | 'woori';

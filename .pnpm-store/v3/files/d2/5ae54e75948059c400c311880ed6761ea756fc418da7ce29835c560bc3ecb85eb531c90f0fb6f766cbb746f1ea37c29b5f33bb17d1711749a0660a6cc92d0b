@@ -1,0 +1,16 @@
+import type { InputRef } from 'antd';
+import React from 'react';
+import { insertPosition } from './interface';
+export interface TextAreaRef {
+    nativeElement: InputRef['nativeElement'];
+    focus: InputRef['focus'];
+    blur: InputRef['blur'];
+    insert: (value: string, position?: insertPosition) => void;
+    clear: () => void;
+    getValue: () => {
+        value: string;
+        config: any[];
+    };
+}
+declare const TextArea: React.ForwardRefExoticComponent<React.RefAttributes<TextAreaRef>>;
+export default TextArea;

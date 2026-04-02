@@ -1,0 +1,18 @@
+import { SenderProps } from '../interface';
+declare const useInputHeight: (styles: React.CSSProperties, autoSize: SenderProps['autoSize']) => {
+    height?: undefined;
+    minHeight?: undefined;
+    maxHeight?: undefined;
+    overflowY?: undefined;
+} | {
+    height: string;
+    minHeight?: undefined;
+    maxHeight?: undefined;
+    overflowY?: undefined;
+} | {
+    minHeight: string | number;
+    maxHeight: string | number;
+    overflowY: import("csstype").Property.OverflowY | undefined;
+    height?: undefined;
+};
+export default useInputHeight;

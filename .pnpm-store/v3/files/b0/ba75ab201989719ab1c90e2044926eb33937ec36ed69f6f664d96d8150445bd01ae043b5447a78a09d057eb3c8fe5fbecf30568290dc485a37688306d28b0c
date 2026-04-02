@@ -1,0 +1,1 @@
+export type AvailablePaymentMethod = 'alipay' | 'apple_pay' | 'bancontact' | 'blik' | 'card' | 'google_pay' | 'ideal' | 'kakao_pay' | 'korea_local' | 'south_korea_local_card' | 'mb_way' | 'naver_pay' | 'payco' | 'paypal' | 'pix' | 'samsung_pay' | 'upi';

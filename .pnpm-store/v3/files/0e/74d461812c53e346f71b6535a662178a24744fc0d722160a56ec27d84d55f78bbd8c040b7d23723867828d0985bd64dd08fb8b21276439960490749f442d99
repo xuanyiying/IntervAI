@@ -1,0 +1,1 @@
+export type SouthKoreaLocalCardType = 'bc' | 'citi' | 'hana' | 'hyundai' | 'jeju' | 'jeonbuk' | 'kakaobank' | 'kbank' | 'kdbbank' | 'kookmin' | 'kwangju' | 'lotte' | 'mg' | 'nh' | 'post' | 'samsung' | 'savingsbank' | 'shinhan' | 'shinhyup' | 'suhyup' | 'tossbank' | 'unknown' | 'woori';

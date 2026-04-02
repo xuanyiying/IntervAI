@@ -1,0 +1,12 @@
+import { type IChargebackFeeNotification } from './chargeback-fee.js';
+import { type PayoutCurrencyCode } from '../../../enums/index.js';
+export interface IPayoutTotalsAdjustmentNotificationResponse {
+    subtotal: string;
+    tax: string;
+    total: string;
+    fee: string;
+    chargeback_fee?: IChargebackFeeNotification | null;
+    earnings: string;
+    currency_code: PayoutCurrencyCode;
+    retained_fee: string;
+}

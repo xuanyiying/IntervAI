@@ -1,0 +1,61 @@
+import classnames from 'classnames';
+import React, { useMemo } from 'react';
+import { getSize } from "../utils";
+const File = props => {
+  const {
+    styles = {},
+    classNames = {},
+    prefixCls,
+    name,
+    ext,
+    size,
+    byte,
+    description,
+    icon,
+    iconColor,
+    onClick,
+    mask
+  } = props;
+  const compCls = `${prefixCls}-file`;
+  const mergedCls = classnames(compCls, classNames.file, {
+    [`${compCls}-pointer`]: !!onClick,
+    [`${compCls}-small`]: size === 'small'
+  });
+  const desc = useMemo(() => {
+    if (description) {
+      return description;
+    }
+    if (typeof byte === 'number') {
+      return getSize(byte);
+    }
+    return '';
+  }, [description, byte]);
+  return /*#__PURE__*/React.createElement("div", {
+    className: mergedCls,
+    style: styles.file,
+    onClick: onClick
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${compCls}-icon`, classNames.icon),
+    style: {
+      color: iconColor,
+      ...styles.icon
+    }
+  }, icon), /*#__PURE__*/React.createElement("div", {
+    className: `${compCls}-content`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${compCls}-name`, classNames.name),
+    style: styles.name
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `${compCls}-name-prefix`
+  }, name), /*#__PURE__*/React.createElement("span", {
+    className: `${compCls}-name-suffix`
+  }, ext)), desc && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${compCls}-description`, classNames.description),
+    style: styles.description
+  }, desc)), mask && /*#__PURE__*/React.createElement("div", {
+    className: `${compCls}-mask`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `${compCls}-mask-info`
+  }, mask)));
+};
+export default File;

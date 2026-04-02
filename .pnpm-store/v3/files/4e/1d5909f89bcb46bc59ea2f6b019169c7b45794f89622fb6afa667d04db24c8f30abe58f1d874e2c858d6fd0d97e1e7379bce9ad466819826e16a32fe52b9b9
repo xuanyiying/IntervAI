@@ -1,0 +1,208 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import classnames from 'classnames';
+import omit from 'rc-util/es/omit';
+import pickAttrs from 'rc-util/es/pickAttrs';
+import * as React from 'react';
+import useProxyImperativeHandle from "../_util/hooks/use-proxy-imperative-handle";
+import { useXProviderContext } from "../x-provider";
+import Bubble from "./Bubble";
+import { BubbleContext } from "./context";
+import DividerBubble from "./Divider";
+import SystemBubble from "./System";
+import useBubbleListStyle from "./style";
+function roleCfgIsFunction(roleCfg) {
+  return typeof roleCfg === 'function' && roleCfg instanceof Function;
+}
+const MemoedBubble = /*#__PURE__*/React.memo(Bubble);
+const MemoedDividerBubble = /*#__PURE__*/React.memo(DividerBubble);
+const MemoedSystemBubble = /*#__PURE__*/React.memo(SystemBubble);
+const BubbleListItem = props => {
+  const {
+    _key,
+    bubblesRef,
+    extraInfo,
+    status,
+    role,
+    classNames = {},
+    styles = {},
+    ...restProps
+  } = props;
+  const initBubbleRef = React.useCallback(node => {
+    if (node) {
+      bubblesRef.current[_key] = node;
+    } else {
+      delete bubblesRef.current[_key];
+    }
+  }, [_key]);
+  const {
+    bubble: bubbleClassName,
+    divider: dividerClassName,
+    system: systemClassName,
+    ...otherClassNames
+  } = classNames;
+  const {
+    bubble: bubbleStyle,
+    divider: dividerStyle,
+    system: systemStyle,
+    ...otherStyles
+  } = styles;
+  let bubble = /*#__PURE__*/React.createElement(MemoedBubble, _extends({
+    ref: initBubbleRef,
+    style: bubbleStyle,
+    className: bubbleClassName,
+    classNames: otherClassNames,
+    styles: otherStyles
+  }, restProps));
+  if (role === 'divider') {
+    bubble = /*#__PURE__*/React.createElement(MemoedDividerBubble, _extends({
+      ref: initBubbleRef,
+      style: dividerStyle,
+      className: dividerClassName,
+      classNames: otherClassNames,
+      styles: otherStyles
+    }, restProps));
+  } else if (role === 'system') {
+    bubble = /*#__PURE__*/React.createElement(MemoedSystemBubble, _extends({
+      ref: initBubbleRef,
+      style: systemStyle,
+      className: systemClassName,
+      classNames: otherClassNames,
+      styles: otherStyles
+    }, restProps));
+  }
+  return /*#__PURE__*/React.createElement(BubbleContext.Provider, {
+    value: {
+      key: _key,
+      status,
+      extraInfo
+    }
+  }, bubble);
+};
+const BubbleList = (props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    rootClassName,
+    className,
+    styles = {},
+    classNames = {},
+    style,
+    items,
+    autoScroll = true,
+    role,
+    onScroll,
+    ...restProps
+  } = props;
+  const domProps = pickAttrs(restProps, {
+    attr: true,
+    aria: true
+  });
+
+  // ============================= Refs =============================
+  const listRef = React.useRef(null);
+  const scrollBoxRef = React.useRef(null);
+  const bubblesRef = React.useRef({});
+
+  // ============================ Prefix ============================
+  const {
+    getPrefixCls
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('bubble', customizePrefixCls);
+  const listPrefixCls = `${prefixCls}-list`;
+  const [hashId, cssVarCls] = useBubbleListStyle(prefixCls);
+  const mergedClassNames = classnames(listPrefixCls, rootClassName, className, classNames.root, hashId, cssVarCls);
+  const mergedStyle = {
+    ...styles.root,
+    ...style
+  };
+
+  // ============================ Scroll ============================
+  // 只有最后一条数据变更才需要滚动到底部
+  const lastItemKey = items[items.length - 1]?.key || items.length;
+  React.useEffect(() => {
+    if (!scrollBoxRef.current) return;
+    scrollBoxRef.current?.scrollTo({
+      top: autoScroll ? 0 : scrollBoxRef.current.scrollHeight
+    });
+  }, [lastItemKey, autoScroll]);
+
+  // ============================= Refs =============================
+  useProxyImperativeHandle(ref, () => {
+    return {
+      nativeElement: listRef.current,
+      scrollBoxNativeElement: scrollBoxRef.current,
+      scrollTo: ({
+        key,
+        top,
+        behavior = 'smooth',
+        block
+      }) => {
+        const {
+          scrollHeight,
+          clientHeight
+        } = scrollBoxRef.current;
+        if (typeof top === 'number') {
+          scrollBoxRef.current?.scrollTo({
+            top: autoScroll ? -scrollHeight + clientHeight + top : top,
+            behavior
+          });
+        } else if (top === 'bottom') {
+          const bottomOffset = autoScroll ? 0 : scrollHeight;
+          scrollBoxRef.current?.scrollTo({
+            top: bottomOffset,
+            behavior
+          });
+        } else if (top === 'top') {
+          const topOffset = autoScroll ? -scrollHeight : 0;
+          scrollBoxRef.current?.scrollTo({
+            top: topOffset,
+            behavior
+          });
+        } else if (key && bubblesRef.current[key]) {
+          bubblesRef.current[key].nativeElement.scrollIntoView({
+            behavior,
+            block
+          });
+        }
+      }
+    };
+  });
+  const renderData = autoScroll ? [...items].reverse() : items;
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("div", _extends({}, domProps, {
+    className: mergedClassNames,
+    style: mergedStyle,
+    ref: listRef
+  }), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${listPrefixCls}-scroll-box`, classNames.scroll, {
+      [`${listPrefixCls}-autoscroll`]: autoScroll
+    }),
+    style: styles.scroll,
+    ref: scrollBoxRef,
+    onScroll: onScroll
+  }, renderData.map(item => {
+    let mergedProps;
+    if (item.role && role) {
+      const cfg = role[item.role];
+      mergedProps = {
+        ...(roleCfgIsFunction(cfg) ? cfg(item) : cfg),
+        ...item
+      };
+    } else {
+      mergedProps = item;
+    }
+    return /*#__PURE__*/React.createElement(BubbleListItem, _extends({
+      classNames: classNames,
+      styles: styles
+    }, omit(mergedProps, ['key']), {
+      key: item.key,
+      _key: item.key,
+      bubblesRef: bubblesRef
+    }));
+  })));
+};
+const ForwardBubbleList = /*#__PURE__*/React.forwardRef(BubbleList);
+if (process.env.NODE_ENV !== 'production') {
+  ForwardBubbleList.displayName = 'BubbleList';
+}
+export default ForwardBubbleList;

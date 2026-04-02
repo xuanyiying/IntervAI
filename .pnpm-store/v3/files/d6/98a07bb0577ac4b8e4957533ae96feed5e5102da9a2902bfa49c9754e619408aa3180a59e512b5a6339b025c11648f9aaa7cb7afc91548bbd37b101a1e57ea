@@ -1,0 +1,7 @@
+import { type CurrencyCode } from '../../enums/index.js';
+import { type ICustomerBalance } from './customer-balance.js';
+export interface ICreditBalanceResponse {
+    customer_id?: string | null;
+    currency_code?: CurrencyCode | null;
+    balance?: ICustomerBalance | null;
+}

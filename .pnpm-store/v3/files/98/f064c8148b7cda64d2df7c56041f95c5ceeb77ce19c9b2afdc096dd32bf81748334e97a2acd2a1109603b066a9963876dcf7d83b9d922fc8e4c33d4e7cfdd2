@@ -1,0 +1,88 @@
+import { CloseOutlined } from '@ant-design/icons';
+import { Button } from 'antd';
+import classNames from 'classnames';
+import CSSMotion from 'rc-motion';
+import * as React from 'react';
+import { useXProviderContext } from "../x-provider";
+export const SendHeaderContext = /*#__PURE__*/React.createContext({});
+const collapseHeight = () => ({
+  height: 0
+});
+const expandedHeight = ele => ({
+  height: ele.scrollHeight
+});
+export default function SenderHeader(props) {
+  const {
+    title,
+    onOpenChange,
+    open,
+    children,
+    className,
+    style,
+    classNames: classes = {},
+    styles = {},
+    prefixCls: customizePrefixCls,
+    closable,
+    forceRender
+  } = props;
+  const {
+    prefixCls: contextPrefixCls
+  } = React.useContext(SendHeaderContext);
+  const {
+    direction,
+    getPrefixCls
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('sender', customizePrefixCls || contextPrefixCls);
+  const headerCls = `${prefixCls}-header`;
+  const onOpenClick = () => {
+    onOpenChange?.(!open);
+  };
+  return /*#__PURE__*/React.createElement(CSSMotion, {
+    motionEnter: true,
+    motionLeave: true,
+    motionName: `${headerCls}-motion`,
+    leavedClassName: `${headerCls}-motion-hidden`,
+    onEnterStart: collapseHeight,
+    onEnterActive: expandedHeight,
+    onLeaveStart: expandedHeight,
+    onLeaveActive: collapseHeight,
+    visible: open,
+    forceRender: forceRender
+  }, ({
+    className: motionClassName,
+    style: motionStyle
+  }) => {
+    return /*#__PURE__*/React.createElement("div", {
+      className: classNames(headerCls, motionClassName, className, {
+        [`${headerCls}-rtl`]: direction === 'rtl'
+      }),
+      style: {
+        ...motionStyle,
+        ...style
+      }
+    }, (closable !== false || title) && /*#__PURE__*/React.createElement("div", {
+      className:
+      // We follow antd naming standard here.
+      // So the header part is use `-header` suffix.
+      // Though its little bit weird for double `-header`.
+      classNames(`${headerCls}-header`, classes.header),
+      style: {
+        ...styles.header
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: `${headerCls}-title`
+    }, title), closable !== false && /*#__PURE__*/React.createElement("div", {
+      className: `${headerCls}-close`
+    }, /*#__PURE__*/React.createElement(Button, {
+      type: "text",
+      icon: /*#__PURE__*/React.createElement(CloseOutlined, null),
+      size: "small",
+      onClick: onOpenClick
+    }))), children && /*#__PURE__*/React.createElement("div", {
+      className: classNames(`${headerCls}-content`, classes.content),
+      style: {
+        ...styles.content
+      }
+    }, children));
+  });
+}

@@ -1,0 +1,289 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { Flex } from 'antd';
+import classnames from 'classnames';
+import { useMergedState } from 'rc-util';
+import pickAttrs from 'rc-util/lib/pickAttrs';
+import React from 'react';
+import useProxyImperativeHandle from "../_util/hooks/use-proxy-imperative-handle";
+import useXComponentConfig from "../_util/hooks/use-x-component-config";
+import { useXProviderContext } from "../x-provider";
+import { ActionButtonContext } from "./components/ActionButton";
+import ClearButton from "./components/ClearButton";
+import LoadingButton from "./components/LoadingButton";
+import SendButton from "./components/SendButton";
+import SpeechButton from "./components/SpeechButton";
+import { SenderContext } from "./context";
+import SenderHeader, { SendHeaderContext } from "./SenderHeader";
+import SenderSwitch from "./SenderSwitch";
+import SlotTextArea from "./SlotTextArea";
+import useStyle from "./style";
+import TextArea from "./TextArea";
+import useSpeech from "./useSpeech";
+export { SenderContext };
+
+/** Used for actions render needed components */
+const sharedRenderComponents = {
+  SendButton,
+  ClearButton,
+  LoadingButton,
+  SpeechButton
+};
+const ForwardSender = /*#__PURE__*/React.forwardRef((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    styles = {},
+    classNames = {},
+    className,
+    rootClassName,
+    style,
+    defaultValue,
+    value,
+    slotConfig,
+    readOnly,
+    submitType = 'enter',
+    onSubmit,
+    loading,
+    components,
+    onCancel,
+    onChange,
+    suffix,
+    onKeyUp,
+    onKeyDown,
+    disabled,
+    allowSpeech,
+    prefix,
+    footer,
+    header,
+    onPaste,
+    onPasteFile,
+    autoSize = {
+      maxRows: 8
+    },
+    placeholder,
+    onFocus,
+    onBlur,
+    ...restProps
+  } = props;
+  const domProps = pickAttrs(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+  const id = React.useId();
+  const isSlotMode = Array.isArray(slotConfig);
+  // ============================= MISC =============================
+  const {
+    direction,
+    getPrefixCls
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('sender', customizePrefixCls);
+
+  // ============================= Refs =============================
+  const containerRef = React.useRef(null);
+  const inputRef = React.useRef(null);
+  useProxyImperativeHandle(ref, () => {
+    return {
+      nativeElement: containerRef.current,
+      inputElement: inputRef.current?.nativeElement,
+      focus: inputRef.current?.focus,
+      blur: inputRef.current?.blur,
+      insert: inputRef.current?.insert,
+      clear: inputRef.current?.clear,
+      getValue: inputRef.current?.getValue
+    };
+  });
+
+  // ======================= Component Config =======================
+  const contextConfig = useXComponentConfig('sender');
+  const inputCls = `${prefixCls}-input`;
+
+  // ============================ Styles ============================
+  const [hashId, cssVarCls] = useStyle(prefixCls);
+  const mergedCls = classnames(prefixCls, contextConfig.className, className, rootClassName, contextConfig.classNames.root, classNames.root, hashId, cssVarCls, {
+    [`${prefixCls}-rtl`]: direction === 'rtl',
+    [`${prefixCls}-disabled`]: disabled
+  });
+  const actionBtnCls = `${prefixCls}-actions-btn`;
+  const actionListCls = `${prefixCls}-actions-list`;
+
+  // ============================ Value =============================
+  const [innerValue, setInnerValue] = useMergedState(defaultValue || '', {
+    value
+  });
+  const triggerValueChange = (nextValue, event, slotConfig) => {
+    if (slotConfig) {
+      setInnerValue(nextValue);
+      if (onChange) {
+        onChange(nextValue, event, slotConfig);
+      }
+      return;
+    }
+    setInnerValue(nextValue);
+    if (onChange) {
+      onChange(nextValue, event);
+    }
+  };
+
+  // ============================ Speech ============================
+  const [speechPermission, triggerSpeech, speechRecording] = useSpeech(transcript => {
+    if (isSlotMode) {
+      inputRef.current?.insert?.([{
+        type: 'text',
+        value: transcript
+      }]);
+    } else {
+      triggerValueChange(`${innerValue} ${transcript}`);
+    }
+  }, allowSpeech);
+
+  // ============================ Events ============================
+  const triggerSend = () => {
+    if (innerValue && onSubmit && !loading) {
+      onSubmit(innerValue);
+    }
+  };
+  const triggerClear = () => {
+    triggerValueChange('');
+    if (isSlotMode) {
+      inputRef.current?.clear?.();
+    }
+  };
+
+  // ============================ Action ============================
+  const actionNode = /*#__PURE__*/React.createElement(Flex, {
+    className: `${actionListCls}-presets`
+  }, allowSpeech && /*#__PURE__*/React.createElement(SpeechButton, null), loading ? /*#__PURE__*/React.createElement(LoadingButton, null) : /*#__PURE__*/React.createElement(SendButton, null));
+
+  // ============================ Suffix ============================
+
+  let suffixNode = actionNode;
+  if (typeof suffix === 'function') {
+    suffixNode = suffix(actionNode, {
+      components: sharedRenderComponents
+    });
+  } else if (suffix || suffix === false) {
+    suffixNode = suffix;
+  }
+
+  // ============================ Prefix ============================
+
+  const prefixNode = typeof prefix === 'function' ? prefix(actionNode, {
+    components: sharedRenderComponents
+  }) : prefix || null;
+
+  // ============================ Header ============================
+  const headerNode = typeof header === 'function' ? header(actionNode, {
+    components: sharedRenderComponents
+  }) : header || null;
+
+  // ============================ Footer ============================
+  const footerNode = typeof footer === 'function' ? footer(actionNode, {
+    components: sharedRenderComponents
+  }) : footer || null;
+
+  // Custom actions context props
+  const actionsButtonContextProps = {
+    prefixCls: actionBtnCls,
+    onSend: triggerSend,
+    onSendDisabled: !innerValue,
+    onClear: triggerClear,
+    onClearDisabled: !innerValue,
+    onCancel,
+    onCancelDisabled: !loading,
+    onSpeech: () => triggerSpeech(false),
+    onSpeechDisabled: !speechPermission,
+    speechRecording,
+    disabled
+  };
+
+  // ============================ Context ============================
+  const contextValue = React.useMemo(() => ({
+    value: innerValue,
+    onChange: triggerValueChange,
+    slotConfig,
+    onKeyUp,
+    onKeyDown,
+    onPaste,
+    onPasteFile,
+    disabled,
+    readOnly,
+    submitType,
+    prefixCls,
+    styles,
+    classNames,
+    autoSize,
+    components,
+    onSubmit,
+    placeholder,
+    onFocus,
+    onBlur,
+    ...restProps
+  }), [innerValue, triggerValueChange, slotConfig, onKeyUp, onKeyDown, onPaste, onPasteFile, disabled, readOnly, submitType, prefixCls, styles, classNames, autoSize, components, onSubmit, placeholder, onFocus, onBlur, restProps]);
+
+  // ============================ Focus =============================
+  const onContentMouseDown = e => {
+    // If input focused but click on the container,
+    // input will lose focus.
+    // We call `preventDefault` to prevent this behavior
+    if (!isSlotMode && e.target !== containerRef.current?.querySelector(`.${inputCls}`)) {
+      e.preventDefault();
+    }
+    if (e.target === containerRef.current?.querySelector(`.${inputCls}`)) {
+      inputRef.current?.focus();
+    }
+  };
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("div", _extends({
+    key: id,
+    ref: containerRef,
+    className: mergedCls,
+    style: {
+      ...contextConfig.style,
+      ...style,
+      ...contextConfig.styles.root,
+      ...styles.root
+    }
+  }, domProps), /*#__PURE__*/React.createElement(SenderContext.Provider, {
+    value: contextValue
+  }, /*#__PURE__*/React.createElement(ActionButtonContext.Provider, {
+    value: actionsButtonContextProps
+  }, headerNode && /*#__PURE__*/React.createElement(SendHeaderContext.Provider, {
+    value: {
+      prefixCls
+    }
+  }, headerNode), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-content`, classNames.content),
+    style: styles.content,
+    onMouseDown: onContentMouseDown
+  }, prefixNode && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-prefix`, contextConfig.classNames.prefix, classNames.prefix),
+    style: {
+      ...contextConfig.styles.prefix,
+      ...styles.prefix
+    }
+  }, prefixNode), isSlotMode ? /*#__PURE__*/React.createElement(SlotTextArea, {
+    ref: inputRef
+  }) : /*#__PURE__*/React.createElement(TextArea, {
+    ref: inputRef
+  }), suffixNode && /*#__PURE__*/React.createElement("div", {
+    className: classnames(actionListCls, contextConfig.classNames.suffix, classNames.suffix),
+    style: {
+      ...contextConfig.styles.suffix,
+      ...styles.suffix
+    }
+  }, suffixNode)), footerNode && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-footer`, contextConfig.classNames.footer, classNames.footer),
+    style: {
+      ...contextConfig.styles.footer,
+      ...styles.footer
+    }
+  }, footerNode))));
+});
+const Sender = ForwardSender;
+if (process.env.NODE_ENV !== 'production') {
+  Sender.displayName = 'Sender';
+}
+Sender.Header = SenderHeader;
+Sender.Switch = SenderSwitch;
+export default Sender;

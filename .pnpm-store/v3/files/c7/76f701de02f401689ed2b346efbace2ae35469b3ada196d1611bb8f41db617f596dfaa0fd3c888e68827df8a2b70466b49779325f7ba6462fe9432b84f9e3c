@@ -1,0 +1,109 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import classnames from 'classnames';
+import CSSMotion from 'rc-motion';
+import pickAttrs from 'rc-util/lib/pickAttrs';
+import React from 'react';
+import { useXProviderContext } from "../x-provider";
+import Status from "./Status";
+
+// ================= ThoughtChainContext ====================
+
+export const ThoughtChainContext = /*#__PURE__*/React.createContext(null);
+const ThoughtChainNode = props => {
+  // ================= info ====================
+  const id = React.useId();
+  const {
+    info = {},
+    line,
+    index,
+    className,
+    ...restProps
+  } = props;
+  const domProps = pickAttrs(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+  const {
+    prefixCls,
+    expandedKeys,
+    collapseMotion,
+    onItemExpand,
+    classNames = {},
+    styles = {}
+  } = React.useContext(ThoughtChainContext) || {};
+  const {
+    direction
+  } = useXProviderContext();
+  const {
+    collapsible,
+    key = id,
+    icon,
+    blink,
+    title,
+    content,
+    footer,
+    status,
+    description
+  } = info;
+
+  // ============================ Style ============================
+  const nodeCls = `${prefixCls}-node`;
+
+  // ============================ Content Open ============================
+  const contentOpen = expandedKeys?.includes(key);
+  let iconNode = /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-index-icon`)
+  }, index + 1);
+  iconNode = icon === false ? null : icon || iconNode;
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("div", _extends({}, domProps, {
+    className: classnames(nodeCls, className, classNames.item),
+    style: props.style
+  }), iconNode && /*#__PURE__*/React.createElement(Status, {
+    className: classnames(`${nodeCls}-icon`, classNames.itemIcon, {
+      [`${nodeCls}-icon-${line}`]: typeof line !== 'boolean'
+    }),
+    style: styles.itemIcon,
+    prefixCls: prefixCls,
+    icon: iconNode,
+    status: status
+  }), /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-box`)
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-header`, classNames.itemHeader),
+    style: styles.itemHeader
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-title`, {
+      [`${nodeCls}-collapsible`]: collapsible,
+      [`${prefixCls}-motion-blink`]: blink
+    }),
+    onClick: collapsible ? () => onItemExpand?.(key) : undefined
+  }, title, collapsible && content && (direction === 'rtl' ? /*#__PURE__*/React.createElement(LeftOutlined, {
+    className: `${nodeCls}-collapse-icon`,
+    rotate: contentOpen ? -90 : 0
+  }) : /*#__PURE__*/React.createElement(RightOutlined, {
+    className: `${nodeCls}-collapse-icon`,
+    rotate: contentOpen ? 90 : 0
+  }))), description && /*#__PURE__*/React.createElement("div", {
+    className: `${nodeCls}-description`
+  }, description)), content && /*#__PURE__*/React.createElement(CSSMotion, _extends({}, collapseMotion, {
+    visible: collapsible ? contentOpen : true
+  }), ({
+    className: motionClassName,
+    style
+  }, motionRef) => /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-content`, motionClassName),
+    ref: motionRef,
+    style: style
+  }, /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-content-box`, classNames.itemContent),
+    style: styles.itemContent
+  }, content))), footer && /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${nodeCls}-footer`, classNames.itemFooter),
+    style: styles.itemFooter
+  }, footer)));
+};
+export default ThoughtChainNode;

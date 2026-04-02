@@ -1,0 +1,92 @@
+{
+  "name": "@paddle/paddle-node-sdk",
+  "version": "3.4.0",
+  "description": "A Node.js SDK that you can use to integrate Paddle Billing with applications written in server-side JavaScript.",
+  "main": "dist/cjs/index.cjs.node.js",
+  "module": "dist/esm/index.esm.node.js",
+  "types": "dist/types/index.cjs.node.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "Paddle",
+    "SDK"
+  ],
+  "author": "paddle.com",
+  "license": "Apache-2.0",
+  "homepage": "https://developer.paddle.com/api-reference/overview",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PaddleHQ/paddle-node-sdk.git"
+  },
+  "bugs": "https://github.com/PaddleHQ/paddle-node-sdk/issues",
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.22.20",
+    "@babel/preset-typescript": "^7.23.0",
+    "@eslint/js": "^9.17.0",
+    "@stylistic/eslint-plugin": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/lodash": "^4.14.202",
+    "@types/node": "^24.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.1",
+    "babel-jest": "^30.0.0",
+    "dotenv": "^17.0.0",
+    "eslint": "^9.17.0",
+    "eslint-config-standard-with-typescript": "^43.0.1",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^17.15.1 ",
+    "eslint-plugin-promise": "^7.2.1",
+    "globals": "^16.0.0",
+    "jest": "^30.0.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2",
+    "typescript-eslint": "^8.19.0"
+  },
+  "exports": {
+    "types": "./dist/types/index.cjs.node.d.ts",
+    "browser": {
+      "import": "./dist/esm/index.esm.edge.js",
+      "require": "./dist/cjs/index.cjs.edge.js"
+    },
+    "bun": {
+      "import": "./dist/esm/index.esm.edge.js",
+      "require": "./dist/cjs/index.cjs.edge.js"
+    },
+    "deno": {
+      "import": "./dist/esm/index.esm.edge.js",
+      "require": "./dist/cjs/index.cjs.edge.js"
+    },
+    "worker": {
+      "import": "./dist/esm/index.esm.edge.js",
+      "require": "./dist/cjs/index.cjs.edge.js"
+    },
+    "workerd": {
+      "import": "./dist/esm/index.esm.edge.js",
+      "require": "./dist/cjs/index.cjs.edge.js"
+    },
+    "default": {
+      "import": "./dist/esm/index.esm.node.js",
+      "require": "./dist/cjs/index.cjs.node.js"
+    }
+  },
+  "dependencies": {},
+  "scripts": {
+    "test": "jest",
+    "prebuild": "node ./scripts/update-env-vars.js",
+    "build": "pnpm clean && pnpm build-esm && pnpm build-cjs && pnpm build-types",
+    "build-esm": "tsc -b tsconfig.esm.json && echo '{\"type\":\"module\"}' > ./dist/esm/package.json",
+    "build-cjs": "tsc -b tsconfig.cjs.json && echo '{\"type\":\"commonjs\"}' > ./dist/cjs/package.json",
+    "build-types": "tsc -b tsconfig.types.json",
+    "typecheck:tests": "tsc -b tsconfig.tests.json",
+    "prettier": "prettier --check ./src",
+    "prettier:fix": "prettier --check ./src --write",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint ./src --fix",
+    "clean": "rm -rf ./dist",
+    "release:rc": "pnpm version --prerelease --preid rc --no-git-tag-version --no-commit-hooks"
+  }
+}

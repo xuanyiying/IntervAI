@@ -1,0 +1,26 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+const genActionsCopyStyle = token => {
+  const {
+    componentCls
+  } = token;
+  const copyCls = `${componentCls}-copy`;
+  return {
+    [copyCls]: {
+      '&-rtl': {
+        direction: 'rtl'
+      },
+      '&-copy': {
+        fontSize: 'inherit',
+        [`&:not(${copyCls}-copy-success)`]: {
+          color: 'inherit!important'
+        }
+      }
+    }
+  };
+};
+var _default = exports.default = genActionsCopyStyle;

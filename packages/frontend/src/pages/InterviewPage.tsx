@@ -19,6 +19,7 @@ import {
   SendOutlined,
   PhoneOutlined,
   UserOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import {
   interviewService,
@@ -29,6 +30,7 @@ import { useTranslation } from 'react-i18next';
 import VoiceManager from '../components/VoiceManager';
 import VoiceInterviewCall from '../components/VoiceInterviewCall';
 import { PersonaSelector } from '../components/PersonaSelector';
+import InterviewAssistant from '../components/InterviewAssistant';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -54,6 +56,7 @@ const InterviewPage: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | undefined>();
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false);
+  const [isInterviewAssistantActive, setIsInterviewAssistantActive] = useState(false);
 
   const [personas, setPersonas] = useState<InterviewerPersona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<
@@ -333,6 +336,15 @@ const InterviewPage: React.FC = () => {
               >
                 Start Voice Call
               </Button>
+              <Button
+                type="primary"
+                ghost
+                icon={<RobotOutlined />}
+                onClick={() => setIsInterviewAssistantActive(true)}
+                disabled={loading}
+              >
+                {t('interview.assistant_title')}
+              </Button>
               <Button danger onClick={endSessionEarly}>
                 {t('interview.end_early')}
               </Button>
@@ -510,6 +522,12 @@ const InterviewPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {isInterviewAssistantActive && (
+        <InterviewAssistant
+          onClose={() => setIsInterviewAssistantActive(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,0 +1,11 @@
+import { type TrafficSource } from '../../../enums/index.js';
+import { type IEventName } from '../../../notifications/index.js';
+export interface UpdateNotificationSettingsRequestBody {
+    description?: string;
+    destination?: string;
+    active?: boolean;
+    apiVersion?: number;
+    includeSensitiveFields?: boolean;
+    subscribedEvents?: IEventName[];
+    trafficSource?: TrafficSource;
+}

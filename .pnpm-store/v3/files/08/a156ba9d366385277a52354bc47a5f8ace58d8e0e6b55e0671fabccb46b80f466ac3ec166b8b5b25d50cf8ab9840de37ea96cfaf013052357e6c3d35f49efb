@@ -1,0 +1,26 @@
+import { InputRef } from 'antd';
+import React from 'react';
+import type { insertPosition, SlotConfigType } from './interface';
+export interface SlotTextAreaRef {
+    focus: (options?: FocusOptions) => void;
+    blur: InputRef['blur'];
+    nativeElement: InputRef['nativeElement'];
+    insert: (slotConfig: SlotConfigType[], position?: insertPosition, replaceCharacters?: string) => void;
+    clear: () => void;
+    getValue: () => {
+        value: string;
+        config: SlotConfigType[];
+    };
+}
+type InputFocusOptions = {
+    preventScroll?: boolean;
+    cursor?: 'start' | 'end' | 'all';
+};
+type SlotFocusOptions = {
+    preventScroll?: boolean;
+    cursor?: 'slot';
+    key?: string;
+};
+type FocusOptions = SlotFocusOptions | InputFocusOptions;
+declare const SlotTextArea: React.ForwardRefExoticComponent<React.RefAttributes<SlotTextAreaRef>>;
+export default SlotTextArea;

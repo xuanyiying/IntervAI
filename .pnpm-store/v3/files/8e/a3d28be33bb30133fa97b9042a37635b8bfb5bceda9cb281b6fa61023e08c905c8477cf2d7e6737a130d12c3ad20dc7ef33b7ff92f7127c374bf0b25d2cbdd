@@ -1,0 +1,37 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+const buildSlotValues = (slotConfig, slotConfigMap) => {
+  if (Array.isArray(slotConfig)) {
+    return slotConfig?.reduce((acc, node) => {
+      if (node.key) {
+        if (node.type === 'input' || node.type === 'select' || node.type === 'custom') {
+          acc[node.key] = node.props?.defaultValue || '';
+        } else {
+          acc[node.key] = '';
+        }
+        slotConfigMap.current.set(node.key, node);
+      }
+      return acc;
+    }, {});
+  }
+  return {};
+};
+function useGetState(slotConfig) {
+  const [state, _setState] = useState({});
+  const stateRef = useRef(state);
+  const slotConfigMap = useRef(new Map());
+  useEffect(() => {
+    const slotValue = buildSlotValues(slotConfig, slotConfigMap);
+    _setState(slotValue);
+    stateRef.current = slotValue;
+  }, [slotConfig]);
+  const setState = useCallback(newValue => {
+    const value = typeof newValue === 'function' ? newValue(stateRef.current) : newValue;
+    stateRef.current = value;
+    _setState(value);
+  }, []);
+  const getState = useCallback(() => {
+    return stateRef.current;
+  }, []);
+  return [slotConfigMap.current, getState, setState];
+}
+export default useGetState;

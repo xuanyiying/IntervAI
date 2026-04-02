@@ -1,0 +1,120 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import classnames from 'classnames';
+import CSSMotion from 'rc-motion';
+import pickAttrs from 'rc-util/lib/pickAttrs';
+import { composeRef } from 'rc-util/lib/ref';
+import React from 'react';
+import useProxyImperativeHandle from "../_util/hooks/use-proxy-imperative-handle";
+import useXComponentConfig from "../_util/hooks/use-x-component-config";
+import { useXProviderContext } from "../x-provider";
+import ActionsAudio from "./ActionsAudio";
+import ActionsCopy from "./ActionsCopy";
+import ActionsFeedback from "./ActionsFeedback";
+import ActionsItem from "./ActionsItem";
+import { ActionsContext } from "./context";
+import Item from "./Item";
+import useStyle from "./style";
+const ForwardActions = /*#__PURE__*/React.forwardRef((props, ref) => {
+  const {
+    items = [],
+    onClick,
+    dropdownProps = {},
+    fadeIn,
+    fadeInLeft,
+    variant = 'borderless',
+    prefixCls: customizePrefixCls,
+    classNames = {},
+    rootClassName = '',
+    className = '',
+    styles = {},
+    style = {},
+    ...otherHtmlProps
+  } = props;
+  const domProps = pickAttrs(otherHtmlProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+
+  // ============================ PrefixCls ============================
+  const {
+    getPrefixCls,
+    direction
+  } = useXProviderContext();
+  const prefixCls = getPrefixCls('actions', customizePrefixCls);
+  const contextConfig = useXComponentConfig('actions');
+  const [hashId, cssVarCls] = useStyle(prefixCls);
+
+  // ============================= Motion =============================
+
+  const rootPrefixCls = getPrefixCls();
+  const motionName = fadeIn || fadeInLeft ? `${rootPrefixCls}-x-fade${fadeInLeft ? '-left' : ''}` : '';
+
+  // ============================= Class =============================
+  const mergedCls = classnames(prefixCls, contextConfig.className, contextConfig.classNames.root, rootClassName, className, classNames.root, cssVarCls, hashId, {
+    [`${prefixCls}-rtl`]: direction === 'rtl'
+  });
+  const mergedStyle = {
+    ...contextConfig.style,
+    ...styles.root,
+    ...style
+  };
+
+  // ============================= Refs =============================
+  const containerRef = React.useRef(null);
+  useProxyImperativeHandle(ref, () => {
+    return {
+      nativeElement: containerRef.current
+    };
+  });
+
+  // ============================= Render =============================
+  return /*#__PURE__*/React.createElement(CSSMotion, {
+    motionName: motionName
+  }, ({
+    className: motionClassName
+  }, ref) => {
+    return /*#__PURE__*/React.createElement("div", _extends({
+      ref: composeRef(containerRef, ref)
+    }, domProps, {
+      className: mergedCls,
+      style: mergedStyle
+    }), /*#__PURE__*/React.createElement(ActionsContext.Provider, {
+      value: {
+        prefixCls,
+        classNames: {
+          item: classnames(contextConfig.classNames.item, classNames.item),
+          itemDropdown: classnames(contextConfig.classNames.itemDropdown, classNames.itemDropdown)
+        },
+        styles: {
+          item: {
+            ...contextConfig.styles.item,
+            ...styles.item
+          },
+          itemDropdown: {
+            ...contextConfig.styles.itemDropdown,
+            ...styles.itemDropdown
+          }
+        }
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: classnames(`${prefixCls}-list`, `${prefixCls}-variant-${variant}`, motionClassName)
+    }, items.map((item, idx) => {
+      return /*#__PURE__*/React.createElement(Item, {
+        item: item,
+        onClick: onClick,
+        dropdownProps: dropdownProps,
+        key: item.key || idx
+      });
+    }))));
+  });
+});
+const Actions = ForwardActions;
+if (process.env.NODE_ENV !== 'production') {
+  Actions.displayName = 'Actions';
+}
+Actions.Feedback = ActionsFeedback;
+Actions.Copy = ActionsCopy;
+Actions.Item = ActionsItem;
+Actions.Audio = ActionsAudio;
+export default Actions;

@@ -1,0 +1,136 @@
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard").default;
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _classnames = _interopRequireDefault(require("classnames"));
+var _pickAttrs = _interopRequireDefault(require("rc-util/lib/pickAttrs"));
+var _react = _interopRequireDefault(require("react"));
+var _useCollapsible = _interopRequireDefault(require("../_util/hooks/use-collapsible"));
+var _useProxyImperativeHandle = _interopRequireDefault(require("../_util/hooks/use-proxy-imperative-handle"));
+var _useXComponentConfig = _interopRequireDefault(require("../_util/hooks/use-x-component-config"));
+var _xProvider = require("../x-provider");
+var _Item = _interopRequireDefault(require("./Item"));
+var _Node = _interopRequireWildcard(require("./Node"));
+var _style = _interopRequireDefault(require("./style"));
+const ForwardThoughtChain = /*#__PURE__*/_react.default.forwardRef((props, ref) => {
+  const {
+    prefixCls: customizePrefixCls,
+    className,
+    items,
+    defaultExpandedKeys,
+    expandedKeys: customExpandedKeys,
+    onExpand,
+    rootClassName,
+    styles = {},
+    classNames = {},
+    line = true,
+    style,
+    ...restProps
+  } = props;
+  const domProps = (0, _pickAttrs.default)(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+
+  // ============================ Prefix ============================
+
+  const {
+    direction,
+    getPrefixCls
+  } = (0, _xProvider.useXProviderContext)();
+  const prefixCls = getPrefixCls('thought-chain', customizePrefixCls);
+
+  // ===================== Component Config =========================
+
+  const contextConfig = (0, _useXComponentConfig.default)('thoughtChain');
+
+  // ============================ Style ============================
+
+  const [hashId, cssVarCls] = (0, _style.default)(prefixCls);
+  const mergedCls = (0, _classnames.default)(className, prefixCls, contextConfig.className, contextConfig.classNames.root, rootClassName, hashId, cssVarCls, className, classNames.root, `${prefixCls}-box`, {
+    [`${prefixCls}-rtl`]: direction === 'rtl'
+  });
+  //  ============================ Item Collapsible ============================
+
+  const rootPrefixCls = getPrefixCls();
+  const collapsibleOptions = {
+    defaultExpandedKeys,
+    expandedKeys: customExpandedKeys,
+    onExpand
+  };
+  const [_, expandedKeys, onItemExpand, collapseMotion] = (0, _useCollapsible.default)(collapsibleOptions, prefixCls, rootPrefixCls);
+
+  // ============================= Refs =============================
+
+  const thoughtChainRef = _react.default.useRef(null);
+  (0, _useProxyImperativeHandle.default)(ref, () => {
+    return {
+      nativeElement: thoughtChainRef.current
+    };
+  });
+
+  // ============================ Render ============================
+  return /*#__PURE__*/_react.default.createElement("div", (0, _extends2.default)({
+    ref: thoughtChainRef,
+    className: mergedCls
+  }, domProps, {
+    style: {
+      ...contextConfig.style,
+      ...styles.root,
+      ...style
+    }
+  }), /*#__PURE__*/_react.default.createElement(_Node.ThoughtChainContext.Provider, {
+    value: {
+      prefixCls,
+      expandedKeys,
+      onItemExpand,
+      collapseMotion,
+      classNames: {
+        itemHeader: (0, _classnames.default)(contextConfig.classNames.itemHeader, classNames.itemHeader),
+        itemContent: (0, _classnames.default)(contextConfig.classNames.itemContent, classNames.itemContent),
+        itemFooter: (0, _classnames.default)(contextConfig.classNames.itemFooter, classNames.itemFooter),
+        itemIcon: (0, _classnames.default)(contextConfig.classNames.itemIcon, classNames.itemIcon)
+      },
+      styles: {
+        itemHeader: {
+          ...contextConfig.styles.itemHeader,
+          ...styles.itemHeader
+        },
+        itemContent: {
+          ...contextConfig.styles.itemContent,
+          ...styles.itemContent
+        },
+        itemFooter: {
+          ...contextConfig.styles.itemFooter,
+          ...styles.itemFooter
+        },
+        itemIcon: {
+          ...contextConfig.styles.itemIcon,
+          ...styles.itemIcon
+        }
+      }
+    }
+  }, items?.map((item, index) => /*#__PURE__*/_react.default.createElement(_Node.default, {
+    key: item.key || `key_${index}`,
+    index: index,
+    line: line,
+    className: (0, _classnames.default)(contextConfig.classNames.item, classNames.item),
+    style: {
+      ...contextConfig.styles.item,
+      ...styles.item
+    },
+    info: item
+  }))));
+});
+const ThoughtChain = ForwardThoughtChain;
+ThoughtChain.Item = _Item.default;
+if (process.env.NODE_ENV !== 'production') {
+  ThoughtChain.displayName = 'ThoughtChain';
+}
+var _default = exports.default = ThoughtChain;

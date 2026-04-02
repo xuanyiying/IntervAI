@@ -1,0 +1,115 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.ThoughtChainContext = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _icons = require("@ant-design/icons");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _rcMotion = _interopRequireDefault(require("rc-motion"));
+var _pickAttrs = _interopRequireDefault(require("rc-util/lib/pickAttrs"));
+var _react = _interopRequireDefault(require("react"));
+var _xProvider = require("../x-provider");
+var _Status = _interopRequireDefault(require("./Status"));
+// ================= ThoughtChainContext ====================
+
+const ThoughtChainContext = exports.ThoughtChainContext = /*#__PURE__*/_react.default.createContext(null);
+const ThoughtChainNode = props => {
+  // ================= info ====================
+  const id = _react.default.useId();
+  const {
+    info = {},
+    line,
+    index,
+    className,
+    ...restProps
+  } = props;
+  const domProps = (0, _pickAttrs.default)(restProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+  const {
+    prefixCls,
+    expandedKeys,
+    collapseMotion,
+    onItemExpand,
+    classNames = {},
+    styles = {}
+  } = _react.default.useContext(ThoughtChainContext) || {};
+  const {
+    direction
+  } = (0, _xProvider.useXProviderContext)();
+  const {
+    collapsible,
+    key = id,
+    icon,
+    blink,
+    title,
+    content,
+    footer,
+    status,
+    description
+  } = info;
+
+  // ============================ Style ============================
+  const nodeCls = `${prefixCls}-node`;
+
+  // ============================ Content Open ============================
+  const contentOpen = expandedKeys?.includes(key);
+  let iconNode = /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-index-icon`)
+  }, index + 1);
+  iconNode = icon === false ? null : icon || iconNode;
+
+  // ============================ Render ============================
+  return /*#__PURE__*/_react.default.createElement("div", (0, _extends2.default)({}, domProps, {
+    className: (0, _classnames.default)(nodeCls, className, classNames.item),
+    style: props.style
+  }), iconNode && /*#__PURE__*/_react.default.createElement(_Status.default, {
+    className: (0, _classnames.default)(`${nodeCls}-icon`, classNames.itemIcon, {
+      [`${nodeCls}-icon-${line}`]: typeof line !== 'boolean'
+    }),
+    style: styles.itemIcon,
+    prefixCls: prefixCls,
+    icon: iconNode,
+    status: status
+  }), /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-box`)
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-header`, classNames.itemHeader),
+    style: styles.itemHeader
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-title`, {
+      [`${nodeCls}-collapsible`]: collapsible,
+      [`${prefixCls}-motion-blink`]: blink
+    }),
+    onClick: collapsible ? () => onItemExpand?.(key) : undefined
+  }, title, collapsible && content && (direction === 'rtl' ? /*#__PURE__*/_react.default.createElement(_icons.LeftOutlined, {
+    className: `${nodeCls}-collapse-icon`,
+    rotate: contentOpen ? -90 : 0
+  }) : /*#__PURE__*/_react.default.createElement(_icons.RightOutlined, {
+    className: `${nodeCls}-collapse-icon`,
+    rotate: contentOpen ? 90 : 0
+  }))), description && /*#__PURE__*/_react.default.createElement("div", {
+    className: `${nodeCls}-description`
+  }, description)), content && /*#__PURE__*/_react.default.createElement(_rcMotion.default, (0, _extends2.default)({}, collapseMotion, {
+    visible: collapsible ? contentOpen : true
+  }), ({
+    className: motionClassName,
+    style
+  }, motionRef) => /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-content`, motionClassName),
+    ref: motionRef,
+    style: style
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-content-box`, classNames.itemContent),
+    style: styles.itemContent
+  }, content))), footer && /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)(`${nodeCls}-footer`, classNames.itemFooter),
+    style: styles.itemFooter
+  }, footer)));
+};
+var _default = exports.default = ThoughtChainNode;

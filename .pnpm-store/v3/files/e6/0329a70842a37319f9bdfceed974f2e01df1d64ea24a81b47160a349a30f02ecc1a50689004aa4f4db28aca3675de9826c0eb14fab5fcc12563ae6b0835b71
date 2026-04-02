@@ -1,0 +1,20 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+const genActionsFeedbackStyle = token => {
+  const {
+    componentCls
+  } = token;
+  const feedbackCls = `${componentCls}-feedback`;
+  return {
+    [feedbackCls]: {
+      '&-rtl': {
+        direction: 'rtl'
+      }
+    }
+  };
+};
+var _default = exports.default = genActionsFeedbackStyle;

@@ -1,0 +1,43 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { Flex, Skeleton, Spin } from 'antd';
+import classnames from 'classnames';
+import React from 'react';
+import ImageIcon from "./ImageIcon";
+import usePercent from "./usePercent";
+const ImageLoading = props => {
+  const {
+    style,
+    className,
+    prefixCls,
+    percent = 'auto',
+    spinProps
+  } = props;
+  const [mergedPercent, percentText] = usePercent(true, percent);
+  const mergeSinkProps = {
+    size: 'default',
+    showText: true,
+    icon: /*#__PURE__*/React.createElement(ImageIcon, {
+      color: "rgba(0,0,0,.45)",
+      size: spinProps?.size || 'default'
+    }),
+    ...spinProps
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    className: classnames(`${prefixCls}-image-loading`, className),
+    style: style
+  }, /*#__PURE__*/React.createElement(Skeleton.Node, {
+    rootClassName: classnames(`${prefixCls}-image-skeleton`),
+    active: true
+  }, /*#__PURE__*/React.createElement(Flex, {
+    className: classnames(`${prefixCls}-image-spin`, {
+      [`${prefixCls}-image-spin-${mergeSinkProps.size}`]: mergeSinkProps.size
+    }),
+    align: "center",
+    gap: "small"
+  }, /*#__PURE__*/React.createElement(Spin, _extends({
+    percent: mergedPercent
+  }, spinProps)), mergeSinkProps.showText && /*#__PURE__*/React.createElement("div", {
+    className: `${prefixCls}-image-spin-text`
+  }, percentText)), mergeSinkProps.icon));
+};
+export default ImageLoading;

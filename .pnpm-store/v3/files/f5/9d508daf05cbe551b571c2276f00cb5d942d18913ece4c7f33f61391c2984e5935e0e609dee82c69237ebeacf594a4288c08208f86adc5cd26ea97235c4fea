@@ -1,0 +1,75 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.initFadeMotion = exports.initFadeLeftMotion = exports.fadeOut = exports.fadeInLeft = exports.fadeIn = void 0;
+var _cssinjs = require("@ant-design/cssinjs");
+var _fastColor = require("@ant-design/fast-color");
+var _init = require("./init");
+const fadeInLeft = exports.fadeInLeft = new _cssinjs.Keyframes('antXFadeInLeft', {
+  '0%': {
+    maskPosition: '100% 0'
+  },
+  '100%': {
+    maskPosition: '0% 0%'
+  }
+});
+const fadeIn = exports.fadeIn = new _cssinjs.Keyframes('antXFadeIn', {
+  '0%': {
+    opacity: 0
+  },
+  '100%': {
+    opacity: 1
+  }
+});
+const fadeOut = exports.fadeOut = new _cssinjs.Keyframes('antFadeOut', {
+  '0%': {
+    opacity: 1
+  },
+  '100%': {
+    opacity: 0
+  }
+});
+const initFadeLeftMotion = (token, sameLevel = false) => {
+  const {
+    antCls
+  } = token;
+  const motionCls = `${antCls}-x-fade-left`;
+  const sameLevelPrefix = sameLevel ? '&' : '';
+  return [(0, _init.initMotion)(motionCls, fadeInLeft, fadeOut, '1s', sameLevel), {
+    [`
+        ${sameLevelPrefix}${motionCls}-enter,
+        ${sameLevelPrefix}${motionCls}-appear
+      `]: {
+      transitionProperty: 'mask-position',
+      animationTimingFunction: 'linear',
+      maskImage: `linear-gradient(90deg, ${token.colorTextBase} 33%, ${new _fastColor.FastColor(token.colorTextBase).setA(0)} 66%)`,
+      maskSize: '300% 100%',
+      maskPosition: '100% 0%'
+    },
+    [`${sameLevelPrefix}${motionCls}-leave`]: {
+      animationTimingFunction: 'linear'
+    }
+  }];
+};
+exports.initFadeLeftMotion = initFadeLeftMotion;
+const initFadeMotion = (token, sameLevel = false) => {
+  const {
+    antCls
+  } = token;
+  const motionCls = `${antCls}-x-fade`;
+  const sameLevelPrefix = sameLevel ? '&' : '';
+  return [(0, _init.initMotion)(motionCls, fadeIn, fadeOut, '1.2s', sameLevel), {
+    [`
+        ${sameLevelPrefix}${motionCls}-enter,
+        ${sameLevelPrefix}${motionCls}-appear
+      `]: {
+      opacity: 0
+    },
+    [`${sameLevelPrefix}${motionCls}-leave`]: {
+      animationTimingFunction: 'linear'
+    }
+  }];
+};
+exports.initFadeMotion = initFadeMotion;

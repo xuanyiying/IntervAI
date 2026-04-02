@@ -1,0 +1,127 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _classnames = _interopRequireDefault(require("classnames"));
+var _rcMotion = _interopRequireDefault(require("rc-motion"));
+var _pickAttrs = _interopRequireDefault(require("rc-util/lib/pickAttrs"));
+var _ref = require("rc-util/lib/ref");
+var _react = _interopRequireDefault(require("react"));
+var _useProxyImperativeHandle = _interopRequireDefault(require("../_util/hooks/use-proxy-imperative-handle"));
+var _useXComponentConfig = _interopRequireDefault(require("../_util/hooks/use-x-component-config"));
+var _xProvider = require("../x-provider");
+var _ActionsAudio = _interopRequireDefault(require("./ActionsAudio"));
+var _ActionsCopy = _interopRequireDefault(require("./ActionsCopy"));
+var _ActionsFeedback = _interopRequireDefault(require("./ActionsFeedback"));
+var _ActionsItem = _interopRequireDefault(require("./ActionsItem"));
+var _context = require("./context");
+var _Item = _interopRequireDefault(require("./Item"));
+var _style = _interopRequireDefault(require("./style"));
+const ForwardActions = /*#__PURE__*/_react.default.forwardRef((props, ref) => {
+  const {
+    items = [],
+    onClick,
+    dropdownProps = {},
+    fadeIn,
+    fadeInLeft,
+    variant = 'borderless',
+    prefixCls: customizePrefixCls,
+    classNames = {},
+    rootClassName = '',
+    className = '',
+    styles = {},
+    style = {},
+    ...otherHtmlProps
+  } = props;
+  const domProps = (0, _pickAttrs.default)(otherHtmlProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+
+  // ============================ PrefixCls ============================
+  const {
+    getPrefixCls,
+    direction
+  } = (0, _xProvider.useXProviderContext)();
+  const prefixCls = getPrefixCls('actions', customizePrefixCls);
+  const contextConfig = (0, _useXComponentConfig.default)('actions');
+  const [hashId, cssVarCls] = (0, _style.default)(prefixCls);
+
+  // ============================= Motion =============================
+
+  const rootPrefixCls = getPrefixCls();
+  const motionName = fadeIn || fadeInLeft ? `${rootPrefixCls}-x-fade${fadeInLeft ? '-left' : ''}` : '';
+
+  // ============================= Class =============================
+  const mergedCls = (0, _classnames.default)(prefixCls, contextConfig.className, contextConfig.classNames.root, rootClassName, className, classNames.root, cssVarCls, hashId, {
+    [`${prefixCls}-rtl`]: direction === 'rtl'
+  });
+  const mergedStyle = {
+    ...contextConfig.style,
+    ...styles.root,
+    ...style
+  };
+
+  // ============================= Refs =============================
+  const containerRef = _react.default.useRef(null);
+  (0, _useProxyImperativeHandle.default)(ref, () => {
+    return {
+      nativeElement: containerRef.current
+    };
+  });
+
+  // ============================= Render =============================
+  return /*#__PURE__*/_react.default.createElement(_rcMotion.default, {
+    motionName: motionName
+  }, ({
+    className: motionClassName
+  }, ref) => {
+    return /*#__PURE__*/_react.default.createElement("div", (0, _extends2.default)({
+      ref: (0, _ref.composeRef)(containerRef, ref)
+    }, domProps, {
+      className: mergedCls,
+      style: mergedStyle
+    }), /*#__PURE__*/_react.default.createElement(_context.ActionsContext.Provider, {
+      value: {
+        prefixCls,
+        classNames: {
+          item: (0, _classnames.default)(contextConfig.classNames.item, classNames.item),
+          itemDropdown: (0, _classnames.default)(contextConfig.classNames.itemDropdown, classNames.itemDropdown)
+        },
+        styles: {
+          item: {
+            ...contextConfig.styles.item,
+            ...styles.item
+          },
+          itemDropdown: {
+            ...contextConfig.styles.itemDropdown,
+            ...styles.itemDropdown
+          }
+        }
+      }
+    }, /*#__PURE__*/_react.default.createElement("div", {
+      className: (0, _classnames.default)(`${prefixCls}-list`, `${prefixCls}-variant-${variant}`, motionClassName)
+    }, items.map((item, idx) => {
+      return /*#__PURE__*/_react.default.createElement(_Item.default, {
+        item: item,
+        onClick: onClick,
+        dropdownProps: dropdownProps,
+        key: item.key || idx
+      });
+    }))));
+  });
+});
+const Actions = ForwardActions;
+if (process.env.NODE_ENV !== 'production') {
+  Actions.displayName = 'Actions';
+}
+Actions.Feedback = _ActionsFeedback.default;
+Actions.Copy = _ActionsCopy.default;
+Actions.Item = _ActionsItem.default;
+Actions.Audio = _ActionsAudio.default;
+var _default = exports.default = Actions;

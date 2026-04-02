@@ -1,0 +1,53 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _useXComponentConfig = _interopRequireDefault(require("../_util/hooks/use-x-component-config"));
+var _xProvider = require("../x-provider");
+var _Bubble = _interopRequireDefault(require("./Bubble"));
+const SystemBubble = ({
+  prefixCls: customizePrefixCls,
+  content,
+  variant = 'shadow',
+  shape,
+  style,
+  className,
+  styles = {},
+  classNames = {},
+  rootClassName,
+  ...restProps
+}, ref) => {
+  // ===================== Component Config =========================
+  const contextConfig = (0, _useXComponentConfig.default)('bubble');
+
+  // ============================ Prefix ============================
+  const {
+    getPrefixCls
+  } = (0, _xProvider.useXProviderContext)();
+  const prefixCls = getPrefixCls('bubble', customizePrefixCls);
+
+  // ============================ Styles ============================
+  const cls = `${prefixCls}-system`;
+  const rootMergedCls = (0, _classnames.default)(cls, prefixCls, contextConfig.className, contextConfig.classNames.root, classNames.root, className, rootClassName);
+  return /*#__PURE__*/_react.default.createElement(_Bubble.default, (0, _extends2.default)({
+    ref: ref,
+    style: style,
+    className: rootMergedCls,
+    styles: styles,
+    classNames: classNames,
+    variant: variant,
+    shape: shape,
+    content: content
+  }, restProps));
+};
+const ForwardSystemBubble = /*#__PURE__*/_react.default.forwardRef(SystemBubble);
+if (process.env.NODE_ENV !== 'production') {
+  ForwardSystemBubble.displayName = 'SystemBubble';
+}
+var _default = exports.default = ForwardSystemBubble;

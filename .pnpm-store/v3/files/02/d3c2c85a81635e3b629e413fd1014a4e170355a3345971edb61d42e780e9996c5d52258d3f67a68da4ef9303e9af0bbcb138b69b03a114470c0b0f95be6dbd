@@ -1,0 +1,5 @@
+import type { XComponentConfig, XComponentsConfig } from '../../x-provider/context';
+import { MarkdownComponentsConfig as XMarkdownComponentsConfig } from '../../x-provider/XMarkdownComponents';
+type MergeXComponentsConfig = XComponentsConfig & XMarkdownComponentsConfig;
+declare const useXComponentConfig: <C extends keyof XComponentsConfig | keyof XMarkdownComponentsConfig>(component: C) => Required<MergeXComponentsConfig>[C] & XComponentConfig;
+export default useXComponentConfig;

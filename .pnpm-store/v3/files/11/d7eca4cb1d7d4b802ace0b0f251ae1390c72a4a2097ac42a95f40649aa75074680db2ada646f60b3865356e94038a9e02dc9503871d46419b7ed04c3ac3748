@@ -1,0 +1,3 @@
+import type { xLocale, xMarkdownLocale } from '.';
+declare const localeValues: Required<xLocale & xMarkdownLocale>;
+export default localeValues;

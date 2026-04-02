@@ -1,0 +1,53 @@
+import React from 'react';
+export declare enum ACTIONS_ITEM_STATUS {
+    /**
+     * @desc 等待状态
+     */
+    LOADING = "loading",
+    /**
+     * @desc 失败状态
+     */
+    ERROR = "error",
+    /**
+     * @desc 执行中
+     */
+    RUNNING = "running",
+    /**
+     * @desc 默认
+     */
+    DEFAULT = "default"
+}
+export interface ActionsItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+    /**
+     * @desc 状态
+     * @descEN status
+     */
+    status?: `${ACTIONS_ITEM_STATUS}`;
+    /**
+     * @desc 图标
+     * @descEN icon
+     */
+    defaultIcon: React.ReactNode;
+    /**
+     * @desc 自定义操作的显示标签
+     * @descEN Display label for the custom action.
+     */
+    label?: string;
+    /**
+     * @desc 执行中图标
+     * @descEN running icon
+     */
+    runningIcon?: React.ReactNode;
+    /**
+     * @desc 自定义样式前缀
+     * @descEN Customize the component's prefixCls
+     */
+    prefixCls?: string;
+    /**
+     * @desc 根节点样式类
+     * @descEN Root node style class.
+     */
+    rootClassName?: string;
+}
+declare const ActionsItem: React.FC<ActionsItemProps>;
+export default ActionsItem;

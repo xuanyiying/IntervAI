@@ -1,0 +1,38 @@
+import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import classnames from 'classnames';
+import React from 'react';
+export let THOUGHT_CHAIN_ITEM_STATUS = /*#__PURE__*/function (THOUGHT_CHAIN_ITEM_STATUS) {
+  THOUGHT_CHAIN_ITEM_STATUS["LOADING"] = "loading";
+  THOUGHT_CHAIN_ITEM_STATUS["SUCCESS"] = "success";
+  THOUGHT_CHAIN_ITEM_STATUS["ERROR"] = "error";
+  THOUGHT_CHAIN_ITEM_STATUS["ABORT"] = "abort";
+  return THOUGHT_CHAIN_ITEM_STATUS;
+}({});
+const StatusIcon = {
+  [THOUGHT_CHAIN_ITEM_STATUS.LOADING]: /*#__PURE__*/React.createElement(LoadingOutlined, null),
+  [THOUGHT_CHAIN_ITEM_STATUS.ERROR]: /*#__PURE__*/React.createElement(CloseCircleOutlined, null),
+  [THOUGHT_CHAIN_ITEM_STATUS.SUCCESS]: /*#__PURE__*/React.createElement(CheckCircleOutlined, null),
+  [THOUGHT_CHAIN_ITEM_STATUS.ABORT]: /*#__PURE__*/React.createElement(MinusCircleOutlined, null)
+};
+const Status = props => {
+  const {
+    prefixCls,
+    icon,
+    status,
+    className,
+    style
+  } = props;
+
+  // ============================ Style ============================
+  const statusCls = `${prefixCls}-status`;
+  const IconNode = status ? StatusIcon[status] : icon;
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement("div", {
+    className: classnames(statusCls, className, {
+      [`${statusCls}-${status}`]: status
+    }),
+    style: style
+  }, IconNode);
+};
+export default Status;
