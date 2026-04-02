@@ -1,0 +1,90 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _extends2 = _interopRequireDefault(require("@babel/runtime/helpers/extends"));
+var _icons = require("@ant-design/icons");
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _pickAttrs = _interopRequireDefault(require("rc-util/lib/pickAttrs"));
+var _react = _interopRequireDefault(require("react"));
+var _locale = require("../locale");
+var _en_US = _interopRequireDefault(require("../locale/en_US"));
+var _xProvider = require("../x-provider");
+var _style = _interopRequireDefault(require("./style"));
+var FEEDBACK_VALUE = /*#__PURE__*/function (FEEDBACK_VALUE) {
+  FEEDBACK_VALUE["like"] = "like";
+  FEEDBACK_VALUE["dislike"] = "dislike";
+  FEEDBACK_VALUE["default"] = "default";
+  return FEEDBACK_VALUE;
+}(FEEDBACK_VALUE || {});
+const ActionsFeedback = props => {
+  const {
+    value = 'default',
+    onChange,
+    className,
+    style,
+    classNames = {},
+    styles = {},
+    prefixCls: customizePrefixCls,
+    rootClassName,
+    ...otherHtmlProps
+  } = props;
+  const domProps = (0, _pickAttrs.default)(otherHtmlProps, {
+    attr: true,
+    aria: true,
+    data: true
+  });
+  const [contextLocale] = (0, _locale.useLocale)('Actions', _en_US.default.Actions);
+
+  // ============================ Prefix ============================
+
+  const {
+    direction,
+    getPrefixCls
+  } = (0, _xProvider.useXProviderContext)();
+  const prefixCls = getPrefixCls('actions', customizePrefixCls);
+  const [hashId, cssVarCls] = (0, _style.default)(prefixCls);
+  const feedbackCls = `${prefixCls}-feedback`;
+
+  // ============================ Classname ============================
+  const mergedCls = (0, _classnames.default)(feedbackCls, hashId, cssVarCls, rootClassName, classNames.root, `${prefixCls}-list`, className, {
+    [`${feedbackCls}-rtl`]: direction === 'rtl'
+  });
+  const onFeedBacKClick = () => onChange?.(value === FEEDBACK_VALUE.dislike ? FEEDBACK_VALUE.default : FEEDBACK_VALUE.dislike);
+  return /*#__PURE__*/_react.default.createElement("div", (0, _extends2.default)({}, domProps, {
+    className: mergedCls,
+    style: {
+      ...style,
+      ...styles.root
+    }
+  }), [FEEDBACK_VALUE.default, FEEDBACK_VALUE.like].includes(value) && /*#__PURE__*/_react.default.createElement(_antd.Tooltip, {
+    title: contextLocale.feedbackLike
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    onClick: () => onChange?.(value === FEEDBACK_VALUE.like ? FEEDBACK_VALUE.default : FEEDBACK_VALUE.like),
+    style: {
+      ...styles.like,
+      ...(value === 'like' ? styles.liked : {})
+    },
+    className: (0, _classnames.default)(`${feedbackCls}-item`, `${prefixCls}-item`, `${feedbackCls}-item-like`, classNames.like, {
+      [`${classNames.liked}`]: classNames.liked && value === 'like',
+      [`${feedbackCls}-item-like-active`]: value === 'like'
+    })
+  }, value === FEEDBACK_VALUE.like ? /*#__PURE__*/_react.default.createElement(_icons.LikeFilled, null) : /*#__PURE__*/_react.default.createElement(_icons.LikeOutlined, null))), [FEEDBACK_VALUE.default, FEEDBACK_VALUE.dislike].includes(value) && /*#__PURE__*/_react.default.createElement(_antd.Tooltip, {
+    title: contextLocale.feedbackDislike
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    onClick: onFeedBacKClick,
+    style: {
+      ...styles.dislike,
+      ...(value === 'dislike' ? styles.disliked : {})
+    },
+    className: (0, _classnames.default)(`${feedbackCls}-item`, `${prefixCls}-item`, `${feedbackCls}-item-dislike`, classNames.dislike, {
+      [`${classNames.disliked}`]: classNames.disliked && value === 'like',
+      [`${feedbackCls}-item-dislike-active`]: value === 'dislike'
+    })
+  }, value === FEEDBACK_VALUE.dislike ? /*#__PURE__*/_react.default.createElement(_icons.DislikeFilled, null) : /*#__PURE__*/_react.default.createElement(_icons.DislikeOutlined, null))));
+};
+var _default = exports.default = ActionsFeedback;

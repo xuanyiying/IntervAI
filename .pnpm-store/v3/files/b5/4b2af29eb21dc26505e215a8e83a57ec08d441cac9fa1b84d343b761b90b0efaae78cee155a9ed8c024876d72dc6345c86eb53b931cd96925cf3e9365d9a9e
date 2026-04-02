@@ -1,0 +1,56 @@
+import { PlusOutlined } from '@ant-design/icons';
+import classNames from 'classnames';
+import React from 'react';
+import { useLocale } from "../../locale";
+import enUS from "../../locale/en_US";
+const CreationLabel = ({
+  shortcutKeysIcon,
+  prefixCls
+}) => {
+  const [contextLocale] = useLocale('Conversations', enUS.Conversations);
+  const showShortcutKeys = !!shortcutKeysIcon?.length;
+  return /*#__PURE__*/React.createElement("div", {
+    className: classNames(prefixCls, {
+      [`${prefixCls}-shortcut-keys-show`]: showShortcutKeys
+    })
+  }, /*#__PURE__*/React.createElement("span", null, contextLocale.create), showShortcutKeys && /*#__PURE__*/React.createElement("span", {
+    className: classNames(`${prefixCls}-shortcut-keys`)
+  }, shortcutKeysIcon.map(keyIcon => /*#__PURE__*/React.createElement("span", {
+    className: classNames(`${prefixCls}-shortcut-key`),
+    key: keyIcon
+  }, keyIcon))));
+};
+const useCreation = ({
+  icon,
+  label,
+  align,
+  shortcutKeyInfo,
+  prefixCls
+}) => {
+  const {
+    shortcutKeysIcon
+  } = shortcutKeyInfo || {};
+  const creationConfig = {
+    label: /*#__PURE__*/React.createElement(CreationLabel, {
+      prefixCls: `${prefixCls}-label`,
+      shortcutKeysIcon: shortcutKeysIcon
+    }),
+    icon: /*#__PURE__*/React.createElement(PlusOutlined, {
+      className: `${prefixCls}-icon`
+    }),
+    align: 'center'
+  };
+  if (label) {
+    creationConfig.label = typeof label === 'function' ? label({
+      shortcutKeyInfo,
+      components: {
+        CreationLabel
+      }
+    }) : label;
+  }
+  if (icon) {
+    creationConfig.icon = typeof icon === 'function' ? icon() : icon;
+  }
+  return [creationConfig.icon, creationConfig.label, align || creationConfig.align];
+};
+export default useCreation;

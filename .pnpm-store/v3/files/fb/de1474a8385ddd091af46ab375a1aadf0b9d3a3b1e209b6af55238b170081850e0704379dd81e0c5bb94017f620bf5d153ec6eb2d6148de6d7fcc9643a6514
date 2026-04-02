@@ -1,0 +1,94 @@
+import { useState } from 'react';
+let uuid = 0;
+class XNotification {
+  static permissionMap = new Map();
+  static permissible;
+  constructor() {
+    XNotification.permissible = !!globalThis?.Notification;
+    if (!XNotification.permissible) {
+      console.warn('Notification API is not supported in this environment.');
+    }
+  }
+  get permission() {
+    if (!XNotification.permissible) {
+      return 'denied';
+    }
+    return globalThis.Notification?.permission;
+  }
+  open(arg) {
+    if (!XNotification.permissible) return;
+    const {
+      title,
+      tag,
+      onClick,
+      duration,
+      onClose,
+      onError,
+      onShow,
+      ...config
+    } = arg || {};
+    if (tag && XNotification.permissionMap.has(tag)) return;
+    uuid += 1;
+    const mergeKey = tag || `x_notification_${uuid}`;
+    const notification = new globalThis.Notification(title, config || {});
+    const close = notification.close.bind(notification);
+    if (typeof duration === 'number') {
+      const timeoutId = setTimeout(() => {
+        clearTimeout(timeoutId);
+        close();
+      }, duration * 1000);
+    }
+    notification.onclick = event => {
+      onClick?.(event, close);
+    };
+    notification.onshow = event => {
+      onShow?.(event);
+      XNotification.permissionMap.set(mergeKey, {
+        close
+      });
+    };
+    notification.onclose = event => {
+      onClose?.(event);
+      XNotification.permissionMap.delete(mergeKey);
+    };
+    notification.onerror = event => {
+      onError?.(event);
+    };
+  }
+  async requestPermission() {
+    return this._requestPermission();
+  }
+  async _requestPermission(setPermissionState) {
+    if (!XNotification.permissible) {
+      return 'denied';
+    }
+    const permissionRes = await globalThis.Notification.requestPermission();
+    if (typeof setPermissionState === 'function') {
+      setPermissionState?.(permissionRes);
+    }
+    return permissionRes;
+  }
+  useNotification() {
+    const [permission, setPermission] = useState(this?.permission);
+    return [{
+      permission
+    }, {
+      open: this.open,
+      close: this.close,
+      requestPermission: () => this._requestPermission.call(this, setPermission)
+    }];
+  }
+  close(tags) {
+    if (!XNotification.permissible) return;
+    Array.from(XNotification.permissionMap.keys()).forEach(key => {
+      if (tags === undefined) {
+        XNotification.permissionMap.get(key)?.close?.();
+      }
+      if (tags?.includes(key)) {
+        XNotification.permissionMap.get(key)?.close?.();
+      }
+    });
+  }
+}
+export default new XNotification();
+export { XNotification };

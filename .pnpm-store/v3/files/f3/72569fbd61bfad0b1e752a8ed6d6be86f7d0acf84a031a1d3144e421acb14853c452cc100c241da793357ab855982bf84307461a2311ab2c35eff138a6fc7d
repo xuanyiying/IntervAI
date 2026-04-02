@@ -1,0 +1,46 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.TypingContent = void 0;
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _useTyping = require("./hooks/useTyping");
+const TypingContent = ({
+  prefixCls,
+  streaming,
+  content,
+  typing,
+  onTyping,
+  onTypingComplete
+}) => {
+  const {
+    renderedData,
+    animating,
+    memoedAnimationCfg
+  } = (0, _useTyping.useTyping)({
+    streaming,
+    content,
+    typing,
+    onTyping,
+    onTypingComplete
+  });
+  const {
+    effect
+  } = memoedAnimationCfg;
+  // 渲染元素
+  const elements = renderedData.map(item => effect === 'fade-in' && !item.done ? /*#__PURE__*/_react.default.createElement("span", {
+    key: item.id,
+    className: "fade-in"
+  }, item.text) : item.text);
+  const isTyping = typing === true ? false : effect === 'typing';
+  return /*#__PURE__*/_react.default.createElement("div", {
+    className: (0, _classnames.default)({
+      [`${prefixCls}-typing`]: isTyping && animating,
+      [`${prefixCls}-fade-in`]: !isTyping
+    })
+  }, elements);
+};
+exports.TypingContent = TypingContent;

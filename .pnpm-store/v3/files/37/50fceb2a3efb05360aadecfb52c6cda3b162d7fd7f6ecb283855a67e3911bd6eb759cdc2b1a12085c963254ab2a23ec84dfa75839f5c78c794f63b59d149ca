@@ -1,0 +1,83 @@
+"use strict";
+
+var _interopRequireWildcard = require("@babel/runtime/helpers/interopRequireWildcard").default;
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _icons = require("@ant-design/icons");
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireWildcard(require("react"));
+const CarouselCard = props => {
+  const {
+    prefixCls,
+    items,
+    activeKey,
+    className,
+    style
+  } = props;
+  const compCls = `${prefixCls}-carousel`;
+  const [slide, setSlide] = _react.default.useState(Math.max(0, items?.findIndex(({
+    key
+  }) => key === activeKey) ?? 0));
+  const carouselRef = _react.default.useRef(null);
+  const handleClick = item => {
+    item.url && window.open(item.url, '_blank', 'noopener,noreferrer');
+    props.onClick?.(item);
+  };
+  (0, _react.useEffect)(() => {
+    if (carouselRef.current) {
+      carouselRef.current.goTo(slide, false);
+    }
+  }, [slide]);
+  return /*#__PURE__*/_react.default.createElement("div", {
+    style: style,
+    className: (0, _classnames.default)(`${compCls}-wrapper`, className)
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-title`
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-btn-wrapper`
+  }, /*#__PURE__*/_react.default.createElement("span", {
+    className: (0, _classnames.default)(`${compCls}-btn`, `${compCls}-left-btn`, {
+      [`${compCls}-btn-disabled`]: slide === 0
+    }),
+    onClick: () => {
+      if (slide > 0) {
+        setSlide(pre => pre - 1);
+      }
+    }
+  }, /*#__PURE__*/_react.default.createElement(_icons.LeftOutlined, null)), /*#__PURE__*/_react.default.createElement("span", {
+    className: (0, _classnames.default)(`${compCls}-btn`, `${compCls}-right-btn`, {
+      [`${compCls}-btn-disabled`]: slide === (items?.length || 1) - 1
+    }),
+    onClick: () => {
+      if (slide < (items?.length || 1) - 1) {
+        setSlide(pre => pre + 1);
+      }
+    }
+  }, /*#__PURE__*/_react.default.createElement(_icons.RightOutlined, null))), /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-page`
+  }, `${slide + 1}/${items?.length || 1}`)), /*#__PURE__*/_react.default.createElement(_antd.Carousel, {
+    className: compCls,
+    ref: carouselRef,
+    arrows: false,
+    infinite: false,
+    dots: false,
+    beforeChange: (_, nextSlide) => setSlide(nextSlide)
+  }, items?.map((item, index) => /*#__PURE__*/_react.default.createElement("div", {
+    key: item.key || index,
+    className: `${compCls}-item`,
+    onClick: () => handleClick(item)
+  }, /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-item-title-wrapper`
+  }, item.icon && /*#__PURE__*/_react.default.createElement("span", {
+    className: `${compCls}-item-icon`
+  }, item.icon), /*#__PURE__*/_react.default.createElement("span", {
+    className: `${compCls}-item-title`
+  }, item.title)), item.description && /*#__PURE__*/_react.default.createElement("div", {
+    className: `${compCls}-item-description`
+  }, item.description)))));
+};
+var _default = exports.default = CarouselCard;

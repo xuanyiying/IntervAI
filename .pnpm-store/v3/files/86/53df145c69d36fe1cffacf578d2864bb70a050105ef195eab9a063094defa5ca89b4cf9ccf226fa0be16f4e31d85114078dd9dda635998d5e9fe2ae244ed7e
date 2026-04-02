@@ -1,0 +1,43 @@
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _react = require("react");
+const buildSlotValues = (slotConfig, slotConfigMap) => {
+  if (Array.isArray(slotConfig)) {
+    return slotConfig?.reduce((acc, node) => {
+      if (node.key) {
+        if (node.type === 'input' || node.type === 'select' || node.type === 'custom') {
+          acc[node.key] = node.props?.defaultValue || '';
+        } else {
+          acc[node.key] = '';
+        }
+        slotConfigMap.current.set(node.key, node);
+      }
+      return acc;
+    }, {});
+  }
+  return {};
+};
+function useGetState(slotConfig) {
+  const [state, _setState] = (0, _react.useState)({});
+  const stateRef = (0, _react.useRef)(state);
+  const slotConfigMap = (0, _react.useRef)(new Map());
+  (0, _react.useEffect)(() => {
+    const slotValue = buildSlotValues(slotConfig, slotConfigMap);
+    _setState(slotValue);
+    stateRef.current = slotValue;
+  }, [slotConfig]);
+  const setState = (0, _react.useCallback)(newValue => {
+    const value = typeof newValue === 'function' ? newValue(stateRef.current) : newValue;
+    stateRef.current = value;
+    _setState(value);
+  }, []);
+  const getState = (0, _react.useCallback)(() => {
+    return stateRef.current;
+  }, []);
+  return [slotConfigMap.current, getState, setState];
+}
+var _default = exports.default = useGetState;

@@ -1,0 +1,11 @@
+import type { SpinProps } from 'antd';
+import React from 'react';
+import { FileCardProps } from '../FileCard';
+export type ImageLoadingProps = SpinProps & {
+    prefixCls?: string;
+    style?: React.CSSProperties;
+    className?: string;
+    spinProps?: FileCardProps['spinProps'];
+};
+declare const ImageLoading: React.FC<ImageLoadingProps>;
+export default ImageLoading;

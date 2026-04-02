@@ -1,0 +1,10 @@
+import { type ITaxRatesUsedResponse, type ITransactionPayoutTotalsAdjustedResponse, type ITransactionPayoutTotalsResponse, type ITransactionTotalsAdjustedResponse, type ITransactionTotalsResponse } from '../shared/index.js';
+import { type ITransactionLineItemResponse } from './transaction-line-item-response.js';
+export interface ITransactionDetailsResponse {
+    tax_rates_used: ITaxRatesUsedResponse[];
+    totals?: ITransactionTotalsResponse | null;
+    adjusted_totals?: ITransactionTotalsAdjustedResponse | null;
+    payout_totals?: ITransactionPayoutTotalsResponse | null;
+    adjusted_payout_totals?: ITransactionPayoutTotalsAdjustedResponse | null;
+    line_items: ITransactionLineItemResponse[];
+}

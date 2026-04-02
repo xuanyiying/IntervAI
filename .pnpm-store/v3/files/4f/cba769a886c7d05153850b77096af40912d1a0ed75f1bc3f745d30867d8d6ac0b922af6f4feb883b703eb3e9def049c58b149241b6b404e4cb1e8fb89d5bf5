@@ -1,0 +1,175 @@
+import { type EventName, type IAddressNotificationResponse, type IAdjustmentNotificationResponse, type IApiKeyNotificationResponse, type IBusinessNotificationResponse, type IClientTokenNotificationResponse, type ICustomerNotificationResponse, type IDiscountGroupNotificationResponse, type IDiscountNotificationResponse, type IPaymentMethodDeletedNotificationResponse, type IPaymentMethodNotificationResponse, type IPayoutNotificationResponse, type IPriceNotificationResponse, type IProductNotificationResponse, type IReportNotificationResponse, type ISubscriptionCreatedNotificationResponse, type ISubscriptionNotificationResponse, type ITransactionNotificationResponse } from '../../notifications/index.js';
+export interface IEventsResponse<T = object> {
+    event_id: string;
+    notification_id: string | null;
+    event_type: string;
+    occurred_at: string;
+    data: T;
+}
+interface IAddressCreated extends IEventsResponse<IAddressNotificationResponse> {
+    event_type: EventName.AddressCreated;
+}
+interface IAddressUpdated extends IEventsResponse<IAddressNotificationResponse> {
+    event_type: EventName.AddressUpdated;
+}
+interface IAddressImported extends IEventsResponse<IAddressNotificationResponse> {
+    event_type: EventName.AddressImported;
+}
+interface IAdjustmentCreated extends IEventsResponse<IAdjustmentNotificationResponse> {
+    event_type: EventName.AdjustmentCreated;
+}
+interface IAdjustmentUpdated extends IEventsResponse<IAdjustmentNotificationResponse> {
+    event_type: EventName.AdjustmentUpdated;
+}
+interface IApiKeyCreated extends IEventsResponse<IApiKeyNotificationResponse> {
+    event_type: EventName.ApiKeyCreated;
+}
+interface IApiKeyExpired extends IEventsResponse<IApiKeyNotificationResponse> {
+    event_type: EventName.ApiKeyExpired;
+}
+interface IApiKeyExpiring extends IEventsResponse<IApiKeyNotificationResponse> {
+    event_type: EventName.ApiKeyExpiring;
+}
+interface IApiKeyRevoked extends IEventsResponse<IApiKeyNotificationResponse> {
+    event_type: EventName.ApiKeyRevoked;
+}
+interface IApiKeyUpdated extends IEventsResponse<IApiKeyNotificationResponse> {
+    event_type: EventName.ApiKeyUpdated;
+}
+interface IBusinessCreated extends IEventsResponse<IBusinessNotificationResponse> {
+    event_type: EventName.BusinessCreated;
+}
+interface IBusinessUpdated extends IEventsResponse<IBusinessNotificationResponse> {
+    event_type: EventName.BusinessUpdated;
+}
+interface IBusinessImported extends IEventsResponse<IBusinessNotificationResponse> {
+    event_type: EventName.BusinessImported;
+}
+interface IClientTokenCreated extends IEventsResponse<IClientTokenNotificationResponse> {
+    event_type: EventName.ClientTokenCreated;
+}
+interface IClientTokenUpdated extends IEventsResponse<IClientTokenNotificationResponse> {
+    event_type: EventName.ClientTokenUpdated;
+}
+interface IClientTokenRevoked extends IEventsResponse<IClientTokenNotificationResponse> {
+    event_type: EventName.ClientTokenRevoked;
+}
+interface ICustomerCreated extends IEventsResponse<ICustomerNotificationResponse> {
+    event_type: EventName.CustomerCreated;
+}
+interface ICustomerUpdated extends IEventsResponse<ICustomerNotificationResponse> {
+    event_type: EventName.CustomerUpdated;
+}
+interface ICustomerImported extends IEventsResponse<ICustomerNotificationResponse> {
+    event_type: EventName.CustomerImported;
+}
+interface IDiscountCreated extends IEventsResponse<IDiscountNotificationResponse> {
+    event_type: EventName.DiscountCreated;
+}
+interface IDiscountUpdated extends IEventsResponse<IDiscountNotificationResponse> {
+    event_type: EventName.DiscountUpdated;
+}
+interface IDiscountImported extends IEventsResponse<IDiscountNotificationResponse> {
+    event_type: EventName.DiscountImported;
+}
+interface IDiscountGroupCreated extends IEventsResponse<IDiscountGroupNotificationResponse> {
+    event_type: EventName.DiscountGroupCreated;
+}
+interface IDiscountGroupUpdated extends IEventsResponse<IDiscountGroupNotificationResponse> {
+    event_type: EventName.DiscountGroupUpdated;
+}
+interface IPaymentMethodDeleted extends IEventsResponse<IPaymentMethodDeletedNotificationResponse> {
+    event_type: EventName.PaymentMethodDeleted;
+}
+interface IPaymentMethodSaved extends IEventsResponse<IPaymentMethodNotificationResponse> {
+    event_type: EventName.PaymentMethodSaved;
+}
+interface IPayoutCreated extends IEventsResponse<IPayoutNotificationResponse> {
+    event_type: EventName.PayoutCreated;
+}
+interface IPayoutPaid extends IEventsResponse<IPayoutNotificationResponse> {
+    event_type: EventName.PayoutPaid;
+}
+interface IPriceCreated extends IEventsResponse<IPriceNotificationResponse> {
+    event_type: EventName.PriceCreated;
+}
+interface IPriceUpdated extends IEventsResponse<IPriceNotificationResponse> {
+    event_type: EventName.PriceUpdated;
+}
+interface IPriceImported extends IEventsResponse<IPriceNotificationResponse> {
+    event_type: EventName.PriceImported;
+}
+interface IProductCreated extends IEventsResponse<IProductNotificationResponse> {
+    event_type: EventName.ProductCreated;
+}
+interface IProductUpdated extends IEventsResponse<IProductNotificationResponse> {
+    event_type: EventName.ProductUpdated;
+}
+interface IProductImported extends IEventsResponse<IProductNotificationResponse> {
+    event_type: EventName.ProductImported;
+}
+interface ISubscriptionActivated extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionActivated;
+}
+interface ISubscriptionCanceled extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionCanceled;
+}
+interface ISubscriptionCreated extends IEventsResponse<ISubscriptionCreatedNotificationResponse> {
+    event_type: EventName.SubscriptionCreated;
+}
+interface ISubscriptionImported extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionImported;
+}
+interface ISubscriptionPastDue extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionPastDue;
+}
+interface ISubscriptionPaused extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionPaused;
+}
+interface ISubscriptionResumed extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionResumed;
+}
+interface ISubscriptionTrialing extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionTrialing;
+}
+interface ISubscriptionUpdated extends IEventsResponse<ISubscriptionNotificationResponse> {
+    event_type: EventName.SubscriptionUpdated;
+}
+interface ITransactionBilled extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionBilled;
+}
+interface ITransactionCanceled extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionCanceled;
+}
+interface ITransactionCompleted extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionCompleted;
+}
+interface ITransactionCreated extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionCreated;
+}
+interface ITransactionPaid extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionPaid;
+}
+interface ITransactionPastDue extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionPastDue;
+}
+interface ITransactionPaymentFailed extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionPaymentFailed;
+}
+interface ITransactionReady extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionReady;
+}
+interface ITransactionUpdated extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionUpdated;
+}
+interface ITransactionRevised extends IEventsResponse<ITransactionNotificationResponse> {
+    event_type: EventName.TransactionRevised;
+}
+interface IReportCreated extends IEventsResponse<IReportNotificationResponse> {
+    event_type: EventName.ReportCreated;
+}
+interface IReportUpdated extends IEventsResponse<IReportNotificationResponse> {
+    event_type: EventName.ReportUpdated;
+}
+export type IEvents = IAddressCreated | IAddressUpdated | IAddressImported | IAdjustmentCreated | IAdjustmentUpdated | IApiKeyCreated | IApiKeyExpired | IApiKeyExpiring | IApiKeyRevoked | IApiKeyUpdated | IBusinessCreated | IBusinessUpdated | IBusinessImported | ICustomerCreated | ICustomerUpdated | ICustomerImported | IClientTokenCreated | IClientTokenUpdated | IClientTokenRevoked | IDiscountCreated | IDiscountUpdated | IDiscountImported | IDiscountGroupCreated | IDiscountGroupUpdated | IPaymentMethodDeleted | IPaymentMethodSaved | IPayoutCreated | IPayoutPaid | IPriceCreated | IPriceUpdated | IPriceImported | IProductCreated | IProductUpdated | IProductImported | ISubscriptionActivated | ISubscriptionCanceled | ISubscriptionCreated | ISubscriptionImported | ISubscriptionPastDue | ISubscriptionPaused | ISubscriptionResumed | ISubscriptionTrialing | ISubscriptionUpdated | ITransactionBilled | ITransactionCanceled | ITransactionCompleted | ITransactionCreated | ITransactionPaid | ITransactionPastDue | ITransactionPaymentFailed | ITransactionReady | ITransactionUpdated | ITransactionRevised | IReportCreated | IReportUpdated;
+export {};

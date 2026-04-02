@@ -1,0 +1,14 @@
+import React from 'react';
+import { SenderContext } from './context';
+import type { ActionsComponents, SenderComponents, SenderProps, SenderRef, SlotConfigType, SubmitType } from './interface';
+import SenderHeader from './SenderHeader';
+import SenderSwitch from './SenderSwitch';
+export type { ActionsComponents, SenderComponents, SenderProps, SenderRef, SlotConfigType, SubmitType, };
+export { SenderContext };
+declare const ForwardSender: React.ForwardRefExoticComponent<SenderProps & React.RefAttributes<SenderRef>>;
+type CompoundedSender = typeof ForwardSender & {
+    Header: typeof SenderHeader;
+    Switch: typeof SenderSwitch;
+};
+declare const Sender: CompoundedSender;
+export default Sender;

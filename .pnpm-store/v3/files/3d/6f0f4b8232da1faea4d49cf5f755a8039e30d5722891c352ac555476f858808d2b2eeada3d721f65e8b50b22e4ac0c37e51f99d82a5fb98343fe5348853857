@@ -1,0 +1,16 @@
+import { type SubscriptionItemStatus } from '../../enums/index.js';
+import { type ISubscriptionTimePeriodResponse } from './subscription-time-period-response.js';
+import { type IPriceResponse } from '../price/index.js';
+import { type IProductResponse } from '../product/index.js';
+export interface ISubscriptionItemResponse {
+    status: SubscriptionItemStatus;
+    quantity: number;
+    recurring: boolean;
+    created_at: string;
+    updated_at: string;
+    previously_billed_at?: string | null;
+    next_billed_at?: string | null;
+    trial_dates?: ISubscriptionTimePeriodResponse | null;
+    price: IPriceResponse;
+    product: IProductResponse;
+}

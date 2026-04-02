@@ -1,0 +1,1 @@
+export type ErrorCode = 'already_canceled' | 'already_refunded' | 'authentication_failed' | 'blocked_card' | 'canceled' | 'declined' | 'declined_not_retryable' | 'expired_card' | 'fraud' | 'invalid_amount' | 'invalid_payment_details' | 'issuer_unavailable' | 'not_enough_balance' | 'psp_error' | 'redacted_payment_method' | 'system_error' | 'transaction_not_permitted' | 'unknown';

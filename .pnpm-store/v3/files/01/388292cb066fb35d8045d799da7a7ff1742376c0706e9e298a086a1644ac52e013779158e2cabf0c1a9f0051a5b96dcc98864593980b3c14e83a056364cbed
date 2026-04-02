@@ -1,0 +1,1 @@
+{"version":3,"file":"process.decorator.d.ts","sourceRoot":"","sources":["../../lib/decorators/process.decorator.ts"],"names":[],"mappings":"AAIA,MAAM,WAAW,cAAc;IAC7B,IAAI,CAAC,EAAE,MAAM,CAAC;IACd,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB;AAED,wBAAgB,OAAO,IAAI,eAAe,CAAC;AAC3C,wBAAgB,OAAO,CAAC,IAAI,EAAE,MAAM,GAAG,eAAe,CAAC;AACvD,wBAAgB,OAAO,CAAC,OAAO,EAAE,cAAc,GAAG,eAAe,CAAC"}

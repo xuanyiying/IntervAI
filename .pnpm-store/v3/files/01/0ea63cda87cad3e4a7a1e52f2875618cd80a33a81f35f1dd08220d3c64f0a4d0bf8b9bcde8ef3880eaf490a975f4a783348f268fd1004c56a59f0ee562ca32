@@ -1,0 +1,11 @@
+import { type IAdjustmentsProrationNotificationResponse } from './adjustments-proration-notification-response.js';
+import { type AdjustmentType } from '../../../enums/index.js';
+import { type IAdjustmentItemTotalsNotificationResponse } from './adjustment-totals-notification-response.js';
+export interface IAdjustmentItemNotificationResponse {
+    id: string;
+    item_id: string;
+    type: AdjustmentType;
+    amount?: string | null;
+    proration?: IAdjustmentsProrationNotificationResponse | null;
+    totals?: IAdjustmentItemTotalsNotificationResponse | null;
+}

@@ -1,0 +1,31 @@
+import { type CollectionMode, type CurrencyCode, type SubscriptionStatus } from '../../../enums/index.js';
+import { type ISubscriptionDiscountNotificationResponse } from './subscription-discount-notification-response.js';
+import { type IBillingDetailsNotificationResponse, type IImportMetaNotificationResponse, type ITimePeriodNotification } from '../shared/index.js';
+import { type ISubscriptionTimePeriodNotificationResponse } from './subscription-time-period-notification-response.js';
+import { type ISubscriptionScheduledChangeNotificationResponse } from './subscription-scheduled-change-notification-response.js';
+import { type ISubscriptionItemNotificationResponse } from './subscription-item-notification-response.js';
+import { type ICustomData } from '../../../types/index.js';
+export interface ISubscriptionNotificationResponse {
+    id: string;
+    status: SubscriptionStatus;
+    customer_id: string;
+    address_id: string;
+    business_id?: string | null;
+    currency_code: CurrencyCode;
+    created_at: string;
+    updated_at: string;
+    started_at?: string | null;
+    first_billed_at?: string | null;
+    next_billed_at?: string | null;
+    paused_at?: string | null;
+    canceled_at?: string | null;
+    discount?: ISubscriptionDiscountNotificationResponse | null;
+    collection_mode: CollectionMode;
+    billing_details?: IBillingDetailsNotificationResponse | null;
+    current_billing_period?: ISubscriptionTimePeriodNotificationResponse | null;
+    billing_cycle: ITimePeriodNotification;
+    scheduled_change?: ISubscriptionScheduledChangeNotificationResponse | null;
+    items: ISubscriptionItemNotificationResponse[];
+    custom_data?: ICustomData | null;
+    import_meta?: IImportMetaNotificationResponse | null;
+}

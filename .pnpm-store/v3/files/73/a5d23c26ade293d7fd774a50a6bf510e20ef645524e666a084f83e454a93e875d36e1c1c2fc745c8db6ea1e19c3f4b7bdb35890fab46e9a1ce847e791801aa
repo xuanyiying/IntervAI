@@ -1,0 +1,164 @@
+"use strict";
+
+var _interopRequireDefault = require("@babel/runtime/helpers/interopRequireDefault").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = FileList;
+var _icons = require("@ant-design/icons");
+var _omit = _interopRequireDefault(require("@rc-component/util/lib/omit"));
+var _antd = require("antd");
+var _classnames = _interopRequireDefault(require("classnames"));
+var _react = _interopRequireDefault(require("react"));
+var _useXComponentConfig = _interopRequireDefault(require("../../_util/hooks/use-x-component-config"));
+var _fileCard = _interopRequireDefault(require("../../file-card"));
+var _context = require("../context");
+var _SilentUploader = _interopRequireDefault(require("../SilentUploader"));
+var _util = require("../util");
+var _Progress = _interopRequireDefault(require("./Progress"));
+function FileList(props) {
+  const {
+    prefixCls,
+    items,
+    onRemove,
+    overflow,
+    upload,
+    className,
+    classNames = {},
+    styles = {},
+    style
+  } = props;
+  const listCls = `${prefixCls}-list`;
+
+  // ===================== Component Config =========================
+  const contextConfig = (0, _useXComponentConfig.default)('attachments');
+  const {
+    classNames: contextClassNames,
+    styles: contextStyles
+  } = contextConfig;
+  const {
+    disabled
+  } = _react.default.useContext(_context.AttachmentContext);
+  const [list, setList] = _react.default.useState([]);
+  const getDescription = item => {
+    if (item.description) {
+      return item.description;
+    }
+    if (item.status === 'uploading') {
+      return `${item.percent || 0}%`;
+    }
+    if (item.status === 'error') {
+      return item.response || '';
+    }
+    return '';
+  };
+  const getList = async items => {
+    const fileCardMap = [];
+    for (let i = 0; i < items.length; i++) {
+      const desc = getDescription(items[i]);
+      let previewImg;
+      if (items[i].originFileObj) {
+        previewImg = await (0, _util.previewImage)(items[i].originFileObj);
+      }
+      const previewUrl = items[i].thumbUrl || items[i].url || previewImg;
+      const cardCls = `${prefixCls}-list-card`;
+      const status = items[i].status;
+      let preview;
+      if (previewUrl && (status === 'uploading' || status === 'error')) {
+        const percent = items[i].percent;
+        const mask = /*#__PURE__*/_react.default.createElement("div", {
+          className: `${cardCls}-file-img-mask`
+        }, status === 'uploading' && percent !== undefined && /*#__PURE__*/_react.default.createElement(_Progress.default, {
+          percent: percent,
+          prefixCls: cardCls
+        }), status === 'error' && /*#__PURE__*/_react.default.createElement("div", {
+          className: `${cardCls}-desc`
+        }, /*#__PURE__*/_react.default.createElement("div", {
+          className: `${cardCls}-ellipsis`
+        }, desc)));
+        preview = {
+          mask
+        };
+      }
+      fileCardMap.push({
+        key: items[i].uid || i,
+        description: desc,
+        src: previewUrl,
+        classNames: {
+          file: (0, _classnames.default)(`${cardCls}-status-${status}`, classNames.file),
+          description: (0, _classnames.default)(`${cardCls}-desc`, classNames.description)
+        },
+        byte: items[i].size,
+        ...(0, _omit.default)(items[i], ['type']),
+        size: undefined,
+        imageProps: {
+          preview: preview
+        }
+      });
+    }
+    setList(fileCardMap);
+  };
+  _react.default.useEffect(() => {
+    getList(items);
+  }, [items]);
+  const handleRemove = item => {
+    const index = list.findIndex(i => i.key === item.key);
+    onRemove(items[index]);
+  };
+
+  // ================================= Render =================================
+  return /*#__PURE__*/_react.default.createElement(_fileCard.default.List, {
+    items: list,
+    className: (0, _classnames.default)(`${prefixCls}-list`, className),
+    classNames: {
+      root: (0, _classnames.default)(classNames.list, contextClassNames.list),
+      card: (0, _classnames.default)(classNames.card, contextClassNames.card),
+      file: (0, _classnames.default)(classNames.file, contextClassNames.file),
+      description: (0, _classnames.default)(classNames.description, contextClassNames.description),
+      icon: (0, _classnames.default)(classNames.icon, contextClassNames.icon),
+      name: (0, _classnames.default)(classNames.name, contextClassNames.title)
+    },
+    styles: {
+      root: {
+        ...styles.list,
+        ...contextStyles.list
+      },
+      card: {
+        ...styles.card,
+        ...contextStyles.card
+      },
+      file: {
+        ...styles.file,
+        ...contextStyles.file
+      },
+      description: {
+        ...styles.description,
+        ...contextStyles.description
+      },
+      icon: {
+        ...styles.icon,
+        ...contextStyles.icon
+      },
+      name: {
+        ...styles.name,
+        ...contextStyles.title
+      }
+    },
+    style: style,
+    removable: !disabled,
+    onRemove: handleRemove,
+    overflow: overflow,
+    extension: !disabled && upload.maxCount && upload.maxCount > items.length && /*#__PURE__*/_react.default.createElement(_SilentUploader.default, {
+      upload: upload
+    }, /*#__PURE__*/_react.default.createElement(_antd.Button, {
+      className: (0, _classnames.default)(classNames.upload, contextClassNames.upload, `${listCls}-upload-btn`),
+      style: {
+        ...styles.upload,
+        ...contextStyles.upload
+      },
+      type: "dashed"
+    }, /*#__PURE__*/_react.default.createElement(_icons.PlusOutlined, {
+      className: `${listCls}-upload-btn-icon`
+    })))
+  });
+}

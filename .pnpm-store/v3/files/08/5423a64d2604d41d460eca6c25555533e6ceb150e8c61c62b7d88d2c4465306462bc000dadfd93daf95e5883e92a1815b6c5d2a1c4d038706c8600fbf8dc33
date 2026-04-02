@@ -1,0 +1,25 @@
+import _extends from "@babel/runtime/helpers/esm/extends";
+import { Upload } from 'antd';
+import React from 'react';
+/**
+ * SilentUploader is only wrap children with antd Upload component.
+ */
+function SilentUploader(props, ref) {
+  const {
+    children,
+    upload,
+    className,
+    style
+  } = props;
+  const uploadRef = React.useRef(null);
+  React.useImperativeHandle(ref, () => uploadRef.current);
+
+  // ============================ Render ============================
+  return /*#__PURE__*/React.createElement(Upload, _extends({}, upload, {
+    showUploadList: false,
+    className: className,
+    style: style,
+    ref: uploadRef
+  }), children);
+}
+export default /*#__PURE__*/React.forwardRef(SilentUploader);
