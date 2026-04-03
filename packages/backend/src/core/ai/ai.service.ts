@@ -3,11 +3,7 @@
  * Unified AI service with simplified API
  */
 
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIProvider } from './providers/provider';
 import { Models, getModelCost } from './models';
@@ -29,6 +25,7 @@ import { SkillRegistry, SkillContext, SkillResult } from './skills';
  */
 @Injectable()
 export class AIService implements OnModuleInit {
+
   private readonly logger = new Logger(AIService.name);
   private provider!: AIProvider;
 
@@ -36,7 +33,7 @@ export class AIService implements OnModuleInit {
     private configService: ConfigService,
     private skillRegistry: SkillRegistry,
     private usageTracker: UsageTrackerService
-  ) { }
+  ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Initializing AI Service');
@@ -56,7 +53,10 @@ export class AIService implements OnModuleInit {
       },
       ollama: {
         apiKey: 'ollama',
-        baseUrl: this.configService.get('OLLAMA_BASE_URL', 'http://localhost:11434/v1'),
+        baseUrl: this.configService.get(
+          'OLLAMA_BASE_URL',
+          'http://localhost:11434/v1'
+        ),
       },
       siliconcloud: {
         apiKey: this.configService.get('SILICONCLOUD_API_KEY', ''),
@@ -81,7 +81,12 @@ export class AIService implements OnModuleInit {
     const [provider, modelName] = this.parseModel(model);
 
     try {
-      const response = await this.provider.chat(provider, modelName, messages, options);
+      const response = await this.provider.chat(
+        provider,
+        modelName,
+        messages,
+        options
+      );
 
       const cost = this.calculateCost(
         modelName,
@@ -146,7 +151,12 @@ export class AIService implements OnModuleInit {
     const [provider, modelName] = this.parseModel(model);
 
     try {
-      for await (const chunk of this.provider.stream(provider, modelName, messages, options)) {
+      for await (const chunk of this.provider.stream(
+        provider,
+        modelName,
+        messages,
+        options
+      )) {
         if (options?.onChunk) {
           options.onChunk(chunk);
         }
@@ -177,7 +187,7 @@ export class AIService implements OnModuleInit {
   async embed(
     model: string,
     text: string,
-    options?: EmbedOptions
+    _options?: EmbedOptions
   ): Promise<number[]> {
     const [provider, modelName] = this.parseModel(model);
 
@@ -215,7 +225,11 @@ export class AIService implements OnModuleInit {
   /**
    * Execute a skill by name
    */
-  async executeSkill(name: string, inputs: Record<string, any>, userId: string): Promise<SkillResult> {
+  async executeSkill(
+    name: string,
+    inputs: Record<string, any>,
+    userId: string
+  ): Promise<SkillResult> {
     const ctx: SkillContext = {
       ai: this,
       inputs,
@@ -278,7 +292,9 @@ export class AIService implements OnModuleInit {
   /**
    * Get provider statistics
    */
-  getProviderStats(provider: string): { circuitState: string; availableTokens: number } | null {
+  getProviderStats(
+    provider: string
+  ): { circuitState: string; availableTokens: number } | null {
     return this.provider.getProviderStats(provider);
   }
 
@@ -307,7 +323,9 @@ export class AIService implements OnModuleInit {
     userId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<Array<{ date: string; calls: number; tokens: number; cost: number }>> {
+  ): Promise<
+    Array<{ date: string; calls: number; tokens: number; cost: number }>
+  > {
     return this.usageTracker.getDailyUsage(userId, startDate, endDate);
   }
 
@@ -325,7 +343,11 @@ export class AIService implements OnModuleInit {
   /**
    * Get monthly cost
    */
-  async getMonthlyCost(userId: string, year: number, month: number): Promise<number> {
+  async getMonthlyCost(
+    userId: string,
+    year: number,
+    month: number
+  ): Promise<number> {
     return this.usageTracker.getMonthlyCost(userId, year, month);
   }
 
@@ -344,9 +366,15 @@ export class AIService implements OnModuleInit {
     return [model.slice(0, idx), model.slice(idx + 1)];
   }
 
-  private calculateCost(model: string, inputTokens: number, outputTokens: number): number {
+  private calculateCost(
+    model: string,
+    inputTokens: number,
+    outputTokens: number
+  ): number {
     const costs = getModelCost(model);
-    return (inputTokens / 1000) * costs.input + (outputTokens / 1000) * costs.output;
+    return (
+      (inputTokens / 1000) * costs.input + (outputTokens / 1000) * costs.output
+    );
   }
 
   private async trackUsage(record: {

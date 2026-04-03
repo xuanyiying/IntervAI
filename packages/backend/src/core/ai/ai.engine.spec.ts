@@ -1,13 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
 import { AIEngine } from './ai.engine';
-import { AIEngineService } from '../ai-providers/ai-engine.service';
 import * as fc from 'fast-check';
 import { ParsedResumeData } from '@/types';
 
 describe('AIEngine', () => {
   let engine: AIEngine;
-  let aiEngineService: AIEngineService;
 
   const mockAIEngineService = {
     call: jest.fn(),
@@ -29,14 +27,13 @@ describe('AIEngine', () => {
       providers: [
         AIEngine,
         {
-          provide: AIEngineService,
+          provide: 'AIEngineService',
           useValue: mockAIEngineService,
         },
       ],
     }).compile();
 
     engine = module.get<AIEngine>(AIEngine);
-    aiEngineService = module.get<AIEngineService>(AIEngineService);
   });
 
   describe('extractTextFromFile', () => {
@@ -105,7 +102,7 @@ describe('AIEngine', () => {
       expect(result.personalInfo).toBeDefined();
       expect(result.personalInfo.email).toBe('john.doe@example.com');
       expect(result.personalInfo.name).toBe('John Doe');
-      expect(aiEngineService.call).toHaveBeenCalledWith(
+      expect(mockAIEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: expect.stringContaining(content.trim()),
           metadata: expect.objectContaining({
@@ -160,7 +157,7 @@ describe('AIEngine', () => {
       const result = await engine.parseResumeContent(content);
 
       expect(result.personalInfo.email).toBe('john.doe@example.com');
-      expect(aiEngineService.call).toHaveBeenCalledTimes(2);
+      expect(mockAIEngineService.call).toHaveBeenCalledTimes(2);
     });
 
     it('should recover from malformed JSON response', async () => {
@@ -242,7 +239,7 @@ describe('AIEngine', () => {
 
       expect(result).toBeDefined();
       expect(result.requiredSkills).toContain('JavaScript');
-      expect(aiEngineService.call).toHaveBeenCalledWith(
+      expect(mockAIEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: expect.stringContaining(description),
           metadata: expect.objectContaining({
@@ -289,25 +286,25 @@ describe('AIEngine', () => {
     });
 
     it('should generate optimization suggestions', async () => {
-      const resumeData: ParsedResumeData = {
+      const resumeContent = JSON.stringify({
         personalInfo: { name: 'John', email: 'john@example.com' },
         education: [],
         experience: [],
         skills: ['JavaScript'],
         projects: [],
-      };
+      });
 
       const jobDescription = 'Looking for React developer';
 
       const result = await engine.generateOptimizationSuggestions(
-        resumeData,
+        resumeContent,
         jobDescription
       );
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
-      expect(aiEngineService.call).toHaveBeenCalledWith(
+      expect(mockAIEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
             templateName: 'resume_optimization',
@@ -322,16 +319,16 @@ describe('AIEngine', () => {
     it('should return empty array on error', async () => {
       mockAIEngineService.call.mockRejectedValue(new Error('AI error'));
 
-      const resumeData: ParsedResumeData = {
+      const resumeContent = JSON.stringify({
         personalInfo: { name: 'John', email: 'john@example.com' },
         education: [],
         experience: [],
         skills: [],
         projects: [],
-      };
+      });
 
       const result = await engine.generateOptimizationSuggestions(
-        resumeData,
+        resumeContent,
         'job description'
       );
 
@@ -361,25 +358,25 @@ describe('AIEngine', () => {
     });
 
     it('should generate interview questions', async () => {
-      const resumeData: ParsedResumeData = {
+      const resumeContent = JSON.stringify({
         personalInfo: { name: 'John', email: 'john@example.com' },
         education: [],
         experience: [],
         skills: ['React', 'TypeScript'],
         projects: [],
-      };
+      });
 
       const jobDescription = 'Frontend developer role';
 
       const result = await engine.generateInterviewQuestions(
-        resumeData,
+        resumeContent,
         jobDescription
       );
 
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThan(0);
-      expect(aiEngineService.call).toHaveBeenCalledWith(
+      expect(mockAIEngineService.call).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
             templateName: 'interview_question_generation',
@@ -394,34 +391,20 @@ describe('AIEngine', () => {
     it('should return empty array on error', async () => {
       mockAIEngineService.call.mockRejectedValue(new Error('AI error'));
 
-      const resumeData: ParsedResumeData = {
+      const resumeContent = JSON.stringify({
         personalInfo: { name: 'John', email: 'john@example.com' },
         education: [],
         experience: [],
         skills: [],
         projects: [],
-      };
+      });
 
       const result = await engine.generateInterviewQuestions(
-        resumeData,
+        resumeContent,
         'job description'
       );
 
       expect(result).toEqual([]);
-    });
-  });
-
-  describe('Caching', () => {
-    it('should handle cache clear request', async () => {
-      await engine.clearCache('test_key');
-      // Should not throw - cache is managed by AIEngineService
-      expect(true).toBe(true);
-    });
-
-    it('should handle clear all cache request', async () => {
-      await engine.clearAllCache();
-      // Should not throw - cache is managed by AIEngineService
-      expect(true).toBe(true);
     });
   });
 

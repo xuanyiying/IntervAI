@@ -144,9 +144,9 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email address' })
   @ApiResponse({ status: 200, description: 'Email successfully verified' })
-  @ApiResponse({ status: 404, description: 'Invalid token' })
+  @ApiResponse({ status: 404, description: 'Invalid code' })
   async verifyEmail(@Body() verifyEmailDto: VerifyEmailDto): Promise<void> {
-    return this.authService.verifyEmail(verifyEmailDto.token);
+    return this.authService.verifyEmail(verifyEmailDto.code);
   }
 
   @Post('forgot-password')
@@ -163,12 +163,12 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password' })
   @ApiResponse({ status: 200, description: 'Password successfully reset' })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired code' })
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto
   ): Promise<void> {
     return this.authService.resetPassword(
-      resetPasswordDto.token,
+      resetPasswordDto.code,
       resetPasswordDto.newPassword
     );
   }

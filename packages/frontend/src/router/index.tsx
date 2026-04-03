@@ -27,7 +27,7 @@ import AccountUsagePage from '../pages/AccountUsagePage';
 import InterviewPage from '../pages/InterviewPage';
 import RealtimeInterviewPage from '../pages/RealtimeInterviewPage';
 import PitchPerfectPage from '../pages/PitchPerfectPage';
-import StrategistPage from '../pages/StrategistPage';
+import { StrategistPage } from '../pages/StrategistPage';
 import RolePlayPage from '../pages/RolePlayPage';
 import AgentMetricsPage from '../pages/AgentMetricsPage';
 import KnowledgeBasePage from '../pages/KnowledgeBasePage';

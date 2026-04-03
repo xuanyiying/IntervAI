@@ -73,7 +73,8 @@ export class MatchAnalysisService {
     const jobDescription = job.jobDescription || '';
 
     let overallScore = 50;
-    const matchData = matchResult.success && matchResult.data ? (matchResult.data as any) : {};
+    const matchData =
+      matchResult.success && matchResult.data ? (matchResult.data as any) : {};
 
     if (matchData.overallScore !== undefined) {
       overallScore = matchData.overallScore;
@@ -82,8 +83,14 @@ export class MatchAnalysisService {
     }
 
     try {
-      const resumeEmbedding = await this.aiService.embed(Models.Embedding, resumeText);
-      const jobEmbedding = await this.aiService.embed(Models.Embedding, jobDescription);
+      const resumeEmbedding = await this.aiService.embed(
+        Models.Embedding,
+        resumeText
+      );
+      const jobEmbedding = await this.aiService.embed(
+        Models.Embedding,
+        jobDescription
+      );
       const similarity = this.cosineSimilarity(resumeEmbedding, jobEmbedding);
       overallScore = Math.round(overallScore * 0.7 + similarity * 100 * 0.3);
     } catch (error) {
@@ -107,7 +114,10 @@ export class MatchAnalysisService {
     };
 
     const experienceMatch = matchData.breakdown?.experience || { score: 50 };
-    const educationMatch = matchData.breakdown?.education || { score: 50, meets: true };
+    const educationMatch = matchData.breakdown?.education || {
+      score: 50,
+      meets: true,
+    };
 
     const recommendations = await this.generateRecommendations(
       skillMatch,
@@ -180,7 +190,8 @@ export class MatchAnalysisService {
       recommendations.push({
         priority: 'medium',
         category: 'Experience',
-        suggestion: 'Highlight relevant projects that demonstrate required skills',
+        suggestion:
+          'Highlight relevant projects that demonstrate required skills',
         impact: 'Medium impact on candidate appeal',
       });
     }
@@ -189,7 +200,8 @@ export class MatchAnalysisService {
       recommendations.push({
         priority: 'high',
         category: 'Overall',
-        suggestion: 'Consider positions that better match your current skill set',
+        suggestion:
+          'Consider positions that better match your current skill set',
         impact: 'Improves application success rate',
       });
     }

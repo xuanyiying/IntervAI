@@ -31,7 +31,13 @@ export { Models, getModelCost, PROVIDER_BASE_URLS } from './models';
 export { AIProvider, ProviderClient } from './providers/provider';
 
 // Memory
-export { Memory, MemoryProvider, RedisMemory, RedisMemoryProvider, InMemoryMemory } from './memory/redis-memory';
+export {
+  Memory,
+  MemoryProvider,
+  RedisMemory,
+  RedisMemoryProvider,
+  InMemoryMemory,
+} from './memory/redis-memory';
 
 // AIEngine - backward compatible facade
 export { AIEngine } from './ai.engine';

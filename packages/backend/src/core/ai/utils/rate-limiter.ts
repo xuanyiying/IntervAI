@@ -64,7 +64,10 @@ export class RateLimiter {
     return false;
   }
 
-  async waitForTokens(tokens: number = 1, timeoutMs: number = 30000): Promise<boolean> {
+  async waitForTokens(
+    tokens: number = 1,
+    timeoutMs: number = 30000
+  ): Promise<boolean> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
@@ -75,7 +78,9 @@ export class RateLimiter {
       const waitTime = Math.ceil(
         ((tokens - this.tokens) / this.config.tokensPerSecond) * 1000
       );
-      await new Promise(resolve => setTimeout(resolve, Math.min(waitTime, 1000)));
+      await new Promise((resolve) =>
+        setTimeout(resolve, Math.min(waitTime, 1000))
+      );
     }
 
     return false;

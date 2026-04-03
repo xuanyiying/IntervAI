@@ -136,20 +136,24 @@ You are an expert resume writer and career coach. Create compelling, ATS-optimiz
 ```
 
 {{#if targetJob}}
+
 ## Target Job
 
 ```json
 {{targetJob}}
 ```
+
 {{/if}}
 
 {{#if optimizationFocus}}
+
 ## Optimization Focus
 
 {{optimizationFocus}}
 {{/if}}
 
 {{#if style}}
+
 ## Style Preference
 
 {{style}}

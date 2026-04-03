@@ -82,10 +82,10 @@ const RegisterPage: React.FC = () => {
             className="!font-bold !mb-2"
             style={{ color: 'var(--text-primary)' }}
           >
-            创建账号
+            {t('auth.title_register', '创建账号')}
           </Title>
           <Text style={{ color: 'var(--text-secondary)' }}>
-            开启您的 AI 职业助手之旅
+            {t('auth.title_register_sub', '开启您的 AI 职业助手之旅')}
           </Text>
         </div>
 
@@ -181,13 +181,13 @@ const RegisterPage: React.FC = () => {
             ]}
           >
             <Checkbox style={{ color: 'var(--text-secondary)' }}>
-              我已阅读并同意{' '}
+              {t('auth.agree_terms', '我已阅读并同意')}{' '}
               <a href="/terms-of-service" className="text-primary-400">
-                服务条款
+                {t('auth.terms_and_conditions', '服务条款')}
               </a>{' '}
-              和{' '}
+              {t('auth.and', '和')}{' '}
               <a href="/privacy-policy" className="text-primary-400">
-                隐私政策
+                {t('auth.privacy_policy', '隐私政策')}
               </a>
             </Checkbox>
           </Form.Item>
@@ -195,23 +195,25 @@ const RegisterPage: React.FC = () => {
           <Form.Item className="mb-4">
             <button
               type="submit"
-              disabled={loading || !isPasswordValid}
+              disabled={loading}
               className={`gradient-button w-full h-12 text-base font-bold shadow-lg transition-all ${
-                loading || !isPasswordValid
+                loading
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:shadow-secondary-500/20'
               }`}
-              title={
-                !isPasswordValid
-                  ? t(
-                      'auth.password_requirements_not_met',
-                      'Please meet all password requirements'
-                    )
-                  : ''
-              }
             >
-              {loading ? '注册中...' : '立即注册'}
+              {loading
+                ? t('auth.register_loading', '注册中...')
+                : t('auth.register_now', '立即注册')}
             </button>
+            {!isPasswordValid && password && password.length > 0 && (
+              <div className="mt-2 text-center text-sm text-yellow-500">
+                {t(
+                  'auth.password_strength_warning',
+                  '⚠️ 密码强度不足，建议满足所有要求以确保账户安全'
+                )}
+              </div>
+            )}
           </Form.Item>
 
           <Divider
@@ -221,7 +223,7 @@ const RegisterPage: React.FC = () => {
               color: 'var(--text-tertiary)',
             }}
           >
-            或使用以下方式
+            {t('auth.or_social_register', '或使用以下方式注册')}
           </Divider>
 
           <div className="flex justify-center gap-4 mb-6">

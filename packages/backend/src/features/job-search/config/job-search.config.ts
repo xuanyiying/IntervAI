@@ -107,7 +107,10 @@ export const JOB_SEARCH_CONFIG = registerAs(
       screenshotPath: process.env.SCREENSHOT_PATH || './screenshots',
     },
     tracking: {
-      emailPollingInterval: parseInt(process.env.EMAIL_POLLING_INTERVAL || '300000', 10),
+      emailPollingInterval: parseInt(
+        process.env.EMAIL_POLLING_INTERVAL || '300000',
+        10
+      ),
       apiCheckInterval: parseInt(process.env.API_CHECK_INTERVAL || '60000', 10),
       maxRetries: parseInt(process.env.TRACKING_MAX_RETRIES || '3', 10),
     },
@@ -123,10 +126,16 @@ export const JOB_SEARCH_CONFIG = registerAs(
 function createDefaultProxyConfig(): ProxyConfig {
   return {
     enabled: process.env.PROXY_ENABLED === 'true',
-    provider: (process.env.PROXY_PROVIDER as ProxyConfig['provider']) || 'custom',
+    provider:
+      (process.env.PROXY_PROVIDER as ProxyConfig['provider']) || 'custom',
     rotationStrategy:
-      (process.env.PROXY_ROTATION_STRATEGY as ProxyConfig['rotationStrategy']) || 'per_request',
-    rotationInterval: parseInt(process.env.PROXY_ROTATION_INTERVAL || '60000', 10),
+      (process.env
+        .PROXY_ROTATION_STRATEGY as ProxyConfig['rotationStrategy']) ||
+      'per_request',
+    rotationInterval: parseInt(
+      process.env.PROXY_ROTATION_INTERVAL || '60000',
+      10
+    ),
     fallbackChain: process.env.PROXY_FALLBACK_CHAIN?.split(',') || [],
   };
 }
@@ -135,7 +144,8 @@ function createDefaultRetryConfig(): RetryConfig {
   return {
     maxRetries: parseInt(process.env.RETRY_MAX_RETRIES || '3', 10),
     backoffStrategy:
-      (process.env.RETRY_BACKOFF_STRATEGY as RetryConfig['backoffStrategy']) || 'exponential',
+      (process.env.RETRY_BACKOFF_STRATEGY as RetryConfig['backoffStrategy']) ||
+      'exponential',
     initialDelay: parseInt(process.env.RETRY_INITIAL_DELAY || '1000', 10),
     maxDelay: parseInt(process.env.RETRY_MAX_DELAY || '30000', 10),
   };

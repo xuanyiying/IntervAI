@@ -10,7 +10,7 @@ import { FileUploadValidator } from '../validators/file-upload.validator';
  * Usage: @ValidateFile() file: Express.Multer.File
  */
 export const ValidateFile = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (_data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     const file = request.file;
 

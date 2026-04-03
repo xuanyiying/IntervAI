@@ -18,16 +18,16 @@ import { ResumeOptimizerService } from '../services/resume-optimizer.service';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
 import { Optimization } from '@prisma/client';
 
-@Controller('resumes')
+@Controller('optimizations')
 @UseGuards(JwtAuthGuard)
 export class ResumeOptimizerController {
   constructor(private resumeOptimizerService: ResumeOptimizerService) {}
 
   /**
    * Create a new optimization
-   * POST /api/v1/resumes/optimizations
+   * POST /api/v1/optimizations
    */
-  @Post('optimizations')
+  @Post()
   @HttpCode(HttpStatus.CREATED)
   async createOptimization(
     @Request() req: any,
@@ -42,18 +42,18 @@ export class ResumeOptimizerController {
 
   /**
    * List all optimizations for the user
-   * GET /api/v1/resumes/optimizations
+   * GET /api/v1/optimizations
    */
-  @Get('optimizations')
+  @Get()
   async listOptimizations(@Request() req: any): Promise<Optimization[]> {
     return this.resumeOptimizerService.listOptimizations(req.user.id);
   }
 
   /**
    * Get an optimization by ID
-   * GET /api/v1/resumes/optimizations/:id
+   * GET /api/v1/optimizations/:id
    */
-  @Get('optimizations/:id')
+  @Get(':id')
   async getOptimization(
     @Request() req: any,
     @Param('id') optimizationId: string
@@ -66,9 +66,9 @@ export class ResumeOptimizerController {
 
   /**
    * Apply a single suggestion
-   * POST /api/v1/resumes/optimizations/:id/suggestions/:suggestionId/accept
+   * POST /api/v1/optimizations/:id/suggestions/:suggestionId/accept
    */
-  @Post('optimizations/:id/suggestions/:suggestionId/accept')
+  @Post(':id/suggestions/:suggestionId/accept')
   @HttpCode(HttpStatus.OK)
   async applySuggestion(
     @Request() req: any,
@@ -84,9 +84,9 @@ export class ResumeOptimizerController {
 
   /**
    * Apply multiple suggestions in batch
-   * POST /api/v1/resumes/optimizations/:id/suggestions/accept-batch{ suggestionIds: [string] }
+   * POST /api/v1/optimizations/:id/suggestions/accept-batch
    */
-  @Post('optimizations/:id/suggestions/accept-batch')
+  @Post(':id/suggestions/accept-batch')
   @HttpCode(HttpStatus.OK)
   async applyBatchSuggestions(
     @Request() req: any,
@@ -102,9 +102,9 @@ export class ResumeOptimizerController {
 
   /**
    * Reject a suggestion
-   * POST /api/v1/resumes/optimizations/:id/suggestions/:suggestionId/reject  reject a suggestion
+   * POST /api/v1/optimizations/:id/suggestions/:suggestionId/reject
    */
-  @Post('optimizations/:id/suggestions/:suggestionId/reject')
+  @Post(':id/suggestions/:suggestionId/reject')
   @HttpCode(HttpStatus.OK)
   async rejectSuggestion(
     @Request() req: any,

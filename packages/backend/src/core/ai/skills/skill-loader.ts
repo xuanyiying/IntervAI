@@ -48,8 +48,12 @@ export class SkillLoader {
   ) {
     this.config = {
       skillsDir: this.configService.get('SKILLS_DIR', 'skills'),
-      builtinSkillsDir: this.configService.get('BUILTIN_SKILLS_DIR', 'skills/builtin'),
-      enableRemoteSkills: this.configService.get('ENABLE_REMOTE_SKILLS', 'true') === 'true',
+      builtinSkillsDir: this.configService.get(
+        'BUILTIN_SKILLS_DIR',
+        'skills/builtin'
+      ),
+      enableRemoteSkills:
+        this.configService.get('ENABLE_REMOTE_SKILLS', 'true') === 'true',
       cacheSkills: this.configService.get('CACHE_SKILLS', 'true') === 'true',
     };
   }
@@ -66,7 +70,9 @@ export class SkillLoader {
     // Load user skills
     await this.loadSkillsFromDirectory(this.config.skillsDir);
 
-    this.logger.log(`Skill loader initialized. Loaded ${this.loadedSkills.size} skills`);
+    this.logger.log(
+      `Skill loader initialized. Loaded ${this.loadedSkills.size} skills`
+    );
   }
 
   /**
@@ -102,7 +108,10 @@ export class SkillLoader {
         if (entry.isDirectory()) {
           // Check for skill.md or skill.yaml in directory
           const skillDir = path.join(resolvedPath, entry.name);
-          const skillInfo = await this.loadSkillFromDirectory(skillDir, sourceType);
+          const skillInfo = await this.loadSkillFromDirectory(
+            skillDir,
+            sourceType
+          );
 
           if (skillInfo) {
             loaded.push(skillInfo);
@@ -204,7 +213,7 @@ export class SkillLoader {
    */
   async loadSkillFromYaml(
     filePath: string,
-    sourceType: SkillSource['type']
+    _sourceType: SkillSource['type']
   ): Promise<LoadedSkillInfo | null> {
     // YAML parsing would be implemented here
     // For now, we focus on Markdown
@@ -259,7 +268,9 @@ export class SkillLoader {
   /**
    * Create an executor function for the skill
    */
-  private createExecutor(definition: SkillDefinition): (ctx: any) => Promise<any> {
+  private createExecutor(
+    definition: SkillDefinition
+  ): (ctx: any) => Promise<any> {
     return async (ctx: any) => {
       // If custom execute function is provided
       if (typeof definition.execute === 'function') {
@@ -271,14 +282,19 @@ export class SkillLoader {
         return this.executeWithPrompt(ctx, definition);
       }
 
-      throw new Error(`Skill "${definition.name}" has no execute function or prompt defined`);
+      throw new Error(
+        `Skill "${definition.name}" has no execute function or prompt defined`
+      );
     };
   }
 
   /**
    * Execute skill using prompt
    */
-  private async executeWithPrompt(ctx: any, definition: SkillDefinition): Promise<any> {
+  private async executeWithPrompt(
+    ctx: any,
+    definition: SkillDefinition
+  ): Promise<any> {
     const { ai, inputs } = ctx;
 
     // Build prompt with input substitution
@@ -286,11 +302,16 @@ export class SkillLoader {
 
     // Replace input placeholders
     for (const [key, value] of Object.entries(inputs)) {
-      prompt = prompt.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(value));
+      prompt = prompt.replace(
+        new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
+        String(value)
+      );
     }
 
     // Determine response format
-    const hasJsonOutput = definition.outputs?.type === 'object' || definition.outputs?.type === 'array';
+    const hasJsonOutput =
+      definition.outputs?.type === 'object' ||
+      definition.outputs?.type === 'array';
 
     const result = await ai.chat(
       ctx.model || 'openai:gpt-4o',
@@ -317,7 +338,9 @@ export class SkillLoader {
   /**
    * Create a validator function for the skill
    */
-  private createValidator(definition: SkillDefinition): (inputs: any) => { valid: boolean; errors: string[] } {
+  private createValidator(
+    definition: SkillDefinition
+  ): (inputs: any) => { valid: boolean; errors: string[] } {
     return (inputs: Record<string, any>) => {
       const errors: string[] = [];
 
@@ -339,14 +362,18 @@ export class SkillLoader {
         if (value !== undefined) {
           const actualType = Array.isArray(value) ? 'array' : typeof value;
           if (actualType !== inputDef.type) {
-            errors.push(`Input "${key}" must be of type ${inputDef.type}, got ${actualType}`);
+            errors.push(
+              `Input "${key}" must be of type ${inputDef.type}, got ${actualType}`
+            );
           }
         }
 
         // Enum validation
         if (inputDef.enum && value !== undefined) {
           if (!inputDef.enum.includes(value)) {
-            errors.push(`Input "${key}" must be one of: ${inputDef.enum.join(', ')}`);
+            errors.push(
+              `Input "${key}" must be one of: ${inputDef.enum.join(', ')}`
+            );
           }
         }
 
@@ -407,7 +434,10 @@ export class SkillLoader {
     this.registry.unregister(name);
 
     // Reload from file
-    const newInfo = await this.loadSkillFromFile(info.source.path, info.source.type);
+    const newInfo = await this.loadSkillFromFile(
+      info.source.path,
+      info.source.type
+    );
 
     if (newInfo) {
       this.registerSkill(newInfo);

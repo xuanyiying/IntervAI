@@ -1,12 +1,12 @@
+import { AIEngine } from '@/core/ai';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
-import { ParsedJobData, ParsedResumeData } from '@/types';
 import { InterviewStatus, MessageRole } from '@prisma/client';
 
 export interface InterviewReportAnalysis {
@@ -172,9 +172,6 @@ export class InterviewReportService {
     const messages = session.messages;
     const userMessages = messages.filter(
       (m: any) => m.role === MessageRole.USER
-    );
-    const assistantMessages = messages.filter(
-      (m: any) => m.role === MessageRole.ASSISTANT
     );
 
     const transcript = messages
@@ -410,7 +407,7 @@ ${Object.entries(analysis.dimensions)
 ### 完整对话
 
 `;
-    report.transcript.forEach((msg, index) => {
+    report.transcript.forEach((msg) => {
       const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN');
       md += `**[${time}] ${msg.role}**:\n\n${msg.content}\n\n---\n\n`;
     });

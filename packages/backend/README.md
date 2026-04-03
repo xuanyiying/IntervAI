@@ -92,10 +92,14 @@ Your skill's prompt template goes here...
 
 ```typescript
 // 执行 Skill
-const result = await aiService.executeSkill('resume-analyzer', {
-  resumeText: '...',
-  targetJob: 'Software Engineer'
-}, userId);
+const result = await aiService.executeSkill(
+  'resume-analyzer',
+  {
+    resumeText: '...',
+    targetJob: 'Software Engineer',
+  },
+  userId
+);
 
 // 获取所有 Skills
 const skills = aiService.getSkills();
@@ -217,14 +221,14 @@ E2E 测试文件位于 `src/e2e/`：
 
 ## 🔌 AI 提供商
 
-| 提供商       | 模型                              |
-| ------------ | --------------------------------- |
+| 提供商       | 模型                               |
+| ------------ | ---------------------------------- |
 | OpenAI       | GPT-4o, GPT-4-turbo, GPT-3.5-turbo |
-| DeepSeek     | deepseek-chat, deepseek-coder     |
-| Qwen         | qwen-turbo, qwen-plus, qwen-max   |
-| Gemini       | gemini-pro, gemini-1.5-pro        |
-| Ollama       | 本地模型                          |
-| SiliconCloud | 开源模型                          |
+| DeepSeek     | deepseek-chat, deepseek-coder      |
+| Qwen         | qwen-turbo, qwen-plus, qwen-max    |
+| Gemini       | gemini-pro, gemini-1.5-pro         |
+| Ollama       | 本地模型                           |
+| SiliconCloud | 开源模型                           |
 
 ## 📖 更多文档
 

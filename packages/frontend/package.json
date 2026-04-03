@@ -57,6 +57,7 @@
     "@vitejs/plugin-react": "^5.1.1",
     "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
+    "baseline-browser-mapping": "^2.10.13",
     "eslint-plugin-react-refresh": "^0.4.24",
     "jsdom": "^27.2.0",
     "typescript": "^5.1.6",

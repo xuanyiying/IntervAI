@@ -71,7 +71,10 @@ export interface SkillOutputDefinition {
 export interface Skill {
   definition: SkillDefinition;
   execute: (ctx: SkillContext) => Promise<any>;
-  validateInputs: (inputs: Record<string, any>) => { valid: boolean; errors: string[] };
+  validateInputs: (inputs: Record<string, any>) => {
+    valid: boolean;
+    errors: string[];
+  };
   source: SkillSource;
 }
 

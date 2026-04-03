@@ -41,4 +41,4 @@ import { RedisModule } from '@/shared/cache/redis.module';
   ],
   exports: [AuthService, JwtModule, JwtAuthGuard],
 })
-export class AuthModule { }
+export class AuthModule {}

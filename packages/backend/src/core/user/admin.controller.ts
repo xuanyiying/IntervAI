@@ -32,7 +32,7 @@ export class AdminController {
   constructor(
     private readonly invitationService: InvitationService,
     private readonly prisma: PrismaService
-  ) { }
+  ) {}
 
   // ==================== User Management ====================
 

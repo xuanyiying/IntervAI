@@ -60,7 +60,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly chatIntentService: ChatIntentService
-  ) { }
+  ) {}
 
   /**
    * Handle client connection with JWT authentication

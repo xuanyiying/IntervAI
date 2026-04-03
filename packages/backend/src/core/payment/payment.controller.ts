@@ -24,7 +24,7 @@ import { SubscriptionResponseDto } from './dto/subscription-response.dto';
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentController {
-  constructor(private readonly paymentService: PaymentService) { }
+  constructor(private readonly paymentService: PaymentService) {}
 
   @Post('create-checkout-session')
   @UseGuards(JwtAuthGuard)

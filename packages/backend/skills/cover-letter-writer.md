@@ -107,12 +107,14 @@ You are an expert cover letter writer specializing in creating compelling, perso
 {{companyName}}
 
 {{#if hiringManager}}
+
 ## Hiring Manager
 
 {{hiringManager}}
 {{/if}}
 
 {{#if tone}}
+
 ## Tone
 
 {{tone}}

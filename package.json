@@ -1,8 +1,8 @@
 {
-  "name": "AI-powered resume optimization",
+  "name": "ai powered resume assistant",
   "version": "1.0.0",
   "private": true,
-  "description": "AI-powered resume optimization SaaS platform",
+  "description": "AI powered resume optimization SaaS platform",
   "workspaces": [
     "packages/frontend",
     "packages/backend"

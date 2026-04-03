@@ -4,12 +4,12 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16
+    image: postgres:15-alpine
     container_name: postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-interview_ai}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_postgres_2025}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -24,7 +24,7 @@ services:
 
   # Redis Cache
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis
     ports:
       - "${REDIS_PORT:-6379}:6379"
@@ -58,6 +58,26 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.9
+    container_name: etcd
+    environment:
+      ETCD_NAME: etcd
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd:2379
+      ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    container_name: jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
 
 volumes:
   postgres_data:

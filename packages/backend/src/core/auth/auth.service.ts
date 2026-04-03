@@ -1,26 +1,26 @@
+import { ErrorCode } from '@/common/exceptions/error-codes';
+import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
+import { Sanitizer } from '@/common/utils/sanitizer';
+import { InvitationService } from '@/core/invitation/invitation.service';
+import { AuthResponseDto } from '@/core/user/dto/auth-response.dto';
+import { LoginDto } from '@/core/user/dto/login.dto';
+import { RegisterDto } from '@/core/user/dto/register.dto';
+import { RedisService } from '@/shared/cache/redis.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { EmailService } from '@/shared/notification/email.service';
 import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
   BadRequestException,
+  ConflictException,
+  Injectable,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { User, SubscriptionTier } from '@prisma/client';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+import { SubscriptionTier, User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { Sanitizer } from '@/common/utils/sanitizer';
-import { RegisterDto } from '@/core/user/dto/register.dto';
-import { LoginDto } from '@/core/user/dto/login.dto';
-import { AuthResponseDto } from '@/core/user/dto/auth-response.dto';
-import { EmailService } from '@/shared/notification/email.service';
-import { InvitationService } from '@/core/invitation/invitation.service';
-import { RedisService } from '@/shared/cache/redis.service';
-import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
-import { ErrorCode } from '@/common/exceptions/error-codes';
 import { PASSWORD_POLICY } from './auth.constants';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +32,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly invitationService: InvitationService,
     private readonly redisService: RedisService
-  ) { }
+  ) {}
 
   private validatePassword(password: string) {
     if (password.length < PASSWORD_POLICY.minLength) {
@@ -112,9 +112,8 @@ export class AuthService {
       : undefined;
     const sanitizedPhone = phone ? Sanitizer.sanitizeString(phone) : undefined;
 
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
+    // Generate 6-digit verification code
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
     // Create new user
     const user = await this.prisma.user.create({
       data: {
@@ -125,9 +124,15 @@ export class AuthService {
         subscriptionTier: SubscriptionTier.FREE,
         isActive: true,
         emailVerified: false,
-        verificationToken,
       },
     });
+
+    // Store verification code in Redis with 10 minute expiry
+    await this.redisService.set(
+      `verify:${verificationCode}`,
+      user.id,
+      600 // 10 minutes
+    );
 
     if (sanitizedInvitationCode) {
       await this.invitationService.markAsUsed(sanitizedInvitationCode, user.id);
@@ -137,12 +142,14 @@ export class AuthService {
     try {
       await this.emailService.sendVerificationEmail(
         user.email,
-        verificationToken,
+        verificationCode,
         user.username || undefined
       );
+      this.logger.log(`Verification email sent to ${user.email}`);
     } catch (error) {
-      this.logger.debug('Failed to send verification email:', error);
-      // Don't fail registration if email fails, user can resend later
+      this.logger.warn(
+        `Failed to send verification email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
 
     return this.generateAuthResponse(user);
@@ -206,23 +213,25 @@ export class AuthService {
   /**
    * Verify email address
    */
-  async verifyEmail(token: string): Promise<void> {
-    const user = await this.prisma.user.findFirst({
-      where: { verificationToken: token },
-    });
+  async verifyEmail(code: string): Promise<void> {
+    // Get user ID from Redis using verification code
+    const userId = await this.redisService.get(`verify:${code}`);
 
-    if (!user) {
+    if (!userId) {
       throw new ResourceNotFoundException(
         ErrorCode.NOT_FOUND,
-        'Invalid verification token'
+        'Invalid or expired verification code'
       );
     }
 
+    // Delete the code from Redis (one-time use)
+    await this.redisService.del(`verify:${code}`);
+
+    // Update user email verification status
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: userId },
       data: {
         emailVerified: true,
-        verificationToken: null, // Clear token after usage
       },
     });
   }
@@ -240,54 +249,52 @@ export class AuthService {
       return;
     }
 
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetExpires = new Date(Date.now() + 3600000); // 1 hour
+    // Generate 6-digit reset code
+    const resetCode = crypto.randomInt(100000, 999999).toString();
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        resetPasswordToken: resetToken,
-        resetPasswordExpires: resetExpires,
-      },
-    });
+    // Store reset code in Redis with 10 minute expiry
+    await this.redisService.set(
+      `reset:${resetCode}`,
+      user.id,
+      600 // 10 minutes
+    );
 
     try {
       await this.emailService.sendPasswordResetEmail(
         user.email,
-        resetToken,
+        resetCode,
         user.username || undefined
       );
+      this.logger.log(`Password reset email sent to ${user.email}`);
     } catch (error) {
-      console.error('Failed to send password reset email:', error);
+      this.logger.error(
+        `Failed to send password reset email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : undefined
+      );
     }
   }
 
   /**
    * Reset password
    */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.prisma.user.findFirst({
-      where: {
-        resetPasswordToken: token,
-        resetPasswordExpires: {
-          gt: new Date(),
-        },
-      },
-    });
+  async resetPassword(code: string, newPassword: string): Promise<void> {
+    // Get user ID from Redis using reset code
+    const userId = await this.redisService.get(`reset:${code}`);
 
-    if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+    if (!userId) {
+      throw new BadRequestException('Invalid or expired reset code');
     }
+
+    // Delete the code from Redis (one-time use)
+    await this.redisService.del(`reset:${code}`);
 
     this.validatePassword(newPassword);
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     await this.prisma.user.update({
-      where: { id: user.id },
+      where: { id: userId },
       data: {
         passwordHash,
-        resetPasswordToken: null,
-        resetPasswordExpires: null,
       },
     });
   }

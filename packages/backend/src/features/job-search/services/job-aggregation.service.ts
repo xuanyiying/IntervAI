@@ -21,9 +21,12 @@ export class JobAggregationService {
   constructor(
     private readonly aiService: AIService,
     private readonly prisma: PrismaService
-  ) { }
+  ) {}
 
-  async aggregateJobs(criteria: SearchCriteria, userId?: string): Promise<JobPosting[]> {
+  async aggregateJobs(
+    criteria: SearchCriteria,
+    userId?: string
+  ): Promise<JobPosting[]> {
     this.logger.log('Starting job aggregation process...');
 
     const scraperConfigs = this.getScraperConfigs();
@@ -75,7 +78,8 @@ export class JobAggregationService {
           });
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         this.logger.error(`Failed to save job ${rawJob.id}: ${errorMessage}`);
         errors.push({ jobId: rawJob.id || 'unknown', error: errorMessage });
       }
@@ -173,24 +177,36 @@ export class JobAggregationService {
     limit?: number;
     offset?: number;
   }): Promise<{ jobs: JobPosting[]; total: number }> {
-    const { userId, platforms, keywords, location, remote, limit = 20, offset = 0 } = params;
+    const {
+      userId,
+      platforms,
+      keywords,
+      location,
+      remote,
+      limit = 20,
+      offset = 0,
+    } = params;
 
     const where: Prisma.JobPostingWhereInput = {
       isActive: true,
       ...(userId && { userId }),
       ...(platforms && platforms.length > 0 && { platform: { in: platforms } }),
-      ...(location && { location: { contains: location, mode: 'insensitive' } }),
-      ...(remote !== undefined && { remotePolicy: remote ? 'remote' : { not: 'remote' } }),
+      ...(location && {
+        location: { contains: location, mode: 'insensitive' },
+      }),
+      ...(remote !== undefined && {
+        remotePolicy: remote ? 'remote' : { not: 'remote' },
+      }),
       ...(keywords &&
         keywords.length > 0 && {
-        OR: keywords.map((keyword) => ({
-          OR: [
-            { title: { contains: keyword, mode: 'insensitive' } },
-            { description: { contains: keyword, mode: 'insensitive' } },
-            { skills: { has: keyword } },
-          ],
-        })),
-      }),
+          OR: keywords.map((keyword) => ({
+            OR: [
+              { title: { contains: keyword, mode: 'insensitive' } },
+              { description: { contains: keyword, mode: 'insensitive' } },
+              { skills: { has: keyword } },
+            ],
+          })),
+        }),
     };
 
     const [jobs, total] = await Promise.all([

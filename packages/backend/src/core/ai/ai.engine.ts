@@ -96,7 +96,7 @@ const ParsedResumeDataSchema = z.object({
 export class AIEngine {
   private readonly logger = new Logger(AIEngine.name);
 
-  constructor(private aiService: AIService) { }
+  constructor(private aiService: AIService) {}
 
   /**
    * Extract text content from a file buffer based on file type
@@ -276,7 +276,9 @@ Return an array of JSON objects with type, priority, section, original, suggesti
         }
       }
 
-      this.logger.log(`Generated ${suggestions.length} optimization suggestions`);
+      this.logger.log(
+        `Generated ${suggestions.length} optimization suggestions`
+      );
       return suggestions;
     } catch (error) {
       this.logger.error('Error generating optimization suggestions:', error);
@@ -371,9 +373,12 @@ Return an array of JSON objects with category, question, suggestedAnswer, and ti
 Conduct a professional interview. Ask follow-up questions, probe for details, and provide constructive feedback.
 Be encouraging but thorough. Keep responses concise and focused.`;
 
-    const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    const messages: Array<{
+      role: 'system' | 'user' | 'assistant';
+      content: string;
+    }> = [
       { role: 'system', content: systemPrompt },
-      ...history.map(h => ({
+      ...history.map((h) => ({
         role: h.role as 'user' | 'assistant',
         content: h.content,
       })),
@@ -389,18 +394,20 @@ Be encouraging but thorough. Keep responses concise and focused.`;
   /**
    * Transcribe audio (placeholder - requires Whisper API)
    */
-  async transcribeAudio(audioBuffer: Buffer): Promise<string> {
+  async transcribeAudio(_audioBuffer: Buffer): Promise<string> {
     this.logger.log('Transcribing audio...');
     const result = await this.aiService.chat(
       Models.Default,
       [
         {
           role: 'system',
-          content: 'You are a transcription assistant. The user will provide audio context.',
+          content:
+            'You are a transcription assistant. The user will provide audio context.',
         },
         {
           role: 'user',
-          content: 'Please transcribe the following audio content. (Note: This is a placeholder - actual transcription requires Whisper API integration)',
+          content:
+            'Please transcribe the following audio content. (Note: This is a placeholder - actual transcription requires Whisper API integration)',
         },
       ],
       { temperature: 0.3 }

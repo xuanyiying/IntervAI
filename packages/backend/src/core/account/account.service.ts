@@ -13,7 +13,7 @@ export class AccountService {
     private readonly paymentService: PaymentService,
     private readonly quotaService: QuotaService,
     private readonly aiService: AIService
-  ) { }
+  ) {}
 
   async getSubscription(userId: string) {
     const [current, billingHistory, subscriptionEvents] = await Promise.all([
@@ -29,14 +29,14 @@ export class AccountService {
     return {
       current: current
         ? {
-          ...current,
-          expiresAt: current.expiresAt
-            ? new Date(current.expiresAt).toISOString()
-            : undefined,
-          currentPeriodEnd: current.currentPeriodEnd
-            ? new Date(current.currentPeriodEnd).toISOString()
-            : undefined,
-        }
+            ...current,
+            expiresAt: current.expiresAt
+              ? new Date(current.expiresAt).toISOString()
+              : undefined,
+            currentPeriodEnd: current.currentPeriodEnd
+              ? new Date(current.currentPeriodEnd).toISOString()
+              : undefined,
+          }
         : null,
       subscriptionRecords: subscriptionEvents.map((e) => ({
         id: e.id,

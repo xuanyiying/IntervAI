@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { StorageService } from '@/core/storage/storage.service';
 import { RedisService } from '@/shared/cache/redis.service';
 import { BackupService } from '@/core/backup/backup.service';
-import PdfGenerationService from '@/features/resume/services/pdf-generation.service';
+import { PdfGenerationService } from '@/features/resume/services/pdf-generation.service';
 
 /**
  * Scheduled tasks for system maintenance

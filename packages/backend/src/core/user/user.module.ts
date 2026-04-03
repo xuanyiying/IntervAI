@@ -28,4 +28,4 @@ import { AuthModule } from '@/core/auth/auth.module';
   providers: [UserService],
   exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

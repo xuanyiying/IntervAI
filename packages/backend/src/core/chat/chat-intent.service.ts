@@ -3,22 +3,21 @@
  * Handles intent recognition and dispatches to appropriate handlers
  */
 
-import {
-  Injectable,
-  Logger,
-  Inject,
-  forwardRef,
-  OnModuleInit,
-  Optional,
-} from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
 import { AIService, Models } from '@/core/ai';
 import { ResumeOptimizerService } from '@/features/resume/services/resume-optimizer.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ChatResponse } from './chat.gateway';
 import {
+  SceneAnalysisResult,
   SceneAnalysisService,
   SceneContext,
-  SceneAnalysisResult,
 } from './scene-analysis.service';
 
 export enum ChatIntent {
@@ -203,8 +202,8 @@ export class ChatIntentService implements OnModuleInit {
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
     @Inject(forwardRef(() => ResumeOptimizerService))
-    private readonly resumeOptimizerService: ResumeOptimizerService,
-  ) { }
+    private readonly resumeOptimizerService: ResumeOptimizerService
+  ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log(
@@ -383,9 +382,9 @@ export class ChatIntentService implements OnModuleInit {
    * Analyze intent specific to current scene
    */
   private async analyzeSceneSpecificIntent(
-    message: string,
-    currentScene: string,
-    userId: string
+    _message: string,
+    _currentScene: string,
+    _userId: string
   ): Promise<IntentResult> {
     // Scene-specific logic can be added here
     return {
@@ -417,7 +416,10 @@ export class ChatIntentService implements OnModuleInit {
     content: string,
     metadata: Record<string, any>,
     onChunk: (chunk: ChatResponse) => void,
-    onComplete: (content: string, metadata?: Record<string, any>) => Promise<void>
+    onComplete: (
+      content: string,
+      metadata?: Record<string, any>
+    ) => Promise<void>
   ): Promise<void> {
     this.logger.log(`Processing message for user: ${userId}`);
 
@@ -445,7 +447,8 @@ export class ChatIntentService implements OnModuleInit {
       this.logger.error('Error processing message:', error);
       onChunk({
         type: 'error',
-        content: error instanceof Error ? error.message : 'Failed to process message',
+        content:
+          error instanceof Error ? error.message : 'Failed to process message',
         timestamp: Date.now(),
       });
       await onComplete('', { error: true });
@@ -459,7 +462,7 @@ export class ChatIntentService implements OnModuleInit {
     intent: ChatIntent,
     message: string,
     userId: string,
-    entities?: Record<string, any>
+    _entities?: Record<string, any>
   ): Promise<ChatResponse> {
     this.logger.log(`Handling intent: ${intent} for user: ${userId}`);
 
@@ -505,7 +508,7 @@ export class ChatIntentService implements OnModuleInit {
    */
   private async handleOptimizeResume(
     userId: string,
-    message: string
+    _message: string
   ): Promise<ChatResponse> {
     try {
       const resume = await this.getUserResumeContent(userId);
@@ -524,7 +527,10 @@ export class ChatIntentService implements OnModuleInit {
 
       return createTextResponse(
         `基于您的简历，我发现了以下优化建议：\n\n${JSON.stringify(suggestions, null, 2)}`,
-        { data: { suggestions }, suggestions: ['详细分析', '生成优化版本', '模拟面试'] }
+        {
+          data: { suggestions },
+          suggestions: ['详细分析', '生成优化版本', '模拟面试'],
+        }
       );
     } catch (error) {
       this.logger.error('Error handling optimize resume:', error);
@@ -533,8 +539,8 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleMockInterview(
-    userId: string,
-    message: string
+    _userId: string,
+    _message: string
   ): Promise<ChatResponse> {
     return createTextResponse(
       '我来为您进行模拟面试！请告诉我您面试的职位，或者上传职位描述，我会根据您的简历和职位要求生成针对性的面试问题。',
@@ -543,8 +549,8 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleInterviewPrediction(
-    userId: string,
-    message: string
+    _userId: string,
+    _message: string
   ): Promise<ChatResponse> {
     return createTextResponse(
       '我可以帮您预测面试题目！请提供职位描述，我将分析可能的面试问题和考察重点。',
@@ -575,17 +581,24 @@ export class ChatIntentService implements OnModuleInit {
       );
 
       if (!parsedJobResult.success || !parsedJobResult.data) {
-        return createTextResponse('解析职位描述时出现问题，请确保提供了完整的职位信息。');
+        return createTextResponse(
+          '解析职位描述时出现问题，请确保提供了完整的职位信息。'
+        );
       }
 
       const parsedJob = parsedJobResult.data as any;
       return createTextResponse(
         `已解析职位信息：\n\n**${parsedJob.title || '未知职位'}** @ ${parsedJob.company || '未知公司'}\n\n**核心要求：**\n${(parsedJob.requirements || []).map((r: string) => `- ${r}`).join('\n')}\n\n**技能需求：**\n${(parsedJob.skills || []).map((s: string) => `- ${s}`).join('\n')}`,
-        { data: { parsedJob }, suggestions: ['匹配简历', '优化简历', '模拟面试', '面试预测'] }
+        {
+          data: { parsedJob },
+          suggestions: ['匹配简历', '优化简历', '模拟面试', '面试预测'],
+        }
       );
     } catch (error) {
       this.logger.error('Error parsing job description:', error);
-      return createTextResponse('解析职位描述时出现问题，请确保提供了完整的职位信息。');
+      return createTextResponse(
+        '解析职位描述时出现问题，请确保提供了完整的职位信息。'
+      );
     }
   }
 
@@ -626,7 +639,7 @@ export class ChatIntentService implements OnModuleInit {
 
   private async handleSkillAnalysis(
     userId: string,
-    message: string
+    _message: string
   ): Promise<ChatResponse> {
     try {
       const resume = await this.getUserResumeContent(userId);
@@ -653,7 +666,10 @@ export class ChatIntentService implements OnModuleInit {
 
       return createTextResponse(
         `**技能分析结果**\n\n**核心技能：**\n${coreSkills.map((s: string) => `- ${s}`).join('\n') || '未识别'}\n\n**技能差距：**\n${gaps.map((g: string) => `- ${g}`).join('\n') || '暂无分析'}`,
-        { data: { analysis }, suggestions: ['优化简历', '学习建议', '职位匹配'] }
+        {
+          data: { analysis },
+          suggestions: ['优化简历', '学习建议', '职位匹配'],
+        }
       );
     } catch (error) {
       this.logger.error('Error handling skill analysis:', error);
@@ -662,8 +678,8 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleSalaryNegotiation(
-    userId: string,
-    message: string
+    _userId: string,
+    _message: string
   ): Promise<ChatResponse> {
     return createTextResponse(
       '薪资谈判是一个重要话题！我可以帮您：\n\n1. **了解市场行情** - 分析目标职位的薪资范围\n2. **准备谈判策略** - 根据您的背景制定谈判方案\n3. **模拟谈判场景** - 练习常见的薪资谈判对话\n\n请告诉我您想了解哪方面？',
@@ -672,8 +688,8 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleFullOptimization(
-    userId: string,
-    message: string
+    _userId: string,
+    _message: string
   ): Promise<ChatResponse> {
     return createTextResponse(
       '完整优化服务将为您提供：\n\n1. **简历深度分析** - 全面评估简历质量\n2. **针对性优化** - 根据目标职位定制优化方案\n3. **内容重写** - AI辅助生成高质量简历内容\n4. **格式美化** - 专业排版和格式调整\n\n请先上传您的简历和目标职位描述，我将为您进行全面优化。',
@@ -682,8 +698,8 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleInterviewPreparation(
-    userId: string,
-    message: string
+    _userId: string,
+    _message: string
   ): Promise<ChatResponse> {
     return createTextResponse(
       '面试准备服务包括：\n\n1. **公司研究** - 了解目标公司背景和文化\n2. **职位分析** - 深入理解职位要求和考察点\n3. **问题预测** - 基于简历和职位预测面试问题\n4. **回答优化** - 准备高质量的回答模板\n5. **模拟面试** - 实战演练和反馈\n\n请提供目标公司和职位信息，我们开始准备吧！',

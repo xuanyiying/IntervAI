@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@nestjs/common';
-import { AIError, AIErrorCode } from '../types';
+import { AIError } from '../types';
 
 const logger = new Logger('Retry');
 
@@ -49,14 +49,15 @@ function isRetryableError(error: Error): boolean {
     '500',
   ];
 
-  return retryablePatterns.some(pattern => message.includes(pattern));
+  return retryablePatterns.some((pattern) => message.includes(pattern));
 }
 
 /**
  * Calculate delay with exponential backoff and jitter
  */
 function calculateDelay(attempt: number, config: RetryConfig): number {
-  const delay = config.initialDelayMs * Math.pow(config.backoffMultiplier, attempt);
+  const delay =
+    config.initialDelayMs * Math.pow(config.backoffMultiplier, attempt);
   const jitter = Math.random() * 0.3 * delay; // 0-30% jitter
   return Math.min(delay + jitter, config.maxDelayMs);
 }
@@ -65,7 +66,7 @@ function calculateDelay(attempt: number, config: RetryConfig): number {
  * Sleep for specified milliseconds
  */
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**

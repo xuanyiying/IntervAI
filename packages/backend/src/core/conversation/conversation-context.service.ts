@@ -248,7 +248,7 @@ Current context:`;
   private async generateFollowUpQuestions(
     context: ConversationContext,
     userMessage: string,
-    aiResponse: string
+    _aiResponse: string
   ): Promise<string[]> {
     const questions: string[] = [];
 

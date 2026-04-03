@@ -415,7 +415,7 @@ const ChatPage: React.FC = () => {
       )}
 
       {/* Auth Usage Header */}
-      {user && usage && (
+      {user && usage && usage.quota && (
         <div className="w-full bg-primary/5 border-b border-primary/10 px-4 py-2 flex items-center justify-between z-20">
           <span className="text-sm text-primary-400">
             {usage.quota.tier === 'FREE'

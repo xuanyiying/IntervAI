@@ -117,18 +117,21 @@ You are an experienced career counselor and talent development expert. Provide p
 ```
 
 {{#if careerGoal}}
+
 ## Career Goal
 
 {{careerGoal}}
 {{/if}}
 
 {{#if currentSituation}}
+
 ## Current Situation
 
 {{currentSituation}}
 {{/if}}
 
 {{#if question}}
+
 ## Specific Question
 
 {{question}}

@@ -87,7 +87,10 @@ export const ModelCosts: Record<string, { input: number; output: number }> = {
 /**
  * Get cost for a model
  */
-export function getModelCost(modelName: string): { input: number; output: number } {
+export function getModelCost(modelName: string): {
+  input: number;
+  output: number;
+} {
   // Extract model name without provider prefix
   const name = modelName.includes(':') ? modelName.split(':')[1] : modelName;
 

@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AIService } from '@/core/ai/ai.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { UserProfile, JobPosting, JobMatch } from '../interfaces/job-search.interface';
+import {
+  UserProfile,
+  JobPosting,
+  JobMatch,
+} from '../interfaces/job-search.interface';
 
 @Injectable()
 export class JobMatchingService {
@@ -10,7 +14,7 @@ export class JobMatchingService {
   constructor(
     private readonly aiService: AIService,
     private readonly prisma: PrismaService
-  ) { }
+  ) {}
 
   async matchJobsForUser(
     userId: string,
@@ -50,8 +54,11 @@ export class JobMatchingService {
           id: saved.id,
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`Failed to save match for job ${match.jobId}: ${errorMessage}`);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `Failed to save match for job ${match.jobId}: ${errorMessage}`
+        );
       }
     }
 
@@ -73,7 +80,9 @@ export class JobMatchingService {
         temporalScore: match.temporalScore || 0,
         matchedSkills: match.matchedSkills || [],
         missingSkills: match.missingSkills || [],
-        skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : undefined,
+        skillGaps: match.skillGaps
+          ? JSON.parse(JSON.stringify(match.skillGaps))
+          : undefined,
         strengths: match.strengths || [],
         concerns: match.concerns || [],
         recommendations: match.recommendations || [],
@@ -87,7 +96,9 @@ export class JobMatchingService {
         temporalScore: match.temporalScore || 0,
         matchedSkills: match.matchedSkills || [],
         missingSkills: match.missingSkills || [],
-        skillGaps: match.skillGaps ? JSON.parse(JSON.stringify(match.skillGaps)) : undefined,
+        skillGaps: match.skillGaps
+          ? JSON.parse(JSON.stringify(match.skillGaps))
+          : undefined,
         strengths: match.strengths || [],
         concerns: match.concerns || [],
         recommendations: match.recommendations || [],
@@ -107,7 +118,9 @@ export class JobMatchingService {
       take: params.take,
       where: {
         userId: params.userId,
-        ...(params.minScore !== undefined ? { matchScore: { gte: params.minScore } } : {}),
+        ...(params.minScore !== undefined
+          ? { matchScore: { gte: params.minScore } }
+          : {}),
       },
       include: { job: true },
       orderBy: { matchScore: 'desc' },

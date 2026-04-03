@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { AIService } from '@/core/ai/ai.service';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   Application,
   JobPosting,
@@ -41,7 +41,7 @@ export class InterviewPrepService {
 
   private studyPlans: Map<string, StudyPlan> = new Map();
 
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   async onInterviewDetected(
     application: Application,
@@ -69,8 +69,8 @@ export class InterviewPrepService {
     userId: string,
     job: JobPosting,
     userProfile: UserProfile,
-    interviewDate?: Date,
-    daysUntilInterview?: number
+    _interviewDate?: Date,
+    _daysUntilInterview?: number
   ): Promise<StudyPlan> {
     const result = await this.aiService.executeSkill(
       'interview-prep',
@@ -92,26 +92,30 @@ export class InterviewPrepService {
       progress: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
-      interviewDate,
+      interviewDate: _interviewDate,
     };
 
     if (result.success && result.data) {
       const data = result.data as any;
       if (data.practiceSchedule) {
-        plan.milestones = data.practiceSchedule.map((day: any, index: number) => ({
-          id: `milestone-${index}`,
-          title: day.focus || `Day ${day.day}`,
-          description: day.focus || '',
-          topics: (day.exercises || []).map((exercise: string, exIndex: number) => ({
-            id: `topic-${index}-${exIndex}`,
-            title: exercise,
-            description: exercise,
-            completed: false,
-            priority: 'medium' as const,
-            estimatedHours: 1,
-            resources: [],
-          })),
-        }));
+        plan.milestones = data.practiceSchedule.map(
+          (day: any, index: number) => ({
+            id: `milestone-${index}`,
+            title: day.focus || `Day ${day.day}`,
+            description: day.focus || '',
+            topics: (day.exercises || []).map(
+              (exercise: string, exIndex: number) => ({
+                id: `topic-${index}-${exIndex}`,
+                title: exercise,
+                description: exercise,
+                completed: false,
+                priority: 'medium' as const,
+                estimatedHours: 1,
+                resources: [],
+              })
+            ),
+          })
+        );
       }
     }
 
