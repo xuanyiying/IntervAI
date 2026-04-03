@@ -1,12 +1,12 @@
-import * as fc from 'fast-check';
-import { HttpExceptionFilter } from './http-exception.filter';
 import { ArgumentsHost, HttpStatus } from '@nestjs/common';
+import * as fc from 'fast-check';
 import { AppException } from '../exceptions/app.exception';
 import {
-  ErrorCode,
-  ERROR_CODE_TO_STATUS,
   ERROR_CODE_TO_MESSAGE,
+  ERROR_CODE_TO_STATUS,
+  ErrorCode,
 } from '../exceptions/error-codes';
+import { HttpExceptionFilter } from './http-exception.filter';
 
 /**
  * Property-based tests for error handling system
@@ -15,11 +15,17 @@ import {
  */
 describe('Error Handling - Property Tests', () => {
   let filter: HttpExceptionFilter;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockResponse: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockRequest: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockArgumentsHost: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockMonitoring: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockAlerting: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let mockLogger: any;
 
   beforeEach(() => {

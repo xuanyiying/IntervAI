@@ -1,10 +1,18 @@
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import 'reflect-metadata';
 import 'tsconfig-paths/register';
-import { PrismaClient } from '@prisma/client';
 import { seedAdmin } from './seeds/seed-admin';
-// Initialize Prisma Client
-const prisma = new PrismaClient();
+import { seedKnowledgeBase } from './seeds/seed-knowledge-base';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 async function main() {
   const startTime = Date.now();
@@ -12,8 +20,9 @@ async function main() {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 
   try {
-    // 1. Seed Admin User
     await seedAdmin(prisma);
+
+    await seedKnowledgeBase(prisma);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(
@@ -33,5 +42,4 @@ async function main() {
   }
 }
 
-// Execute seeding
 main();

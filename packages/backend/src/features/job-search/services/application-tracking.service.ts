@@ -1,15 +1,18 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { JobPosting, UserProfile, Application, ApplicationStatus } from '../interfaces/job-search.interface';
+import {
+  JobPosting,
+  UserProfile,
+  Application,
+  ApplicationStatus,
+} from '../interfaces/job-search.interface';
 import { ApplicationStatus as PrismaApplicationStatus } from '@prisma/client';
 
 @Injectable()
 export class ApplicationTrackingService {
   private readonly logger = new Logger(ApplicationTrackingService.name);
 
-  constructor(
-    private readonly prisma: PrismaService
-  ) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   private mapStatus(status: ApplicationStatus): PrismaApplicationStatus {
     const mapping: Record<ApplicationStatus, PrismaApplicationStatus> = {
@@ -53,7 +56,9 @@ export class ApplicationTrackingService {
     });
 
     if (existingApplication) {
-      this.logger.warn(`User ${userProfile.userId} has already applied to job ${job.id}`);
+      this.logger.warn(
+        `User ${userProfile.userId} has already applied to job ${job.id}`
+      );
       return this.mapToApplication(existingApplication);
     }
 
@@ -91,7 +96,9 @@ export class ApplicationTrackingService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID ${applicationId} not found.`);
+      throw new NotFoundException(
+        `Application with ID ${applicationId} not found.`
+      );
     }
 
     // Parse status from content (simplified logic)
@@ -118,7 +125,9 @@ export class ApplicationTrackingService {
     });
 
     if (!application) {
-      throw new NotFoundException(`Application with ID ${applicationId} not found.`);
+      throw new NotFoundException(
+        `Application with ID ${applicationId} not found.`
+      );
     }
 
     const content = `${emailSubject}\n${emailBody}`;
@@ -137,16 +146,28 @@ export class ApplicationTrackingService {
   private parseStatusFromContent(content: string): ApplicationStatus {
     const lowerContent = content.toLowerCase();
 
-    if (lowerContent.includes('offer') || lowerContent.includes('congratulations')) {
+    if (
+      lowerContent.includes('offer') ||
+      lowerContent.includes('congratulations')
+    ) {
       return ApplicationStatus.OFFER;
     }
-    if (lowerContent.includes('interview') && lowerContent.includes('schedule')) {
+    if (
+      lowerContent.includes('interview') &&
+      lowerContent.includes('schedule')
+    ) {
       return ApplicationStatus.INTERVIEW_REQUESTED;
     }
-    if (lowerContent.includes('rejected') || lowerContent.includes('unfortunately')) {
+    if (
+      lowerContent.includes('rejected') ||
+      lowerContent.includes('unfortunately')
+    ) {
       return ApplicationStatus.REJECTED;
     }
-    if (lowerContent.includes('review') || lowerContent.includes('considering')) {
+    if (
+      lowerContent.includes('review') ||
+      lowerContent.includes('considering')
+    ) {
       return ApplicationStatus.UNDER_REVIEW;
     }
     if (lowerContent.includes('viewed') || lowerContent.includes('seen')) {
@@ -156,7 +177,10 @@ export class ApplicationTrackingService {
     return ApplicationStatus.SUBMITTED;
   }
 
-  private generateCoverLetter(job: JobPosting, userProfile: UserProfile): string {
+  private generateCoverLetter(
+    job: JobPosting,
+    userProfile: UserProfile
+  ): string {
     return `Dear Hiring Manager,
 
 I am writing to express my strong interest in the ${job.title} position at ${job.company}. With my background and skills, I believe I would be a valuable addition to your team.
@@ -214,10 +238,13 @@ Best regards`;
       orderBy: { updatedAt: 'desc' },
     });
 
-    return applications.map(app => this.mapToApplication(app));
+    return applications.map((app) => this.mapToApplication(app));
   }
 
-  async getApplication(applicationId: string, userId: string): Promise<Application | null> {
+  async getApplication(
+    applicationId: string,
+    userId: string
+  ): Promise<Application | null> {
     const application = await this.prisma.application.findFirst({
       where: { id: applicationId, userId },
     });

@@ -7,7 +7,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   Skill,
   SkillDefinition,
-  SkillSource,
   SkillStats,
   SkillContext,
   SkillResult,
@@ -38,7 +37,9 @@ export class SkillRegistry {
       averageTokens: 0,
     });
 
-    this.logger.log(`Registered skill: ${skill.definition.name} v${skill.definition.version}`);
+    this.logger.log(
+      `Registered skill: ${skill.definition.name} v${skill.definition.version}`
+    );
   }
 
   /**

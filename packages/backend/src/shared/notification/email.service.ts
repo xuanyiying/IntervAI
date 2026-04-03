@@ -5,30 +5,26 @@ import { MailerService } from '@nestjs-modules/mailer';
 export class EmailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendVerificationEmail(email: string, token: string, name?: string) {
-    const url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
-
+  async sendVerificationEmail(email: string, code: string, name?: string) {
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Verify your email address',
-      template: './verification', // .hbs extension is implied
+      subject: 'Verify your email address - Your verification code',
+      template: './verification',
       context: {
         name: name || 'User',
-        url,
+        code,
       },
     });
   }
 
-  async sendPasswordResetEmail(email: string, token: string, name?: string) {
-    const url = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
-
+  async sendPasswordResetEmail(email: string, code: string, name?: string) {
     await this.mailerService.sendMail({
       to: email,
-      subject: 'Reset your password',
+      subject: 'Reset your password - Your reset code',
       template: './reset-password',
       context: {
         name: name || 'User',
-        url,
+        code,
       },
     });
   }

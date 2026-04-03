@@ -38,12 +38,17 @@ axiosInstance.interceptors.request.use(
 // Response interceptor for error handling
 axiosInstance.interceptors.response.use(
   (response) => {
-    // 🔍 DEBUG LOG: 检查 axios 响应拦截器接收到的数据
-    console.log('🔍 [AXIOS INTERCEPTOR] Login response:', {
-      url: response.config.url,
-      data: response.data,
-      status: response.status,
-    });
+    // Handle TransformInterceptor wrapper: { data: ..., timestamp: ... }
+    const rawData = response.data;
+    if (
+      rawData &&
+      typeof rawData === 'object' &&
+      'data' in rawData &&
+      'timestamp' in rawData
+    ) {
+      // Always unwrap - handles both object and array responses
+      response.data = rawData.data;
+    }
 
     return response;
   },

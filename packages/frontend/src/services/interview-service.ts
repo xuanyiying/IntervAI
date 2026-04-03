@@ -126,12 +126,16 @@ export const interviewService = {
    * @param optimizationId - The ID of the optimization to base the interview on
    * @param voiceId - Optional voice ID for audio interviews
    * @param personaId - Optional persona ID for custom interviewer
+   * @param mode - Interview mode: 'mock' (AI asks questions) or 'assist' (user asks, get reference answers)
+   * @param language - Output language: 'en' (English) or 'zh' (Chinese, default)
    * @returns The created interview session and the first question
    */
   startSession: async (
     optimizationId: string,
     voiceId?: string,
-    personaId?: string
+    personaId?: string,
+    mode?: 'mock' | 'assist',
+    language?: 'en' | 'zh'
   ): Promise<{
     session: InterviewSession;
     firstQuestion: InterviewQuestion;
@@ -143,6 +147,8 @@ export const interviewService = {
       optimizationId,
       voiceId,
       personaId,
+      mode,
+      language,
     });
     return response.data;
   },

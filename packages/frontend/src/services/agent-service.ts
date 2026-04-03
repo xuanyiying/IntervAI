@@ -87,6 +87,7 @@ export const strategistService = {
 /**
  * Role-Play Agent Service
  * Handles AI-powered mock interview simulations
+ * Maps to /interview API endpoints
  */
 export const rolePlayService = {
   /**
@@ -103,7 +104,7 @@ export const rolePlayService = {
     focusAreas: string[],
     resumeData?: ParsedResumeData
   ): Promise<any> => {
-    const response = await axios.post('/agents/role-play/start', {
+    const response = await axios.post('/interview/session', {
       jobDescription,
       interviewerStyle,
       focusAreas,
@@ -122,10 +123,13 @@ export const rolePlayService = {
     sessionId: string,
     userResponse: string
   ): Promise<any> => {
-    const response = await axios.post('/agents/role-play/respond', {
-      sessionId,
-      userResponse,
-    });
+    const response = await axios.post(
+      `/interview/session:${sessionId}/answer`,
+      {
+        sessionId,
+        userResponse,
+      }
+    );
     return response.data;
   },
 
@@ -135,7 +139,7 @@ export const rolePlayService = {
    * @returns Final summary of the interview
    */
   concludeInterview: async (sessionId: string): Promise<any> => {
-    const response = await axios.post('/agents/role-play/conclude', {
+    const response = await axios.post(`/interview/session:${sessionId}/end`, {
       sessionId,
     });
     return response.data;
@@ -147,7 +151,9 @@ export const rolePlayService = {
    * @returns Detailed performance feedback
    */
   getFeedback: async (sessionId: string): Promise<any> => {
-    const response = await axios.get(`/agents/role-play/feedback/${sessionId}`);
+    const response = await axios.get(
+      `/interview/session/${sessionId}/feedback`
+    );
     return response.data;
   },
 };

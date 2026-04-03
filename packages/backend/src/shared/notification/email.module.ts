@@ -10,8 +10,9 @@ import Handlebars from 'handlebars';
     MailerModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         transport: {
-          host: config.get('MAIL_HOST') || 'smtp.gmail.com',
-          secure: false,
+          host: config.get('MAIL_HOST') || 'smtp.163.com',
+          port: config.get('MAIL_PORT') || 465,
+          secure: true,
           auth: {
             user: config.get('MAIL_USER'),
             pass: config.get('MAIL_PASS'),

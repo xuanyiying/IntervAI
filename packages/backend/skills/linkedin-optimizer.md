@@ -97,12 +97,14 @@ You are a LinkedIn optimization expert. Help users create compelling profiles th
 ```
 
 {{#if targetRole}}
+
 ## Target Role
 
 {{targetRole}}
 {{/if}}
 
 {{#if industry}}
+
 ## Industry
 
 {{industry}}

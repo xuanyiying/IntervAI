@@ -12,6 +12,9 @@ import {
   Input,
   Divider,
   Steps,
+  Select,
+  Radio,
+  Tag,
 } from 'antd';
 import {
   AudioOutlined,
@@ -20,6 +23,8 @@ import {
   PhoneOutlined,
   UserOutlined,
   RobotOutlined,
+  QuestionCircleOutlined,
+  MessageOutlined,
 } from '@ant-design/icons';
 import {
   interviewService,
@@ -34,6 +39,11 @@ import InterviewAssistant from '../components/InterviewAssistant';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
+
+// 面试模式类型
+type InterviewMode = 'mock' | 'assist';
+// 语言类型
+type InterviewLanguage = 'zh' | 'en';
 
 const InterviewPage: React.FC = () => {
   const { t } = useTranslation();
@@ -63,6 +73,10 @@ const InterviewPage: React.FC = () => {
     string | undefined
   >();
   const [currentStep, setCurrentStep] = useState(0);
+
+  // 新增：面试模式和语言选择
+  const [interviewMode, setInterviewMode] = useState<InterviewMode>('assist');
+  const [language, setLanguage] = useState<InterviewLanguage>('zh');
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -112,7 +126,9 @@ const InterviewPage: React.FC = () => {
         const result = await interviewService.startSession(
           optimizationId!,
           selectedVoiceId,
-          selectedPersonaId
+          selectedPersonaId,
+          interviewMode,
+          language
         );
         setSession(result.session);
         setCurrentQuestion(result.firstQuestion);
@@ -209,6 +225,25 @@ const InterviewPage: React.FC = () => {
     }
   };
 
+  // 辅助面试模式：发送问题，获取参考答案
+  const handleSendMessage = async (question: string) => {
+    if (!session || !question.trim()) {
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      const result = await interviewService.sendMessage(session.id, question);
+      // AI 返回的参考答案已经包含在消息中
+      // 可以选择刷新会话状态显示新消息
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      message.error(t('interview.send_failed'));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const handleCompletion = (sessionId: string) => {
     message.success(t('interview.completed_generating_feedback'));
     pollFeedback(sessionId);
@@ -278,25 +313,80 @@ const InterviewPage: React.FC = () => {
       {currentStep === 0 && (
         <Card className="mb-6">
           <Title level={3} className="mb-4">
-            {t('interview.choose_interviewer', '选择你的面试官')}
+            {t('interview.setup_title', '面试设置')}
           </Title>
-          <Paragraph className="mb-6">
-            {t(
-              'interview.persona_description',
-              '不同的面试官有不同的风格和侧重点，选择最适合你的面试官来提升面试体验。'
-            )}
-          </Paragraph>
-          <PersonaSelector
-            personas={personas}
-            selectedPersonaId={selectedPersonaId}
-            onSelect={setSelectedPersonaId}
-          />
+
+          {/* 面试模式选择 */}
+          <div className="mb-6">
+            <Text strong className="mb-2" style={{ display: 'block' }}>
+              {t('interview.mode_label', '面试模式')}
+            </Text>
+            <Radio.Group
+              value={interviewMode}
+              onChange={(e) => setInterviewMode(e.target.value)}
+              className="w-full"
+            >
+              <Radio.Button value="assist" className="w-1/2 text-center py-3">
+                <MessageOutlined className="mr-2" />
+                {t('interview.mode_assist', '辅助面试')}
+                <div className="text-xs text-gray-500 mt-1">
+                  {t('interview.mode_assist_desc', '实时获取参考答案')}
+                </div>
+              </Radio.Button>
+              <Radio.Button value="mock" className="w-1/2 text-center py-3">
+                <QuestionCircleOutlined className="mr-2" />
+                {t('interview.mode_mock', '模拟面试')}
+                <div className="text-xs text-gray-500 mt-1">
+                  {t('interview.mode_mock_desc', 'AI 提问你回答')}
+                </div>
+              </Radio.Button>
+            </Radio.Group>
+          </div>
+
+          {/* 语言选择 */}
+          <div className="mb-6">
+            <Text strong className="mb-2" style={{ display: 'block' }}>
+              {t('interview.language_label', '答案语言')}
+            </Text>
+            <Select
+              value={language}
+              onChange={setLanguage}
+              style={{ width: 200 }}
+              options={[
+                { value: 'zh', label: t('interview.language_zh', '中文') },
+                { value: 'en', label: t('interview.language_en', 'English') },
+              ]}
+            />
+          </div>
+
+          <Divider />
+
+          {/* 面试官选择 - 仅在模拟面试模式显示 */}
+          {interviewMode === 'mock' && (
+            <>
+              <Title level={4} className="mb-4">
+                {t('interview.choose_interviewer', '选择你的面试官')}
+              </Title>
+              <Paragraph className="mb-6">
+                {t(
+                  'interview.persona_description',
+                  '不同的面试官有不同的风格和侧重点，选择最适合你的面试官来提升面试体验。'
+                )}
+              </Paragraph>
+              <PersonaSelector
+                personas={personas}
+                selectedPersonaId={selectedPersonaId}
+                onSelect={setSelectedPersonaId}
+              />
+            </>
+          )}
+
           <div className="mt-6 flex justify-end">
             <Button
               type="primary"
               size="large"
               onClick={() => setCurrentStep(1)}
-              disabled={!selectedPersonaId}
+              disabled={interviewMode === 'mock' && !selectedPersonaId}
             >
               {t('interview.start_interview', '开始面试')}
             </Button>
@@ -315,18 +405,23 @@ const InterviewPage: React.FC = () => {
               }}
             >
               <Title level={3} style={{ margin: 0 }}>
-                {t('interview.title')}
+                {interviewMode === 'assist'
+                  ? t('interview.assist_title', '面试助手')
+                  : t('interview.title')}
               </Title>
-              <Text type="secondary">
-                {t('interview.question_progress', {
-                  current: currentIndex + 1,
-                  total: totalQuestions,
-                })}
-              </Text>
+              {interviewMode === 'mock' && (
+                <Text type="secondary">
+                  {t('interview.question_progress', {
+                    current: currentIndex + 1,
+                    total: totalQuestions,
+                  })}
+                </Text>
+              )}
             </div>
           }
           extra={
             <Space>
+<<<<<<< HEAD
               <Button
                 type="primary"
                 ghost
@@ -345,99 +440,58 @@ const InterviewPage: React.FC = () => {
               >
                 {t('interview.assistant_title')}
               </Button>
+=======
+              {interviewMode === 'mock' && (
+                <Button
+                  type="primary"
+                  ghost
+                  icon={<PhoneOutlined />}
+                  onClick={() => setIsVoiceCallActive(true)}
+                  disabled={loading}
+                >
+                  Start Voice Call
+                </Button>
+              )}
+>>>>>>> 510a622b2 (feat(interview): add assist mode and language support for interview sessions)
               <Button danger onClick={endSessionEarly}>
                 {t('interview.end_early')}
               </Button>
             </Space>
           }
         >
-          <Progress
-            percent={Math.round((currentIndex / totalQuestions) * 100)}
-            showInfo={false}
-          />
+          {interviewMode === 'mock' && (
+            <Progress
+              percent={Math.round((currentIndex / totalQuestions) * 100)}
+              showInfo={false}
+            />
+          )}
 
           <div style={{ marginTop: '24px', minHeight: '300px' }}>
             {loading ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Spin size="large" />
               </div>
+            ) : interviewMode === 'assist' ? (
+              // 辅助面试模式：用户输入问题，AI 生成参考答案
+              <AssistModeView
+                session={session}
+                processing={processing}
+                onSendMessage={handleSendMessage}
+                t={t}
+              />
             ) : currentQuestion ? (
-              <>
-                <Card
-                  type="inner"
-                  title={currentQuestion.questionType}
-                  style={{ backgroundColor: '#f9f9f9' }}
-                >
-                  <Title level={4}>{currentQuestion.question}</Title>
-                  {currentQuestion.tips && currentQuestion.tips.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <Text type="secondary" strong>
-                        {t('interview.tips')}:
-                      </Text>
-                      <ul>
-                        {currentQuestion.tips.map((tip, idx) => (
-                          <li key={idx}>
-                            <Text type="secondary">{tip}</Text>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </Card>
-
-                <Divider>{t('interview.your_answer')}</Divider>
-
-                <TextArea
-                  rows={6}
-                  value={answerText}
-                  onChange={(e) => setAnswerText(e.target.value)}
-                  placeholder={t('interview.answer_placeholder')}
-                  disabled={processing || recording}
-                />
-
-                <div style={{ marginTop: '24px', textAlign: 'center' }}>
-                  <Space size="large">
-                    {!recording ? (
-                      <Button
-                        shape="circle"
-                        icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-                        size="large"
-                        style={{ width: '64px', height: '64px' }}
-                        onClick={startRecording}
-                        disabled={processing}
-                      />
-                    ) : (
-                      <Button
-                        type="primary"
-                        danger
-                        shape="circle"
-                        icon={<StopOutlined style={{ fontSize: '24px' }} />}
-                        size="large"
-                        style={{ width: '64px', height: '64px' }}
-                        onClick={stopRecording}
-                      />
-                    )}
-
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<SendOutlined />}
-                      onClick={() => handleSubmitAnswer()}
-                      disabled={recording || processing || !answerText.trim()}
-                      loading={processing}
-                    >
-                      {t('interview.submit_answer')}
-                    </Button>
-                  </Space>
-                  <div style={{ marginTop: 8 }}>
-                    <Text type="secondary">
-                      {recording
-                        ? t('interview.recording_hint_recording')
-                        : t('interview.recording_hint_idle')}
-                    </Text>
-                  </div>
-                </div>
-              </>
+              // 模拟面试模式：显示问题，用户回答
+              <MockModeView
+                currentQuestion={currentQuestion}
+                answerText={answerText}
+                setAnswerText={setAnswerText}
+                recording={recording}
+                processing={processing}
+                startRecording={startRecording}
+                stopRecording={stopRecording}
+                handleSubmitAnswer={() => handleSubmitAnswer()}
+                t={t}
+              />
             ) : (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Text>{t('interview.session_completed_or_error')}</Text>
@@ -529,6 +583,191 @@ const InterviewPage: React.FC = () => {
         />
       )}
     </div>
+  );
+};
+
+// 辅助面试模式组件：用户输入问题，AI 生成参考答案
+const AssistModeView: React.FC<{
+  session: InterviewSession | null;
+  processing: boolean;
+  onSendMessage: (question: string) => void;
+  t: any;
+}> = ({ session, processing, onSendMessage, t }) => {
+  const [question, setQuestion] = useState('');
+  const [messages, setMessages] = useState<
+    Array<{ role: 'user' | 'assistant'; content: string }>
+  >([]);
+
+  const handleSubmit = () => {
+    if (!question.trim()) return;
+    onSendMessage(question);
+    setQuestion('');
+  };
+
+  return (
+    <div>
+      {/* 问题输入区域 */}
+      <Card style={{ marginBottom: 16 }}>
+        <Text strong style={{ display: 'block', marginBottom: 8 }}>
+          {t('interview.assist_input_label', '请输入面试官的问题：')}
+        </Text>
+        <TextArea
+          rows={3}
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder={t(
+            'interview.assist_input_placeholder',
+            '例如：请介绍一下你的项目经验'
+          )}
+          disabled={processing}
+        />
+        <Button
+          type="primary"
+          style={{ marginTop: 8 }}
+          onClick={handleSubmit}
+          disabled={!question.trim() || processing}
+          loading={processing}
+        >
+          {t('interview.assist_submit', '获取参考答案')}
+        </Button>
+      </Card>
+
+      {/* 历史消息展示 */}
+      {messages.length > 0 && (
+        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+          {messages.map((msg, idx) => (
+            <Card
+              key={idx}
+              size="small"
+              style={{
+                marginBottom: 8,
+                backgroundColor: msg.role === 'user' ? '#f0f5ff' : '#f6ffed',
+              }}
+            >
+              <Text strong>
+                {msg.role === 'user' ? '👤 你' : '🤖 AI 参考答案'}
+              </Text>
+              <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>
+                <Text>{msg.content}</Text>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* 使用提示 */}
+      <Card size="small" style={{ marginTop: 16, backgroundColor: '#fffbe6' }}>
+        <Text type="secondary">
+          💡{' '}
+          {t(
+            'interview.assist_hint',
+            '提示：在电话面试中，当面试官提问后，快速将问题输入，系统会生成参考答案供你参考。'
+          )}
+        </Text>
+      </Card>
+    </div>
+  );
+};
+
+// 模拟面试模式组件：显示问题，用户回答
+const MockModeView: React.FC<{
+  currentQuestion: InterviewQuestion;
+  answerText: string;
+  setAnswerText: (text: string) => void;
+  recording: boolean;
+  processing: boolean;
+  startRecording: () => void;
+  stopRecording: () => void;
+  handleSubmitAnswer: () => void;
+  t: any;
+}> = ({
+  currentQuestion,
+  answerText,
+  setAnswerText,
+  recording,
+  processing,
+  startRecording,
+  stopRecording,
+  handleSubmitAnswer,
+  t,
+}) => {
+  return (
+    <>
+      <Card
+        type="inner"
+        title={currentQuestion.questionType}
+        style={{ backgroundColor: '#f9f9f9' }}
+      >
+        <Title level={4}>{currentQuestion.question}</Title>
+        {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary" strong>
+              {t('interview.tips')}:
+            </Text>
+            <ul>
+              {currentQuestion.tips.map((tip, idx) => (
+                <li key={idx}>
+                  <Text type="secondary">{tip}</Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
+
+      <Divider>{t('interview.your_answer')}</Divider>
+
+      <TextArea
+        rows={6}
+        value={answerText}
+        onChange={(e) => setAnswerText(e.target.value)}
+        placeholder={t('interview.answer_placeholder')}
+        disabled={processing || recording}
+      />
+
+      <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <Space size="large">
+          {!recording ? (
+            <Button
+              shape="circle"
+              icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+              size="large"
+              style={{ width: '64px', height: '64px' }}
+              onClick={startRecording}
+              disabled={processing}
+            />
+          ) : (
+            <Button
+              type="primary"
+              danger
+              shape="circle"
+              icon={<StopOutlined style={{ fontSize: '24px' }} />}
+              size="large"
+              style={{ width: '64px', height: '64px' }}
+              onClick={stopRecording}
+            />
+          )}
+
+          <Button
+            type="primary"
+            size="large"
+            icon={<SendOutlined />}
+            onClick={handleSubmitAnswer}
+            disabled={recording || processing || !answerText.trim()}
+            loading={processing}
+          >
+            {t('interview.submit_answer')}
+          </Button>
+        </Space>
+        <div style={{ marginTop: 8 }}>
+          <Text type="secondary">
+            {recording
+              ? t('interview.recording_hint_recording')
+              : t('interview.recording_hint_idle')}
+          </Text>
+        </div>
+      </div>
+    </>
   );
 };
 

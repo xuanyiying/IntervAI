@@ -128,31 +128,37 @@ You are a compensation expert with deep knowledge of salary trends, market rates
 {{jobTitle}}
 
 {{#if location}}
+
 ## Location
 
 {{location}}
 {{/if}}
 
 {{#if experience}}
+
 ## Experience
 
 ```json
 {{experience}}
 ```
+
 {{/if}}
 
 {{#if skills}}
+
 ## Key Skills
 
 {{skills}}
 {{/if}}
 
 {{#if currentOffer}}
+
 ## Current Offer
 
 ```json
 {{currentOffer}}
 ```
+
 {{/if}}
 
 Provide comprehensive salary analysis and negotiation guidance in the specified JSON format.

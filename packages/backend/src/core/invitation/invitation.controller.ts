@@ -9,7 +9,7 @@ import { Role } from '@prisma/client';
 @ApiTags('invitations')
 @Controller('invitations')
 export class InvitationController {
-  constructor(private readonly invitationService: InvitationService) { }
+  constructor(private readonly invitationService: InvitationService) {}
 
   @Post('generate')
   @UseGuards(JwtAuthGuard, RolesGuard)

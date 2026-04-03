@@ -32,7 +32,7 @@ export class InterviewController {
     private questionService: InterviewQuestionService,
     private sessionService: InterviewSessionService,
     private reportService: InterviewReportService
-  ) { }
+  ) {}
 
   /**
    * Get interview preparation guide or strategy

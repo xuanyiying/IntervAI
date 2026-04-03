@@ -1,21 +1,20 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { AIEngine, AIService, Models } from '@/core/ai';
 import { PrismaService } from '@/shared/database/prisma.service';
 import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  InterviewMessage,
   InterviewQuestion,
   InterviewSession,
-  InterviewMessage,
 } from '@prisma/client';
 import { CreateSessionDto } from './dto/create-session.dto';
-import { SendMessageDto } from './dto/send-message.dto';
-import { EndSessionDto } from './dto/end-session.dto';
-import { QuestionGeneratorService } from './services/question-generator.service';
-import { InterviewSessionService } from './services/interview-session.service';
-import { AIService, Models, AIEngine } from '@/core/ai';
 import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
+import { SendMessageDto } from './dto/send-message.dto';
+import { InterviewSessionService } from './services/interview-session.service';
+import { QuestionGeneratorService } from './services/question-generator.service';
 
 @Injectable()
 export class InterviewService {
@@ -25,7 +24,7 @@ export class InterviewService {
     private sessionService: InterviewSessionService,
     private aiService: AIService,
     private aiEngine: AIEngine
-  ) { }
+  ) {}
 
   async getPreparationGuide(dto: GetPreparationGuideDto): Promise<string> {
     const systemPrompt = `You are an expert interview coach. Provide comprehensive interview preparation guidance.`;
@@ -143,16 +142,17 @@ Language: ${dto.language || 'en'}`;
       <strong>Suggested Answer:</strong>
       <p>${this.escapeHtml(q.suggestedAnswer).replace(/\n/g, '<br>')}</p>
     </div>
-    ${q.tips && q.tips.length > 0
-            ? `
+    ${
+      q.tips && q.tips.length > 0
+        ? `
     <div class="tips">
       <div class="tips-title">Tips:</div>
       <ul>
         ${q.tips.map((tip) => `<li>${this.escapeHtml(tip)}</li>`).join('')}
       </ul>
     </div>`
-            : ''
-          }
+        : ''
+    }
   </div>`;
       });
     }
@@ -167,14 +167,17 @@ Language: ${dto.language || 'en'}`;
   private groupQuestionsByType(
     questions: InterviewQuestion[]
   ): Record<string, InterviewQuestion[]> {
-    return questions.reduce((acc, question) => {
-      const type = question.questionType;
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(question);
-      return acc;
-    }, {} as Record<string, InterviewQuestion[]>);
+    return questions.reduce(
+      (acc, question) => {
+        const type = question.questionType;
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push(question);
+        return acc;
+      },
+      {} as Record<string, InterviewQuestion[]>
+    );
   }
 
   private formatQuestionType(type: string): string {
@@ -185,7 +188,6 @@ Language: ${dto.language || 'en'}`;
   }
 
   private escapeHtml(text: string): string {
-    const div = { toString: () => '' };
     return text
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -197,7 +199,10 @@ Language: ${dto.language || 'en'}`;
   async createSession(
     userId: string,
     dto: CreateSessionDto
-  ): Promise<{ session: InterviewSession; firstQuestion: InterviewQuestion | null }> {
+  ): Promise<{
+    session: InterviewSession;
+    firstQuestion: InterviewQuestion | null;
+  }> {
     return this.sessionService.startSession(userId, dto);
   }
 
@@ -211,12 +216,15 @@ Language: ${dto.language || 'en'}`;
 
   async endSession(
     sessionId: string,
-    userId: string,
+    userId: string
   ): Promise<InterviewSession> {
     return this.sessionService.endSession(userId, { sessionId });
   }
 
-  async getSession(sessionId: string, userId: string): Promise<InterviewSession> {
+  async getSession(
+    sessionId: string,
+    userId: string
+  ): Promise<InterviewSession> {
     return this.sessionService.getSession(userId, sessionId);
   }
 
@@ -234,7 +242,9 @@ Language: ${dto.language || 'en'}`;
     }
 
     if (session.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to access this session');
+      throw new ForbiddenException(
+        'You do not have permission to access this session'
+      );
     }
 
     return session.messages;
@@ -251,7 +261,10 @@ Language: ${dto.language || 'en'}`;
     userId: string,
     optimizationId: string
   ): Promise<InterviewSession | null> {
-    return this.sessionService.getActiveSessionByOptimization(userId, optimizationId);
+    return this.sessionService.getActiveSessionByOptimization(
+      userId,
+      optimizationId
+    );
   }
 
   async transcribeAudio(file: Express.Multer.File): Promise<{ text: string }> {

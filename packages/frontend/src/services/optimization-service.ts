@@ -15,13 +15,10 @@ export const optimizationService = {
     resumeId: string,
     jobId: string
   ): Promise<Optimization> => {
-    const response = await axios.post<Optimization>(
-      '/resume-optimizer/optimizations',
-      {
-        resumeId,
-        jobId,
-      }
-    );
+    const response = await axios.post<Optimization>('/optimizations', {
+      resumeId,
+      jobId,
+    });
     return response.data;
   },
 
@@ -32,7 +29,7 @@ export const optimizationService = {
    */
   getOptimization: async (optimizationId: string): Promise<Optimization> => {
     const response = await axios.get<Optimization>(
-      `/resume-optimizer/optimizations/${optimizationId}`
+      `/optimizations/${optimizationId}`
     );
     return response.data;
   },
@@ -42,9 +39,7 @@ export const optimizationService = {
    * @returns List of optimization records
    */
   listOptimizations: async (): Promise<Optimization[]> => {
-    const response = await axios.get<Optimization[]>(
-      '/resume-optimizer/optimizations'
-    );
+    const response = await axios.get<Optimization[]>('/optimizations');
     return response.data;
   },
 
@@ -59,7 +54,7 @@ export const optimizationService = {
     suggestionId: string
   ): Promise<Optimization> => {
     const response = await axios.post<Optimization>(
-      `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/accept`
+      `/optimizations/${optimizationId}/suggestions/${suggestionId}/accept`
     );
     return response.data;
   },
@@ -75,7 +70,7 @@ export const optimizationService = {
     suggestionId: string
   ): Promise<Optimization> => {
     const response = await axios.post<Optimization>(
-      `/resume-optimizer/optimizations/${optimizationId}/suggestions/${suggestionId}/reject`
+      `/optimizations/${optimizationId}/suggestions/${suggestionId}/reject`
     );
     return response.data;
   },
@@ -91,7 +86,7 @@ export const optimizationService = {
     suggestionIds: string[]
   ): Promise<Optimization> => {
     const response = await axios.post<Optimization>(
-      `/resume-optimizer/optimizations/${optimizationId}/suggestions/accept-batch`,
+      `/optimizations/${optimizationId}/suggestions/accept-batch`,
       { suggestionIds }
     );
     return response.data;

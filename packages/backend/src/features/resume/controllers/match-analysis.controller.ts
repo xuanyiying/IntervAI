@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { MatchAnalysisService } from '../services/match-analysis.service';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 
@@ -13,7 +21,11 @@ export class MatchAnalysisController {
     @Request() req: any
   ) {
     const userId = req.user?.id || req.user?.userId;
-    return this.matchAnalysisService.analyzeMatch(body.resumeId, body.jobId, userId);
+    return this.matchAnalysisService.analyzeMatch(
+      body.resumeId,
+      body.jobId,
+      userId
+    );
   }
 
   @Get(':resumeId/:jobId')

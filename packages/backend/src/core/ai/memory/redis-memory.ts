@@ -48,12 +48,12 @@ export class RedisMemory implements Memory {
 
   async getAll(): Promise<MemoryEntry[]> {
     const entries = await this.redis.lrange(this.key, 0, -1);
-    return entries.map(e => JSON.parse(e)).reverse();
+    return entries.map((e) => JSON.parse(e)).reverse();
   }
 
   async getLast(n: number): Promise<MemoryEntry[]> {
     const entries = await this.redis.lrange(this.key, 0, n - 1);
-    return entries.map(e => JSON.parse(e)).reverse();
+    return entries.map((e) => JSON.parse(e)).reverse();
   }
 
   async clear(): Promise<void> {

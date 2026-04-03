@@ -97,6 +97,7 @@ You are an expert resume parser and career analyst. Your task is to analyze the 
 {{resumeText}}
 
 {{#if targetJob}}
+
 ## Target Job Description
 
 {{targetJob}}

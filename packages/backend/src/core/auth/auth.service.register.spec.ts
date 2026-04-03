@@ -23,7 +23,9 @@ describe('AuthService.register', () => {
       markAsUsed: jest.fn(),
     } as any;
 
-    const redisService = {} as any;
+    const redisService = {
+      set: jest.fn().mockResolvedValue(undefined),
+    } as any;
 
     const now = new Date('2026-01-01T00:00:00.000Z');
     const createdUser = {
@@ -35,7 +37,6 @@ describe('AuthService.register', () => {
       subscriptionTier: SubscriptionTier.FREE,
       isActive: true,
       emailVerified: false,
-      verificationToken: 'token',
       role: Role.USER,
       createdAt: now,
       updatedAt: now,

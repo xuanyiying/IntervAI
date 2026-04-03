@@ -571,8 +571,44 @@ export class ResumeService {
       throw new ForbiddenException('Access denied');
     }
 
-    if (!resume.parsedData) {
-      throw new BadRequestException('Resume must be parsed before analysis');
+    // If not parsed yet, auto-trigger parsing first
+    if (!resume.parsedData || resume.parseStatus !== ParseStatus.COMPLETED) {
+      this.logger.log(
+        `Resume ${resumeId} not parsed yet, auto-triggering parsing`
+      );
+
+      try {
+        await this.parseResume(resumeId, userId);
+      } catch (parseError) {
+        this.logger.error(
+          `Auto-parsing failed for resume ${resumeId}:`,
+          parseError
+        );
+        // Provide more helpful error message
+        const errorMsg =
+          parseError instanceof Error ? parseError.message : 'Unknown error';
+        if (errorMsg.includes('Storage record not found')) {
+          throw new BadRequestException('简历文件未找到，请重新上传简历');
+        }
+        if (errorMsg.includes('timeout')) {
+          throw new BadRequestException(
+            '简历解析超时，请稍后重试或重新上传简历'
+          );
+        }
+        throw new BadRequestException(`简历解析失败: ${errorMsg}`);
+      }
+
+      // Re-fetch the resume after parsing
+      const parsedResume = await this.prisma.resume.findUnique({
+        where: { id: resumeId },
+      });
+
+      if (!parsedResume?.parsedData) {
+        throw new BadRequestException('简历解析失败，请重新上传');
+      }
+
+      const parsedData = parsedResume.parsedData as unknown as ParsedResumeData;
+      return this.aiEngine.analyzeParsedResume(parsedData);
     }
 
     const parsedData = resume.parsedData as unknown as ParsedResumeData;

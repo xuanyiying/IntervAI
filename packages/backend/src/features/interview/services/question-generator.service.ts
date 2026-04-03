@@ -16,7 +16,7 @@ export class QuestionGeneratorService {
   constructor(
     private prisma: PrismaService,
     private aiEngine: AIEngine
-  ) { }
+  ) {}
 
   /**
    * Generate interview questions based on resume and job

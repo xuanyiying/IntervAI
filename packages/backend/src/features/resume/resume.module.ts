@@ -44,6 +44,11 @@ import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
     TemplatesController,
     MatchAnalysisController,
   ],
-  exports: [ResumeService, ResumeOptimizerService, MatchAnalysisService],
+  exports: [
+    ResumeService,
+    ResumeOptimizerService,
+    MatchAnalysisService,
+    PdfGenerationService,
+  ],
 })
 export class ResumeModule {}

@@ -7,7 +7,13 @@
 import OpenAI from 'openai';
 import { Logger } from '@nestjs/common';
 import { PROVIDER_BASE_URLS, DefaultParams } from '../models';
-import { AIError, AIErrorCode, AIMessage, ChatOptions, ProviderConfig } from '../types';
+import {
+  AIError,
+  AIErrorCode,
+  AIMessage,
+  ChatOptions,
+  ProviderConfig,
+} from '../types';
 import { retry } from '../utils/retry';
 import { CircuitBreaker } from '../utils/circuit-breaker';
 import { RateLimiter } from '../utils/rate-limiter';
@@ -122,7 +128,10 @@ export class AIProvider {
     model: string,
     messages: AIMessage[],
     options?: ChatOptions
-  ): Promise<{ content: string; usage: { prompt_tokens: number; completion_tokens: number } }> {
+  ): Promise<{
+    content: string;
+    usage: { prompt_tokens: number; completion_tokens: number };
+  }> {
     const pc = this.getProviderClient(provider);
 
     if (pc.circuitBreaker.isOpen()) {
@@ -373,11 +382,6 @@ export class AIProvider {
       );
     }
 
-    throw new AIError(
-      AIErrorCode.UNKNOWN_ERROR,
-      message,
-      err,
-      false
-    );
+    throw new AIError(AIErrorCode.UNKNOWN_ERROR, message, err, false);
   }
 }

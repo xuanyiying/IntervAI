@@ -57,7 +57,9 @@ export class SkillInstallerService {
    * Install a skill from a package source
    */
   async install(source: SkillPackageSource): Promise<InstallResult[]> {
-    this.logger.log(`Installing skill from ${source.type}: ${source.name || source.url}`);
+    this.logger.log(
+      `Installing skill from ${source.type}: ${source.name || source.url}`
+    );
 
     switch (source.type) {
       case 'npm':
@@ -84,8 +86,13 @@ export class SkillInstallerService {
   /**
    * Install skill from NPM
    */
-  async installFromNpm(packageName: string, version?: string): Promise<InstallResult[]> {
-    this.logger.log(`Installing from NPM: ${packageName}@${version || 'latest'}`);
+  async installFromNpm(
+    packageName: string,
+    version?: string
+  ): Promise<InstallResult[]> {
+    this.logger.log(
+      `Installing from NPM: ${packageName}@${version || 'latest'}`
+    );
 
     try {
       // In production, this would use npm registry API
@@ -240,7 +247,10 @@ export class SkillInstallerService {
       const stats = await fs.stat(resolvedPath);
 
       if (stats.isDirectory()) {
-        const loaded = await this.loader.loadSkillsFromDirectory(resolvedPath, 'file');
+        const loaded = await this.loader.loadSkillsFromDirectory(
+          resolvedPath,
+          'file'
+        );
         return loaded.map((info) => ({
           success: true,
           skillName: info.name,

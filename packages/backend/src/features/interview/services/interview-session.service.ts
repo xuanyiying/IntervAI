@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
+import { AIService } from '@/core/ai/ai.service';
 import { QuotaService } from '@/core/quota/quota.service';
 import {
   InterviewSession,
@@ -13,8 +13,12 @@ import {
   InterviewStatus,
   MessageRole,
   InterviewQuestion,
+  InterviewMode,
 } from '@prisma/client';
-import { CreateSessionDto } from '../dto/create-session.dto';
+import {
+  CreateSessionDto,
+  InterviewMode as InterviewModeEnum,
+} from '../dto/create-session.dto';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { EndSessionDto } from '../dto/end-session.dto';
 import { ParsedJobData, ParsedResumeData } from '@/types';
@@ -26,10 +30,10 @@ export class InterviewSessionService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine,
+    private aiService: AIService,
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService
-  ) { }
+  ) {}
 
   /**
    * Start a new interview session
@@ -43,7 +47,16 @@ export class InterviewSessionService {
   }> {
     await this.quotaService.enforceInterviewQuota(userId);
 
-    const { optimizationId, voiceId, personaId } = createSessionDto;
+    const { optimizationId, voiceId, personaId, mode, language } =
+      createSessionDto;
+
+    // Map DTO mode to Prisma enum
+    const sessionMode =
+      mode === InterviewModeEnum.ASSIST
+        ? InterviewMode.ASSIST
+        : InterviewMode.MOCK;
+    // Map DTO language to Prisma enum
+    const sessionLanguage = language === 'zh' ? 'ZH' : 'EN';
 
     if (voiceId) {
       const voices = await this.voiceService.getVoices(userId);
@@ -94,6 +107,8 @@ export class InterviewSessionService {
         optimizationId,
         voiceId: createSessionDto.voiceId,
         personaId: createSessionDto.personaId,
+        mode: sessionMode,
+        language: sessionLanguage,
         status: InterviewStatus.IN_PROGRESS,
       },
       include: {
@@ -115,9 +130,16 @@ export class InterviewSessionService {
       orderBy: { createdAt: 'asc' },
     });
 
+    // For ASSIST mode, don't return预设 questions - user will input questions
+    // For MOCK mode, return the first question
+    const firstQuestion =
+      sessionMode === InterviewMode.MOCK && questions.length > 0
+        ? questions[0]
+        : null;
+
     return {
       session,
-      firstQuestion: questions.length > 0 ? questions[0] : null,
+      firstQuestion,
     };
   }
 
@@ -285,39 +307,31 @@ export class InterviewSessionService {
       },
     });
 
-    // Generate AI response
+    // Get resume and job data
     const resumeData = session.optimization.resume
       .parsedData as unknown as ParsedResumeData;
     const jobData = session.optimization.job
       .parsedRequirements as unknown as ParsedJobData;
 
-    const requirements = [
-      ...(jobData.requiredSkills || []),
-      ...(jobData.responsibilities || []),
-    ].join('; ');
+    let aiResponse: string;
 
-    const context = `
-You are an experienced interviewer conducting a job interview.
-Candidate Name: ${resumeData.personalInfo.name}
-Job Title: ${session.optimization.job.title}
-Company: ${session.optimization.job.company}
-Job Requirements: ${requirements.substring(0, 500)}...
-
-Your goal is to assess the candidate's fit for the role based on their resume and the job description.
-Be professional, encouraging, but thorough. Ask follow-up questions when appropriate.
-Keep your responses concise (under 100 words) to maintain a natural conversation flow.
-`;
-
-    const history = session.messages.map((m) => ({
-      role: m.role === MessageRole.USER ? 'user' : 'assistant',
-      content: m.content,
-    }));
-
-    const aiResponse = await this.aiEngine.chatWithInterviewer(
-      context,
-      content,
-      history
-    );
+    if (session.mode === InterviewMode.ASSIST) {
+      // ASSIST 模式：用户输入面试官问题，AI 生成参考答案
+      aiResponse = await this.generateAssistAnswer(
+        content, // 用户输入的面试官问题
+        resumeData,
+        jobData,
+        session.language
+      );
+    } else {
+      // MOCK 模式：AI 作为面试官继续提问
+      aiResponse = await this.generateMockResponse(
+        session,
+        content,
+        resumeData,
+        jobData
+      );
+    }
 
     const aiMessage = await this.prisma.interviewMessage.create({
       data: {
@@ -328,6 +342,152 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
     });
 
     return { userMessage, aiMessage };
+  }
+
+  /**
+   * 生成辅助面试答案 (ASSIST 模式)
+   * 用户输入面试官问题，AI 生成参考答案
+   */
+  private async generateAssistAnswer(
+    question: string,
+    resumeData: ParsedResumeData,
+    jobData: ParsedJobData,
+    language: string
+  ): Promise<string> {
+    const isZh = language === 'ZH';
+
+    // 语言标签映射
+    const labels = isZh
+      ? {
+          question: '问题',
+          referenceAnswer: '参考答案',
+          keyPoints: '要点',
+          estimatedTime: '建议时长',
+          tips: '建议',
+          avoid: '避免',
+        }
+      : {
+          question: 'Question',
+          referenceAnswer: 'Reference Answer',
+          keyPoints: 'Key Points',
+          estimatedTime: 'Estimated Time',
+          tips: 'Tips',
+          avoid: 'Avoid',
+        };
+
+    try {
+      const resumeText = JSON.stringify({
+        name: resumeData.personalInfo?.name || 'Candidate',
+        skills: resumeData.skills || [],
+        experience: resumeData.experience || [],
+        projects: resumeData.projects || [],
+      });
+
+      const jobDescription = JSON.stringify({
+        title: jobData.title || '',
+        company: jobData.company || '',
+        requiredSkills: jobData.requiredSkills || [],
+        responsibilities: jobData.responsibilities || [],
+      });
+
+      const result = await this.aiService.executeSkill(
+        'interview-assistant',
+        {
+          question,
+          resume: resumeText,
+          jobDescription,
+          selfIntroduction: '',
+          interviewType: 'technical',
+          language: isZh ? 'zh' : 'en',
+        },
+        ''
+      );
+
+      if (result.success && result.data) {
+        const data = result.data as any;
+        // 格式化输出为易读的文本
+        let formattedAnswer = `📝 **${labels.question}**: ${question}\n\n`;
+
+        if (data.suggestedAnswer) {
+          formattedAnswer += `💡 **${labels.referenceAnswer}**:\n${data.suggestedAnswer}\n\n`;
+        }
+
+        if (data.keyPoints && data.keyPoints.length > 0) {
+          formattedAnswer += `📌 **${labels.keyPoints}**:\n${data.keyPoints.map((p: string) => `• ${p}`).join('\n')}\n\n`;
+        }
+
+        if (data.estimatedTime) {
+          formattedAnswer += `⏱️ **${labels.estimatedTime}**: ${data.estimatedTime}\n`;
+        }
+
+        if (data.tips && data.tips.length > 0) {
+          formattedAnswer += `\n💡 **${labels.tips}**: ${data.tips.join(' | ')}`;
+        }
+
+        if (data.redFlags && data.redFlags.length > 0) {
+          formattedAnswer += `\n⚠️ **${labels.avoid}**: ${data.redFlags.join(' | ')}`;
+        }
+
+        return formattedAnswer;
+      }
+
+      // 如果 skill 执行失败，返回简单响应
+      return isZh
+        ? `收到问题: ${question}\n\n请稍等，我正在生成参考答案...`
+        : `Received question: ${question}\n\nPlease wait, generating reference answer...`;
+    } catch (error) {
+      this.logger.error('Failed to generate assist answer:', error);
+      return isZh
+        ? `抱歉，无法生成参考答案。请稍后重试。`
+        : `Sorry, unable to generate reference answer. Please try again later.`;
+    }
+  }
+
+  /**
+   * 生成模拟面试回答 (MOCK 模式)
+   * AI 作为面试官，根据用户回答继续提问
+   */
+  private async generateMockResponse(
+    session: any,
+    userAnswer: string,
+    resumeData: ParsedResumeData,
+    jobData: ParsedJobData
+  ): Promise<string> {
+    const requirements = [
+      ...(jobData.requiredSkills || []),
+      ...(jobData.responsibilities || []),
+    ].join('; ');
+
+    const context = `
+You are an experienced interviewer conducting a job interview.
+Candidate Name: ${resumeData.personalInfo?.name || 'Candidate'}
+Job Title: ${jobData.title || 'Target Position'}
+Company: ${jobData.company || 'Target Company'}
+Job Requirements: ${requirements.substring(0, 500)}...
+
+Your goal is to assess the candidate's fit for the role based on their resume and the job description.
+Be professional, encouraging, but thorough. Ask follow-up questions when appropriate.
+Keep your responses concise (under 100 words) to maintain a natural conversation flow.
+`;
+
+    const history = session.messages.map((m: any) => ({
+      role: m.role === MessageRole.USER ? 'user' : 'assistant',
+      content: m.content,
+    }));
+
+    try {
+      const { AIEngine } = await import('@/core/ai');
+      const aiEngine = new AIEngine(this.aiService);
+      const aiResponse = await aiEngine.chatWithInterviewer(
+        context,
+        userAnswer,
+        history
+      );
+      return aiResponse;
+    } catch (error) {
+      this.logger.error('Failed to generate mock response:', error);
+      return 'Thank you for your answer. Could you tell me more about...';
+    }
   }
 
   /**
@@ -462,7 +622,7 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
    * Transcribe audio file
    */
   async transcribeAudio(file: Express.Multer.File): Promise<{ text: string }> {
-    const text = await this.aiEngine.transcribeAudio(file.buffer);
+    const text = await this.voiceService.transcribeAudio(file.buffer);
     return { text };
   }
 
@@ -507,10 +667,12 @@ Format the output as JSON:
 `;
 
     try {
-      const result = await this.aiEngine.generate(prompt, {
-        temperature: 0.7,
-        maxTokens: 2000,
-      });
+      const { Models } = await import('@/core/ai/models');
+      const result = await this.aiService.generate(
+        Models.InterviewPrep,
+        prompt,
+        ''
+      );
 
       // Parse JSON from result
       // Assuming result is a string that might contain JSON

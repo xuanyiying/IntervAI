@@ -110,24 +110,28 @@ You are an expert interview coach with deep knowledge of hiring practices across
 {{jobDescription}}
 
 {{#if resumeText}}
+
 ## Candidate Resume
 
 {{resumeText}}
 {{/if}}
 
 {{#if interviewType}}
+
 ## Interview Type
 
 {{interviewType}}
 {{/if}}
 
 {{#if difficulty}}
+
 ## Difficulty Level
 
 {{difficulty}}
 {{/if}}
 
 {{#if count}}
+
 ## Number of Questions
 
 {{count}}

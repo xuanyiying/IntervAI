@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { message, Spin, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/auth-service';
 
 const { Title } = Typography;
 
 const OAuthCallbackPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const { setAuth } = useAuthStore();
@@ -24,7 +26,9 @@ const OAuthCallbackPage: React.FC = () => {
         }
 
         if (!token) {
-          throw new Error('认证失败：未收到访问令牌');
+          throw new Error(
+            t('auth.oauth_token_missing', '认证失败：未收到访问令牌')
+          );
         }
 
         // Verify the token and get user info
@@ -33,19 +37,17 @@ const OAuthCallbackPage: React.FC = () => {
         // Set auth state
         setAuth(user, token);
 
-        message.success('登录成功！');
+        message.success(t('auth.login_success', '登录成功！'));
 
         // Redirect to home page
         setTimeout(() => {
           navigate('/', { replace: true });
-        }, 100);
+        }, 1500);
       } catch (err) {
         const errorMessage =
-          (err as Error)?.message || 'OAuth 认证失败，请重试';
-
+          (err as Error)?.message ||
+          t('auth.oauth_failed', 'OAuth 认证失败，请重试');
         message.error(errorMessage);
-
-        // Redirect to login page after a short delay
         setTimeout(() => {
           navigate('/login', { replace: true });
         }, 2000);
@@ -53,24 +55,16 @@ const OAuthCallbackPage: React.FC = () => {
     };
 
     handleOAuthCallback();
-  }, [location, navigate, setAuth]);
+  }, [location, navigate, setAuth, t]);
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-      }}
-    >
-      <Spin size="large" />
-      <Title level={3} style={{ color: '#fff', marginTop: '20px' }}>
-        正在处理认证...
-      </Title>
+    <div className="min-h-screen flex items-center justify-center bg-primary/5">
+      <div className="text-center">
+        <Spin size="large" />
+        <Title level={4} className="mt-4">
+          {t('auth.oauth_processing', '正在处理认证...')}
+        </Title>
+      </div>
     </div>
   );
 };

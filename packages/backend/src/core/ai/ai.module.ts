@@ -88,7 +88,7 @@ import {
   ],
 })
 export class AIModule implements OnModuleInit {
-  constructor(private readonly skillLoader: SkillLoader) { }
+  constructor(private readonly skillLoader: SkillLoader) {}
 
   async onModuleInit(): Promise<void> {
     // Initialize skill loader

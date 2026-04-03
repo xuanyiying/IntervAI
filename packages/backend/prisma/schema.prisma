@@ -565,6 +565,8 @@ model InterviewSession {
   userId         String
   optimizationId String
   personaId      String?
+  mode           InterviewMode       @default(MOCK)
+  language       InterviewLanguage   @default(EN)
   status         InterviewStatus     @default(IN_PROGRESS)
   startTime      DateTime            @default(now())
   endTime        DateTime?
@@ -688,6 +690,16 @@ enum OssType {
   ALIYUN_OSS
   TENCENT_COS
   LOCAL
+}
+
+enum InterviewMode {
+  MOCK
+  ASSIST
+}
+
+enum InterviewLanguage {
+  EN
+  ZH
 }
 
 enum InterviewStatus {
@@ -820,6 +832,24 @@ model UserProfile {
 
   @@index([userId])
   @@map("user_profiles")
+}
+
+model KnowledgeBase {
+  id        String   @id @default(uuid())
+  content   String
+  embedding String
+  metadata  Json
+  source    String
+  category  String
+  role      String?
+  keywords  String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+  @@index([source])
+  @@index([role])
+  @@map("knowledge_base")
 }
 
 enum ApplicationStatus {

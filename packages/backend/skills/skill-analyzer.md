@@ -139,11 +139,13 @@ You are a skills development expert and career coach. Analyze the gap between cu
 {{targetRole}}
 
 {{#if experience}}
+
 ## Experience Context
 
 ```json
 {{experience}}
 ```
+
 {{/if}}
 
 Provide comprehensive skill analysis in the specified JSON format.

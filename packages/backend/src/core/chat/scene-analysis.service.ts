@@ -117,7 +117,7 @@ Return JSON only, no markdown.`;
     }
   }
 
-  private buildSystemPrompt(context: SceneContext): string {
+  private buildSystemPrompt(_context: SceneContext): string {
     return `You are an intelligent scene analyzer for a career services platform. Your job is to understand user intent and categorize their requests into appropriate scenes.
 
 Available Scenes:

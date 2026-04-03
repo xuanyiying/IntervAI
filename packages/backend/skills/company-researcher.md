@@ -147,12 +147,14 @@ You are a corporate research analyst specializing in company analysis for job se
 {{companyName}}
 
 {{#if role}}
+
 ## Target Role
 
 {{role}}
 {{/if}}
 
 {{#if researchDepth}}
+
 ## Research Depth
 
 {{researchDepth}}

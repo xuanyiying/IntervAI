@@ -103,7 +103,11 @@ describe('MatchAnalysisService', () => {
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
+      const result = await service.analyzeMatch(
+        'resume-id',
+        'job-id',
+        'user-id'
+      );
 
       expect(result).toBeDefined();
       expect(result.overallScore).toBeDefined();
@@ -160,7 +164,11 @@ describe('MatchAnalysisService', () => {
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
+      const result = await service.analyzeMatch(
+        'resume-id',
+        'job-id',
+        'user-id'
+      );
 
       expect(result.skillMatch.matched.length).toBeGreaterThan(0);
       expect(
@@ -195,7 +203,11 @@ describe('MatchAnalysisService', () => {
         .mockResolvedValueOnce([0.1, 0.2, 0.3])
         .mockResolvedValueOnce([0.15, 0.25, 0.35]);
 
-      const result = await service.analyzeMatch('resume-id', 'job-id', 'user-id');
+      const result = await service.analyzeMatch(
+        'resume-id',
+        'job-id',
+        'user-id'
+      );
 
       expect(result.skillMatch.missing.length).toBeGreaterThan(0);
       expect(result.skillMatch.missing.some((s) => s.skill === 'AWS')).toBe(

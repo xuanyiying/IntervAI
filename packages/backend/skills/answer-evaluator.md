@@ -98,6 +98,7 @@ You are an expert interview evaluator. Assess the quality of interview answers a
 {{answer}}
 
 {{#if jobContext}}
+
 ## Job Context
 
 {{jobContext}}

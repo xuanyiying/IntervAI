@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { RolePlayCard } from '../components/RolePlayCard';
-import { useResumeStore } from '../stores';
+import { useResumeStore } from '@/stores';
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, Space } from 'antd';
 import { FileTextOutlined, CommentOutlined } from '@ant-design/icons';
 import './agents.css';
 
 export const RolePlayPage: React.FC = () => {
+  const { t } = useTranslation();
   const { currentResume, fetchResumes } = useResumeStore();
   const [jobDescription, setJobDescription] = useState('');
   const [showForm, setShowForm] = useState(true);
@@ -31,15 +33,22 @@ export const RolePlayPage: React.FC = () => {
         <div className="header-icon-wrapper">
           <CommentOutlined className="header-icon" />
         </div>
-        <h1>模拟面试</h1>
-        <p>AI 面试官实时互动，模拟真实面试场景并提供即时反馈</p>
+        <h1>{t('roleplay.title', '模拟面试')}</h1>
+        <p>
+          {t(
+            'roleplay.description',
+            'AI 面试官实时互动，模拟真实面试场景并提供即时反馈'
+          )}
+        </p>
       </div>
 
       {showForm ? (
         <div className="form-container">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>当前活跃简历 (用于背景分析):</label>
+              <label>
+                {t('roleplay.current_resume', '当前活跃简历 (用于背景分析)')}:
+              </label>
               {currentResume ? (
                 <div className="active-resume-card">
                   <Space>
@@ -49,7 +58,8 @@ export const RolePlayPage: React.FC = () => {
                         {currentResume.title || currentResume.originalFilename}
                       </div>
                       <div className="resume-meta">
-                        v{currentResume.version} · 已解析
+                        v{currentResume.version} ·{' '}
+                        {t('resume.parsed', '已解析')}
                       </div>
                     </div>
                   </Space>
@@ -58,13 +68,16 @@ export const RolePlayPage: React.FC = () => {
                     className="change-btn"
                     onClick={() => (window.location.href = '/resumes')}
                   >
-                    更换
+                    {t('roleplay.change', '更换')}
                   </Button>
                 </div>
               ) : (
                 <Alert
-                  message="未选择简历"
-                  description="虽然可以不带简历面试，但建议先在'我的简历'模块上传，以便 AI 提供针对性问题。"
+                  message={t('roleplay.no_resume_title', '未选择简历')}
+                  description={t(
+                    'roleplay.no_resume_desc',
+                    "虽然可以不带简历面试，但建议先在'我的简历'模块上传，以便 AI 提供针对性问题。"
+                  )}
                   type="info"
                   showIcon
                   action={
@@ -73,7 +86,7 @@ export const RolePlayPage: React.FC = () => {
                       type="primary"
                       onClick={() => (window.location.href = '/resumes')}
                     >
-                      去上传
+                      {t('roleplay.go_upload', '去上传')}
                     </Button>
                   }
                 />
@@ -81,12 +94,18 @@ export const RolePlayPage: React.FC = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="jd">职位描述:</label>
+              <label htmlFor="jd">
+                {t('roleplay.job_description', '职位描述')}:
+              </label>
               <textarea
                 id="jd"
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
-                placeholder="粘贴职位描述内容"
+                placeholder={t(
+                  'roleplay.job_description_placeholder',
+                  '粘贴职位描述内容'
+                )}
+                className="form-textarea"
                 rows={10}
                 required
               />
@@ -94,7 +113,7 @@ export const RolePlayPage: React.FC = () => {
 
             <div className="form-actions">
               <button type="submit" className="btn-primary">
-                进入面试间
+                {t('roleplay.enter_interview', '进入面试间')}
               </button>
             </div>
           </form>
