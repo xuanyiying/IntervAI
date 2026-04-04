@@ -1,6 +1,7 @@
 import { AIEngine } from '@/core/ai';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
+import { PromptService } from '@/core/prompts';
 import {
   ForbiddenException,
   Injectable,
@@ -63,7 +64,8 @@ export class InterviewReportService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private aiEngine: AIEngine,
+    private promptService: PromptService
   ) {}
 
   async generateReport(
@@ -178,56 +180,15 @@ export class InterviewReportService {
       .map((m: any) => `${m.role}: ${m.content}`)
       .join('\n');
 
-    const analysisPrompt = `你是一位资深的面试评估专家。请对以下模拟面试进行全面、专业的分析评估。
-
-## 面试背景
-- 职位: ${jobTitle}
-- 公司: ${company}
-- 候选人: ${resumeData.personalInfo?.name || '候选人'}
-- 职位要求: ${requirements.substring(0, 800)}
-
-## 面试记录
-${transcript}
-
-## 评估要求
-请从以下维度进行专业评估，并以JSON格式返回结果：
-
-1. **准确性评估 (accuracy: 0-100)**: 回答内容的技术准确性、事实正确性
-2. **表达流畅度 (fluency: 0-100)**: 语言表达是否清晰流畅、有条理
-3. **逻辑思维能力 (logicalThinking: 0-100)**: 回答是否有逻辑性、层次分明
-4. **专业知识掌握程度 (professionalKnowledge: 0-100)**: 对相关领域知识的掌握深度
-5. **沟通能力 (communication: 0-100)**: 与面试官的互动质量、倾听能力
-6. **自信心 (confidence: 0-100)**: 回答时的自信程度、态度表现
-
-请返回以下JSON格式：
-{
-  "overallScore": 0-100,
-  "dimensions": {
-    "accuracy": 0-100,
-    "fluency": 0-100,
-    "logicalThinking": 0-100,
-    "professionalKnowledge": 0-100,
-    "communication": 0-100,
-    "confidence": 0-100
-  },
-  "strengths": ["优势1", "优势2", "优势3"],
-  "improvements": ["改进点1", "改进点2", "改进点3"],
-  "detailedAnalysis": [
-    {
-      "questionId": "问题序号",
-      "question": "问题内容",
-      "answer": "回答内容摘要",
-      "score": 0-100,
-      "feedback": "针对该问题的具体反馈",
-      "keywords": ["关键词1", "关键词2"],
-      "suggestions": ["建议1", "建议2"]
-    }
-  ],
-  "recommendations": ["整体建议1", "整体建议2"],
-  "nextSteps": ["下一步行动1", "下一步行动2"]
-}
-
-请确保返回纯JSON格式，不要包含任何其他文字。`;
+    // Get language from session (default to ZH for report)
+    const language = session.language || 'ZH';
+    const analysisPrompt = this.buildAnalysisPrompt(language, {
+      jobTitle,
+      company,
+      candidateName: resumeData.personalInfo?.name || '候选人',
+      requirements: requirements.substring(0, 800),
+      transcript,
+    });
 
     try {
       const result = await this.aiEngine.generate(analysisPrompt, {
@@ -341,6 +302,122 @@ ${transcript}
       recommendations: ['建议进行更多模拟面试练习'],
       nextSteps: ['继续加强专业知识学习', '提升表达能力'],
     };
+  }
+
+  private buildAnalysisPrompt(
+    language: string,
+    context: {
+      jobTitle: string;
+      company: string;
+      candidateName: string;
+      requirements: string;
+      transcript: string;
+    }
+  ): string {
+    if (language === 'ZH') {
+      return `你是一位资深的面试评估专家。请对以下模拟面试进行全面、专业的分析评估。
+
+## 面试背景
+- 职位: ${context.jobTitle}
+- 公司: ${context.company}
+- 候选人: ${context.candidateName}
+- 职位要求: ${context.requirements}
+
+## 面试记录
+${context.transcript}
+
+## 评估要求
+请从以下维度进行专业评估，并以JSON格式返回结果：
+
+1. **准确性评估 (accuracy: 0-100)**: 回答内容的技术准确性、事实正确性
+2. **表达流畅度 (fluency: 0-100)**: 语言表达是否清晰流畅、有条理
+3. **逻辑思维能力 (logicalThinking: 0-100)**: 回答是否有逻辑性、层次分明
+4. **专业知识掌握程度 (professionalKnowledge: 0-100)**: 对相关领域知识的掌握深度
+5. **沟通能力 (communication: 0-100)**: 与面试官的互动质量、倾听能力
+6. **自信心 (confidence: 0-100)**: 回答时的自信程度、态度表现
+
+请返回以下JSON格式：
+{
+  "overallScore": 0-100,
+  "dimensions": {
+    "accuracy": 0-100,
+    "fluency": 0-100,
+    "logicalThinking": 0-100,
+    "professionalKnowledge": 0-100,
+    "communication": 0-100,
+    "confidence": 0-100
+  },
+  "strengths": ["优势1", "优势2", "优势3"],
+  "improvements": ["改进点1", "改进点2", "改进点3"],
+  "detailedAnalysis": [
+    {
+      "questionId": "问题序号",
+      "question": "问题内容",
+      "answer": "回答内容摘要",
+      "score": 0-100,
+      "feedback": "针对该问题的具体反馈",
+      "keywords": ["关键词1", "关键词2"],
+      "suggestions": ["建议1", "建议2"]
+    }
+  ],
+  "recommendations": ["整体建议1", "整体建议2"],
+  "nextSteps": ["下一步行动1", "下一步行动2"]
+}
+
+请确保返回纯JSON格式，不要包含任何其他文字。`;
+    }
+
+    // English prompt
+    return `You are a senior interview evaluation expert. Please provide a comprehensive and professional analysis of the following mock interview.
+
+## Interview Background
+- Position: ${context.jobTitle}
+- Company: ${context.company}
+- Candidate: ${context.candidateName}
+- Job Requirements: ${context.requirements}
+
+## Interview Transcript
+${context.transcript}
+
+## Evaluation Requirements
+Please provide professional evaluation in the following dimensions and return JSON:
+
+1. **Accuracy (accuracy: 0-100)**: Technical accuracy and factual correctness of answers
+2. **Fluency (fluency: 0-100)**: Whether the language expression is clear, fluent, and organized
+3. **Logical Thinking (logicalThinking: 0-100)**: Whether answers are logical and well-structured
+4. **Professional Knowledge (professionalKnowledge: 0-100)**: Depth of knowledge in relevant areas
+5. **Communication (communication: 0-100)**: Quality of interaction with interviewer, listening ability
+6. **Confidence (confidence: 0-100)**: Confidence level and attitude during answers
+
+Please return JSON in the following format:
+{
+  "overallScore": 0-100,
+  "dimensions": {
+    "accuracy": 0-100,
+    "fluency": 0-100,
+    "logicalThinking": 0-100,
+    "professionalKnowledge": 0-100,
+    "communication": 0-100,
+    "confidence": 0-100
+  },
+  "strengths": ["strength1", "strength2", "strength3"],
+  "improvements": ["improvement1", "improvement2", "improvement3"],
+  "detailedAnalysis": [
+    {
+      "questionId": "question number",
+      "question": "question content",
+      "answer": "answer summary",
+      "score": 0-100,
+      "feedback": "specific feedback for this question",
+      "keywords": ["keyword1", "keyword2"],
+      "suggestions": ["suggestion1", "suggestion2"]
+    }
+  ],
+  "recommendations": ["overall recommendation1", "overall recommendation2"],
+  "nextSteps": ["next action1", "next action2"]
+}
+
+Please ensure to return pure JSON format, without any other text.`;
   }
 
   private generateMarkdown(report: InterviewReport): string {

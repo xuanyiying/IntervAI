@@ -15,6 +15,7 @@ import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { InterviewSessionService } from './services/interview-session.service';
 import { QuestionGeneratorService } from './services/question-generator.service';
+import { PromptService, normalizeLanguage } from '@/core/prompts';
 
 @Injectable()
 export class InterviewService {
@@ -23,11 +24,15 @@ export class InterviewService {
     private questionGenerator: QuestionGeneratorService,
     private sessionService: InterviewSessionService,
     private aiService: AIService,
-    private aiEngine: AIEngine
+    private aiEngine: AIEngine,
+    private promptService: PromptService
   ) {}
 
   async getPreparationGuide(dto: GetPreparationGuideDto): Promise<string> {
-    const systemPrompt = `You are an expert interview coach. Provide comprehensive interview preparation guidance.`;
+    // Convert language like 'zh-CN' to 'zh' for our system
+    const langCode = (dto.language?.split('-')[0] || 'en') as 'en' | 'zh';
+    const language = normalizeLanguage(langCode);
+    const systemPrompt = this.promptService.getPreparationGuidancePrompt(language);
 
     const userPrompt = `Please provide interview preparation guidance based on:
 
@@ -35,7 +40,7 @@ Resume: ${dto.resumeData ? JSON.stringify(dto.resumeData) : 'Not provided'}
 Job Description: ${dto.jobDescription || 'Not provided'}
 Question/Scenario: ${dto.question || 'General preparation'}
 Type: ${dto.type || 'general'}
-Language: ${dto.language || 'en'}`;
+Language: ${language}`;
 
     const result = await this.aiService.chat(
       Models.InterviewPrep,

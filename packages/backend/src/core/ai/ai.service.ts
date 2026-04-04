@@ -25,7 +25,6 @@ import { SkillRegistry, SkillContext, SkillResult } from './skills';
  */
 @Injectable()
 export class AIService implements OnModuleInit {
-
   private readonly logger = new Logger(AIService.name);
   private provider!: AIProvider;
 

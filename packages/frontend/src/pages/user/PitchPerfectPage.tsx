@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { PitchPerfectCard } from '../components/PitchPerfectCard';
+import { PitchPerfectCard } from '../../components/PitchPerfectCard';
 import { useResumeStore } from '@/stores';
 import { useTranslation } from 'react-i18next';
-import { ParsedResumeData } from '../types';
+import { ParsedResumeData } from '../../types';
 import { Alert, Button, Space } from 'antd';
 import { FileTextOutlined, HighlightOutlined } from '@ant-design/icons';
-import './agents.css';
+import '@/styles/common.css';
+import '@/styles/agents.css';
 
 export const PitchPerfectPage: React.FC = () => {
   const { t } = useTranslation();

@@ -1,0 +1,13 @@
+.usage-widget-collapsed {
+  max-width: 160px;
+}
+.usage-widget-expanded {
+  max-width: 200px;
+}
+.usage-widget {
+  backdrop-filter: blur(16px) saturate(180%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.success-color {
+  color: var(--success-color);
+}

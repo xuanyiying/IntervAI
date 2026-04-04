@@ -6,8 +6,8 @@ import {
   type Job,
   type AttachmentStatus,
   type InterviewQuestion,
-} from '../../../types';
-import { formatTime } from '../../../i18n';
+} from '../../../../types';
+import { formatTime } from '../../../../i18n';
 
 interface UseChatItemsProps {
   messages: any[];

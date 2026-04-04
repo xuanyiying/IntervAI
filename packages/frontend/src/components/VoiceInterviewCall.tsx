@@ -96,7 +96,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     onAiResponse: (data) => {
       console.log('AI said:', data.text);
     },
-    onReconnecting: (attempt) => {
+    onReconnecting: (_attempt) => {
       setStatus('reconnecting');
     },
     onReconnected: () => {
@@ -242,7 +242,6 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       };
 
       mediaRecorder.onstop = async () => {
-        const extension = getFileExtension(currentAudioMimeType.current);
         const audioBlob = new Blob(audioChunksRef.current, {
           type: currentAudioMimeType.current,
         });

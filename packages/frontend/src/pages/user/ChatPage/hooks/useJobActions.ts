@@ -5,9 +5,9 @@ import {
   jobService,
   type JobInput,
   type Job,
-} from '../../../services/job-service';
-import { useConversationStore } from '../../../stores';
-import { MessageRole } from '../../../types';
+} from '../../../../services/job-service';
+import { useConversationStore } from '../../../../stores';
+import { MessageRole } from '../../../../types';
 
 export const useJobActions = (startOptimization: () => void) => {
   const { t } = useTranslation();

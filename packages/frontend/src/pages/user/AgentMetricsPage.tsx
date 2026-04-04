@@ -1,6 +1,7 @@
 import React from 'react';
-import { AgentMetricsDashboard } from '../components/AgentMetricsDashboard';
-import './agents.css';
+import { AgentMetricsDashboard } from '../../components/AgentMetricsDashboard';
+import '@/styles/common.css';
+import '@/styles/agents.css';
 
 export const AgentMetricsPage: React.FC = () => {
   return (

@@ -2,54 +2,83 @@
 
 /* Large screens */
 @media (min-width: 1920px) {
-    .pricing-container {
-        max-width: 1400px !important;
-        margin: 0 auto;
-    }
+  .pricing-container {
+    max-width: 1400px !important;
+    margin: 0 auto;
+  }
 }
 
 /* Mobile devices */
 @media (max-width: 768px) {
-    .pricing-container {
-        padding: 24px 16px !important;
-    }
+  .pricing-container {
+    padding: 24px 16px !important;
+  }
 
-    .pricing-title {
-        font-size: 28px !important;
-    }
+  .pricing-title {
+    font-size: 28px !important;
+  }
 
-    .pricing-subtitle {
-        font-size: 16px !important;
-    }
+  .pricing-subtitle {
+    font-size: 16px !important;
+  }
 }
 
 /* Small mobile devices */
 @media (max-width: 480px) {
-    .pricing-container {
-        padding: 20px 12px !important;
-    }
+  .pricing-container {
+    padding: 20px 12px !important;
+  }
 
-    .pricing-title {
-        font-size: 24px !important;
-    }
+  .pricing-title {
+    font-size: 24px !important;
+  }
 
-    .pricing-subtitle {
-        font-size: 14px !important;
-    }
+  .pricing-subtitle {
+    font-size: 14px !important;
+  }
 
-    .pricing-switch-container {
-        flex-direction: column !important;
-        gap: 8px !important;
-    }
+  .pricing-switch-container {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
 }
 
 /* Very small devices (320px) */
 @media (max-width: 320px) {
-    .pricing-container {
-        padding: 16px 8px !important;
-    }
+  .pricing-container {
+    padding: 16px 8px !important;
+  }
 
-    .pricing-title {
-        font-size: 20px !important;
-    }
+  .pricing-title {
+    font-size: 20px !important;
+  }
+}
+
+.pricing-tabs .ant-tabs-nav {
+  margin-bottom: 24px;
+}
+
+.pricing-tabs .ant-tabs-tab {
+  font-size: 15px;
+  padding: 8px 20px;
+}
+
+.pricing-tier-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.pricing-tier-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.credit-tier-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-color);
+}
+
+.credit-tier-popular {
+  border-color: var(--primary-color);
+  background: rgba(99, 102, 241, 0.03);
 }

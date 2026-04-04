@@ -19,6 +19,7 @@ import {
   SceneAnalysisService,
   SceneContext,
 } from './scene-analysis.service';
+import { PromptService, LanguageInput } from '@/core/prompts';
 
 export enum ChatIntent {
   OPTIMIZE_RESUME = 'optimize_resume',
@@ -201,6 +202,7 @@ export class ChatIntentService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
+    private readonly promptService: PromptService,
     @Inject(forwardRef(() => ResumeOptimizerService))
     private readonly resumeOptimizerService: ResumeOptimizerService
   ) {}
@@ -604,7 +606,8 @@ export class ChatIntentService implements OnModuleInit {
 
   private async handleCareerAdvice(
     userId: string,
-    message: string
+    message: string,
+    language: LanguageInput = 'ZH'
   ): Promise<ChatResponse> {
     try {
       const resume = await this.getUserResumeContent(userId);
@@ -613,13 +616,14 @@ export class ChatIntentService implements OnModuleInit {
         ? `基于用户简历：${resume.content.substring(0, 1000)}...\n\n用户问题：${message}`
         : `用户问题：${message}`;
 
+      const systemPrompt = this.promptService.getChatIntentPrompt('careerAdvice', language);
+
       const response = await this.aiService.chat(
         Models.Chat,
         [
           {
             role: 'system',
-            content:
-              '你是一位资深的职业规划顾问，擅长根据用户的背景和目标提供个性化的职业发展建议。',
+            content: systemPrompt,
           },
           { role: 'user', content: prompt },
         ],
@@ -632,7 +636,9 @@ export class ChatIntentService implements OnModuleInit {
     } catch (error) {
       this.logger.error('Error handling career advice:', error);
       return createTextResponse(
-        '获取职业建议时出现问题。请告诉我更多关于您的背景和目标，我会尽力帮助您。'
+        language === 'ZH'
+          ? '获取职业建议时出现问题。请告诉我更多关于您的背景和目标，我会尽力帮助您。'
+          : 'Error getting career advice. Please tell me more about your background and goals, and I will do my best to help you.'
       );
     }
   }
@@ -759,16 +765,18 @@ export class ChatIntentService implements OnModuleInit {
    */
   private async handleGeneralChat(
     userId: string,
-    message: string
+    message: string,
+    language: LanguageInput = 'ZH'
   ): Promise<ChatResponse> {
     try {
+      const systemPrompt = this.promptService.getChatIntentPrompt('generalChat', language);
+
       const response = await this.aiService.chat(
         Models.Chat,
         [
           {
             role: 'system',
-            content:
-              '你是IntervAI智能助手，专门帮助用户进行面试准备和简历优化。保持友好、专业，并主动提供有用的建议。',
+            content: systemPrompt,
           },
           { role: 'user', content: message },
         ],
@@ -781,7 +789,9 @@ export class ChatIntentService implements OnModuleInit {
     } catch (error) {
       this.logger.error('Error in general chat:', error);
       return createTextResponse(
-        '抱歉，我暂时无法处理您的请求。请尝试其他功能或稍后再试。',
+        language === 'ZH'
+          ? '抱歉，我暂时无法处理您的请求。请尝试其他功能或稍后再试。'
+          : 'Sorry, I am unable to process your request at the moment. Please try other features or try again later.',
         { suggestions: ['帮助', '优化简历', '模拟面试'] }
       );
     }
@@ -789,8 +799,9 @@ export class ChatIntentService implements OnModuleInit {
 
   async analyzeScene(
     content: string,
-    context: SceneContext
+    context: SceneContext,
+    language: LanguageInput = 'EN'
   ): Promise<SceneAnalysisResult> {
-    return this.sceneAnalysisService.analyzeScene(content, context);
+    return this.sceneAnalysisService.analyzeScene(content, context, language);
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import TeamDashboard from '../components/TeamDashboard';
+import TeamDashboard from '../../components/TeamDashboard';
 import './TeamPage.css';
 
 const TeamPage: React.FC = () => {

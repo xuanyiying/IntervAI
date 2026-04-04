@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Bubble } from '@ant-design/x';
 import { Button, Spin, Alert } from 'antd';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
-import { MessageRole, MessageItem } from '../../../types';
+import { MessageRole, MessageItem } from '../../../../types';
 import { MessageContent } from './MessageContent';
 
 interface ChatListProps {

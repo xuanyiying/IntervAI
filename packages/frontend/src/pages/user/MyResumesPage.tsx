@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { message, Typography, Button } from 'antd';
 import { FileTextOutlined, PlusOutlined } from '@ant-design/icons';
-import { useResumePage } from '../hooks/useResumePage';
-import { ResumeSidebar } from '../components/MyResumes/ResumeSidebar';
-import { ResumeDetail } from '../components/MyResumes/ResumeDetail';
-import { ResumeEmptyState } from '../components/MyResumes/ResumeEmptyState';
-import { ResumeViewMode } from '../components/MyResumes/ResumeDetailHeader';
-import JobInputDialog from '../components/JobInputDialog';
-import { jobService } from '../services/job-service';
+import { useResumePage } from '../../hooks/useResumePage';
+import { ResumeSidebar } from '../../components/MyResumes/ResumeSidebar';
+import { ResumeDetail } from '../../components/MyResumes/ResumeDetail';
+import { ResumeEmptyState } from '../../components/MyResumes/ResumeEmptyState';
+import { ResumeViewMode } from '../../components/MyResumes/ResumeDetailHeader';
+import JobInputDialog from '../../components/JobInputDialog';
+import { jobService } from '../../services/job-service';
 import './MyResumesPage.css';
 
 const { Title } = Typography;

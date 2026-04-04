@@ -4,9 +4,13 @@
      ========================================================================== */
 
   /* Typography - High Quality System Stacks */
-  --font-family-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-family-body:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --font-family-display: 'Inter var', system-ui, -apple-system, sans-serif;
-  --font-family-mono: ui-monospace, SFMono-Regular, 'SF Pro Mono', 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, 'SF Pro Mono', 'Cascadia Code',
+    'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
 
   /* Typography Scale */
   --font-size-xs: 0.75rem;
@@ -102,10 +106,14 @@
 
   /* Shadows Scale */
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-sm:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
 
@@ -140,7 +148,8 @@
   --z-tooltip: 1070;
 
   /* Theme Transition */
-  --theme-transition: background-color var(--duration-slow) var(--ease-in-out),
+  --theme-transition:
+    background-color var(--duration-slow) var(--ease-in-out),
     color var(--duration-slow) var(--ease-in-out),
     border-color var(--duration-slow) var(--ease-in-out),
     box-shadow var(--duration-slow) var(--ease-in-out);
@@ -149,7 +158,11 @@
   /* Color Palette - Cyber-Tech/Deep Space Theme */
   --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
   --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
-  --surface-gradient: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.7) 100%);
+  --surface-gradient: linear-gradient(
+    180deg,
+    rgba(30, 41, 59, 0.7) 0%,
+    rgba(15, 23, 42, 0.7) 100%
+  );
 
   /* Core Colors */
   --primary-color: #6366f1;
@@ -210,7 +223,8 @@
   --sidebar-item-margin-y: 8px;
 
   /* Neon Shadow Effect */
-  --shadow-neon: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(168, 85, 247, 0.1);
+  --shadow-neon:
+    0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(168, 85, 247, 0.1);
 }
 
 /* Note: Dark theme is default in :root, no separate [data-theme='dark'] selector needed */
@@ -219,7 +233,11 @@
   /* Color Palette - Clean & Modern */
   --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
   --secondary-gradient: linear-gradient(135deg, #2563eb 0%, #0d9488 100%);
-  --surface-gradient: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.9) 100%);
+  --surface-gradient: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(248, 250, 252, 0.9) 100%
+  );
 
   /* Core Colors */
   --primary-color: #4f46e5;
@@ -236,29 +254,48 @@
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-card: rgba(255, 255, 255, 0.75);
 
   /* Glassmorphism - Light Mode */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-bg-hover: rgba(255, 255, 255, 0.9);
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-bg-hover: rgba(255, 255, 255, 0.92);
   --glass-border: rgba(0, 0, 0, 0.06);
   --glass-border-light: rgba(0, 0, 0, 0.1);
-  --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  --glass-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   --glass-backdrop: blur(12px) saturate(150%);
   --scrollbar-thumb: rgba(0, 0, 0, 0.1);
   --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
-  --sidebar-item-hover: rgba(0, 0, 0, 0.04);
-  --sidebar-item-active: rgba(0, 0, 0, 0.08);
+  --sidebar-item-hover: rgba(79, 70, 229, 0.05);
+  --sidebar-item-active: rgba(79, 70, 229, 0.1);
 
   /* Text Colors */
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-tertiary: #64748b;
+  --text-tertiary: #94a3b8;
   --text-accent: #1e293b;
   --text-inverse: #f8fafc;
 
   /* Neon Shadow Effect - Light Mode */
   --shadow-neon: 0 4px 20px rgba(79, 70, 229, 0.08);
+}
+
+[data-theme='light'] body::before {
+  background:
+    radial-gradient(
+      circle at 15% 50%,
+      rgba(79, 70, 229, 0.06) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 85% 30%,
+      rgba(124, 58, 237, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 50% 80%,
+      rgba(13, 148, 136, 0.04) 0%,
+      transparent 50%
+    );
 }
 
 * {
@@ -301,16 +338,28 @@ body::before {
   right: 0;
   bottom: 0;
   background:
-    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, rgba(45, 212, 191, 0.05) 0%, transparent 50%);
+    radial-gradient(
+      circle at 15% 50%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 85% 30%,
+      rgba(168, 85, 247, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 50% 80%,
+      rgba(45, 212, 191, 0.05) 0%,
+      transparent 50%
+    );
   z-index: -1;
   pointer-events: none;
 }
 
 /* Background Texture for "Tech" feel */
 body::after {
-  content: "";
+  content: '';
   position: fixed;
   top: 0;
   left: 0;
@@ -574,7 +623,6 @@ code {
 
 /* Special Animations */
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0);
@@ -586,7 +634,6 @@ code {
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -608,7 +655,6 @@ code {
 }
 
 @keyframes bounce {
-
   0%,
   100% {
     transform: translateY(0);
@@ -622,7 +668,6 @@ code {
 }
 
 @keyframes shake {
-
   0%,
   100% {
     transform: translateX(0);
@@ -1267,7 +1312,7 @@ code {
   padding-top: 4rem;
 }
 
-.space-y-1>*+* {
+.space-y-1 > * + * {
   margin-top: 0.25rem;
 }
 
@@ -1287,7 +1332,8 @@ code {
 
 /* Transition utilities */
 .transition-colors {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }

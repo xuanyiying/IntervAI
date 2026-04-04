@@ -12,6 +12,7 @@ import {
   Modal,
   Radio,
   Space,
+  Tabs,
 } from 'antd';
 import {
   CheckOutlined,
@@ -20,12 +21,12 @@ import {
   WechatOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
-import { paymentService } from '../services/payment-service';
-import { loadPaddle } from '../utils/paddle-loader';
-import { SubscriptionTier } from '../types';
-import SubscriptionManagementPage from './SubscriptionManagementPage';
+import { useAuthStore } from '../../stores/authStore';
+import { paymentService } from '../../services/payment-service';
+import { loadPaddle } from '../../utils/paddle-loader';
+import { SubscriptionTier } from '../../types';
 import './pricing.css';
+import SubscriptionManagementPage from '../user/SubscriptionManagementPage';
 
 const { Title, Text } = Typography;
 
@@ -41,6 +42,7 @@ const PricingPage: React.FC = () => {
   const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'paddle'>(
     'stripe'
   );
+  const [activeTab, setActiveTab] = useState('recharge');
   const { user } = useAuthStore();
 
   const isSubscribed =
@@ -194,6 +196,27 @@ const PricingPage: React.FC = () => {
           {t('pricing.subtitle')}
         </Text>
 
+        <Tabs
+          defaultActiveKey="recharge"
+          centered
+          items={[
+            {
+              key: 'recharge',
+              label: t('pricing.tab_recharge', '充值'),
+            },
+            {
+              key: 'orders',
+              label: t('pricing.tab_orders', '我的订单'),
+            },
+            {
+              key: 'history',
+              label: t('pricing.tab_history', '使用记录'),
+            },
+          ]}
+          className="pricing-tabs mb-8"
+          onChange={(key) => setActiveTab(key)}
+        />
+
         <div
           className="pricing-switch-container"
           style={{
@@ -212,73 +235,126 @@ const PricingPage: React.FC = () => {
         </div>
       </div>
 
-      <Row gutter={[32, 32]} justify="center">
-        {tiers.map((tier) => (
-          <Col xs={24} md={8} key={tier.title}>
-            <Card
-              hoverable
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderColor: tier.popular ? '#1890ff' : undefined,
-                borderWidth: tier.popular ? 2 : 1,
-                position: 'relative',
-              }}
-              bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-            >
-              {tier.popular && (
-                <Tag
-                  color="#1890ff"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    borderTopLeftRadius: 0,
-                    borderBottomRightRadius: 0,
-                  }}
-                >
-                  {t('pricing.most_popular')}
-                </Tag>
-              )}
-
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <Title level={3}>{tier.title}</Title>
-                <div style={{ marginBottom: 16 }}>
-                  <Text style={{ fontSize: 36, fontWeight: 'bold' }}>
-                    {tier.price}
-                  </Text>
-                  <Text type="secondary">{tier.period}</Text>
-                </div>
-              </div>
-
-              <List
-                dataSource={tier.features}
-                renderItem={(item) => (
-                  <List.Item style={{ border: 'none', padding: '8px 0' }}>
-                    <CheckOutlined
-                      style={{ color: '#52c41a', marginRight: 8 }}
-                    />
-                    {item}
-                  </List.Item>
-                )}
-                style={{ marginBottom: 32, flex: 1 }}
-              />
-
-              <Button
-                type={tier.popular ? 'primary' : 'default'}
-                size="large"
-                block
-                onClick={tier.action || undefined}
-                disabled={tier.isCurrent || !tier.action}
-                loading={loading && !tier.isCurrent && !!tier.action}
+      {activeTab === 'recharge' && (
+        <Row gutter={[32, 32]} justify="center">
+          {tiers.map((tier) => (
+            <Col xs={24} md={8} key={tier.title}>
+              <Card
+                hoverable
+                className="glass-card pricing-tier-card"
+                style={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderColor: tier.popular
+                    ? 'var(--primary-color)'
+                    : undefined,
+                  borderWidth: tier.popular ? 2 : 1,
+                  position: 'relative',
+                }}
+                bodyStyle={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
               >
-                {tier.isCurrent ? t('pricing.current_plan') : tier.buttonText}
-              </Button>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+                {tier.popular && (
+                  <Tag
+                    color="primary"
+                    className="absolute top-0 right-0 rounded-bl-lg rounded-tr-none"
+                  >
+                    {t('pricing.most_popular')}
+                  </Tag>
+                )}
+
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <Title level={3}>{tier.title}</Title>
+                  <div style={{ marginBottom: 16 }}>
+                    <Text
+                      style={{
+                        fontSize: tier.popular ? 42 : 36,
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {tier.price}
+                    </Text>
+                    <Text type="secondary">{tier.period}</Text>
+                  </div>
+                </div>
+
+                <List
+                  dataSource={tier.features}
+                  renderItem={(item) => (
+                    <List.Item style={{ border: 'none', padding: '8px 0' }}>
+                      <CheckOutlined
+                        style={{ color: '#52c41a', marginRight: 8 }}
+                      />
+                      {item}
+                    </List.Item>
+                  )}
+                  style={{ marginBottom: 32, flex: 1 }}
+                />
+
+                <Button
+                  type={tier.popular ? 'primary' : 'default'}
+                  size="large"
+                  block
+                  onClick={tier.action || undefined}
+                  disabled={tier.isCurrent || !tier.action}
+                  loading={loading && !tier.isCurrent && !!tier.action}
+                >
+                  {tier.isCurrent ? t('pricing.current_plan') : tier.buttonText}
+                </Button>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+      )}
+
+      {activeTab === 'recharge' && (
+        <div className="credits-section mt-12">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+            {t('pricing.credits_title', '积分购买')}
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] mb-6">
+            {t(
+              'pricing.credits_desc',
+              '100 积分可兑换一次测试模拟面试，200 积分可兑换一次面试精灵'
+            )}
+          </p>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { points: 100, price: '¥9.9', popular: false },
+              { points: 200, price: '¥19.9', popular: true },
+              { points: 500, price: '¥49.9', popular: false },
+              { points: 1000, price: '¥89.9', popular: false },
+            ].map((tier) => (
+              <div
+                key={tier.points}
+                className={`glass-card credit-tier-card p-4 rounded-xl text-center cursor-pointer transition-all duration-200 hover:-translate-y-1 ${tier.popular ? 'credit-tier-popular' : ''}`}
+                onClick={() => handleUpgrade('', SubscriptionTier.PRO)}
+              >
+                <div className="text-2xl font-bold text-[var(--text-primary)] mb-1">
+                  {tier.points}
+                  <span className="text-sm font-normal text-[var(--text-tertiary)]">
+                    {' '}
+                    {t('pricing.points', '积分')}
+                  </span>
+                </div>
+                <div className="text-base font-semibold text-primary mb-2">
+                  {tier.price}
+                </div>
+                {tier.popular && (
+                  <span className="inline-block px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+                    {t('pricing.hot', '热门')}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Modal
         title={t('pricing.select_method')}

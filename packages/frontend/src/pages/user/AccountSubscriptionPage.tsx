@@ -4,10 +4,10 @@ import { useTranslation } from 'react-i18next';
 import {
   accountService,
   SubscriptionRecord,
-} from '../services/account-service';
-import SubscriptionStatus from '../components/SubscriptionStatus';
-import { SubscriptionStatus as SubStatus, BillingStatus } from '../types';
-import { formatCurrency, formatDate } from '../i18n';
+} from '../../services/account-service';
+import SubscriptionStatus from '../../components/SubscriptionStatus';
+import { SubscriptionStatus as SubStatus, BillingStatus } from '../../types';
+import { formatCurrency, formatDate } from '../../i18n';
 
 const { Title, Text } = Typography;
 

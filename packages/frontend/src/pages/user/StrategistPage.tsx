@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { StrategistCard } from '../components/StrategistCard';
+import { StrategistCard } from '../../components/StrategistCard';
 import { useResumeStore } from '@/stores';
 import { useTranslation } from 'react-i18next';
 import { Space, Input, Button, Alert } from 'antd';
 import { RocketOutlined, FileTextOutlined } from '@ant-design/icons';
-import './agents.css';
+import '@/styles/common.css';
+import '@/styles/agents.css';
 
 const { TextArea } = Input;
 

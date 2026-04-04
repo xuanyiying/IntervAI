@@ -15,11 +15,11 @@ import {
   paymentService,
   SubscriptionDetails,
   BillingRecord,
-} from '../services/payment-service';
-import SubscriptionStatus from '../components/SubscriptionStatus';
-import { SubscriptionStatus as SubStatus, BillingStatus } from '../types';
+} from '../../services/payment-service';
+import SubscriptionStatus from '../../components/SubscriptionStatus';
+import { SubscriptionStatus as SubStatus, BillingStatus } from '../../types';
 import { useTranslation } from 'react-i18next';
-import { formatCurrency, formatDate } from '../i18n';
+import { formatCurrency, formatDate } from '../../i18n';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;

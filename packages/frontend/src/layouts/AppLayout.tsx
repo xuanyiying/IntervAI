@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore, useUIStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
+import UsageWidget from '@/components/UsageWidget/UsageWidget';
 import Sidebar from './components/Sidebar';
 import { Logo } from '../components/Logo';
 import { useTranslation } from 'react-i18next';
@@ -292,6 +293,7 @@ const AppLayout: React.FC = () => {
         </Content>
       </Layout>
 
+      <UsageWidget />
       <CookieConsent />
     </Layout>
   );

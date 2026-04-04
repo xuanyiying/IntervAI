@@ -1,16 +1,27 @@
-/* Agents Pages Styles - Unified Glassmorphism Theme */
+/* ==========================================================================
+   Agent Pages Styles - Agent-specific styles only
+   Imports: common.css (shared base) must be loaded first
+   ========================================================================== */
 
 .page-container {
   min-height: calc(100vh - 64px);
   padding: 2.5rem 1.5rem;
-  background: radial-gradient(circle at top right, rgba(var(--primary-rgb), 0.05), transparent),
-    radial-gradient(circle at bottom left, rgba(var(--primary-rgb), 0.05), transparent);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(var(--primary-rgb), 0.05),
+      transparent
+    ),
+    radial-gradient(
+      circle at bottom left,
+      rgba(var(--primary-rgb), 0.05),
+      transparent
+    );
   color: var(--text-primary);
   position: relative;
   overflow-x: hidden;
 }
 
-/* Background Decor */
 .page-container::before {
   content: '';
   position: absolute;
@@ -18,79 +29,62 @@
   right: -5%;
   width: 40%;
   height: 40%;
-  background: radial-gradient(circle, rgba(var(--primary-rgb), 0.08) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--primary-rgb), 0.08) 0%,
+    transparent 70%
+  );
   z-index: 0;
   pointer-events: none;
 }
 
-.page-header {
+/* Agent page header overrides */
+.page-container .page-header {
   margin-bottom: 3.5rem;
-  text-align: center;
-  position: relative;
-  z-index: 1;
 }
 
-.header-icon-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  background: rgba(var(--primary-rgb), 0.1);
-  border: 1px solid rgba(var(--primary-rgb), 0.2);
+.page-container .header-icon-wrapper {
   border-radius: 20px;
   margin-bottom: 1.5rem;
   font-size: 2rem;
-  color: var(--primary-color);
-  box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.15);
   animation: float 6s ease-in-out infinite;
 }
 
-.page-header h1 {
-  color: var(--text-primary);
+.page-container .page-header h1 {
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 0.75rem;
   letter-spacing: -0.02em;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
-.page-header p {
-  color: var(--text-secondary);
+.page-container .page-header p {
   font-size: 1.15rem;
-  max-width: 600px;
-  margin: 0 auto;
 }
 
-.form-container {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-backdrop);
-  -webkit-backdrop-filter: var(--glass-backdrop);
-  border: 1px solid var(--glass-border);
+/* Agent form container overrides */
+.page-container .form-container {
   border-radius: 24px;
   padding: 2.5rem;
-  max-width: 800px;
-  margin: 0 auto;
-  box-shadow: var(--glass-shadow);
-  position: relative;
-  z-index: 1;
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.form-group {
+.page-container .form-group {
   margin-bottom: 2rem;
 }
 
-.form-group label {
-  display: block;
+.page-container .form-group label {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-secondary);
   margin-bottom: 0.75rem;
   padding-left: 0.25rem;
+}
+
+.page-container .form-group textarea,
+.page-container .form-group .ant-input {
+  border-radius: 16px !important;
+  padding: 1.25rem !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease !important;
 }
 
 /* Active Resume Display Card */
@@ -144,46 +138,20 @@
   color: var(--primary-color) !important;
 }
 
-/* Results section wrapper */
 .results-wrapper {
   animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Textarea styling */
-.form-group textarea,
-.form-group .ant-input {
-  width: 100%;
-  background: var(--glass-bg-hover) !important;
-  border: 1px solid var(--glass-border) !important;
-  border-radius: 16px !important;
-  color: var(--text-primary) !important;
-  padding: 1.25rem !important;
-  font-size: 1rem !important;
-  transition: all 0.3s ease !important;
-}
-
-.form-group textarea:focus,
-.form-group .ant-input:focus {
-  border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1) !important;
-  background: var(--bg-card) !important;
 }
 
 .form-actions {
   margin-top: 2.5rem;
 }
 
-/* Content display container */
-.content-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
+.page-container .content-container {
   animation: fadeIn 0.5s ease-out;
   padding-top: 1rem;
 }
 
-/* Integrated Back Button (inside cards) */
+/* Integrated Back Button */
 .integrated-back-btn {
   width: 36px !important;
   height: 36px !important;
@@ -209,59 +177,28 @@
   transform: translateX(0);
 }
 
-/* Buttons */
-.btn-primary {
-  width: 100%;
+/* Agent button overrides */
+.page-container .btn-primary {
   height: 54px;
-  background: var(--primary-gradient);
-  border: none;
   border-radius: 16px;
-  color: white;
   font-size: 1.1rem;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.25);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 32px rgba(var(--primary-rgb), 0.35);
-  filter: brightness(1.1);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.btn-secondary {
-  background: var(--glass-bg-hover);
-  border: 1px solid var(--glass-border);
-  color: var(--text-primary);
+.page-container .btn-secondary {
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
   font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
   gap: 0.5rem;
   transition: all 0.3s ease;
 }
 
-.btn-secondary:hover {
-  background: var(--glass-border);
-  border-color: var(--text-secondary);
-}
-
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
+  0%,
+  100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
 
@@ -279,10 +216,28 @@
   .page-container {
     padding: 1.5rem 1rem;
   }
-  .form-container {
+  .page-container .form-container {
     padding: 1.5rem;
   }
-  .page-header h1 {
+  .page-container .page-header h1 {
     font-size: 2rem;
   }
+}
+
+/* Interview Page Specific */
+.interview-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.interview-page-tabs .ant-tabs-nav {
+  margin-bottom: 8px;
+}
+
+.product-hero-banner {
+  min-height: 140px;
+}
+
+.config-field label {
+  display: block;
 }

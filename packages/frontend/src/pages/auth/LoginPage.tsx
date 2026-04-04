@@ -18,8 +18,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores';
 import { authService } from '@/services';
-import { getApiBaseUrl } from '../config/axios';
-import './auth.css';
+import { getApiBaseUrl } from '../../config/axios';
+import '@/styles/auth.css';
 import { Logo } from '@/components/Logo';
 
 const { Title, Text } = Typography;
@@ -80,15 +80,18 @@ const LoginPage: React.FC = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-white/10">
+      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-[var(--glass-border)]">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <Logo width={64} height={64} className="shadow-lg rounded-2xl" />
           </div>
-          <Title level={2} className="!text-white !font-bold !mb-2">
+          <Title
+            level={2}
+            className="![color:var(--text-primary)] !font-bold !mb-2"
+          >
             AI 求职面试助手
           </Title>
-          <Text className="!text-gray-400">登录您的账号</Text>
+          <Text className="![color:var(--text-secondary)]">登录您的账号</Text>
         </div>
 
         <Form
@@ -113,9 +116,9 @@ const LoginPage: React.FC = () => {
             ]}
           >
             <Input
-              prefix={<UserOutlined className="text-gray-400" />}
+              prefix={<UserOutlined className="text-[var(--text-tertiary)]" />}
               placeholder={t('auth.email_placeholder', 'Email Address')}
-              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
+              className="!bg-transparent !border-[var(--glass-border)] ![color:var(--text-primary)] placeholder:![color:var(--text-tertiary)]"
             />
           </Form.Item>
 
@@ -132,15 +135,17 @@ const LoginPage: React.FC = () => {
             ]}
           >
             <Input.Password
-              prefix={<LockOutlined className="text-gray-400" />}
+              prefix={<LockOutlined className="text-[var(--text-tertiary)]" />}
               placeholder={t('auth.password_placeholder', 'Password')}
-              className="!bg-transparent !border-white/10 !text-white placeholder:!text-gray-500"
+              className="!bg-transparent !border-[var(--glass-border)] ![color:var(--text-primary)] placeholder:![color:var(--text-tertiary)]"
             />
           </Form.Item>
 
           <div className="flex justify-between items-center mb-6">
             <Form.Item name="remember" valuePropName="checked" noStyle>
-              <Checkbox className="!text-gray-400">记住我</Checkbox>
+              <Checkbox className="![color:var(--text-secondary)]">
+                记住我
+              </Checkbox>
             </Form.Item>
             <Link to="/forgot-password">
               <span className="text-primary-400 hover:text-primary transition-colors">
@@ -160,7 +165,7 @@ const LoginPage: React.FC = () => {
           </Form.Item>
         </Form>
 
-        <Divider className="!border-white/10 !text-gray-500 !text-xs">
+        <Divider className="!border-[var(--glass-border)] ![color:var(--text-tertiary)] !text-xs">
           或使用以下方式
         </Divider>
 
@@ -171,7 +176,7 @@ const LoginPage: React.FC = () => {
             size="large"
             disabled={false}
             onClick={() => handleSocialLogin('google')}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
+            className="!bg-[var(--glass-bg)] !border-[var(--glass-border)] ![color:var(--text-primary)] hover:!bg-[var(--glass-bg-hover)] hover:!border-primary hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
           />
           <Button
             shape="circle"
@@ -179,13 +184,13 @@ const LoginPage: React.FC = () => {
             size="large"
             disabled={false}
             onClick={() => handleSocialLogin('github')}
-            className="!bg-white/5 !border-white/10 !text-white hover:!bg-white/10 hover:!border-primary-500 hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
+            className="!bg-[var(--glass-bg)] !border-[var(--glass-border)] ![color:var(--text-primary)] hover:!bg-[var(--glass-bg-hover)] hover:!border-primary hover:!text-primary-400 !w-12 !h-12 !min-w-[48px] !min-h-[48px] !p-0 !rounded-full flex items-center justify-center transition-all cursor-pointer"
           />
         </div>
 
         {/* Register Link */}
         <div className="text-center mt-6">
-          <Text className="!text-gray-400">
+          <Text className="![color:var(--text-secondary)]">
             {t('auth.no_account')}{' '}
             <Link
               to="/register"

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AIService, Models } from '@/core/ai';
 import { RedisService } from '@/shared/cache/redis.service';
+import { PromptService, LanguageInput } from '@/core/prompts';
 
 export interface SceneAnalysisResult {
   scene: string;
@@ -28,14 +29,16 @@ export class SceneAnalysisService {
 
   constructor(
     private readonly aiService: AIService,
-    private readonly redisService: RedisService
+    private readonly redisService: RedisService,
+    private readonly promptService: PromptService
   ) {}
 
   async analyzeScene(
     content: string,
-    context: SceneContext
+    context: SceneContext,
+    language: LanguageInput = 'EN'
   ): Promise<SceneAnalysisResult> {
-    this.logger.debug(`Analyzing scene for user ${context.userId}`);
+    this.logger.debug(`Analyzing scene for user ${context.userId} (language: ${language})`);
 
     const cacheKey = await this.getCacheKey(content, context);
     const cached = await this.getCachedResult(cacheKey);
@@ -47,7 +50,7 @@ export class SceneAnalysisService {
     }
 
     try {
-      const result = await this.performAIAnalysis(content, context);
+      const result = await this.performAIAnalysis(content, context, language);
 
       await this.cacheResult(cacheKey, result);
 
@@ -63,9 +66,10 @@ export class SceneAnalysisService {
 
   private async performAIAnalysis(
     content: string,
-    context: SceneContext
+    context: SceneContext,
+    language: LanguageInput = 'EN'
   ): Promise<SceneAnalysisResult> {
-    const systemPrompt = this.buildSystemPrompt(context);
+    const systemPrompt = this.promptService.getSceneAnalysisPrompt(language);
     const contextInfo = this.buildContextInfo(context);
 
     const userPrompt = `${contextInfo}
@@ -115,35 +119,6 @@ Return JSON only, no markdown.`;
       );
       return this.getFallbackAnalysis(content, context);
     }
-  }
-
-  private buildSystemPrompt(_context: SceneContext): string {
-    return `You are an intelligent scene analyzer for a career services platform. Your job is to understand user intent and categorize their requests into appropriate scenes.
-
-Available Scenes:
-1. optimize_resume - User wants to improve/polish their resume (simple optimization)
-2. parse_resume - User wants to analyze or extract information from resume
-3. mock_interview - User wants to practice interview scenarios
-4. interview_prediction - User wants to predict interview questions
-5. parse_job_description - User wants to analyze a job posting
-6. career_advice - User seeks general career guidance
-7. skill_analysis - User wants to analyze their skills
-8. salary_negotiation - User wants help with salary discussions
-9. full_optimization - User wants comprehensive resume optimization based on JD (uses multi-agent team)
-10. interview_preparation - User wants comprehensive interview preparation (uses multi-agent team)
-11. career_transition - User wants career transition analysis (uses multi-agent team)
-12. competitive_analysis - User wants competitive analysis between their skills and JD (uses multi-agent team)
-13. general_chat - General conversation or unclear intent
-14. help - User is asking for help or instructions
-15. unknown - Cannot determine intent
-
-Guidelines:
-- Consider the user's context (has resume, has JD, conversation history)
-- Look for implicit intent, not just explicit keywords
-- Provide confidence scores based on clarity of intent
-- Extract relevant entities (dates, job titles, skills, etc.)
-- Suggest appropriate next actions
-- If user mentions both resume and JD together, prefer full_optimization over simple optimize_resume`;
   }
 
   private buildContextInfo(context: SceneContext): string {

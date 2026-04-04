@@ -56,6 +56,11 @@
     "present": "至今",
     "completed": "已完成"
   },
+  "greeting": {
+    "morning": "早上好",
+    "afternoon": "下午好",
+    "evening": "晚上好"
+  },
   "auth": {
     "login": "登录",
     "register": "注册",
@@ -127,6 +132,7 @@
     "password_requirements_not_met": "请满足所有密码要求"
   },
   "menu": {
+    "home": "主页",
     "new_chat": "新对话",
     "history": "历史会话",
     "collapse": "收起",
@@ -140,9 +146,12 @@
     "admin": "管理",
     "agents": "AI 助手",
     "my_resumes": "我的简历",
+    "interview_spirit": "AI 面试精灵",
     "pitch_perfect": "履历点睛",
     "interview_prediction": "面试预测",
     "mock_interview": "模拟面试",
+    "chat": "对话",
+    "pricing": "订阅与定价",
     "job_input": "职位输入",
     "admin_system": "系统管理",
     "dashboard": "控制台",
@@ -511,6 +520,15 @@
       "job_input": "职位输入",
       "discover": "发现"
     },
+    "welcome_subtitle": "{username}，今天想做什么？",
+    "placeholder_enhanced": "向助手提问，或拖拽简历上传...",
+    "optimize_resume": "优化简历",
+    "message_error": "处理消息时发生错误",
+    "resume_ready": "简历已准备就绪，可以开始优化！",
+    "guest_welcome": "我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！",
+    "file_not_found": "无法获取原始文件，请重新上传",
+    "view_comparison": "查看对比",
+    "download_resume": "下载简历",
     "welcome_title": "你好，我是你的面试求职AI助手",
     "welcome": "你好，我是 AI 简历助手。我可以帮你优化简历、进行模拟面试或润色自我介绍。",
     "placeholder": "输入您的问题，或上传简历文件...",
@@ -551,6 +569,15 @@
     "optimizing": "正在为您深度优化简历，请稍候...",
     "starting_optimization": "正在开始优化简历...",
     "use_upload_button": "请使用上传按钮上传简历"
+  },
+  "quota": {
+    "free_available": "免费额度可用"
+  },
+  "features": {
+    "resume_optimization_tip": "上传简历，获取个性化优化建议",
+    "interview_prediction_tip": "AI 分析岗位 JD，预测高频面试题",
+    "mock_interview_tip": "真实场景模拟面试，实时反馈表现",
+    "discover_tip": "探索更多 AI 能力和使用技巧"
   },
   "suggestions": {
     "resume_label": "上传简历",
