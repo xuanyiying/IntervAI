@@ -3,12 +3,12 @@
  * Tests streaming functionality with various inputs
  */
 
-import { Test, TestingModule } from '@nestjs/testing';
-import { ResumeOptimizerService } from './resume-optimizer.service';
-import { PrismaService } from '@/shared/database/prisma.service';
 import { AIService } from '@/core/ai';
 import { QuotaService } from '@/core/quota/quota.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as fc from 'fast-check';
+import { ResumeOptimizerService } from './resume-optimizer.service';
 
 describe('ResumeOptimizerService Property Tests', () => {
   let service: ResumeOptimizerService;
@@ -33,7 +33,8 @@ describe('ResumeOptimizerService Property Tests', () => {
 
   const mockAIService = {
     stream: jest.fn(),
-    chat: jest.fn(),
+    executeSkill: jest.fn(),
+    generate: jest.fn(),
   };
 
   const mockQuotaService = {
@@ -213,11 +214,7 @@ describe('ResumeOptimizerService Property Tests', () => {
 
             // Mock AI engine to return long content
             aiService.stream.mockImplementation(async function* () {
-              yield {
-                content: longContent,
-                model: 'test-model',
-                provider: 'test-provider',
-              };
+              yield longContent;
             });
 
             // Collect all output chunks
@@ -257,11 +254,6 @@ describe('ResumeOptimizerService Property Tests', () => {
             // Mock AI engine to throw error
             aiService.stream.mockImplementation(async function* () {
               throw new Error(errorMessage);
-              yield {
-                content: '',
-                model: 'test-model',
-                provider: 'test-provider',
-              };
             });
 
             // Collect all output chunks
@@ -301,11 +293,7 @@ describe('ResumeOptimizerService Property Tests', () => {
 
             // Mock AI engine to return content with Chinese characters
             aiService.stream.mockImplementation(async function* () {
-              yield {
-                content: `优化后的${originalContent}`,
-                model: 'test-model',
-                provider: 'test-provider',
-              };
+              yield `优化后的${originalContent}`;
             });
 
             // Collect all output chunks

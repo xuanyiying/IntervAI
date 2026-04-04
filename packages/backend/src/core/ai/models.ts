@@ -13,7 +13,7 @@ export const PROVIDER_BASE_URLS: Record<string, string> = {
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
   ollama: 'http://localhost:11434/v1',
   siliconcloud: 'https://api.siliconflow.cn/v1',
-  
+  openrouter: 'https://openrouter.ai/api/v1',
 };
 
 /**
@@ -83,6 +83,13 @@ export const ModelCosts: Record<string, { input: number; output: number }> = {
 
   // Default for unknown models
   default: { input: 0.001, output: 0.002 },
+
+  // OpenRouter models (vary by model, using typical values)
+  'qwen/qwen3.6-plus:free': { input: 0, output: 0 },
+  'qwen/qwen3.6-plus': { input: 0.0002, output: 0.0006 },
+  'deepseek/deepseek-chat': { input: 0.00014, output: 0.00028 },
+  'anthropic/claude-3.5-sonnet': { input: 0.003, output: 0.015 },
+  'google/gemini-pro-1.5': { input: 0.00125, output: 0.005 },
 };
 
 /**

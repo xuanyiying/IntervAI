@@ -3,13 +3,13 @@ import PdfGenerationService, { PDFOptions } from './pdf-generation.service';
 import { ParsedResumeData } from '../../../types';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { StorageService } from '../../../core/storage/storage.service';
-import { QuotaService } from '../../quota/quota.service';
 import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import * as fc from 'fast-check';
+import { QuotaService } from '@/core/quota/quota.service';
 
 // Mock Puppeteer to avoid launching browser during tests
 jest.mock('puppeteer', () => ({

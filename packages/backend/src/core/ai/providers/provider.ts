@@ -130,7 +130,7 @@ export class AIProvider {
     options?: ChatOptions
   ): Promise<{
     content: string;
-    usage: { prompt_tokens: number; completion_tokens: number };
+    usage: { prompt_tokens: number; completion_tokens: number; reasoning_tokens?: number };
   }> {
     const pc = this.getProviderClient(provider);
 
@@ -182,6 +182,7 @@ export class AIProvider {
         usage: {
           prompt_tokens: response.usage?.prompt_tokens || 0,
           completion_tokens: response.usage?.completion_tokens || 0,
+          reasoning_tokens: (response.usage as { reasoning_tokens?: number })?.reasoning_tokens,
         },
       };
     });

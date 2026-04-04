@@ -1,14 +1,20 @@
+import StreamingMarkdownBubble from '@/components/StreamingMarkdownBubble';
+import '@/styles/agents.css';
+import '@/styles/common.css';
 import { InterviewQuestion, InterviewSession } from '@/types';
 import {
   AudioOutlined,
+  BulbOutlined,
   MessageOutlined,
   PhoneOutlined,
   QuestionCircleOutlined,
   SendOutlined,
   StopOutlined,
   UserOutlined,
+  WifiOutlined
 } from '@ant-design/icons';
 import {
+  Badge,
   Button,
   Card,
   Divider,
@@ -21,7 +27,7 @@ import {
   Space,
   Spin,
   Steps,
-  Typography,
+  Typography
 } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -33,8 +39,7 @@ import {
   InterviewerPersona,
   interviewService,
 } from '../../services/interview-service';
-import '@/styles/common.css';
-import '@/styles/agents.css';
+import { useInterviewSocket } from '@/hooks/useInterviewSocket';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -557,26 +562,233 @@ const InterviewPage: React.FC = () => {
   );
 };
 
-// 辅助面试模式组件：用户输入问题，AI 生成参考答案
+// 辅助面试模式组件：支持语音输入和流式答案
 const AssistModeView: React.FC<{
   session: InterviewSession | null;
   processing: boolean;
   onSendMessage: (question: string) => void;
   t: any;
-}> = ({ session: _session, processing, onSendMessage, t }) => {
+}> = ({ session, processing, onSendMessage, t }) => {
   const [question, setQuestion] = useState('');
-  const [messages, _setMessages] = useState<
+  const [messages, setMessages] = useState<
     Array<{ role: 'user' | 'assistant'; content: string }>
   >([]);
+  const [streamingAnswer, setStreamingAnswer] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [recording, setRecording] = useState(false);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const playAudio = async (audioBuffer: ArrayBuffer) => {
+    try {
+      const blob = new Blob([audioBuffer], { type: 'audio/mp3' });
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      await audio.play();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to play audio:', error);
+    }
+  };
+
+  const refreshSession = async () => {
+    if (!session) return;
+    try {
+      const data = await interviewService.getSession(session.id);
+      const sessionMessages = data.messages ?? [];
+      setMessages(
+        sessionMessages
+          .filter((m) => m.role !== 'SYSTEM')
+          .map((m) => ({
+            role: m.role === 'USER' ? 'user' as const : 'assistant' as const,
+            content: m.content,
+          }))
+      );
+    } catch (error) {
+      console.error('Failed to refresh session:', error);
+    }
+  };
+
+  const {
+    isConnected,
+    isReconnecting,
+    latency,
+    joinSession,
+    sendQuestion,
+    endAudio,
+  } = useInterviewSocket({
+    mode: 'assist',
+    onConnected: () => {
+      if (session) {
+        joinSession(session.id);
+      }
+    },
+    onTranscription: (data) => {
+      setQuestion(data.text);
+    },
+    onGeneratingAnswer: () => {
+      setIsGenerating(true);
+      setStreamingAnswer('');
+    },
+    onAnswerChunk: (data) => {
+      setStreamingAnswer((prev) => prev + data.chunk);
+    },
+    onAnswerComplete: (data) => {
+      setIsGenerating(false);
+      setStreamingAnswer('');
+      refreshSession();
+    },
+    onAnswerAudio: async (data) => {
+      await playAudio(data.audio);
+    },
+    onError: (err) => {
+      message.error(err.message);
+      setIsGenerating(false);
+    },
+  });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingAnswer]);
+
+  useEffect(() => {
+    if (session && isConnected) {
+      joinSession(session.id);
+    }
+  }, [session, isConnected, joinSession]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 24000,
+        },
+      });
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: 'audio/webm',
+        });
+        stream.getTracks().forEach((track) => track.stop());
+        if (session) {
+          endAudio(session.id, audioBlob);
+        }
+      };
+
+      mediaRecorder.start(1000);
+      setRecording(true);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      message.error(t('interview.microphone_denied'));
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && recording) {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
 
   const handleSubmit = () => {
     if (!question.trim()) return;
-    onSendMessage(question);
+
+    setMessages((prev) => [
+      ...prev,
+      { role: 'user', content: question },
+    ]);
+
+    if (session && isConnected) {
+      sendQuestion(session.id, question);
+    } else {
+      onSendMessage(question);
+    }
     setQuestion('');
   };
 
   return (
     <div>
+      {/* 连接状态指示器 */}
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Badge
+          status={isConnected ? 'success' : isReconnecting ? 'warning' : 'default'}
+        />
+        <Text type="secondary">
+          {isConnected
+            ? t('interview.realtime_connected', '实时连接已建立')
+            : isReconnecting
+              ? t('interview.reconnecting', '正在重连...')
+              : t('interview.connecting', '正在连接...')}
+        </Text>
+        {isConnected && latency > 0 && (
+          <Text type="secondary" style={{ marginLeft: 8 }}>
+            <WifiOutlined /> {latency}ms
+          </Text>
+        )}
+      </div>
+
+      {/* 消息历史 */}
+      {messages.length > 0 && (
+        <div style={{ maxHeight: 300, overflowY: 'auto', marginBottom: 16 }}>
+          {messages.map((msg, idx) => (
+            <Card
+              key={idx}
+              size="small"
+              style={{
+                marginBottom: 8,
+                backgroundColor: msg.role === 'user' ? '#f0f5ff' : '#f6ffed',
+              }}
+            >
+              <Text strong>
+                {msg.role === 'user' ? '👤 你' : '🤖 AI 参考答案'}
+              </Text>
+              <div style={{ marginTop: 8 }}>
+                <StreamingMarkdownBubble content={msg.content} isStreaming={false} />
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* 流式答案显示 */}
+      {streamingAnswer && (
+        <Card
+          size="small"
+          style={{
+            marginBottom: 16,
+            backgroundColor: '#f6ffed',
+            borderLeft: '3px solid #52c41a',
+          }}
+        >
+          <Text strong style={{ display: 'block', marginBottom: 8 }}>
+            🤖 {t('interview.ai_answer', 'AI 参考答案')}
+          </Text>
+          <StreamingMarkdownBubble content={streamingAnswer} isStreaming={isGenerating} />
+        </Card>
+      )}
+
+      {/* 正在生成提示 */}
+      {isGenerating && !streamingAnswer && (
+        <div style={{ padding: 16, textAlign: 'center', color: '#1890ff' }}>
+          <Spin size="small" /> {t('interview.generating_answer', '正在生成答案...')}
+        </div>
+      )}
+
       {/* 问题输入区域 */}
       <Card style={{ marginBottom: 16 }}>
         <Text strong style={{ display: 'block', marginBottom: 8 }}>
@@ -590,52 +802,76 @@ const AssistModeView: React.FC<{
             'interview.assist_input_placeholder',
             '例如：请介绍一下你的项目经验'
           )}
-          disabled={processing}
+          disabled={processing || isGenerating || recording}
+          onPressEnter={(e) => {
+            if (!e.shiftKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
         />
-        <Button
-          type="primary"
-          style={{ marginTop: 8 }}
-          onClick={handleSubmit}
-          disabled={!question.trim() || processing}
-          loading={processing}
-        >
-          {t('interview.assist_submit', '获取参考答案')}
-        </Button>
+
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <Space size="large">
+            {!recording ? (
+              <Button
+                shape="circle"
+                icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={startRecording}
+                disabled={processing || isGenerating || !isConnected}
+                title={t('interview.voice_input', '语音输入')}
+              />
+            ) : (
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<StopOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={stopRecording}
+                title={t('interview.stop_recording', '停止录音')}
+              />
+            )}
+
+            <Button
+              type="primary"
+              size="large"
+              icon={<SendOutlined />}
+              onClick={handleSubmit}
+              disabled={recording || processing || isGenerating || !question.trim()}
+              loading={processing || isGenerating}
+            >
+              {t('interview.assist_submit', '获取参考答案')}
+            </Button>
+          </Space>
+
+          <div style={{ marginTop: 8 }}>
+            <Text type="secondary">
+              {recording
+                ? t('interview.recording_hint_recording', '正在录音...')
+                : !isConnected
+                  ? t('interview.waiting_connection', '等待连接...')
+                  : t('interview.input_or_voice', '输入问题或点击麦克风语音输入')}
+            </Text>
+          </div>
+        </div>
       </Card>
 
-      {/* 历史消息展示 */}
-      {messages.length > 0 && (
-        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-          {messages.map((msg, idx) => (
-            <Card
-              key={idx}
-              size="small"
-              style={{
-                marginBottom: 8,
-                backgroundColor: msg.role === 'user' ? '#f0f5ff' : '#f6ffed',
-              }}
-            >
-              <Text strong>
-                {msg.role === 'user' ? '👤 你' : '🤖 AI 参考答案'}
-              </Text>
-              <div style={{ marginTop: 8, whiteSpace: 'pre-wrap' }}>
-                <Text>{msg.content}</Text>
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
-
       {/* 使用提示 */}
-      <Card size="small" style={{ marginTop: 16, backgroundColor: '#fffbe6' }}>
+      <Card size="small" style={{ backgroundColor: '#fffbe6' }}>
         <Text type="secondary">
-          💡{' '}
+          <BulbOutlined style={{ marginRight: 8 }} />
           {t(
             'interview.assist_hint',
-            '提示：在电话面试中，当面试官提问后，快速将问题输入，系统会生成参考答案供你参考。'
+            '提示：在电话面试中，当面试官提问后，快速将问题输入或使用语音输入，系统会实时生成参考答案供你参考。'
           )}
         </Text>
       </Card>
+
+      <div ref={messagesEndRef} />
     </div>
   );
 };
@@ -662,84 +898,84 @@ const MockModeView: React.FC<{
   handleSubmitAnswer,
   t,
 }) => {
-  return (
-    <>
-      <Card
-        type="inner"
-        title={currentQuestion.questionType}
-        style={{ backgroundColor: '#f9f9f9' }}
-      >
-        <Title level={4}>{currentQuestion.question}</Title>
-        {currentQuestion.tips && currentQuestion.tips.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary" strong>
-              {t('interview.tips')}:
-            </Text>
-            <ul>
-              {currentQuestion.tips.map((tip, idx) => (
-                <li key={idx}>
-                  <Text type="secondary">{tip}</Text>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Card>
+    return (
+      <>
+        <Card
+          type="inner"
+          title={currentQuestion.questionType}
+          style={{ backgroundColor: '#f9f9f9' }}
+        >
+          <Title level={4}>{currentQuestion.question}</Title>
+          {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary" strong>
+                {t('interview.tips')}:
+              </Text>
+              <ul>
+                {currentQuestion.tips.map((tip, idx) => (
+                  <li key={idx}>
+                    <Text type="secondary">{tip}</Text>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
 
-      <Divider>{t('interview.your_answer')}</Divider>
+        <Divider>{t('interview.your_answer')}</Divider>
 
-      <TextArea
-        rows={6}
-        value={answerText}
-        onChange={(e) => setAnswerText(e.target.value)}
-        placeholder={t('interview.answer_placeholder')}
-        disabled={processing || recording}
-      />
+        <TextArea
+          rows={6}
+          value={answerText}
+          onChange={(e) => setAnswerText(e.target.value)}
+          placeholder={t('interview.answer_placeholder')}
+          disabled={processing || recording}
+        />
 
-      <div style={{ marginTop: '24px', textAlign: 'center' }}>
-        <Space size="large">
-          {!recording ? (
-            <Button
-              shape="circle"
-              icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-              size="large"
-              style={{ width: '64px', height: '64px' }}
-              onClick={startRecording}
-              disabled={processing}
-            />
-          ) : (
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <Space size="large">
+            {!recording ? (
+              <Button
+                shape="circle"
+                icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={startRecording}
+                disabled={processing}
+              />
+            ) : (
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<StopOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={stopRecording}
+              />
+            )}
+
             <Button
               type="primary"
-              danger
-              shape="circle"
-              icon={<StopOutlined style={{ fontSize: '24px' }} />}
               size="large"
-              style={{ width: '64px', height: '64px' }}
-              onClick={stopRecording}
-            />
-          )}
-
-          <Button
-            type="primary"
-            size="large"
-            icon={<SendOutlined />}
-            onClick={handleSubmitAnswer}
-            disabled={recording || processing || !answerText.trim()}
-            loading={processing}
-          >
-            {t('interview.submit_answer')}
-          </Button>
-        </Space>
-        <div style={{ marginTop: 8 }}>
-          <Text type="secondary">
-            {recording
-              ? t('interview.recording_hint_recording')
-              : t('interview.recording_hint_idle')}
-          </Text>
+              icon={<SendOutlined />}
+              onClick={handleSubmitAnswer}
+              disabled={recording || processing || !answerText.trim()}
+              loading={processing}
+            >
+              {t('interview.submit_answer')}
+            </Button>
+          </Space>
+          <div style={{ marginTop: 8 }}>
+            <Text type="secondary">
+              {recording
+                ? t('interview.recording_hint_recording')
+                : t('interview.recording_hint_idle')}
+            </Text>
+          </div>
         </div>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
 export default InterviewPage;

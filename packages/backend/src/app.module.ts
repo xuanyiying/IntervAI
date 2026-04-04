@@ -12,7 +12,6 @@ import { ResumeModule } from '@/features/resume/resume.module';
 import { JobModule } from '@/features/job/job.module';
 import { TasksModule } from '@/features/tasks/tasks.module';
 import { InterviewModule } from '@/features/interview/interview.module';
-import { RealtimeInterviewModule } from '@/features/interview/realtime-interview.module';
 import { CommonModule } from '@/common/common.module';
 import { QuotaModule } from '@/core/quota/quota.module';
 import { LoggerModule } from '@/shared/logger/logger.module';
@@ -26,6 +25,7 @@ import { ChatModule } from '@/core/chat/chat.module';
 import { JobSearchModule } from '@/features/job-search';
 import { AccountModule } from '@/core/account/account.module';
 import { VoiceModule } from '@/features/voice/voice.module';
+import { AgentsModule } from '@/features/agents/agents.module';
 import { loggerConfig } from '@/shared/logger/logger.config';
 import {
   PerformanceMiddleware,
@@ -64,17 +64,17 @@ import { StorageModule } from '@/core/storage/storage.module';
     StorageModule,
     TasksModule,
     InterviewModule,
-    RealtimeInterviewModule,
     QuotaModule,
     MonitoringModule,
     EmailModule,
     PaymentModule,
-    AIModule, // Unified AI module with skills system
+    AIModule,
     InvitationModule,
     ChatModule,
     JobSearchModule,
     AccountModule,
     VoiceModule,
+    AgentsModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

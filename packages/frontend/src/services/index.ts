@@ -1,18 +1,15 @@
+export { adminService } from './admin-service';
+export {
+  agentMetricsService, pitchPerfectService, rolePlayService, strategistService
+} from './agent-service';
 export { authService } from './auth-service';
 export { conversationService } from './conversation-service';
-export { resumeService } from './resume-service';
-export { jobService } from './job-service';
-export { optimizationService } from './optimization-service';
 export { generateService } from './generate-service';
 export { interviewService } from './interview-service';
-export { realtimeInterviewService } from './realtime-interview-service';
-export { userService } from './user-service';
-export { adminService } from './admin-service';
+export { jobService } from './job-service';
 export { default as knowledgeBaseService } from './knowledge-base-service';
+export { optimizationService } from './optimization-service';
 export { paymentService } from './payment-service';
-export {
-  pitchPerfectService,
-  strategistService,
-  rolePlayService,
-  agentMetricsService,
-} from './agent-service';
+export { resumeService } from './resume-service';
+export { userService } from './user-service';
+
