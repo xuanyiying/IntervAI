@@ -34,7 +34,7 @@ import {
   ClearOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '../i18n';
+import { formatDate } from '../../i18n';
 import type { UploadFile, UploadProps } from 'antd';
 import type {
   KBDocument,
@@ -57,7 +57,6 @@ const { Option } = Select;
 const KnowledgeBasePage: React.FC = () => {
   const { t } = useTranslation();
 
-  // State
   const [documents, setDocuments] = useState<KBDocument[]>([]);
   const [stats, setStats] = useState<KBStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,14 +64,12 @@ const KnowledgeBasePage: React.FC = () => {
   const [queryDrawerOpen, setQueryDrawerOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
-  // Upload state
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadCategory, setUploadCategory] =
     useState<DocumentCategory>('general');
   const [uploadTags, setUploadTags] = useState<string>('');
   const [uploadTitle, setUploadTitle] = useState<string>('');
 
-  // Query state
   const [queryText, setQueryText] = useState('');
   const [queryCategory, setQueryCategory] = useState<
     DocumentCategory | undefined
@@ -82,7 +79,6 @@ const KnowledgeBasePage: React.FC = () => {
   );
   const [querying, setQuerying] = useState(false);
 
-  // Load data
   const loadData = async () => {
     setLoading(true);
     try {
@@ -104,7 +100,6 @@ const KnowledgeBasePage: React.FC = () => {
     loadData();
   }, []);
 
-  // Upload handlers
   const handleUpload = async () => {
     if (fileList.length === 0) {
       message.warning('Please select a file');
@@ -159,12 +154,11 @@ const KnowledgeBasePage: React.FC = () => {
     accept: KB_ACCEPT,
     fileList,
     onChange: ({ fileList: newFileList }) => {
-      setFileList(newFileList.slice(-1)); // Keep only the last file
+      setFileList(newFileList.slice(-1));
     },
     maxCount: 1,
   };
 
-  // Delete handler
   const handleDelete = async (id: string) => {
     try {
       await knowledgeBaseService.deleteDocument(id);
@@ -176,7 +170,6 @@ const KnowledgeBasePage: React.FC = () => {
     }
   };
 
-  // Query handler
   const handleQuery = async () => {
     if (!queryText.trim()) {
       message.warning('Please enter a query');
@@ -199,7 +192,6 @@ const KnowledgeBasePage: React.FC = () => {
     }
   };
 
-  // Clear KB handler
   const handleClearKB = async () => {
     try {
       await knowledgeBaseService.clearKnowledgeBase();
@@ -211,7 +203,6 @@ const KnowledgeBasePage: React.FC = () => {
     }
   };
 
-  // Helper functions
   const getFileIcon = (type: string) => {
     switch (type) {
       case 'pdf':
@@ -234,7 +225,6 @@ const KnowledgeBasePage: React.FC = () => {
     return colors[category];
   };
 
-  // Table columns
   const columns = [
     {
       title: t('knowledge_base.doc_name'),
@@ -306,7 +296,6 @@ const KnowledgeBasePage: React.FC = () => {
 
   return (
     <div className="knowledge-base-page" style={{ padding: '24px' }}>
-      {/* Header */}
       <div className="page-header" style={{ marginBottom: 24 }}>
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary-400 to-secondary-400">
           {t('knowledge_base.title')}
@@ -316,7 +305,6 @@ const KnowledgeBasePage: React.FC = () => {
         </p>
       </div>
 
-      {/* Stats Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card className="glass-card">
@@ -354,7 +342,6 @@ const KnowledgeBasePage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Actions */}
       <div style={{ marginBottom: 16 }}>
         <Space>
           <Button
@@ -387,7 +374,6 @@ const KnowledgeBasePage: React.FC = () => {
         </Space>
       </div>
 
-      {/* Documents Table */}
       <Card className="glass-card">
         <Table
           columns={columns}
@@ -398,7 +384,6 @@ const KnowledgeBasePage: React.FC = () => {
         />
       </Card>
 
-      {/* Upload Modal */}
       <Modal
         title={t('knowledge_base.upload_modal_title')}
         open={uploadModalOpen}
@@ -458,7 +443,6 @@ const KnowledgeBasePage: React.FC = () => {
         </Space>
       </Modal>
 
-      {/* Query Drawer */}
       <Drawer
         title={t('knowledge_base.query_drawer_title')}
         placement="right"

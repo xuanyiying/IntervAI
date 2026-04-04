@@ -1,0 +1,51 @@
+.dashboard-card {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+.dashboard-card-indigo {
+  border-left: 3px solid var(--primary-color);
+}
+.dashboard-card-indigo .dashboard-card-header {
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.08) 0%,
+    rgba(124, 58, 237, 0.05) 100%
+  );
+}
+.dashboard-card-purple {
+  border-left: 3px solid var(--secondary-color);
+}
+.dashboard-card-purple .dashboard-card-header {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.08) 0%,
+    rgba(168, 85, 247, 0.05) 100%
+  );
+}
+.dashboard-card-warm {
+  border-left: 3px solid var(--warning-color);
+}
+.dashboard-card-warm .dashboard-card-header {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.08) 0%,
+    rgba(251, 191, 36, 0.05) 100%
+  );
+}
+.dashboard-card-hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.dashboard-card-header {
+  padding: var(--spacing-4) var(--spacing-6);
+  border-bottom: 1px solid var(--glass-border);
+}
+.dashboard-card-body {
+  padding: var(--spacing-6);
+}
+.dashboard-card-footer {
+  padding: var(--spacing-4) var(--spacing-6);
+  border-top: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.01);
+}

@@ -19,8 +19,8 @@ import {
   EditOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { normalizeLanguage } from '../i18n';
-import './common.css';
+import { normalizeLanguage } from '../../i18n';
+import '@/styles/common.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;

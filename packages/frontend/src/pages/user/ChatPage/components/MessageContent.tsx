@@ -3,14 +3,15 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from 'antd';
 import { FileTextOutlined, DownloadOutlined } from '@ant-design/icons';
-import { MessageItem, Job } from '../../../types';
-import StreamingMarkdownBubble from '../../../components/StreamingMarkdownBubble';
-import AttachmentMessage from '../../../components/AttachmentMessage';
-import JobInfoCard from '../../../components/JobInfoCard';
-import SuggestionsList from '../../../components/SuggestionsList';
-import PDFGenerationCard from '../../../components/PDFGenerationCard';
-import MarkdownPDFCard from '../../../components/MarkdownPDFCard';
-import InterviewQuestionsCard from '../../../components/InterviewQuestionsCard';
+import { useTranslation } from 'react-i18next';
+import { MessageItem, Job } from '../../../../types';
+import StreamingMarkdownBubble from '../../../../components/StreamingMarkdownBubble';
+import AttachmentMessage from '../../../../components/AttachmentMessage';
+import JobInfoCard from '../../../../components/JobInfoCard';
+import SuggestionsList from '../../../../components/SuggestionsList';
+import PDFGenerationCard from '../../../../components/PDFGenerationCard';
+import MarkdownPDFCard from '../../../../components/MarkdownPDFCard';
+import InterviewQuestionsCard from '../../../../components/InterviewQuestionsCard';
 
 interface MessageContentProps {
   item: MessageItem;
@@ -41,6 +42,7 @@ export const MessageContent = React.memo(function MessageContent({
   onRejectSuggestion,
   onAcceptAllSuggestions,
 }: MessageContentProps) {
+  const { t } = useTranslation();
   return (
     <div className="markdown-content">
       {item.key === 'streaming-optimization' ? (
@@ -73,10 +75,10 @@ export const MessageContent = React.memo(function MessageContent({
             icon={<FileTextOutlined />}
             onClick={onOpenComparison}
           >
-            查看对比
+            {t('chat.view_comparison', '查看对比')}
           </Button>
           <Button icon={<DownloadOutlined />} onClick={onDownloadOptimized}>
-            下载简历
+            {t('chat.download_resume', '下载简历')}
           </Button>
         </div>
       )}

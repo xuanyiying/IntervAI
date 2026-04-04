@@ -13,6 +13,7 @@ export const PROVIDER_BASE_URLS: Record<string, string> = {
   gemini: 'https://generativelanguage.googleapis.com/v1beta/openai',
   ollama: 'http://localhost:11434/v1',
   siliconcloud: 'https://api.siliconflow.cn/v1',
+  
 };
 
 /**

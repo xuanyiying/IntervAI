@@ -1,21 +1,21 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
 import type { UploadFile } from 'antd/es/upload/interface';
-import { resumeService } from '../../../services/resume-service';
+import { resumeService } from '../../../../services/resume-service';
 import {
   MAX_FILE_SIZE_MB,
   RESUME_ALLOWED_TYPES,
   resolveUploadFile,
   validateFile,
-} from '../../../services/upload-service';
-import { UPLOAD_TIMEOUT_MS, PARSE_TIMEOUT_MS } from '../../../config/app';
+} from '../../../../services/upload-service';
+import { UPLOAD_TIMEOUT_MS, PARSE_TIMEOUT_MS } from '../../../../config/app';
 import {
   MessageRole,
   type MessageItem,
   type AttachmentStatus,
   type Resume,
   type ParsedResumeData,
-} from '../../../types';
+} from '../../../../types';
 
 interface UseResumeUploadProps {
   currentConversationId?: string;

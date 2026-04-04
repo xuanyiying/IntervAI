@@ -1,0 +1,7 @@
+.feature-guide-card {
+  border: 1px solid transparent;
+}
+.feature-guide-card:hover {
+  border-color: var(--glass-border);
+  background: var(--glass-bg-hover);
+}

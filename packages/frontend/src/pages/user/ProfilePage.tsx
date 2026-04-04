@@ -1,41 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/stores';
+import '@/styles/common.css';
 import {
-  Avatar,
-  Button,
-  Card,
-  Space,
-  Typography,
-  Tabs,
-  Form,
-  Input,
-  Upload,
-  message,
-  List,
-  Tag,
-  Badge,
-} from 'antd';
-import {
-  UserOutlined,
-  UploadOutlined,
-  LockOutlined,
-  HistoryOutlined,
   BellOutlined,
   CheckOutlined,
+  HistoryOutlined,
+  LockOutlined,
   MailOutlined,
   PhoneOutlined,
+  UploadOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
-import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '@/stores';
-import { formatDateTime } from '../i18n';
 import {
-  userService,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Form,
+  Input,
+  List,
+  Space,
+  Tabs,
+  Tag,
+  Typography,
+  Upload,
+  message,
+} from 'antd';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
+import { formatDateTime } from '../../i18n';
+import { accountService } from '../../services/account-service';
+import {
+  ChangePasswordDto,
   UserActivity,
   UserNotification,
-  ChangePasswordDto,
-} from '../services/user-service';
-import { accountService } from '../services/account-service';
-import './common.css';
+  userService,
+} from '../../services/user-service';
 
 const { Title, Text } = Typography;
 
@@ -240,18 +240,18 @@ const ProfilePage: React.FC = () => {
                     usage.quota.optimizationsLimit === -1
                       ? 0
                       : Math.max(
-                          0,
-                          usage.quota.optimizationsLimit -
-                            usage.quota.optimizationsUsed
-                        ),
+                        0,
+                        usage.quota.optimizationsLimit -
+                        usage.quota.optimizationsUsed
+                      ),
                   remaining:
                     usage.quota.optimizationsLimit === -1
                       ? '∞'
                       : Math.max(
-                          0,
-                          usage.quota.optimizationsLimit -
-                            usage.quota.optimizationsUsed
-                        ),
+                        0,
+                        usage.quota.optimizationsLimit -
+                        usage.quota.optimizationsUsed
+                      ),
                   limit:
                     usage.quota.optimizationsLimit === -1
                       ? '∞'

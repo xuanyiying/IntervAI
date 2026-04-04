@@ -19,10 +19,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores';
 import { authService } from '@/services';
-import { getApiBaseUrl } from '../config/axios';
-import { Logo } from '../components/Logo';
-import { PasswordStrengthChecker } from '../components/PasswordStrengthChecker';
-import './auth.css';
+import { getApiBaseUrl } from '../../config/axios';
+import { Logo } from '../../components/Logo';
+import { PasswordStrengthChecker } from '../../components/PasswordStrengthChecker';
+import '@/styles/auth.css';
 
 const { Title, Text } = Typography;
 

@@ -2,8 +2,8 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { message, Spin, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../stores/authStore';
-import { authService } from '../services/auth-service';
+import { useAuthStore } from '../../stores/authStore';
+import { authService } from '../../services/auth-service';
 
 const { Title } = Typography;
 

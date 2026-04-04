@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { AIEngine } from '@/core/ai';
 import { ParsedJobData, ParsedResumeData } from '@/types';
+import { PromptService } from '@/core/prompts';
 
 @Injectable()
 export class AnswerEvaluationService {
@@ -9,7 +10,8 @@ export class AnswerEvaluationService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private aiEngine: AIEngine,
+    private promptService: PromptService
   ) {}
 
   /**
@@ -55,26 +57,16 @@ export class AnswerEvaluationService {
         .map((m) => `${m.role}: ${m.content}`)
         .join('\n');
 
-      const prompt = `
-You are an expert interview coach. Review the following interview transcript for a ${jobTitle} position at ${company}.
-Job Requirements: ${requirements.substring(0, 500)}...
-Candidate: ${resumeData.personalInfo.name}
+      // Get language from session (default to EN)
+      const language = session.language || 'EN';
+      const feedbackPromptTemplate = this.promptService.getInterviewFeedbackPrompt(language);
 
-Transcript:
-${transcript}
-
-Provide a comprehensive evaluation including:
-1. Overall Score (0-100)
-2. Key Strengths (bullet points)
-3. Areas for Improvement (bullet points)
-4. Detailed Feedback on specific answers
-
-Format the output as JSON:
-{
-  "score": number,
-  "feedback": "markdown string"
-}
-`;
+      const prompt = feedbackPromptTemplate
+        .replace('{{jobTitle}}', jobTitle)
+        .replace('{{company}}', company)
+        .replace('{{requirements}}', requirements.substring(0, 500))
+        .replace('{{candidateName}}', resumeData.personalInfo.name || 'Candidate')
+        .replace('{{transcript}}', transcript);
 
       const result = await this.aiEngine.generate(prompt, {
         temperature: 0.7,

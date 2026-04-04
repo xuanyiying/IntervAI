@@ -6,6 +6,7 @@ import { InterviewerPersonaController } from './interviewer-persona.controller';
 import { InterviewAssistantController } from './interview-assistant.controller';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { AIModule } from '@/core/ai/ai.module';
+import { PromptsModule } from '@/core/prompts/prompts.module';
 import { RedisModule } from '@/shared/cache/redis.module';
 import { QuotaModule } from '@/core/quota/quota.module';
 import { VoiceModule } from '../voice/voice.module';
@@ -25,6 +26,7 @@ import { AuthModule } from '@/core/auth/auth.module';
   imports: [
     PrismaModule,
     AIModule,
+    PromptsModule,
     RedisModule,
     QuotaModule,
     VoiceModule,

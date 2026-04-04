@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Avatar, Tag, Space, Button, Typography } from 'antd';
+import { Card, Avatar, Tag, Space, Typography } from 'antd';
 import {
   UserOutlined,
   CheckCircleOutlined,
@@ -14,7 +14,7 @@ interface PersonaSelectorProps {
   personas: InterviewerPersona[];
   selectedPersonaId?: string;
   onSelect: (personaId: string) => void;
-  loading?: boolean;
+  _loading?: boolean;
 }
 
 const styleColors: Record<string, string> = {
@@ -39,7 +39,7 @@ export const PersonaSelector: React.FC<PersonaSelectorProps> = ({
   personas,
   selectedPersonaId,
   onSelect,
-  loading,
+  _loading,
 }) => {
   const { t } = useTranslation();
 

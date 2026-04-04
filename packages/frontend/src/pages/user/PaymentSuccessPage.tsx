@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Result, Button, Typography, Card, Spin } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircleOutlined } from '@ant-design/icons';
-import { useAuthStore } from '../stores/authStore';
+import { useAuthStore } from '../../stores/authStore';
 
 const { Paragraph, Text } = Typography;
 

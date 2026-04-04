@@ -10,8 +10,8 @@ import {
   Typography,
 } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { accountService, DailyUsagePoint } from '../services/account-service';
-import { formatDateTime } from '../i18n';
+import { accountService, DailyUsagePoint } from '../../services/account-service';
+import { formatDateTime } from '../../i18n';
 
 const { Title, Text } = Typography;
 

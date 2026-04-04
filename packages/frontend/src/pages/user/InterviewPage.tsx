@@ -1,41 +1,40 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { InterviewQuestion, InterviewSession } from '@/types';
+import {
+  AudioOutlined,
+  MessageOutlined,
+  PhoneOutlined,
+  QuestionCircleOutlined,
+  SendOutlined,
+  StopOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import {
   Button,
   Card,
-  Typography,
-  Space,
-  Spin,
+  Divider,
+  Input,
   message,
   Modal,
   Progress,
-  Input,
-  Divider,
-  Steps,
-  Select,
   Radio,
-  Tag,
+  Select,
+  Space,
+  Spin,
+  Steps,
+  Typography,
 } from 'antd';
-import {
-  AudioOutlined,
-  StopOutlined,
-  SendOutlined,
-  PhoneOutlined,
-  UserOutlined,
-  RobotOutlined,
-  QuestionCircleOutlined,
-  MessageOutlined,
-} from '@ant-design/icons';
-import {
-  interviewService,
-  InterviewerPersona,
-} from '../services/interview-service';
-import { InterviewQuestion, InterviewSession } from '@/types';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import VoiceManager from '../components/VoiceManager';
-import VoiceInterviewCall from '../components/VoiceInterviewCall';
-import { PersonaSelector } from '../components/PersonaSelector';
-import InterviewAssistant from '../components/InterviewAssistant';
+import { useNavigate, useParams } from 'react-router-dom';
+import { PersonaSelector } from '../../components/PersonaSelector';
+import VoiceInterviewCall from '../../components/VoiceInterviewCall';
+import VoiceManager from '../../components/VoiceManager';
+import {
+  InterviewerPersona,
+  interviewService,
+} from '../../services/interview-service';
+import '@/styles/common.css';
+import '@/styles/agents.css';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -66,7 +65,6 @@ const InterviewPage: React.FC = () => {
   const [answerText, setAnswerText] = useState('');
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | undefined>();
   const [isVoiceCallActive, setIsVoiceCallActive] = useState(false);
-  const [isInterviewAssistantActive, setIsInterviewAssistantActive] = useState(false);
 
   const [personas, setPersonas] = useState<InterviewerPersona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<
@@ -233,7 +231,7 @@ const InterviewPage: React.FC = () => {
 
     try {
       setProcessing(true);
-      const result = await interviewService.sendMessage(session.id, question);
+      await interviewService.sendMessage(session.id, question);
       // AI 返回的参考答案已经包含在消息中
       // 可以选择刷新会话状态显示新消息
     } catch (error) {
@@ -421,26 +419,6 @@ const InterviewPage: React.FC = () => {
           }
           extra={
             <Space>
-<<<<<<< HEAD
-              <Button
-                type="primary"
-                ghost
-                icon={<PhoneOutlined />}
-                onClick={() => setIsVoiceCallActive(true)}
-                disabled={loading}
-              >
-                Start Voice Call
-              </Button>
-              <Button
-                type="primary"
-                ghost
-                icon={<RobotOutlined />}
-                onClick={() => setIsInterviewAssistantActive(true)}
-                disabled={loading}
-              >
-                {t('interview.assistant_title')}
-              </Button>
-=======
               {interviewMode === 'mock' && (
                 <Button
                   type="primary"
@@ -452,7 +430,6 @@ const InterviewPage: React.FC = () => {
                   Start Voice Call
                 </Button>
               )}
->>>>>>> 510a622b2 (feat(interview): add assist mode and language support for interview sessions)
               <Button danger onClick={endSessionEarly}>
                 {t('interview.end_early')}
               </Button>
@@ -576,12 +553,6 @@ const InterviewPage: React.FC = () => {
           </div>
         )}
       </Modal>
-
-      {isInterviewAssistantActive && (
-        <InterviewAssistant
-          onClose={() => setIsInterviewAssistantActive(false)}
-        />
-      )}
     </div>
   );
 };
@@ -592,9 +563,9 @@ const AssistModeView: React.FC<{
   processing: boolean;
   onSendMessage: (question: string) => void;
   t: any;
-}> = ({ session, processing, onSendMessage, t }) => {
+}> = ({ session: _session, processing, onSendMessage, t }) => {
   const [question, setQuestion] = useState('');
-  const [messages, setMessages] = useState<
+  const [messages, _setMessages] = useState<
     Array<{ role: 'user' | 'assistant'; content: string }>
   >([]);
 

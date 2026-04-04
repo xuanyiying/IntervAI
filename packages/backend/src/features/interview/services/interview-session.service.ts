@@ -1,28 +1,29 @@
+import { AIEngine, AIService } from '@/core/ai';
+import { PromptService } from '@/core/prompts';
+import { QuotaService } from '@/core/quota/quota.service';
+import { AlibabaVoiceService } from '@/features/voice/voice.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { AIService } from '@/core/ai/ai.service';
-import { QuotaService } from '@/core/quota/quota.service';
 import {
-  InterviewSession,
   InterviewMessage,
+  InterviewMode,
+  InterviewQuestion,
+  InterviewSession,
   InterviewStatus,
   MessageRole,
-  InterviewQuestion,
-  InterviewMode,
 } from '@prisma/client';
 import {
   CreateSessionDto,
   InterviewMode as InterviewModeEnum,
 } from '../dto/create-session.dto';
-import { SendMessageDto } from '../dto/send-message.dto';
 import { EndSessionDto } from '../dto/end-session.dto';
-import { ParsedJobData, ParsedResumeData } from '@/types';
-import { AlibabaVoiceService } from '@/features/voice/voice.service';
+import { SendMessageDto } from '../dto/send-message.dto';
 
 @Injectable()
 export class InterviewSessionService {
@@ -32,8 +33,9 @@ export class InterviewSessionService {
     private prisma: PrismaService,
     private aiService: AIService,
     private quotaService: QuotaService,
-    private voiceService: AlibabaVoiceService
-  ) {}
+    private voiceService: AlibabaVoiceService,
+    private promptService: PromptService
+  ) { }
 
   /**
    * Start a new interview session
@@ -354,26 +356,10 @@ export class InterviewSessionService {
     jobData: ParsedJobData,
     language: string
   ): Promise<string> {
+    // 使用 PromptService 获取多语言标签
+    const labels = this.promptService.getInterviewLabels(language as any);
+    const fallbackResponse = this.promptService.getFallbackResponse(language as any);
     const isZh = language === 'ZH';
-
-    // 语言标签映射
-    const labels = isZh
-      ? {
-          question: '问题',
-          referenceAnswer: '参考答案',
-          keyPoints: '要点',
-          estimatedTime: '建议时长',
-          tips: '建议',
-          avoid: '避免',
-        }
-      : {
-          question: 'Question',
-          referenceAnswer: 'Reference Answer',
-          keyPoints: 'Key Points',
-          estimatedTime: 'Estimated Time',
-          tips: 'Tips',
-          avoid: 'Avoid',
-        };
 
     try {
       const resumeText = JSON.stringify({
@@ -432,14 +418,13 @@ export class InterviewSessionService {
       }
 
       // 如果 skill 执行失败，返回简单响应
-      return isZh
+      // 如果 skill 执行失败，返回简单响应
+      return language === 'ZH'
         ? `收到问题: ${question}\n\n请稍等，我正在生成参考答案...`
         : `Received question: ${question}\n\nPlease wait, generating reference answer...`;
     } catch (error) {
       this.logger.error('Failed to generate assist answer:', error);
-      return isZh
-        ? `抱歉，无法生成参考答案。请稍后重试。`
-        : `Sorry, unable to generate reference answer. Please try again later.`;
+      return fallbackResponse;
     }
   }
 
@@ -458,17 +443,16 @@ export class InterviewSessionService {
       ...(jobData.responsibilities || []),
     ].join('; ');
 
-    const context = `
-You are an experienced interviewer conducting a job interview.
-Candidate Name: ${resumeData.personalInfo?.name || 'Candidate'}
-Job Title: ${jobData.title || 'Target Position'}
-Company: ${jobData.company || 'Target Company'}
-Job Requirements: ${requirements.substring(0, 500)}...
+    // 使用多语言提示词
+    const language = session.language || 'EN';
+    const prompts = this.promptService.getInterviewMockPrompts(language);
 
-Your goal is to assess the candidate's fit for the role based on their resume and the job description.
-Be professional, encouraging, but thorough. Ask follow-up questions when appropriate.
-Keep your responses concise (under 100 words) to maintain a natural conversation flow.
-`;
+    const context = prompts.context({
+      candidateName: resumeData.personalInfo?.name || 'Candidate',
+      jobTitle: jobData.title || 'Target Position',
+      company: jobData.company || 'Target Company',
+      requirements: requirements.substring(0, 500),
+    });
 
     const history = session.messages.map((m: any) => ({
       role: m.role === MessageRole.USER ? 'user' : 'assistant',
@@ -476,17 +460,18 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
     }));
 
     try {
-      const { AIEngine } = await import('@/core/ai');
-      const aiEngine = new AIEngine(this.aiService);
+      const aiEngine = new AIEngine(this.aiService, this.promptService);
       const aiResponse = await aiEngine.chatWithInterviewer(
-        context,
+        prompts.system + '\n\n' + context,
         userAnswer,
         history
       );
       return aiResponse;
     } catch (error) {
       this.logger.error('Failed to generate mock response:', error);
-      return 'Thank you for your answer. Could you tell me more about...';
+      return language === 'ZH'
+        ? '谢谢你的回答。能告诉我更多关于...'
+        : 'Thank you for your answer. Could you tell me more about...';
     }
   }
 
@@ -645,26 +630,18 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
       .map((m: any) => `${m.role}: ${m.content}`)
       .join('\n');
 
-    const prompt = `
-You are an expert interview coach. Review the following interview transcript for a ${jobTitle} position at ${company}.
-Job Requirements: ${requirements.substring(0, 500)}...
-Candidate: ${resumeData.personalInfo.name}
-
-Transcript:
-${transcript}
-
-Provide a comprehensive evaluation including:
-1. Overall Score (0-100)
-2. Key Strengths (bullet points)
-3. Areas for Improvement (bullet points)
-4. Detailed Feedback on specific answers
-
-Format the output as JSON:
-{
-  "score": number,
-  "feedback": "markdown string"
-}
-`;
+    // 使用多语言提示词
+    const language = session.language || 'EN';
+    const prompt = this.promptService.buildFeedbackPrompt(
+      {
+        jobTitle,
+        company,
+        requirements: requirements.substring(0, 500),
+        candidateName: resumeData.personalInfo?.name || 'Candidate',
+        transcript,
+      },
+      language
+    );
 
     try {
       const { Models } = await import('@/core/ai/models');

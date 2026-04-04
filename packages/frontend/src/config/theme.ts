@@ -321,19 +321,19 @@ export const lightTheme: ThemeConfig = {
       controlHeightSM: 32,
     },
     Card: {
-      colorBgContainer: '#ffffff',
-      colorBorderSecondary: 'rgba(0, 0, 0, 0.05)',
+      colorBgContainer: 'rgba(255, 255, 255, 0.75)',
+      colorBorderSecondary: 'rgba(0, 0, 0, 0.06)',
       borderRadiusLG: 16,
       paddingLG: 24,
     },
     Modal: {
-      contentBg: '#ffffff',
-      headerBg: '#ffffff',
+      contentBg: 'rgba(255, 255, 255, 0.95)',
+      headerBg: 'rgba(255, 255, 255, 0.95)',
       borderRadiusLG: 16,
       paddingContentHorizontalLG: 24,
     },
     Drawer: {
-      colorBgElevated: '#ffffff',
+      colorBgElevated: 'rgba(255, 255, 255, 0.95)',
       borderRadiusLG: 16,
     },
     Input: {

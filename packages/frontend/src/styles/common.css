@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Common Page Styles - Unified Design System
+   Shared Base Styles - Unified Design System
+   Used by: User pages (Profile, Settings) + Admin pages + Agent pages
    ========================================================================== */
 
 /* Page Container Patterns */
@@ -74,7 +75,7 @@ h2.ant-typography {
   color: var(--text-secondary) !important;
 }
 
-/* Ant Design Component Theming in Common */
+/* Ant Design Component Theming */
 .ant-card {
   background: var(--glass-bg) !important;
   backdrop-filter: var(--glass-backdrop) !important;
@@ -92,10 +93,7 @@ h2.ant-typography {
   font-weight: var(--font-weight-semibold) !important;
 }
 
-/* ==========================================================================
-   Form Patterns
-   ========================================================================== */
-
+/* Form Patterns */
 .form-group {
   margin-bottom: var(--spacing-6);
 }
@@ -135,10 +133,7 @@ h2.ant-typography {
   color: var(--text-tertiary) !important;
 }
 
-/* ==========================================================================
-   Button Patterns
-   ========================================================================== */
-
+/* Button Patterns */
 .btn-primary {
   width: 100%;
   height: var(--button-height-xl);
@@ -188,10 +183,7 @@ h2.ant-typography {
   border-color: var(--text-secondary);
 }
 
-/* ==========================================================================
-   Page Header Patterns
-   ========================================================================== */
-
+/* Page Header Patterns */
 .page-header {
   margin-bottom: var(--spacing-10);
   text-align: center;
@@ -233,10 +225,7 @@ h2.ant-typography {
   box-shadow: 0 8px 24px rgba(var(--primary-rgb), 0.15);
 }
 
-/* ==========================================================================
-   Content Container Patterns
-   ========================================================================== */
-
+/* Content Container & Form Container */
 .content-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -259,11 +248,7 @@ h2.ant-typography {
   z-index: 1;
 }
 
-/* ==========================================================================
-   Utility Classes
-   ========================================================================== */
-
-/* Text Utilities */
+/* Utility Classes */
 .text-gradient {
   background: var(--primary-gradient);
   -webkit-background-clip: text;
@@ -278,7 +263,6 @@ h2.ant-typography {
   color: transparent;
 }
 
-/* Glass Effect Utilities */
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-backdrop);
@@ -301,12 +285,8 @@ h2.ant-typography {
   border: 1px solid var(--glass-border);
 }
 
-/* ==========================================================================
-   Responsive Adjustments
-   ========================================================================== */
-
+/* Responsive Adjustments */
 @media (max-width: 768px) {
-
   .settings-container,
   .profile-container,
   .admin-container {
@@ -327,7 +307,6 @@ h2.ant-typography {
 }
 
 @media (max-width: 480px) {
-
   .settings-container,
   .profile-container,
   .admin-container {

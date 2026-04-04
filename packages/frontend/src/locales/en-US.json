@@ -48,13 +48,17 @@
     "copy": "Copy",
     "copy_success": "Copied",
     "download": "Download",
-    "login": "Login",
     "login_now": "Login Now",
     "login_required": "Login required",
     "retry": "Retry",
     "processing": "Processing",
     "present": "Present",
     "completed": "Completed"
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
   },
   "auth": {
     "login": "Login",
@@ -101,7 +105,6 @@
     "oauth_token_missing": "Authentication failed: No access token received",
     "oauth_failed": "OAuth authentication failed, please try again",
     "oauth_processing": "Processing authentication...",
-
     "reset_invalid_title": "Invalid Link",
     "reset_invalid_subtitle": "The password reset link is invalid or missing.",
     "reset_success_title": "Password Reset Successfully",
@@ -126,6 +129,7 @@
     "password_requirements_not_met": "Please meet all password requirements"
   },
   "menu": {
+    "home": "Home",
     "new_chat": "New Chat",
     "history": "History",
     "collapse": "Collapse",
@@ -139,10 +143,13 @@
     "admin": "Admin",
     "agents": "AI Agents",
     "my_resumes": "My Resumes",
+    "interview_spirit": "AI Interview Spirit",
     "pitch_perfect": "Pitch Perfect",
     "resume_optimization": "Resume Optimization",
     "interview_prediction": "Interview Prediction",
     "mock_interview": "Mock Interview",
+    "chat": "Chat",
+    "pricing": "Subscription & Pricing",
     "job_input": "Job Input",
     "admin_system": "System Management",
     "dashboard": "Dashboard",
@@ -422,6 +429,15 @@
       "job_input": "Job Input",
       "discover": "Discover"
     },
+    "welcome_subtitle": "What would you like to do today, {username}?",
+    "placeholder_enhanced": "Ask a question, or drag & drop your resume...",
+    "optimize_resume": "Optimize Resume",
+    "message_error": "Error processing message",
+    "resume_ready": "Resume is ready, you can start optimizing!",
+    "guest_welcome": "I am AI Resume Assistant. As a guest, I can only answer basic questions. Please log in to experience full features, including resume optimization, mock interviews, and more!",
+    "file_not_found": "Cannot retrieve original file, please re-upload",
+    "view_comparison": "View Comparison",
+    "download_resume": "Download Resume",
     "welcome_title": "Hello, I am AI Resume Assistant",
     "welcome": "Hello, I am AI Resume Assistant. I can help you optimize resume, conduct mock interviews, or polish self-introduction.",
     "placeholder": "Type your question, or upload resume file...",
@@ -462,6 +478,15 @@
     "optimizing": "Optimizing your resume deeply, please wait...",
     "starting_optimization": "Starting resume optimization...",
     "use_upload_button": "Please use the upload button to upload your resume"
+  },
+  "quota": {
+    "free_available": "Free quota available"
+  },
+  "features": {
+    "resume_optimization_tip": "Upload your resume for personalized optimization suggestions",
+    "interview_prediction_tip": "AI analyzes job descriptions and predicts high-frequency questions",
+    "mock_interview_tip": "Real-scenario mock interviews with real-time feedback",
+    "discover_tip": "Explore more AI capabilities and tips"
   },
   "suggestions": {
     "resume_label": "Upload Resume",

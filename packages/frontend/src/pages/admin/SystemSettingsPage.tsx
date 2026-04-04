@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import '@/styles/common.css';
 import {
+  MailOutlined,
+  SafetyOutlined,
+  SaveOutlined,
+  SettingOutlined,
+  UserAddOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
   Card,
+  Divider,
   Form,
   Input,
-  Switch,
   InputNumber,
-  Button,
-  Tabs,
   message,
-  Typography,
-  Divider,
   Space,
+  Switch,
+  Tabs,
+  Typography,
 } from 'antd';
-import {
-  SettingOutlined,
-  SafetyOutlined,
-  MailOutlined,
-  UserAddOutlined,
-  SaveOutlined,
-} from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { adminService } from '../services/admin-service';
-import './common.css';
+import { adminService } from '../../services/admin-service';
 
 const { Title, Text } = Typography;
 
@@ -56,7 +56,6 @@ const SystemSettingsPage: React.FC = () => {
       form.setFieldsValue(settings);
     } catch {
       message.error(t('admin.system.load_failed'));
-      // Set default values
       form.setFieldsValue({
         siteName: 'AI Resume Assistant',
         siteDescription: 'AI-powered resume optimization platform',

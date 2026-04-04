@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { optimizationService } from '../../../services/optimization-service';
-import { useConversationStore } from '../../../stores';
-import { MessageRole, type MessageItem } from '../../../types';
+import { optimizationService } from '../../../../services/optimization-service';
+import { useConversationStore } from '../../../../stores';
+import { MessageRole, type MessageItem } from '../../../../types';
 
 interface UseOptimizationProps {
   sendSocketMessage: (

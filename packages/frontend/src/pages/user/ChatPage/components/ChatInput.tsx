@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sender } from '@ant-design/x';
 import { PaperClipOutlined } from '@ant-design/icons';
-import ResumeUploadButton from '../../../components/ResumeUploadButton';
+import ResumeUploadButton from '../../../../components/ResumeUploadButton';
 
 interface ChatInputProps {
   value: string;

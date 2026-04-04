@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Result } from 'antd';
 import { LockOutlined, SafetyOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { authService } from '../services/auth-service';
+import { authService } from '../../services/auth-service';
 import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;

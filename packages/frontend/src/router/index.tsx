@@ -1,40 +1,38 @@
-import React from 'react';
+import InviteCodeManagementPage from '@/pages/admin/InviteCodeManagementPage';
+import KnowledgeBasePage from '@/pages/admin/KnowledgeBasePage';
+import ModelManagementPage from '@/pages/admin/ModelManagementPage';
+import PromptManagementPage from '@/pages/admin/PromptManagementPage';
+import SystemSettingsPage from '@/pages/admin/SystemSettingsPage';
+import UserManagementPage from '@/pages/admin/UserManagementPage';
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage';
+import LoginPage from '@/pages/auth/LoginPage';
+import OAuthCallbackPage from '@/pages/auth/OAuthCallbackPage';
+import RegisterPage from '@/pages/auth/RegisterPage';
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
+import VerifyEmailPage from '@/pages/auth/VerifyEmailPage';
+import PrivacyPolicyPage from '@/pages/legal/PrivacyPolicyPage';
+import TermsOfServicePage from '@/pages/legal/TermsOfServicePage';
+import PricingPage from '@/pages/marketing/PricingPage';
+import AccountSubscriptionPage from '@/pages/user/AccountSubscriptionPage';
+import AccountUsagePage from '@/pages/user/AccountUsagePage';
+import AgentMetricsPage from '@/pages/user/AgentMetricsPage';
+import ChatPage from '@/pages/user/ChatPage';
+import InterviewPage from '@/pages/user/InterviewPage';
+import MyResumesPage from '@/pages/user/MyResumesPage';
+import PaymentCancelPage from '@/pages/user/PaymentCancelPage';
+import PaymentSuccessPage from '@/pages/user/PaymentSuccessPage';
+import PitchPerfectPage from '@/pages/user/PitchPerfectPage';
+import ProfilePage from '@/pages/user/ProfilePage';
+import ResumeBuilderPage from '@/pages/user/ResumeBuilderPage';
+import RolePlayPage from '@/pages/user/RolePlayPage';
+import SettingsPage from '@/pages/user/SettingsPage';
+import { StrategistPage } from '@/pages/user/StrategistPage';
+import SubscriptionManagementPage from '@/pages/user/SubscriptionManagementPage';
+import TeamPage from '@/pages/user/TeamPage';
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
-import AppLayout from '../layouts/AppLayout';
-import ProtectedRoute from '../components/ProtectedRoute';
 import ErrorBoundary from '../components/ErrorBoundary';
-import RegisterPage from '../pages/RegisterPage';
-import ChatPage from '../pages/ChatPage';
-import ProfilePage from '../pages/ProfilePage';
-import SettingsPage from '../pages/SettingsPage';
-import PromptManagementPage from '../pages/PromptManagementPage';
-import ModelManagementPage from '../pages/ModelManagementPage';
-import InviteCodeManagementPage from '../pages/InviteCodeManagementPage';
-import UserManagementPage from '../pages/UserManagementPage';
-import SystemSettingsPage from '../pages/SystemSettingsPage';
-import VerifyEmailPage from '../pages/VerifyEmailPage';
-import ForgotPasswordPage from '../pages/ForgotPasswordPage';
-import ResetPasswordPage from '../pages/ResetPasswordPage';
-import PricingPage from '../pages/PricingPage';
-import TermsOfServicePage from '../pages/TermsOfServicePage';
-import PrivacyPolicyPage from '../pages/PrivacyPolicyPage';
-import OAuthCallbackPage from '../pages/OAuthCallbackPage';
-import PaymentSuccessPage from '../pages/PaymentSuccessPage';
-import PaymentCancelPage from '../pages/PaymentCancelPage';
-import SubscriptionManagementPage from '../pages/SubscriptionManagementPage';
-import AccountSubscriptionPage from '../pages/AccountSubscriptionPage';
-import AccountUsagePage from '../pages/AccountUsagePage';
-import InterviewPage from '../pages/InterviewPage';
-import RealtimeInterviewPage from '../pages/RealtimeInterviewPage';
-import PitchPerfectPage from '../pages/PitchPerfectPage';
-import { StrategistPage } from '../pages/StrategistPage';
-import RolePlayPage from '../pages/RolePlayPage';
-import AgentMetricsPage from '../pages/AgentMetricsPage';
-import KnowledgeBasePage from '../pages/KnowledgeBasePage';
-import ResumeBuilderPage from '../pages/ResumeBuilderPage';
-import MyResumesPage from '../pages/MyResumesPage';
-import TeamPage from '../pages/TeamPage';
-import LoginPage from '@/pages/LoginPage';
+import ProtectedRoute from '../components/ProtectedRoute';
+import AppLayout from '../layouts/AppLayout';
 
 const routes: RouteObject[] = [
   {
@@ -175,14 +173,6 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute>
             <InterviewPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'realtime-interview',
-        element: (
-          <ProtectedRoute>
-            <RealtimeInterviewPage />
           </ProtectedRoute>
         ),
       },

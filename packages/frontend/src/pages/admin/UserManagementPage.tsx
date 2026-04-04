@@ -22,9 +22,9 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { formatDate } from '../i18n';
-import { adminService } from '../services/admin-service';
-import './common.css';
+import { formatDate } from '../../i18n';
+import { adminService } from '../../services/admin-service';
+import '@/styles/common.css';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -65,7 +65,6 @@ const UserManagementPage: React.FC = () => {
       setPagination({ current: page, pageSize, total: res.total });
     } catch {
       message.error(t('admin.users.load_failed'));
-      // Mock data for development
       setUsers([
         {
           id: '1',

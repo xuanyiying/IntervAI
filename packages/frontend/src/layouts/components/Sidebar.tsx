@@ -1,29 +1,32 @@
-import React from 'react';
-import { Button, Input, Tooltip, Badge, Modal } from 'antd';
-import {
-  PlusOutlined,
-  SearchOutlined,
-  MessageOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  DashboardOutlined,
-  TeamOutlined,
-  ApiOutlined,
-  FileTextOutlined,
-  BarcodeOutlined,
-  ToolOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  StarOutlined,
-  LineChartOutlined,
-  UserOutlined,
-  FileSearchOutlined,
-} from '@ant-design/icons';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { Logo } from '@/components/Logo';
 import { useAuthStore, useConversationStore, useResumeStore } from '@/stores';
 import { Role } from '@/types';
-import { Logo } from '@/components/Logo';
+import {
+  ApiOutlined,
+  BarcodeOutlined,
+  DashboardOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  FileSearchOutlined,
+  FileTextOutlined,
+  HomeOutlined,
+  LineChartOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  MessageOutlined,
+  PlusOutlined,
+  RobotOutlined,
+  SearchOutlined,
+  StarOutlined,
+  TeamOutlined,
+  ToolOutlined,
+  UserOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
+import { Badge, Button, Input, Modal, Tooltip } from 'antd';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Interface for props if needed, though we use stores mostly
 interface SidebarProps {
@@ -59,7 +62,13 @@ const Sidebar: React.FC<SidebarProps> = ({
     fetchResumes();
   }, [fetchResumes]);
 
-  const agentNavItems = [
+  const mainNavItems = [
+    {
+      key: 'home',
+      icon: <HomeOutlined />,
+      label: t('menu.home', '主页'),
+      path: '/',
+    },
     {
       key: 'my-resumes',
       icon: <FileSearchOutlined />,
@@ -67,22 +76,40 @@ const Sidebar: React.FC<SidebarProps> = ({
       path: '/resumes',
     },
     {
-      key: 'pitch-perfect',
-      icon: <StarOutlined />,
-      label: t('menu.pitch_perfect', '履历点睛'),
-      path: '/pitch-perfect',
-    },
-    {
-      key: 'interview-prediction',
-      icon: <LineChartOutlined />,
-      label: t('menu.interview_prediction', '面试预测'),
-      path: '/strategist',
+      key: 'interview',
+      icon: <RobotOutlined />,
+      label: t('menu.interview_spirit', 'AI 面试精灵'),
+      path: '/interview',
     },
     {
       key: 'mock-interview',
       icon: <UserOutlined />,
       label: t('menu.mock_interview', '模拟面试'),
       path: '/role-play',
+    },
+    {
+      key: 'pitch-perfect',
+      icon: <StarOutlined />,
+      label: t('menu.pitch_perfect', '自我介绍'),
+      path: '/pitch-perfect',
+    },
+    {
+      key: 'interview-prediction',
+      icon: <LineChartOutlined />,
+      label: t('menu.interview_prediction', '面试押题'),
+      path: '/strategist',
+    },
+    {
+      key: 'chat',
+      icon: <MessageOutlined />,
+      label: t('menu.chat', '对话'),
+      path: '/chat',
+    },
+    {
+      key: 'pricing',
+      icon: <WalletOutlined />,
+      label: t('menu.pricing', '订阅与定价'),
+      path: '/pricing',
     },
   ];
 
@@ -247,6 +274,50 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
+      {/* Main Navigation */}
+      <div className="px-2 space-y-1">
+        {mainNavItems.map((item) => (
+          <Tooltip
+            key={item.key}
+            title={isCollapsed ? item.label : ''}
+            placement="right"
+          >
+            <div
+              onClick={() => {
+                navigate(item.path);
+                if (setMobileDrawerOpen) setMobileDrawerOpen(false);
+              }}
+              className={`
+                flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200
+                ${location.pathname === item.path ||
+                  (item.path !== '/' && location.pathname.startsWith(item.path))
+                  ? 'border-l-[3px] border-l-primary bg-[var(--sidebar-item-active)] text-primary'
+                  : 'border-l-[3px] border-l-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'
+                }
+              `}
+              style={{
+                paddingLeft: 'calc(var(--sidebar-item-padding-x) - 3px)',
+                paddingRight: 'var(--sidebar-item-padding-x)',
+                paddingTop: 'var(--sidebar-item-padding-y)',
+                paddingBottom: 'var(--sidebar-item-padding-y)',
+              }}
+            >
+              <span className="flex items-center justify-center w-5">
+                {item.icon}
+              </span>
+              {!isCollapsed && (
+                <span className="truncate text-sm font-medium">
+                  {item.label}
+                </span>
+              )}
+            </div>
+          </Tooltip>
+        ))}
+      </div>
+
+      {/* Divider between main nav and chat area */}
+      <div className="border-t border-[var(--glass-border)] mt-2 pt-2" />
+
       {/* New Chat */}
       <div className="px-4 mb-4">
         <Tooltip
@@ -277,48 +348,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
         </div>
       )}
-
-      {/* AI Agents */}
-      <div className="px-2 mb-4 space-y-1">
-        {!isCollapsed && (
-          <div className="px-3 py-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
-            {t('menu.agents', 'AI 助手')}
-          </div>
-        )}
-        {agentNavItems.map((item) => (
-          <Tooltip
-            key={item.key}
-            title={isCollapsed ? item.label : ''}
-            placement="right"
-          >
-            <div
-              onClick={() => {
-                navigate(item.path);
-                if (setMobileDrawerOpen) setMobileDrawerOpen(false);
-              }}
-              className={`
-                group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200
-                ${location.pathname.startsWith(item.path) ? 'text-primary-500 bg-[var(--sidebar-item-active)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'}
-              `}
-              style={{
-                paddingLeft: 'var(--sidebar-item-padding-x)',
-                paddingRight: 'var(--sidebar-item-padding-x)',
-                paddingTop: 'var(--sidebar-item-padding-y)',
-                paddingBottom: 'var(--sidebar-item-padding-y)',
-              }}
-            >
-              <span className="flex items-center justify-center w-5">
-                {item.icon}
-              </span>
-              {!isCollapsed && (
-                <span className="truncate text-sm font-medium">
-                  {item.label}
-                </span>
-              )}
-            </div>
-          </Tooltip>
-        ))}
-      </div>
 
       {/* Chat List */}
       <div className="flex-1 overflow-y-auto px-2 space-y-1 scrollbar-hide">

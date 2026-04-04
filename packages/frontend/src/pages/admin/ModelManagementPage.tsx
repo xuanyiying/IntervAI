@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import '@/styles/common.css';
 import {
-  Table,
+  ApiOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+} from '@ant-design/icons';
+import {
   Button,
-  Space,
-  message,
-  Modal,
   Form,
   Input,
-  Select,
-  Tag,
-  Typography,
-  Tooltip,
-  Popconfirm,
-  Switch,
   InputNumber,
+  message,
+  Modal,
+  Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
 } from 'antd';
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ReloadOutlined,
-  ApiOutlined,
-} from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
+  CreateModelConfigDto,
   modelAdminService,
   ModelConfig,
-  CreateModelConfigDto,
-} from '../services/model-admin-service';
-import { useTranslation } from 'react-i18next';
-import './common.css';
+} from '../../services/model-admin-service';
 import './admin.css';
 
 const { Title, Text } = Typography;
@@ -76,7 +76,7 @@ const ModelManagementPage: React.FC = () => {
     setEditingModel(model);
     form.setFieldsValue({
       ...model,
-      apiKey: '', // Don't show masked API key
+      apiKey: '',
     });
     setModalVisible(true);
   };
@@ -124,7 +124,6 @@ const ModelManagementPage: React.FC = () => {
 
   const handleSubmit = async (values: CreateModelConfigDto) => {
     try {
-      // If editing and API key is empty, remove it from update
       const submitData =
         editingModel && !values.apiKey
           ? { ...values, apiKey: undefined }

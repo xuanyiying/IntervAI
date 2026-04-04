@@ -1,5 +1,5 @@
 import React from 'react';
-import ResumeBuilder from '../components/ResumeBuilder';
+import ResumeBuilder from '../../components/ResumeBuilder';
 
 const ResumeBuilderPage: React.FC = () => {
   return (
