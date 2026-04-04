@@ -153,12 +153,18 @@ export class InterviewSessionService {
     sessionId: string,
     content: string,
     audioUrl?: string
-  ): Promise<{ nextQuestion: InterviewQuestion | null; isCompleted: boolean }> {
+  ): Promise<{ nextQuestion: InterviewQuestion | null; isCompleted: boolean; evaluation?: { score: number; feedback: string } }> {
     // Verify session exists and belongs to user
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
       include: {
         messages: true,
+        optimization: {
+          include: {
+            resume: true,
+            job: true,
+          },
+        },
       },
     });
 
@@ -186,26 +192,94 @@ export class InterviewSessionService {
       },
     });
 
+    // Real-time answer evaluation using answer-evaluator skill
+    let evaluationScore: number | null = null;
+    let evaluationFeedback: string | null = null;
+
+    try {
+      const resumeData = session.optimization.resume
+        ?.parsedData as unknown as ParsedResumeData | undefined;
+      const jobData = session.optimization.job
+        ?.parsedRequirements as unknown as ParsedJobData | undefined;
+
+      const questions = await this.prisma.interviewQuestion.findMany({
+        where: { optimizationId: session.optimizationId },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const answerCount =
+        session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
+      const questionText = questions[answerCount - 1]?.question || 'Unknown question';
+
+      if (resumeData && jobData && questionText !== 'Unknown question') {
+        const evalResult = await this.aiService.executeSkill(
+          'answer-evaluator',
+          {
+            question: questionText,
+            answer: content,
+            resumeData: JSON.stringify({
+              skills: resumeData?.skills || [],
+              experience: resumeData?.experience || [],
+              projects: resumeData?.projects || [],
+            }),
+            jobDescription: JSON.stringify({
+              title: jobData?.title || '',
+              company: jobData?.company || '',
+              requiredSkills: jobData?.requiredSkills || [],
+              responsibilities: jobData?.responsibilities || [],
+            }),
+            language: session.language === 'ZH' ? 'zh' : 'en',
+          },
+          ''
+        );
+
+        if (evalResult.success && evalResult.data) {
+          const evalData = evalResult.data as any;
+          evaluationScore = evalData.overallScore ?? evalData.score ?? null;
+          evaluationFeedback = evalData.feedback ?? evalData.detailedFeedback
+            ?? JSON.stringify(evalData);
+
+          await this.prisma.interviewMessage.create({
+            data: {
+              sessionId,
+              role: MessageRole.ASSISTANT,
+              content: `📊 **评分**: ${evaluationScore}/100\n\n${evaluationFeedback}`,
+            },
+          });
+        }
+      }
+    } catch (evalError) {
+      this.logger.warn(
+        `Real-time evaluation failed for session ${sessionId}, continuing without score:`,
+        evalError
+      );
+    }
+
     // Determine next question
     const questions = await this.prisma.interviewQuestion.findMany({
       where: { optimizationId: session.optimizationId },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Count answers (user messages)
     const answerCount =
-      session.messages.filter((m) => m.role === MessageRole.USER).length + 1; // +1 for the one just added? No, session.messages is stale.
-    // Actually session.messages doesn't include the one we just added.
-    // So current count is session.messages (user) + 1.
+      session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
 
     if (answerCount < questions.length) {
-      return { nextQuestion: questions[answerCount], isCompleted: false };
+      return {
+        nextQuestion: questions[answerCount],
+        isCompleted: false,
+        ...(evaluationScore !== null
+          ? { evaluation: { score: evaluationScore, feedback: evaluationFeedback! } }
+          : {}),
+      };
     } else {
-      // Completed all questions
-      // Mark session as completed? Or wait for explicit end?
-      // Controller says "isCompleted".
-      // Maybe we don't close it yet, but return null.
-      return { nextQuestion: null, isCompleted: true };
+      return {
+        nextQuestion: null,
+        isCompleted: true,
+        ...(evaluationScore !== null
+          ? { evaluation: { score: evaluationScore, feedback: evaluationFeedback! } }
+          : {}),
+      };
     }
   }
 
@@ -679,5 +753,96 @@ export class InterviewSessionService {
     } catch (error) {
       this.logger.error('Error generating feedback:', error);
     }
+  }
+
+  async *streamAnswer(
+    userId: string,
+    sessionId: string,
+    question: string
+  ): AsyncGenerator<string> {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        optimization: {
+          include: {
+            resume: true,
+            job: true,
+          },
+        },
+        messages: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${sessionId} not found`);
+    }
+
+    if (session.userId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to access this session'
+      );
+    }
+
+    if (session.status !== InterviewStatus.IN_PROGRESS) {
+      throw new ForbiddenException('Session is not in progress');
+    }
+
+    const resumeData = session.optimization?.resume?.parsedData as unknown as ParsedResumeData;
+    const jobData = session.optimization?.job?.parsedRequirements as unknown as ParsedJobData;
+
+    const resumeText = JSON.stringify({
+      name: resumeData?.personalInfo?.name || 'Candidate',
+      skills: resumeData?.skills || [],
+      experience: resumeData?.experience || [],
+      projects: resumeData?.projects || [],
+    });
+
+    const jobDescription = JSON.stringify({
+      title: jobData?.title || '',
+      company: jobData?.company || '',
+      requiredSkills: jobData?.requiredSkills || [],
+      responsibilities: jobData?.responsibilities || [],
+    });
+
+    const isZh = session.language === 'ZH';
+
+    let fullAnswer = '';
+
+    const { Models } = await import('@/core/ai/models');
+    const systemPrompt = isZh
+      ? '你是一位经验丰富的面试辅导专家。根据候选人的简历和目标职位，为面试问题提供专业、有深度的参考答案。'
+      : 'You are an experienced interview coach. Based on the candidate\'s resume and target position, provide professional and insightful reference answers to interview questions.';
+
+    const userPrompt = isZh
+      ? `简历信息：${resumeText}\n\n目标职位：${jobDescription}\n\n面试官问题：${question}\n\n请提供参考答案：`
+      : `Resume: ${resumeText}\n\nTarget Position: ${jobDescription}\n\nInterviewer Question: ${question}\n\nPlease provide a reference answer:`;
+
+    for await (const chunk of this.aiService.stream(
+      Models.Chat,
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      { userId }
+    )) {
+      fullAnswer += chunk;
+      yield chunk;
+    }
+
+    await this.prisma.interviewMessage.create({
+      data: {
+        sessionId,
+        role: MessageRole.USER,
+        content: question,
+      },
+    });
+
+    await this.prisma.interviewMessage.create({
+      data: {
+        sessionId,
+        role: MessageRole.ASSISTANT,
+        content: fullAnswer,
+      },
+    });
   }
 }

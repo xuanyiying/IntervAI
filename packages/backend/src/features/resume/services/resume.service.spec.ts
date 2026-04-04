@@ -9,8 +9,8 @@ import { ResumeService } from './resume.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { AIEngine } from '../../../core/ai/ai.engine';
 import { StorageService } from '../../../core/storage/storage.service';
-import { AIQueueService } from '../../ai/queue/ai-queue.service';
 import * as fs from 'fs';
+import { AIQueueService } from '@/core/ai/queue/ai-queue.service';
 
 jest.mock('fs');
 

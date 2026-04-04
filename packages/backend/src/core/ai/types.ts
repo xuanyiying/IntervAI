@@ -20,6 +20,7 @@ export interface AIResult {
     input: number;
     output: number;
     total?: number;
+    reasoningTokens?: number;
   };
   model?: string;
   provider?: string;

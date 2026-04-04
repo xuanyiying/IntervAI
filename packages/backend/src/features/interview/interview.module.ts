@@ -15,6 +15,7 @@ import { InterviewQuestionService } from './services/interview-question.service'
 import { InterviewSessionService } from './services/interview-session.service';
 import { InterviewerPersonaService } from './services/interviewer-persona.service';
 import { InterviewGateway } from './interview.gateway';
+import { RealtimeInterviewGateway } from './realtime-interview.gateway';
 import { QuestionGeneratorService } from './services/question-generator.service';
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
@@ -42,6 +43,7 @@ import { AuthModule } from '@/core/auth/auth.module';
     InterviewSessionService,
     InterviewerPersonaService,
     InterviewGateway,
+    RealtimeInterviewGateway,
     QuestionGeneratorService,
     AnswerEvaluationService,
     EvaluationProcessor,

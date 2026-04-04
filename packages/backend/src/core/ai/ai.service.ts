@@ -60,6 +60,9 @@ export class AIService implements OnModuleInit {
       siliconcloud: {
         apiKey: this.configService.get('SILICONCLOUD_API_KEY', ''),
       },
+      openrouter: {
+        apiKey: this.configService.get('OPENROUTER_API_KEY', ''),
+      },
     });
 
     const providers = this.provider.getProviderNames();
@@ -111,6 +114,7 @@ export class AIService implements OnModuleInit {
         usage: {
           input: response.usage.prompt_tokens,
           output: response.usage.completion_tokens,
+          reasoningTokens: response.usage.reasoning_tokens,
         },
         model: modelName,
         provider,

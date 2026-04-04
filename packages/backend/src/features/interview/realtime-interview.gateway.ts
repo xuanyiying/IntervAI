@@ -1,21 +1,21 @@
-import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
-import { Logger, Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { RealtimeInterviewService } from './services/realtime-interview.service';
-import { AlibabaVoiceService } from '@/features/voice/voice.service';
-import { StorageService } from '@/core/storage/storage.service';
 import { JwtPayload } from '@/core/auth/interfaces/jwt-payload.interface';
 import { FileType } from '@/core/storage/interfaces/storage.interface';
+import { StorageService } from '@/core/storage/storage.service';
+import { AlibabaVoiceService } from '@/features/voice/voice.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import {
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+import { Server, Socket } from 'socket.io';
+import { InterviewSessionService } from './services/interview-session.service';
 
 @WebSocketGateway({
   namespace: '/realtime-interview',
@@ -27,23 +27,23 @@ import { FileType } from '@/core/storage/interfaces/storage.interface';
 })
 @Injectable()
 export class RealtimeInterviewGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+  implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
   private readonly logger = new Logger(RealtimeInterviewGateway.name);
   private authenticatedClients = new Map<string, string>();
   private activeSessions = new Map<string, string>();
+  private sessionVoices = new Map<string, string>();
   private audioBuffers = new Map<string, Buffer[]>();
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
-    private readonly realtimeInterviewService: RealtimeInterviewService,
+    private readonly interviewSessionService: InterviewSessionService,
     private readonly voiceService: AlibabaVoiceService,
     private readonly storageService: StorageService
-  ) {}
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -69,26 +69,41 @@ export class RealtimeInterviewGateway
   }
 
   handleDisconnect(client: Socket) {
+    const userId = this.authenticatedClients.get(client.id);
+    if (userId) {
+      this.logger.debug(`User ${userId} disconnected: ${client.id}`);
+    }
     this.authenticatedClients.delete(client.id);
-    this.activeSessions.delete(client.id);
-    this.logger.debug(`Client disconnected: ${client.id}`);
+
+    const sessionId = this.activeSessions.get(client.id);
+    if (sessionId) {
+      this.activeSessions.delete(client.id);
+      this.audioBuffers.delete(sessionId);
+    }
   }
 
   @SubscribeMessage('join_session')
   async handleJoinSession(
-    @MessageBody() data: { sessionId: string },
+    @MessageBody() data: { sessionId: string; voiceId?: string },
     @ConnectedSocket() client: Socket
   ) {
     const userId = this.authenticatedClients.get(client.id);
     if (!userId) return;
 
-    const session = await this.realtimeInterviewService.getSession(userId, data.sessionId);
+    const session = await this.interviewSessionService.getSession(userId, data.sessionId);
     if (!session) {
       client.emit('error', { message: 'Unauthorized or session not found' });
       return;
     }
 
     this.activeSessions.set(client.id, data.sessionId);
+
+    if (data.voiceId) {
+      this.sessionVoices.set(data.sessionId, data.voiceId);
+    } else if (session.voiceId) {
+      this.sessionVoices.set(data.sessionId, session.voiceId);
+    }
+
     client.join(data.sessionId);
     client.emit('joined_session', { sessionId: data.sessionId });
   }
@@ -153,8 +168,10 @@ export class RealtimeInterviewGateway
 
       client.emit('generating_answer');
 
+      const voiceId = this.getSessionVoiceId(data.sessionId);
+
       let fullAnswer = '';
-      for await (const chunk of this.realtimeInterviewService.streamAnswer(
+      for await (const chunk of this.interviewSessionService.streamAnswer(
         userId,
         data.sessionId,
         transcription
@@ -167,12 +184,71 @@ export class RealtimeInterviewGateway
 
       const audioBuffer = await this.voiceService.synthesizeSpeech(
         fullAnswer,
-        'default'
+        voiceId
       );
       client.emit('answer_audio', { audio: audioBuffer });
     } catch (error) {
       this.logger.error('Failed to process audio:', error);
       client.emit('error', { message: 'Failed to process voice' });
+    }
+  }
+
+  @SubscribeMessage('detect_question')
+  async handleDetectQuestion(
+    @MessageBody() data: { sessionId: string; audioBuffer: any },
+    @ConnectedSocket() client: Socket
+  ) {
+    const userId = this.authenticatedClients.get(client.id);
+    if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
+      return;
+
+    try {
+      const buffer = Buffer.isBuffer(data.audioBuffer)
+        ? data.audioBuffer
+        : Buffer.from(data.audioBuffer);
+
+      const transcription = await this.voiceService.transcribeAudio(buffer);
+
+      const questionPatterns = [
+        /[？?]$/,
+        /^(what|how|why|when|where|who|which|can|could|would|should|do|did|does|is|are|was|were|have|has|had|will|tell|describe|explain|share|give)\s/i,
+        /^(请|能否|怎么|如何|为什么|什么|哪个|谁|哪里|什么时候|描述|解释|分享|谈谈|说说)/i,
+        /\b(question|ask|wonder|curious)\b/i,
+      ];
+
+      const isQuestion = questionPatterns.some((pattern) => pattern.test(transcription.trim()));
+
+      client.emit('question_detected', {
+        text: transcription,
+        isQuestion,
+      });
+
+      if (isQuestion && transcription.trim().length > 3) {
+        client.emit('generating_answer');
+
+        const voiceId = this.getSessionVoiceId(data.sessionId);
+
+        let fullAnswer = '';
+        for await (const chunk of this.interviewSessionService.streamAnswer(
+          userId,
+          data.sessionId,
+          transcription
+        )) {
+          fullAnswer += chunk;
+          client.emit('answer_chunk', { chunk });
+        }
+
+        client.emit('answer_complete', { answer: fullAnswer });
+
+        const audioBuffer = await this.voiceService.synthesizeSpeech(
+          fullAnswer,
+          voiceId
+        );
+        client.emit('answer_audio', { audio: audioBuffer });
+      }
+    } catch (error) {
+      this.logger.error('Failed to detect question:', error);
+      client.emit('error', { message: 'Failed to detect question' });
     }
   }
 
@@ -188,8 +264,10 @@ export class RealtimeInterviewGateway
     try {
       client.emit('generating_answer');
 
+      const voiceId = this.getSessionVoiceId(data.sessionId);
+
       let fullAnswer = '';
-      for await (const chunk of this.realtimeInterviewService.streamAnswer(
+      for await (const chunk of this.interviewSessionService.streamAnswer(
         userId,
         data.sessionId,
         data.question
@@ -202,7 +280,7 @@ export class RealtimeInterviewGateway
 
       const audioBuffer = await this.voiceService.synthesizeSpeech(
         fullAnswer,
-        'default'
+        voiceId
       );
       client.emit('answer_audio', { audio: audioBuffer });
     } catch (error) {
@@ -214,6 +292,10 @@ export class RealtimeInterviewGateway
   @SubscribeMessage('ping')
   handlePing(@ConnectedSocket() client: Socket) {
     client.emit('pong');
+  }
+
+  private getSessionVoiceId(sessionId: string): string {
+    return this.sessionVoices.get(sessionId) || 'default';
   }
 
   private extractToken(client: Socket): string | null {

@@ -4,26 +4,26 @@
  * Combines functionality from optimization and resume-optimizer modules
  */
 
+import { AIService, Models } from '@/core/ai';
+import { QuotaService } from '@/core/quota/quota.service';
+import { PrismaService } from '@/shared/database/prisma.service';
 import {
+  MatchScore,
+  OptimizationOptions,
+  ParsedJobData,
+  ParsedResumeData,
+  StreamChunk,
+  Suggestion,
+  SuggestionStatus,
+  SuggestionType,
+} from '@/types';
+import {
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { AIService, Models } from '@/core/ai';
-import { QuotaService } from '@/core/quota/quota.service';
 import { Optimization, OptimizationStatus } from '@prisma/client';
-import {
-  ParsedResumeData,
-  ParsedJobData,
-  MatchScore,
-  Suggestion,
-  SuggestionType,
-  SuggestionStatus,
-  StreamChunk,
-  OptimizationOptions,
-} from '@/types';
 
 @Injectable()
 export class ResumeOptimizerService {
@@ -33,7 +33,7 @@ export class ResumeOptimizerService {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly quotaService: QuotaService
-  ) {}
+  ) { }
 
   /**
    * Create a new optimization record
@@ -198,8 +198,7 @@ export class ResumeOptimizerService {
           return; // Success, exit the retry loop
         } catch (error) {
           this.logger.error(
-            `Resume optimization attempt ${attempt} failed for user ${userId}: ${
-              error instanceof Error ? error.message : String(error)
+            `Resume optimization attempt ${attempt} failed for user ${userId}: ${error instanceof Error ? error.message : String(error)
             }`
           );
           if (attempt === maxRetries) {
@@ -209,8 +208,7 @@ export class ResumeOptimizerService {
       }
     } catch (error) {
       this.logger.error(
-        `Resume optimization failed for user ${userId}: ${
-          error instanceof Error ? error.message : String(error)
+        `Resume optimization failed for user ${userId}: ${error instanceof Error ? error.message : String(error)
         }`
       );
 
@@ -281,9 +279,9 @@ export class ResumeOptimizerService {
     // Calculate overall score as weighted average
     const overall = Math.round(
       skillMatch * 0.4 +
-        experienceMatch * 0.3 +
-        educationMatch * 0.15 +
-        keywordCoverage * 0.15
+      experienceMatch * 0.3 +
+      educationMatch * 0.15 +
+      keywordCoverage * 0.15
     );
 
     // Ensure overall score is within 0-100 range
@@ -347,35 +345,43 @@ export class ResumeOptimizerService {
       );
       suggestions.push(...keywordSuggestions);
 
-      // Try to get AI-enhanced suggestions if available
-      // Note: This feature is not yet implemented
-      // try {
-      //   const aiSuggestions = await this.aiEngineService.generateOptimizationSuggestions?.(
-      //     resumeData,
-      //     JSON.stringify(jobData)
-      //   );
-      //   if (aiSuggestions && Array.isArray(aiSuggestions)) {
-      //     // Convert AI suggestions to our format
-      //     const convertedAISuggestions = aiSuggestions.map(
-      //       (s: any, index: number) => ({
-      //         id: `ai-${index}`,
-      //         type: s.type || SuggestionType.CONTENT,
-      //         section: s.section || 'general',
-      //         itemIndex: s.itemIndex,
-      //         original: s.original || '',
-      //         optimized: s.optimized || '',
-      //         reason: s.reason || '',
-      //         status: SuggestionStatus.PENDING,
-      //       })
-      //     );
-      //     suggestions.push(...convertedAISuggestions);
-      //   }
-      // } catch (aiError) {
-      //   this.logger.warn(
-      //     'AI suggestion generation failed, using rule-based suggestions only',
-      //     aiError
-      //   );
-      // }
+      // AI-enhanced suggestions using resume-writer skill
+      try {
+        const aiResult = await this.aiService.executeSkill(
+          'resume-writer',
+          {
+            resumeData: JSON.stringify(resumeData),
+            targetJob: JSON.stringify(jobData),
+            optimizationFocus: 'all',
+            style: 'professional',
+          },
+          ''
+        );
+
+        if (aiResult.success && aiResult.data) {
+          const aiSuggestions = this.parseAISuggestions(aiResult.data as any);
+          // Merge AI suggestions with rule-based suggestions, avoiding duplicates
+          for (const aiSuggestion of aiSuggestions) {
+            const isDuplicate = suggestions.some(
+              (s) =>
+                s.section === aiSuggestion.section &&
+                s.original === aiSuggestion.original
+            );
+            if (!isDuplicate) {
+              suggestions.push(aiSuggestion);
+            }
+          }
+          this.logger.debug(
+            `Added ${aiSuggestions.length} AI-enhanced suggestions`
+          );
+        }
+      } catch (aiError) {
+        this.logger.warn(
+          'AI suggestion generation failed, using rule-based suggestions only',
+          aiError
+        );
+        // Graceful degradation: continue with rule-based suggestions only
+      }
 
       // Ensure we have at least 10 suggestions
       if (suggestions.length < 10) {
@@ -1272,5 +1278,65 @@ ${content}
         }
       }
     }
+  }
+
+  /**
+   * Parse AI suggestions from resume-writer skill output
+   */
+  private parseAISuggestions(data: any): Suggestion[] {
+    const suggestions: Suggestion[] = [];
+
+    try {
+      let parsedData = data;
+
+      if (typeof data === 'string') {
+        try {
+          parsedData = JSON.parse(data);
+        } catch {
+          return suggestions;
+        }
+      }
+
+      const optimizations = parsedData?.optimizations || parsedData?.suggestions || [];
+
+      if (Array.isArray(optimizations)) {
+        for (let i = 0; i < optimizations.length; i++) {
+          const opt = optimizations[i];
+          if (opt && typeof opt === 'object') {
+            suggestions.push({
+              id: `ai-${Date.now()}-${i}`,
+              type: this.mapSuggestionType(opt.type),
+              section: opt.section || 'general',
+              itemIndex: opt.itemIndex,
+              original: opt.before || opt.original || '',
+              optimized: opt.after || opt.optimized || '',
+              reason: opt.reason || 'AI-generated optimization suggestion',
+              status: SuggestionStatus.PENDING,
+            });
+          }
+        }
+      }
+
+      return suggestions;
+    } catch (error) {
+      this.logger.error('Error parsing AI suggestions:', error);
+      return suggestions;
+    }
+  }
+
+  /**
+   * Map AI suggestion type to SuggestionType enum
+   */
+  private mapSuggestionType(type: string | undefined): SuggestionType {
+    if (!type) return SuggestionType.CONTENT;
+
+    const typeMap: Record<string, SuggestionType> = {
+      content: SuggestionType.CONTENT,
+      keyword: SuggestionType.KEYWORD,
+      structure: SuggestionType.STRUCTURE,
+      quantification: SuggestionType.QUANTIFICATION,
+    };
+
+    return typeMap[type.toLowerCase()] || SuggestionType.CONTENT;
   }
 }
