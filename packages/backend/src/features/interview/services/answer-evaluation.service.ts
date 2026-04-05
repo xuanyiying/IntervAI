@@ -59,13 +59,17 @@ export class AnswerEvaluationService {
 
       // Get language from session (default to EN)
       const language = session.language || 'EN';
-      const feedbackPromptTemplate = this.promptService.getInterviewFeedbackPrompt(language);
+      const feedbackPromptTemplate =
+        this.promptService.getInterviewFeedbackPrompt(language);
 
       const prompt = feedbackPromptTemplate
         .replace('{{jobTitle}}', jobTitle)
         .replace('{{company}}', company)
         .replace('{{requirements}}', requirements.substring(0, 500))
-        .replace('{{candidateName}}', resumeData.personalInfo.name || 'Candidate')
+        .replace(
+          '{{candidateName}}',
+          resumeData.personalInfo.name || 'Candidate'
+        )
         .replace('{{transcript}}', transcript);
 
       const result = await this.aiEngine.generate(prompt, {

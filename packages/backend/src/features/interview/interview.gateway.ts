@@ -20,7 +20,7 @@ import { FileType } from '@/core/storage/interfaces/storage.interface';
 @WebSocketGateway({
   namespace: '/interview',
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST'],
     credentials: true,
   },

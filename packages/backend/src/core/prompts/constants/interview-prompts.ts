@@ -14,7 +14,8 @@ Keep your responses concise (under 100 words) to maintain a natural conversation
       jobTitle: string;
       company: string;
       requirements: string;
-    }) => `
+    }) =>
+      `
 Candidate Name: ${data.candidateName}
 Job Title: ${data.jobTitle}
 Company: ${data.company}
@@ -22,8 +23,10 @@ Job Requirements: ${data.requirements}
 `.trim(),
     firstQuestion: (jobTitle: string) =>
       `Thank you for joining us today. Let's start with a brief introduction. Can you tell me about yourself and how your experience relates to the ${jobTitle} role?`,
-    followUpEncourage: 'Thank you for sharing that. Could you tell me more about how you handled that situation?',
-    wrapUp: 'Thank you for your time today. Do you have any questions for me about the role or our company?',
+    followUpEncourage:
+      'Thank you for sharing that. Could you tell me more about how you handled that situation?',
+    wrapUp:
+      'Thank you for your time today. Do you have any questions for me about the role or our company?',
   },
   ZH: {
     system: `你是一位经验丰富的面试官，正在进行一场工作面试。
@@ -35,7 +38,8 @@ Job Requirements: ${data.requirements}
       jobTitle: string;
       company: string;
       requirements: string;
-    }) => `
+    }) =>
+      `
 候选人姓名: ${data.candidateName}
 应聘职位: ${data.jobTitle}
 公司名称: ${data.company}
@@ -43,7 +47,8 @@ Job Requirements: ${data.requirements}
 `.trim(),
     firstQuestion: (jobTitle: string) =>
       `感谢你今天来参加面试。我们先从自我介绍开始吧。请介绍一下你自己，以及你的经验如何与${jobTitle}这个职位相关？`,
-    followUpEncourage: '谢谢你分享了这些。能告诉我更多关于你是如何处理这种情况的吗？',
+    followUpEncourage:
+      '谢谢你分享了这些。能告诉我更多关于你是如何处理这种情况的吗？',
     wrapUp: '感谢你今天的时间。你有什么关于这个职位或我们公司的问题想问我吗？',
   },
 } as const;

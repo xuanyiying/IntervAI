@@ -155,10 +155,15 @@ const ChatPage: React.FC = () => {
         }
       }
     },
-    onError: (err) => message.error(err.content || t('chat.message_error', '处理消息时发生错误')),
+    onError: (err) =>
+      message.error(
+        err.content || t('chat.message_error', '处理消息时发生错误')
+      ),
     onSystem: (sys) => {
       if (sys.metadata?.action === 'resume_ready') {
-        message.success(t('chat.resume_ready', '简历已准备就绪，可以开始优化！'));
+        message.success(
+          t('chat.resume_ready', '简历已准备就绪，可以开始优化！')
+        );
       }
       if (sys.metadata?.stage) {
         const { resumeId, stage, progress, error } = sys.metadata;
@@ -269,11 +274,10 @@ const ChatPage: React.FC = () => {
       const aiMsg = {
         id: (Date.now() + 1).toString(),
         role: MessageRole.ASSISTANT,
-        content:
-          t(
-            'chat.guest_welcome',
-            '我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！'
-          ),
+        content: t(
+          'chat.guest_welcome',
+          '我是 AI Resume 助手。作为一个访客，我只能回答基础问题。请登录以体验完整功能，包括简历优化、面试模拟等！'
+        ),
         createdAt: new Date(),
       };
       setGuestMessages((prev) => [...prev, aiMsg]);
@@ -474,7 +478,10 @@ const ChatPage: React.FC = () => {
                 onRetryAttachment: (key) => {
                   const file = failedFiles.get(key);
                   if (file) handleResumeUpload(file, key);
-                  else message.info(t('chat.file_not_found', '无法获取原始文件，请重新上传'));
+                  else
+                    message.info(
+                      t('chat.file_not_found', '无法获取原始文件，请重新上传')
+                    );
                 },
                 onOpenComparison: () => setComparisonVisible(true),
                 onDownloadOptimized: handleDownloadOptimized,

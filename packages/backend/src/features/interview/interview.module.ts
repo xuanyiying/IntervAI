@@ -49,7 +49,11 @@ import { AuthModule } from '@/core/auth/auth.module';
     EvaluationProcessor,
     InterviewReportService,
   ],
-  controllers: [InterviewController, InterviewerPersonaController, InterviewAssistantController],
+  controllers: [
+    InterviewController,
+    InterviewerPersonaController,
+    InterviewAssistantController,
+  ],
   exports: [InterviewService, InterviewerPersonaService],
 })
 export class InterviewModule {}

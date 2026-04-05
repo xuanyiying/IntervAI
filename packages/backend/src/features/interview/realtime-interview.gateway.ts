@@ -1,5 +1,4 @@
 import { JwtPayload } from '@/core/auth/interfaces/jwt-payload.interface';
-import { FileType } from '@/core/storage/interfaces/storage.interface';
 import { StorageService } from '@/core/storage/storage.service';
 import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
@@ -20,14 +19,15 @@ import { InterviewSessionService } from './services/interview-session.service';
 @WebSocketGateway({
   namespace: '/realtime-interview',
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST'],
     credentials: true,
   },
 })
 @Injectable()
 export class RealtimeInterviewGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -43,7 +43,7 @@ export class RealtimeInterviewGateway
     private readonly interviewSessionService: InterviewSessionService,
     private readonly voiceService: AlibabaVoiceService,
     private readonly storageService: StorageService
-  ) { }
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -61,7 +61,9 @@ export class RealtimeInterviewGateway
       }
 
       this.authenticatedClients.set(client.id, userId);
-      this.logger.debug(`User ${userId} connected for realtime interview: ${client.id}`);
+      this.logger.debug(
+        `User ${userId} connected for realtime interview: ${client.id}`
+      );
     } catch (error) {
       this.logger.error('Connection error:', error);
       client.disconnect();
@@ -90,7 +92,10 @@ export class RealtimeInterviewGateway
     const userId = this.authenticatedClients.get(client.id);
     if (!userId) return;
 
-    const session = await this.interviewSessionService.getSession(userId, data.sessionId);
+    const session = await this.interviewSessionService.getSession(
+      userId,
+      data.sessionId
+    );
     if (!session) {
       client.emit('error', { message: 'Unauthorized or session not found' });
       return;
@@ -154,15 +159,6 @@ export class RealtimeInterviewGateway
 
       this.audioBuffers.delete(data.sessionId);
 
-      const storageFile = await this.storageService.uploadFile({
-        userId,
-        buffer,
-        filename: `realtime-interview-${data.sessionId}-${Date.now()}.webm`,
-        mimetype: 'audio/webm',
-        size: buffer.length,
-        fileType: FileType.AUDIO,
-      } as any);
-
       const transcription = await this.voiceService.transcribeAudio(buffer);
       client.emit('transcription', { text: transcription });
 
@@ -216,7 +212,9 @@ export class RealtimeInterviewGateway
         /\b(question|ask|wonder|curious)\b/i,
       ];
 
-      const isQuestion = questionPatterns.some((pattern) => pattern.test(transcription.trim()));
+      const isQuestion = questionPatterns.some((pattern) =>
+        pattern.test(transcription.trim())
+      );
 
       client.emit('question_detected', {
         text: transcription,

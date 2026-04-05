@@ -100,7 +100,7 @@ export class AIEngine {
   constructor(
     private aiService: AIService,
     private promptService: PromptService
-  ) { }
+  ) {}
 
   /**
    * Extract text content from a file buffer based on file type
@@ -173,12 +173,14 @@ export class AIEngine {
   ): Promise<ParsedResumeData> {
     this.logger.log(`Parsing resume content (language: ${language})`);
 
-    const systemPrompt = this.promptService?.getResumeParsingPrompt(language)
-      ?? `You are a resume parsing expert. Extract structured information from the resume text provided.
+    const systemPrompt =
+      this.promptService?.getResumeParsingPrompt(language) ??
+      `You are a resume parsing expert. Extract structured information from the resume text provided.
 Return valid JSON matching the expected schema with personalInfo, education, experience, skills, projects, certifications, and languages.`;
 
-    const userPrompt = this.promptService?.buildResumeParsingPrompt(content)
-      ?? `Parse this resume and return structured JSON data:\n\n${content}`;
+    const userPrompt =
+      this.promptService?.buildResumeParsingPrompt(content) ??
+      `Parse this resume and return structured JSON data:\n\n${content}`;
 
     try {
       const response = await this.aiService.generate(
@@ -222,12 +224,14 @@ Return valid JSON matching the expected schema with personalInfo, education, exp
   ): Promise<ParsedJobDescription> {
     this.logger.log(`Parsing job description (language: ${language})`);
 
-    const systemPrompt = this.promptService?.getJobParsingPrompt(language)
-      ?? `You are a job description parsing expert. Extract structured information from the job description provided.
+    const systemPrompt =
+      this.promptService?.getJobParsingPrompt(language) ??
+      `You are a job description parsing expert. Extract structured information from the job description provided.
 Return valid JSON with title, company, location, description, requirements, responsibilities, skills, experience, education, salary, and benefits.`;
 
-    const userPrompt = this.promptService?.buildJobParsingPrompt(content)
-      ?? `Parse this job description and return structured JSON data:\n\n${content}`;
+    const userPrompt =
+      this.promptService?.buildJobParsingPrompt(content) ??
+      `Parse this job description and return structured JSON data:\n\n${content}`;
 
     try {
       const response = await this.aiService.generate(
@@ -265,14 +269,21 @@ Return valid JSON with title, company, location, description, requirements, resp
     jobDescription: string,
     language: LanguageInput = 'EN'
   ): Promise<OptimizationSuggestion[]> {
-    this.logger.log(`Generating optimization suggestions (language: ${language})`);
+    this.logger.log(
+      `Generating optimization suggestions (language: ${language})`
+    );
 
-    const systemPrompt = this.promptService?.getOptimizationPrompt(language)
-      ?? `You are a resume optimization expert. Analyze the resume against the job description and provide specific suggestions for improvement.
+    const systemPrompt =
+      this.promptService?.getOptimizationPrompt(language) ??
+      `You are a resume optimization expert. Analyze the resume against the job description and provide specific suggestions for improvement.
 Return an array of JSON objects with type, priority, section, original, suggestion, and reason fields.`;
 
-    const userPrompt = this.promptService?.buildOptimizationPrompt(resumeContent, jobDescription)
-      ?? `Resume:\n${resumeContent}\n\nJob Description:\n${jobDescription}\n\nProvide optimization suggestions as a JSON array.`;
+    const userPrompt =
+      this.promptService?.buildOptimizationPrompt(
+        resumeContent,
+        jobDescription
+      ) ??
+      `Resume:\n${resumeContent}\n\nJob Description:\n${jobDescription}\n\nProvide optimization suggestions as a JSON array.`;
 
     try {
       const response = await this.aiService.generate(
@@ -312,14 +323,22 @@ Return an array of JSON objects with type, priority, section, original, suggesti
     count: number = 10,
     language: LanguageInput = 'EN'
   ): Promise<InterviewQuestion[]> {
-    this.logger.log(`Generating interview questions (language: ${language}, count: ${count})`);
+    this.logger.log(
+      `Generating interview questions (language: ${language}, count: ${count})`
+    );
 
-    const systemPrompt = this.promptService?.getQuestionGeneratorPrompt(language, count)
-      ?? `You are an interview preparation expert. Based on the job description and resume, generate relevant interview questions.
+    const systemPrompt =
+      this.promptService?.getQuestionGeneratorPrompt(language, count) ??
+      `You are an interview preparation expert. Based on the job description and resume, generate relevant interview questions.
 Return an array of JSON objects with category, question, suggestedAnswer, and tips fields.`;
 
-    const userPrompt = this.promptService?.buildInterviewQuestionsPrompt(jobDescription, resumeContent, count)
-      ?? `Job Description:\n${jobDescription}\n\nResume:\n${resumeContent}\n\nGenerate ${count} interview questions as a JSON array.`;
+    const userPrompt =
+      this.promptService?.buildInterviewQuestionsPrompt(
+        jobDescription,
+        resumeContent,
+        count
+      ) ??
+      `Job Description:\n${jobDescription}\n\nResume:\n${resumeContent}\n\nGenerate ${count} interview questions as a JSON array.`;
 
     try {
       const response = await this.aiService.generate(
@@ -398,13 +417,13 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       role: 'system' | 'user' | 'assistant';
       content: string;
     }> = [
-        { role: 'system', content: systemPrompt },
-        ...history.map((h) => ({
-          role: h.role as 'user' | 'assistant',
-          content: h.content,
-        })),
-        { role: 'user', content: message },
-      ];
+      { role: 'system', content: systemPrompt },
+      ...history.map((h) => ({
+        role: h.role as 'user' | 'assistant',
+        content: h.content,
+      })),
+      { role: 'user', content: message },
+    ];
 
     const result = await this.aiService.chat(Models.InterviewChat, messages, {
       temperature: 0.7,
@@ -450,8 +469,9 @@ Be encouraging but thorough. Keep responses concise and focused.`;
   }> {
     this.logger.log(`Analyzing parsed resume data (language: ${language})`);
 
-    const systemPrompt = this.promptService?.getAnalysisPrompt(language)
-      ?? `You are a resume analysis expert. Analyze the parsed resume data and provide:
+    const systemPrompt =
+      this.promptService?.getAnalysisPrompt(language) ??
+      `You are a resume analysis expert. Analyze the parsed resume data and provide:
 1. A list of strengths (what makes this resume strong)
 2. A list of weaknesses (areas that need improvement)
 3. Specific suggestions for improvement
@@ -459,8 +479,9 @@ Be encouraging but thorough. Keep responses concise and focused.`;
 
 Return valid JSON with keys: strengths (string[]), weaknesses (string[]), suggestions (string[]), overallScore (number).`;
 
-    const userPrompt = this.promptService?.buildAnalysisPrompt(parsedData)
-      ?? `Analyze this resume data:\n\n${JSON.stringify(parsedData, null, 2)}`;
+    const userPrompt =
+      this.promptService?.buildAnalysisPrompt(parsedData) ??
+      `Analyze this resume data:\n\n${JSON.stringify(parsedData, null, 2)}`;
 
     try {
       const response = await this.aiService.generate(

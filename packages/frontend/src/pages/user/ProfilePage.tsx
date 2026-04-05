@@ -240,18 +240,18 @@ const ProfilePage: React.FC = () => {
                     usage.quota.optimizationsLimit === -1
                       ? 0
                       : Math.max(
-                        0,
-                        usage.quota.optimizationsLimit -
-                        usage.quota.optimizationsUsed
-                      ),
+                          0,
+                          usage.quota.optimizationsLimit -
+                            usage.quota.optimizationsUsed
+                        ),
                   remaining:
                     usage.quota.optimizationsLimit === -1
                       ? '∞'
                       : Math.max(
-                        0,
-                        usage.quota.optimizationsLimit -
-                        usage.quota.optimizationsUsed
-                      ),
+                          0,
+                          usage.quota.optimizationsLimit -
+                            usage.quota.optimizationsUsed
+                        ),
                   limit:
                     usage.quota.optimizationsLimit === -1
                       ? '∞'

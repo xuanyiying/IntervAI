@@ -1,5 +1,8 @@
 import { AIService } from '@/core/ai';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PitchPerfectService } from './pitch-perfect.service';
 
@@ -36,7 +39,8 @@ describe('PitchPerfectService', () => {
   `;
 
   const mockPitchOutput = {
-    introduction: 'I am an experienced software engineer with expertise in JavaScript and React.',
+    introduction:
+      'I am an experienced software engineer with expertise in JavaScript and React.',
     highlights: [
       '5+ years of experience in web development',
       'Improved application performance by 50%',
@@ -237,7 +241,9 @@ describe('PitchPerfectService', () => {
 
   describe('parsePitchOutput', () => {
     it('should parse valid JSON string', () => {
-      const result = (service as any).parsePitchOutput(JSON.stringify(mockPitchOutput));
+      const result = (service as any).parsePitchOutput(
+        JSON.stringify(mockPitchOutput)
+      );
 
       expect(result.introduction).toBe(mockPitchOutput.introduction);
       expect(result.highlights).toEqual(mockPitchOutput.highlights);
@@ -253,7 +259,9 @@ describe('PitchPerfectService', () => {
       const result = (service as any).parsePitchOutput('invalid json');
 
       expect(result.introduction).toBe('');
-      expect(result.suggestions).toContain('Unable to generate pitch. Please try again.');
+      expect(result.suggestions).toContain(
+        'Unable to generate pitch. Please try again.'
+      );
     });
   });
 

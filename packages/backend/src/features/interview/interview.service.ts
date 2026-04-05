@@ -32,7 +32,8 @@ export class InterviewService {
     // Convert language like 'zh-CN' to 'zh' for our system
     const langCode = (dto.language?.split('-')[0] || 'en') as 'en' | 'zh';
     const language = normalizeLanguage(langCode);
-    const systemPrompt = this.promptService.getPreparationGuidancePrompt(language);
+    const systemPrompt =
+      this.promptService.getPreparationGuidancePrompt(language);
 
     const userPrompt = `Please provide interview preparation guidance based on:
 

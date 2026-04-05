@@ -289,10 +289,11 @@ const Sidebar: React.FC<SidebarProps> = ({
               }}
               className={`
                 flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200
-                ${location.pathname === item.path ||
+                ${
+                  location.pathname === item.path ||
                   (item.path !== '/' && location.pathname.startsWith(item.path))
-                  ? 'border-l-[3px] border-l-primary bg-[var(--sidebar-item-active)] text-primary'
-                  : 'border-l-[3px] border-l-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'
+                    ? 'border-l-[3px] border-l-primary bg-[var(--sidebar-item-active)] text-primary'
+                    : 'border-l-[3px] border-l-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'
                 }
               `}
               style={{

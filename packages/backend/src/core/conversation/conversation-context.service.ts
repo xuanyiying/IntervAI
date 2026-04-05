@@ -141,7 +141,10 @@ Format your response in a clear, structured way.`;
     };
   }
 
-  private buildSystemPrompt(context: ConversationContext, language: LanguageInput = 'EN'): string {
+  private buildSystemPrompt(
+    context: ConversationContext,
+    language: LanguageInput = 'EN'
+  ): string {
     // Use PromptService to get the localized system prompt
     const basePrompt = this.promptService.getResumeOptimizationPrompt(language);
 

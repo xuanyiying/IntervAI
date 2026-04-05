@@ -2,7 +2,7 @@
  * Property-based tests for ResumeOptimizerService
  * Tests streaming functionality with various inputs
  */
-
+// eslint-disable-next-line require-yield
 import { AIService } from '@/core/ai';
 import { QuotaService } from '@/core/quota/quota.service';
 import { PrismaService } from '@/shared/database/prisma.service';
@@ -252,6 +252,7 @@ describe('ResumeOptimizerService Property Tests', () => {
           fc.string({ minLength: 5, maxLength: 100 }),
           async (resumeContent, userId, language, errorMessage) => {
             // Mock AI engine to throw error
+            // eslint-disable-next-line require-yield
             aiService.stream.mockImplementation(async function* () {
               throw new Error(errorMessage);
             });
