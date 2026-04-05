@@ -616,7 +616,10 @@ export class ChatIntentService implements OnModuleInit {
         ? `基于用户简历：${resume.content.substring(0, 1000)}...\n\n用户问题：${message}`
         : `用户问题：${message}`;
 
-      const systemPrompt = this.promptService.getChatIntentPrompt('careerAdvice', language);
+      const systemPrompt = this.promptService.getChatIntentPrompt(
+        'careerAdvice',
+        language
+      );
 
       const response = await this.aiService.chat(
         Models.Chat,
@@ -769,7 +772,10 @@ export class ChatIntentService implements OnModuleInit {
     language: LanguageInput = 'ZH'
   ): Promise<ChatResponse> {
     try {
-      const systemPrompt = this.promptService.getChatIntentPrompt('generalChat', language);
+      const systemPrompt = this.promptService.getChatIntentPrompt(
+        'generalChat',
+        language
+      );
 
       const response = await this.aiService.chat(
         Models.Chat,

@@ -8,7 +8,17 @@ import {
   SoundOutlined,
   WifiOutlined,
 } from '@ant-design/icons';
-import { Badge, Button, Card, message, Space, Switch, Tag, Tooltip, Typography } from 'antd';
+import {
+  Badge,
+  Button,
+  Card,
+  message,
+  Space,
+  Switch,
+  Tag,
+  Tooltip,
+  Typography,
+} from 'antd';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useInterviewSocket } from '../hooks/useInterviewSocket';
@@ -185,7 +195,8 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   }, [isCalling]);
 
   const checkSilence = useCallback(() => {
-    if (!analyserRef.current || !autoDetectMode || status !== 'listening') return;
+    if (!analyserRef.current || !autoDetectMode || status !== 'listening')
+      return;
 
     const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
     analyserRef.current.getByteFrequencyData(dataArray);
@@ -333,11 +344,14 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
           if (autoDetectMode) {
             requestAnimationFrame(checkSilence);
           } else {
-            const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+            const dataArray = new Uint8Array(
+              analyserRef.current.frequencyBinCount
+            );
             const updateVolume = () => {
               if (!analyserRef.current) return;
               analyserRef.current.getByteFrequencyData(dataArray);
-              const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+              const average =
+                dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
               setUserVolume(average);
               if (isCalling) requestAnimationFrame(updateVolume);
             };
@@ -458,14 +472,18 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         aiAnalyser.connect(aiCtx.destination);
       } catch (e) {
         useAnalyser = false;
-        console.warn('createMediaElementSource not supported, using direct playback:', e);
+        console.warn(
+          'createMediaElementSource not supported, using direct playback:',
+          e
+        );
       }
 
       if (useAnalyser && aiAnalyser) {
         const dataArray = new Uint8Array(aiAnalyser.frequencyBinCount);
         const updateAiVolume = () => {
           aiAnalyser!.getByteFrequencyData(dataArray);
-          const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+          const average =
+            dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
           setAiVolume(average);
           if (!audio.paused) requestAnimationFrame(updateAiVolume);
         };

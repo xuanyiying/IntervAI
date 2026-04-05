@@ -26,16 +26,18 @@ export interface RefinePitchOutput {
 export class PitchPerfectService {
   private readonly logger = new Logger(PitchPerfectService.name);
 
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   async generatePitch(
     dto: GeneratePitchDto,
-    userId: string,
+    userId: string
   ): Promise<PitchPerfectOutput> {
     const { resumeData, jobDescription, style, duration } = dto;
 
     if (!resumeData || !jobDescription) {
-      throw new BadRequestException('Resume data and job description are required');
+      throw new BadRequestException(
+        'Resume data and job description are required'
+      );
     }
 
     try {
@@ -47,13 +49,16 @@ export class PitchPerfectService {
           style: style || 'technical',
           duration: duration || 30,
         },
-        userId,
+        userId
       );
 
       if (!result.success || !result.data) {
-        this.logger.error('Pitch-perfect skill execution failed:', result.error);
+        this.logger.error(
+          'Pitch-perfect skill execution failed:',
+          result.error
+        );
         throw new InternalServerErrorException(
-          result.error || 'Failed to generate pitch',
+          result.error || 'Failed to generate pitch'
         );
       }
 
@@ -61,7 +66,10 @@ export class PitchPerfectService {
       return output;
     } catch (error) {
       this.logger.error('Error generating pitch:', error);
-      if (error instanceof BadRequestException || error instanceof InternalServerErrorException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof InternalServerErrorException
+      ) {
         throw error;
       }
       throw new InternalServerErrorException('Failed to generate pitch');
@@ -70,27 +78,27 @@ export class PitchPerfectService {
 
   async refinePitch(
     dto: RefinePitchDto,
-    userId: string,
+    userId: string
   ): Promise<RefinePitchOutput> {
     const { currentIntroduction, feedback } = dto;
 
     if (!currentIntroduction || !feedback) {
       throw new BadRequestException(
-        'Current introduction and feedback are required',
+        'Current introduction and feedback are required'
       );
     }
 
     try {
       const refinementPrompt = this.buildRefinementPrompt(
         currentIntroduction,
-        feedback,
+        feedback
       );
 
       const { Models } = await import('@/core/ai/models');
       const refinedIntroduction = await this.aiService.generate(
         Models.Chat,
         refinementPrompt,
-        userId,
+        userId
       );
 
       return { refinedIntroduction };
@@ -114,7 +122,9 @@ export class PitchPerfectService {
   }
 
   private validateOutput(data: Record<string, unknown>): PitchPerfectOutput {
-    const keywordOverlap = data.keywordOverlap as Record<string, unknown> | undefined;
+    const keywordOverlap = data.keywordOverlap as
+      | Record<string, unknown>
+      | undefined;
 
     return {
       introduction: String(data.introduction || ''),
@@ -141,7 +151,7 @@ export class PitchPerfectService {
 
   private buildRefinementPrompt(
     currentIntroduction: string,
-    feedback: string,
+    feedback: string
   ): string {
     return `You are an expert career coach. Please refine the following self-introduction based on the user's feedback.
 

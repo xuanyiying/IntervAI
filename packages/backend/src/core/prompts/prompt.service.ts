@@ -197,7 +197,10 @@ export class PromptService {
   /**
    * Build feedback prompt with context
    */
-  buildFeedbackPrompt(context: FeedbackContext, language: LanguageInput): string {
+  buildFeedbackPrompt(
+    context: FeedbackContext,
+    language: LanguageInput
+  ): string {
     const template = this.getInterviewFeedbackPrompt(language);
     return template
       .replace('{{jobTitle}}', context.jobTitle)

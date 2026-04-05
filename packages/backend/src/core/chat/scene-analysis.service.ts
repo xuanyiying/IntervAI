@@ -38,7 +38,9 @@ export class SceneAnalysisService {
     context: SceneContext,
     language: LanguageInput = 'EN'
   ): Promise<SceneAnalysisResult> {
-    this.logger.debug(`Analyzing scene for user ${context.userId} (language: ${language})`);
+    this.logger.debug(
+      `Analyzing scene for user ${context.userId} (language: ${language})`
+    );
 
     const cacheKey = await this.getCacheKey(content, context);
     const cached = await this.getCachedResult(cacheKey);

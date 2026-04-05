@@ -35,7 +35,7 @@ export class InterviewSessionService {
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService,
     private promptService: PromptService
-  ) { }
+  ) {}
 
   /**
    * Start a new interview session
@@ -153,7 +153,11 @@ export class InterviewSessionService {
     sessionId: string,
     content: string,
     audioUrl?: string
-  ): Promise<{ nextQuestion: InterviewQuestion | null; isCompleted: boolean; evaluation?: { score: number; feedback: string } }> {
+  ): Promise<{
+    nextQuestion: InterviewQuestion | null;
+    isCompleted: boolean;
+    evaluation?: { score: number; feedback: string };
+  }> {
     // Verify session exists and belongs to user
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
@@ -197,8 +201,9 @@ export class InterviewSessionService {
     let evaluationFeedback: string | null = null;
 
     try {
-      const resumeData = session.optimization.resume
-        ?.parsedData as unknown as ParsedResumeData | undefined;
+      const resumeData = session.optimization.resume?.parsedData as unknown as
+        | ParsedResumeData
+        | undefined;
       const jobData = session.optimization.job
         ?.parsedRequirements as unknown as ParsedJobData | undefined;
 
@@ -209,7 +214,8 @@ export class InterviewSessionService {
 
       const answerCount =
         session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
-      const questionText = questions[answerCount - 1]?.question || 'Unknown question';
+      const questionText =
+        questions[answerCount - 1]?.question || 'Unknown question';
 
       if (resumeData && jobData && questionText !== 'Unknown question') {
         const evalResult = await this.aiService.executeSkill(
@@ -236,8 +242,10 @@ export class InterviewSessionService {
         if (evalResult.success && evalResult.data) {
           const evalData = evalResult.data as any;
           evaluationScore = evalData.overallScore ?? evalData.score ?? null;
-          evaluationFeedback = evalData.feedback ?? evalData.detailedFeedback
-            ?? JSON.stringify(evalData);
+          evaluationFeedback =
+            evalData.feedback ??
+            evalData.detailedFeedback ??
+            JSON.stringify(evalData);
 
           await this.prisma.interviewMessage.create({
             data: {
@@ -269,7 +277,12 @@ export class InterviewSessionService {
         nextQuestion: questions[answerCount],
         isCompleted: false,
         ...(evaluationScore !== null
-          ? { evaluation: { score: evaluationScore, feedback: evaluationFeedback! } }
+          ? {
+              evaluation: {
+                score: evaluationScore,
+                feedback: evaluationFeedback!,
+              },
+            }
           : {}),
       };
     } else {
@@ -277,7 +290,12 @@ export class InterviewSessionService {
         nextQuestion: null,
         isCompleted: true,
         ...(evaluationScore !== null
-          ? { evaluation: { score: evaluationScore, feedback: evaluationFeedback! } }
+          ? {
+              evaluation: {
+                score: evaluationScore,
+                feedback: evaluationFeedback!,
+              },
+            }
           : {}),
       };
     }
@@ -432,7 +450,9 @@ export class InterviewSessionService {
   ): Promise<string> {
     // 使用 PromptService 获取多语言标签
     const labels = this.promptService.getInterviewLabels(language as any);
-    const fallbackResponse = this.promptService.getFallbackResponse(language as any);
+    const fallbackResponse = this.promptService.getFallbackResponse(
+      language as any
+    );
     const isZh = language === 'ZH';
 
     try {
@@ -787,8 +807,10 @@ export class InterviewSessionService {
       throw new ForbiddenException('Session is not in progress');
     }
 
-    const resumeData = session.optimization?.resume?.parsedData as unknown as ParsedResumeData;
-    const jobData = session.optimization?.job?.parsedRequirements as unknown as ParsedJobData;
+    const resumeData = session.optimization?.resume
+      ?.parsedData as unknown as ParsedResumeData;
+    const jobData = session.optimization?.job
+      ?.parsedRequirements as unknown as ParsedJobData;
 
     const resumeText = JSON.stringify({
       name: resumeData?.personalInfo?.name || 'Candidate',
@@ -811,7 +833,7 @@ export class InterviewSessionService {
     const { Models } = await import('@/core/ai/models');
     const systemPrompt = isZh
       ? '你是一位经验丰富的面试辅导专家。根据候选人的简历和目标职位，为面试问题提供专业、有深度的参考答案。'
-      : 'You are an experienced interview coach. Based on the candidate\'s resume and target position, provide professional and insightful reference answers to interview questions.';
+      : "You are an experienced interview coach. Based on the candidate's resume and target position, provide professional and insightful reference answers to interview questions.";
 
     const userPrompt = isZh
       ? `简历信息：${resumeText}\n\n目标职位：${jobDescription}\n\n面试官问题：${question}\n\n请提供参考答案：`

@@ -10,7 +10,7 @@ interface ExecuteSkillDto {
 
 @Controller('api/ai/skill')
 export class InterviewAssistantController {
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   @Post('execute')
   @UseGuards(JwtAuthGuard)
@@ -30,8 +30,9 @@ export class InterviewAssistantController {
       return {
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Failed to execute skill'
-        }
+          message:
+            error instanceof Error ? error.message : 'Failed to execute skill',
+        },
       };
     }
   }

@@ -61,7 +61,6 @@ export const useInterviewSocket = (
   const pingStartTimeRef = useRef<number>(0);
   const currentSessionIdRef = useRef<string | null>(null);
   const currentVoiceIdRef = useRef<string | undefined>(undefined);
-  const lastKnownStatusRef = useRef<string>('idle');
   const reconnectRestoreDoneRef = useRef<boolean>(false);
 
   const { user } = useAuthStore();
@@ -264,9 +263,12 @@ export const useInterviewSocket = (
     socketRef.current?.emit('end_audio', { sessionId, audioBuffer });
   }, []);
 
-  const sendQuestionDetected = useCallback((sessionId: string, audioBuffer: Blob) => {
-    socketRef.current?.emit('detect_question', { sessionId, audioBuffer });
-  }, []);
+  const sendQuestionDetected = useCallback(
+    (sessionId: string, audioBuffer: Blob) => {
+      socketRef.current?.emit('detect_question', { sessionId, audioBuffer });
+    },
+    []
+  );
 
   const sendQuestion = useCallback((sessionId: string, question: string) => {
     socketRef.current?.emit('send_question', { sessionId, question });

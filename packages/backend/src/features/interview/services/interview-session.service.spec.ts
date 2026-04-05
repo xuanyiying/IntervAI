@@ -11,9 +11,7 @@ describe('InterviewSessionService', () => {
   let service: InterviewSessionService;
   let aiService: jest.Mocked<AIService>;
   let prismaService: jest.Mocked<PrismaService>;
-  let quotaService: jest.Mocked<QuotaService>;
   let voiceService: jest.Mocked<AlibabaVoiceService>;
-  let promptService: jest.Mocked<PromptService>;
 
   const mockUserId = 'test-user-id';
   const mockSessionId = 'test-session-id';
@@ -138,15 +136,21 @@ describe('InterviewSessionService', () => {
         resume: { parsedData: {} },
         job: { parsedRequirements: {} },
       } as any);
-      prismaService.interviewSession.create.mockResolvedValue(mockSession as any);
+      prismaService.interviewSession.create.mockResolvedValue(
+        mockSession as any
+      );
       quotaService.incrementInterviewCount.mockResolvedValue(undefined);
       prismaService.interviewQuestion.findMany.mockResolvedValue([]);
 
       const result = await service.startSession(mockUserId, createDto as any);
 
       expect(result.session).toBeDefined();
-      expect(quotaService.enforceInterviewQuota).toHaveBeenCalledWith(mockUserId);
-      expect(quotaService.incrementInterviewCount).toHaveBeenCalledWith(mockUserId);
+      expect(quotaService.enforceInterviewQuota).toHaveBeenCalledWith(
+        mockUserId
+      );
+      expect(quotaService.incrementInterviewCount).toHaveBeenCalledWith(
+        mockUserId
+      );
     });
 
     it('should throw error when optimization not found', async () => {
@@ -176,7 +180,9 @@ describe('InterviewSessionService', () => {
         id: mockOptimizationId,
         userId: mockUserId,
       } as any);
-      prismaService.interviewSession.create.mockResolvedValue(mockSession as any);
+      prismaService.interviewSession.create.mockResolvedValue(
+        mockSession as any
+      );
       quotaService.incrementInterviewCount.mockResolvedValue(undefined);
       prismaService.interviewQuestion.findMany.mockResolvedValue([]);
 
@@ -198,7 +204,9 @@ describe('InterviewSessionService', () => {
         messages: [],
       } as any);
       prismaService.interviewMessage.create.mockResolvedValue({} as any);
-      prismaService.interviewQuestion.findMany.mockResolvedValue(mockQuestions as any);
+      prismaService.interviewQuestion.findMany.mockResolvedValue(
+        mockQuestions as any
+      );
 
       const result = await service.submitAnswer(
         mockUserId,
@@ -218,7 +226,9 @@ describe('InterviewSessionService', () => {
         messages: [{ role: MessageRole.USER, content: 'Previous answer' }],
       } as any);
       prismaService.interviewMessage.create.mockResolvedValue({} as any);
-      prismaService.interviewQuestion.findMany.mockResolvedValue(mockQuestions as any);
+      prismaService.interviewQuestion.findMany.mockResolvedValue(
+        mockQuestions as any
+      );
 
       const result = await service.submitAnswer(
         mockUserId,
@@ -238,7 +248,9 @@ describe('InterviewSessionService', () => {
         mode: InterviewMode.ASSIST,
       };
 
-      prismaService.interviewSession.findUnique.mockResolvedValue(assistSession as any);
+      prismaService.interviewSession.findUnique.mockResolvedValue(
+        assistSession as any
+      );
       prismaService.interviewMessage.create.mockResolvedValue({} as any);
       aiService.executeSkill.mockResolvedValue({
         success: true,
@@ -263,7 +275,9 @@ describe('InterviewSessionService', () => {
     });
 
     it('should generate mock response in MOCK mode', async () => {
-      prismaService.interviewSession.findUnique.mockResolvedValue(mockSession as any);
+      prismaService.interviewSession.findUnique.mockResolvedValue(
+        mockSession as any
+      );
       prismaService.interviewMessage.create.mockResolvedValue({} as any);
       aiService.executeSkill.mockResolvedValue({
         success: true,
@@ -280,11 +294,7 @@ describe('InterviewSessionService', () => {
 
   describe('getSessionState', () => {
     it('should return current session state with progress', async () => {
-      const mockQuestions = [
-        { id: 'q1' },
-        { id: 'q2' },
-        { id: 'q3' },
-      ];
+      const mockQuestions = [{ id: 'q1' }, { id: 'q2' }, { id: 'q3' }];
 
       prismaService.interviewSession.findUnique.mockResolvedValue({
         ...mockSession,
@@ -293,7 +303,9 @@ describe('InterviewSessionService', () => {
           { role: MessageRole.ASSISTANT, content: 'Response 1' },
         ],
       } as any);
-      prismaService.interviewQuestion.findMany.mockResolvedValue(mockQuestions as any);
+      prismaService.interviewQuestion.findMany.mockResolvedValue(
+        mockQuestions as any
+      );
 
       const result = await service.getSessionState(mockUserId, mockSessionId);
 
@@ -305,14 +317,18 @@ describe('InterviewSessionService', () => {
 
   describe('endSession', () => {
     it('should update session status to COMPLETED', async () => {
-      prismaService.interviewSession.findUnique.mockResolvedValue(mockSession as any);
+      prismaService.interviewSession.findUnique.mockResolvedValue(
+        mockSession as any
+      );
       prismaService.interviewSession.update.mockResolvedValue({
         ...mockSession,
         status: InterviewStatus.COMPLETED,
         endTime: new Date(),
       } as any);
 
-      const result = await service.endSession(mockUserId, { sessionId: mockSessionId });
+      const result = await service.endSession(mockUserId, {
+        sessionId: mockSessionId,
+      });
 
       expect(result.status).toBe(InterviewStatus.COMPLETED);
       expect(result.endTime).toBeDefined();

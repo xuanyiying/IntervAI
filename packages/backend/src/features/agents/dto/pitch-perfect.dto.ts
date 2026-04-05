@@ -1,4 +1,11 @@
-import { IsObject, IsString, IsEnum, IsNumber, IsOptional, ValidateNested } from 'class-validator';
+import {
+  IsObject,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -58,7 +65,10 @@ export class GeneratePitchDto {
   @IsString()
   jobDescription: string;
 
-  @ApiPropertyOptional({ enum: ['technical', 'managerial', 'sales'], default: 'technical' })
+  @ApiPropertyOptional({
+    enum: ['technical', 'managerial', 'sales'],
+    default: 'technical',
+  })
   @IsOptional()
   @IsEnum(['technical', 'managerial', 'sales'])
   style?: 'technical' | 'managerial' | 'sales' = 'technical';

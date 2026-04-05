@@ -11,7 +11,7 @@ import {
   SendOutlined,
   StopOutlined,
   UserOutlined,
-  WifiOutlined
+  WifiOutlined,
 } from '@ant-design/icons';
 import {
   Badge,
@@ -27,7 +27,7 @@ import {
   Space,
   Spin,
   Steps,
-  Typography
+  Typography,
 } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -580,7 +580,6 @@ const AssistModeView: React.FC<{
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
 
   const playAudio = async (audioBuffer: ArrayBuffer) => {
     try {
@@ -603,7 +602,8 @@ const AssistModeView: React.FC<{
         sessionMessages
           .filter((m) => m.role !== 'SYSTEM')
           .map((m) => ({
-            role: m.role === 'USER' ? 'user' as const : 'assistant' as const,
+            role:
+              m.role === 'USER' ? ('user' as const) : ('assistant' as const),
             content: m.content,
           }))
       );
@@ -636,7 +636,7 @@ const AssistModeView: React.FC<{
     onAnswerChunk: (data) => {
       setStreamingAnswer((prev) => prev + data.chunk);
     },
-    onAnswerComplete: (data) => {
+    onAnswerComplete: (_data) => {
       setIsGenerating(false);
       setStreamingAnswer('');
       refreshSession();
@@ -708,10 +708,7 @@ const AssistModeView: React.FC<{
   const handleSubmit = () => {
     if (!question.trim()) return;
 
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', content: question },
-    ]);
+    setMessages((prev) => [...prev, { role: 'user', content: question }]);
 
     if (session && isConnected) {
       sendQuestion(session.id, question);
@@ -724,9 +721,18 @@ const AssistModeView: React.FC<{
   return (
     <div>
       {/* 连接状态指示器 */}
-      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
         <Badge
-          status={isConnected ? 'success' : isReconnecting ? 'warning' : 'default'}
+          status={
+            isConnected ? 'success' : isReconnecting ? 'warning' : 'default'
+          }
         />
         <Text type="secondary">
           {isConnected
@@ -758,7 +764,10 @@ const AssistModeView: React.FC<{
                 {msg.role === 'user' ? '👤 你' : '🤖 AI 参考答案'}
               </Text>
               <div style={{ marginTop: 8 }}>
-                <StreamingMarkdownBubble content={msg.content} isStreaming={false} />
+                <StreamingMarkdownBubble
+                  content={msg.content}
+                  isStreaming={false}
+                />
               </div>
             </Card>
           ))}
@@ -778,14 +787,18 @@ const AssistModeView: React.FC<{
           <Text strong style={{ display: 'block', marginBottom: 8 }}>
             🤖 {t('interview.ai_answer', 'AI 参考答案')}
           </Text>
-          <StreamingMarkdownBubble content={streamingAnswer} isStreaming={isGenerating} />
+          <StreamingMarkdownBubble
+            content={streamingAnswer}
+            isStreaming={isGenerating}
+          />
         </Card>
       )}
 
       {/* 正在生成提示 */}
       {isGenerating && !streamingAnswer && (
         <div style={{ padding: 16, textAlign: 'center', color: '#1890ff' }}>
-          <Spin size="small" /> {t('interview.generating_answer', '正在生成答案...')}
+          <Spin size="small" />{' '}
+          {t('interview.generating_answer', '正在生成答案...')}
         </div>
       )}
 
@@ -841,7 +854,9 @@ const AssistModeView: React.FC<{
               size="large"
               icon={<SendOutlined />}
               onClick={handleSubmit}
-              disabled={recording || processing || isGenerating || !question.trim()}
+              disabled={
+                recording || processing || isGenerating || !question.trim()
+              }
               loading={processing || isGenerating}
             >
               {t('interview.assist_submit', '获取参考答案')}
@@ -854,7 +869,10 @@ const AssistModeView: React.FC<{
                 ? t('interview.recording_hint_recording', '正在录音...')
                 : !isConnected
                   ? t('interview.waiting_connection', '等待连接...')
-                  : t('interview.input_or_voice', '输入问题或点击麦克风语音输入')}
+                  : t(
+                      'interview.input_or_voice',
+                      '输入问题或点击麦克风语音输入'
+                    )}
             </Text>
           </div>
         </div>
@@ -898,84 +916,84 @@ const MockModeView: React.FC<{
   handleSubmitAnswer,
   t,
 }) => {
-    return (
-      <>
-        <Card
-          type="inner"
-          title={currentQuestion.questionType}
-          style={{ backgroundColor: '#f9f9f9' }}
-        >
-          <Title level={4}>{currentQuestion.question}</Title>
-          {currentQuestion.tips && currentQuestion.tips.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <Text type="secondary" strong>
-                {t('interview.tips')}:
-              </Text>
-              <ul>
-                {currentQuestion.tips.map((tip, idx) => (
-                  <li key={idx}>
-                    <Text type="secondary">{tip}</Text>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Card>
+  return (
+    <>
+      <Card
+        type="inner"
+        title={currentQuestion.questionType}
+        style={{ backgroundColor: '#f9f9f9' }}
+      >
+        <Title level={4}>{currentQuestion.question}</Title>
+        {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary" strong>
+              {t('interview.tips')}:
+            </Text>
+            <ul>
+              {currentQuestion.tips.map((tip, idx) => (
+                <li key={idx}>
+                  <Text type="secondary">{tip}</Text>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
 
-        <Divider>{t('interview.your_answer')}</Divider>
+      <Divider>{t('interview.your_answer')}</Divider>
 
-        <TextArea
-          rows={6}
-          value={answerText}
-          onChange={(e) => setAnswerText(e.target.value)}
-          placeholder={t('interview.answer_placeholder')}
-          disabled={processing || recording}
-        />
+      <TextArea
+        rows={6}
+        value={answerText}
+        onChange={(e) => setAnswerText(e.target.value)}
+        placeholder={t('interview.answer_placeholder')}
+        disabled={processing || recording}
+      />
 
-        <div style={{ marginTop: '24px', textAlign: 'center' }}>
-          <Space size="large">
-            {!recording ? (
-              <Button
-                shape="circle"
-                icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-                size="large"
-                style={{ width: '64px', height: '64px' }}
-                onClick={startRecording}
-                disabled={processing}
-              />
-            ) : (
-              <Button
-                type="primary"
-                danger
-                shape="circle"
-                icon={<StopOutlined style={{ fontSize: '24px' }} />}
-                size="large"
-                style={{ width: '64px', height: '64px' }}
-                onClick={stopRecording}
-              />
-            )}
-
+      <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <Space size="large">
+          {!recording ? (
+            <Button
+              shape="circle"
+              icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+              size="large"
+              style={{ width: '64px', height: '64px' }}
+              onClick={startRecording}
+              disabled={processing}
+            />
+          ) : (
             <Button
               type="primary"
+              danger
+              shape="circle"
+              icon={<StopOutlined style={{ fontSize: '24px' }} />}
               size="large"
-              icon={<SendOutlined />}
-              onClick={handleSubmitAnswer}
-              disabled={recording || processing || !answerText.trim()}
-              loading={processing}
-            >
-              {t('interview.submit_answer')}
-            </Button>
-          </Space>
-          <div style={{ marginTop: 8 }}>
-            <Text type="secondary">
-              {recording
-                ? t('interview.recording_hint_recording')
-                : t('interview.recording_hint_idle')}
-            </Text>
-          </div>
+              style={{ width: '64px', height: '64px' }}
+              onClick={stopRecording}
+            />
+          )}
+
+          <Button
+            type="primary"
+            size="large"
+            icon={<SendOutlined />}
+            onClick={handleSubmitAnswer}
+            disabled={recording || processing || !answerText.trim()}
+            loading={processing}
+          >
+            {t('interview.submit_answer')}
+          </Button>
+        </Space>
+        <div style={{ marginTop: 8 }}>
+          <Text type="secondary">
+            {recording
+              ? t('interview.recording_hint_recording')
+              : t('interview.recording_hint_idle')}
+          </Text>
         </div>
-      </>
-    );
-  };
+      </div>
+    </>
+  );
+};
 
 export default InterviewPage;

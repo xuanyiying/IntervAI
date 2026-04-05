@@ -33,7 +33,7 @@ export class ResumeOptimizerService {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly quotaService: QuotaService
-  ) { }
+  ) {}
 
   /**
    * Create a new optimization record
@@ -198,7 +198,8 @@ export class ResumeOptimizerService {
           return; // Success, exit the retry loop
         } catch (error) {
           this.logger.error(
-            `Resume optimization attempt ${attempt} failed for user ${userId}: ${error instanceof Error ? error.message : String(error)
+            `Resume optimization attempt ${attempt} failed for user ${userId}: ${
+              error instanceof Error ? error.message : String(error)
             }`
           );
           if (attempt === maxRetries) {
@@ -208,7 +209,8 @@ export class ResumeOptimizerService {
       }
     } catch (error) {
       this.logger.error(
-        `Resume optimization failed for user ${userId}: ${error instanceof Error ? error.message : String(error)
+        `Resume optimization failed for user ${userId}: ${
+          error instanceof Error ? error.message : String(error)
         }`
       );
 
@@ -279,9 +281,9 @@ export class ResumeOptimizerService {
     // Calculate overall score as weighted average
     const overall = Math.round(
       skillMatch * 0.4 +
-      experienceMatch * 0.3 +
-      educationMatch * 0.15 +
-      keywordCoverage * 0.15
+        experienceMatch * 0.3 +
+        educationMatch * 0.15 +
+        keywordCoverage * 0.15
     );
 
     // Ensure overall score is within 0-100 range
@@ -1297,7 +1299,8 @@ ${content}
         }
       }
 
-      const optimizations = parsedData?.optimizations || parsedData?.suggestions || [];
+      const optimizations =
+        parsedData?.optimizations || parsedData?.suggestions || [];
 
       if (Array.isArray(optimizations)) {
         for (let i = 0; i < optimizations.length; i++) {

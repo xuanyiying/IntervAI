@@ -1,6 +1,9 @@
 export { adminService } from './admin-service';
 export {
-  agentMetricsService, pitchPerfectService, rolePlayService, strategistService
+  agentMetricsService,
+  pitchPerfectService,
+  rolePlayService,
+  strategistService,
 } from './agent-service';
 export { authService } from './auth-service';
 export { conversationService } from './conversation-service';
@@ -12,4 +15,3 @@ export { optimizationService } from './optimization-service';
 export { paymentService } from './payment-service';
 export { resumeService } from './resume-service';
 export { userService } from './user-service';
-

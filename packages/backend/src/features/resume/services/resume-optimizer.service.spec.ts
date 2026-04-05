@@ -10,7 +10,6 @@ describe('ResumeOptimizerService', () => {
   let service: ResumeOptimizerService;
   let aiService: jest.Mocked<AIService>;
   let prismaService: any;
-  let quotaService: jest.Mocked<QuotaService>;
 
   const mockUserId = 'test-user-id';
   const mockResumeId = 'test-resume-id';
@@ -95,12 +94,14 @@ describe('ResumeOptimizerService', () => {
     service = module.get<ResumeOptimizerService>(ResumeOptimizerService);
     aiService = module.get(AIService);
     prismaService = module.get(PrismaService);
-    quotaService = module.get(QuotaService);
   });
 
   describe('calculateMatchScore', () => {
     it('should calculate correct match score with high skill overlap', () => {
-      const result = service.calculateMatchScore(mockResumeData as any, mockJobData as any);
+      const result = service.calculateMatchScore(
+        mockResumeData as any,
+        mockJobData as any
+      );
 
       expect(result.overall).toBeGreaterThanOrEqual(0);
       expect(result.overall).toBeLessThanOrEqual(100);
@@ -114,7 +115,10 @@ describe('ResumeOptimizerService', () => {
     });
 
     it('should identify missing keywords from job description', () => {
-      const result = service.calculateMatchScore(mockResumeData as any, mockJobData as any);
+      const result = service.calculateMatchScore(
+        mockResumeData as any,
+        mockJobData as any
+      );
 
       expect(result.missingKeywords).toContain('Python');
       expect(result.missingKeywords).toContain('AWS');
@@ -128,7 +132,10 @@ describe('ResumeOptimizerService', () => {
         responsibilities: [],
       };
 
-      const result = service.calculateMatchScore(mockResumeData as any, emptyJobData as any);
+      const result = service.calculateMatchScore(
+        mockResumeData as any,
+        emptyJobData as any
+      );
 
       expect(result.skillMatch).toBe(100);
       expect(result.keywordCoverage).toBe(100);
@@ -180,7 +187,9 @@ describe('ResumeOptimizerService', () => {
     });
 
     it('should gracefully degrade when AI service fails', async () => {
-      aiService.executeSkill.mockRejectedValue(new Error('AI service unavailable'));
+      aiService.executeSkill.mockRejectedValue(
+        new Error('AI service unavailable')
+      );
 
       const result = await service.generateSuggestions(
         mockResumeData as any,
@@ -219,7 +228,8 @@ describe('ResumeOptimizerService', () => {
             type: SuggestionType.CONTENT,
             section: 'summary',
             original: 'Experienced software engineer',
-            optimized: 'Experienced software engineer with 5+ years of expertise',
+            optimized:
+              'Experienced software engineer with 5+ years of expertise',
             reason: 'Enhanced summary',
             status: SuggestionStatus.PENDING,
           },
@@ -233,15 +243,29 @@ describe('ResumeOptimizerService', () => {
         parsedData: mockResumeData,
       };
 
-      prismaService.optimization.findUnique.mockResolvedValue(mockOptimization as any);
+      prismaService.optimization.findUnique.mockResolvedValue(
+        mockOptimization as any
+      );
       prismaService.resume.findUnique.mockResolvedValue(mockResume as any);
-      prismaService.resume.update.mockResolvedValue({ ...mockResume, version: 2 } as any);
+      prismaService.resume.update.mockResolvedValue({
+        ...mockResume,
+        version: 2,
+      } as any);
       prismaService.optimization.update.mockResolvedValue({
         ...mockOptimization,
-        suggestions: [{ ...mockOptimization.suggestions[0], status: SuggestionStatus.ACCEPTED }],
+        suggestions: [
+          {
+            ...mockOptimization.suggestions[0],
+            status: SuggestionStatus.ACCEPTED,
+          },
+        ],
       } as any);
 
-      const result = await service.applySuggestion('opt-id', mockUserId, 'suggestion-1');
+      const result = await service.applySuggestion(
+        'opt-id',
+        mockUserId,
+        'suggestion-1'
+      );
 
       expect(prismaService.resume.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -258,7 +282,9 @@ describe('ResumeOptimizerService', () => {
         suggestions: [],
       };
 
-      prismaService.optimization.findUnique.mockResolvedValue(mockOptimization as any);
+      prismaService.optimization.findUnique.mockResolvedValue(
+        mockOptimization as any
+      );
 
       await expect(
         service.applySuggestion('opt-id', mockUserId, 'non-existent')

@@ -14,6 +14,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ChatIntentService } from './chat-intent.service';
@@ -41,7 +42,7 @@ export interface ChatResponse {
 @WebSocketGateway({
   namespace: '/chat',
   cors: {
-    origin: '*',
+    origin: process.env.CORS_ORIGIN || '*',
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -57,10 +58,28 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private activeStreams = new Map<string, boolean>(); // clientId -> isStreaming
 
   constructor(
+    private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
     private readonly chatIntentService: ChatIntentService
   ) {}
+
+  private getCorsOrigin(): string | string[] {
+    const corsOrigin = this.configService.get<string>('CORS_ORIGIN');
+    if (corsOrigin) {
+      return corsOrigin.split(',').map((origin) => origin.trim());
+    }
+    return '*';
+  }
+
+  private getCorsConfig() {
+    const origin = this.getCorsOrigin();
+    return {
+      origin,
+      methods: ['GET', 'POST'],
+      credentials: true,
+    };
+  }
 
   /**
    * Handle client connection with JWT authentication
