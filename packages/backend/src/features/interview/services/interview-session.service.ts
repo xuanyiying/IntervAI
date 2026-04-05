@@ -35,7 +35,7 @@ export class InterviewSessionService {
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService,
     private promptService: PromptService
-  ) {}
+  ) { }
 
   /**
    * Start a new interview session
@@ -278,11 +278,11 @@ export class InterviewSessionService {
         isCompleted: false,
         ...(evaluationScore !== null
           ? {
-              evaluation: {
-                score: evaluationScore,
-                feedback: evaluationFeedback!,
-              },
-            }
+            evaluation: {
+              score: evaluationScore,
+              feedback: evaluationFeedback || 'No feedback available',
+            },
+          }
           : {}),
       };
     } else {
@@ -291,11 +291,11 @@ export class InterviewSessionService {
         isCompleted: true,
         ...(evaluationScore !== null
           ? {
-              evaluation: {
-                score: evaluationScore,
-                feedback: evaluationFeedback!,
-              },
-            }
+            evaluation: {
+              score: evaluationScore,
+              feedback: evaluationFeedback || 'No feedback available',
+            },
+          }
           : {}),
       };
     }
