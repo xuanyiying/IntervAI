@@ -280,7 +280,7 @@ export class InterviewSessionService {
           ? {
             evaluation: {
               score: evaluationScore,
-              feedback: evaluationFeedback || 'No feedback available',
+              feedback: this.getEvaluationFeedback(evaluationFeedback),
             },
           }
           : {}),
@@ -293,7 +293,7 @@ export class InterviewSessionService {
           ? {
             evaluation: {
               score: evaluationScore,
-              feedback: evaluationFeedback || 'No feedback available',
+              feedback: this.getEvaluationFeedback(evaluationFeedback),
             },
           }
           : {}),
@@ -866,5 +866,9 @@ export class InterviewSessionService {
         content: fullAnswer,
       },
     });
+  }
+
+  private getEvaluationFeedback(feedback: string | null): string {
+    return feedback || 'No feedback available';
   }
 }
