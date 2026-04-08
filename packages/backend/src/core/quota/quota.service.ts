@@ -1,6 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
-import { RedisService } from '@/shared/cache/redis.service';
-import { PrismaService } from '@/shared/database/prisma.service';
+import { Injectable } from '@nestjs/common';
 import { SubscriptionTier } from '@prisma/client';
 
 export interface QuotaInfo {
@@ -15,302 +13,53 @@ export interface QuotaInfo {
   canGeneratePdf: boolean;
 }
 
+/**
+ * OSS Community Edition: NoopQuotaService
+ *
+ * This is a fully-permissive stub that powers the open-source build.
+ * All quota checks pass immediately — self-hosted users own their own
+ * API keys and bear their own costs.
+ *
+ * In EE (commercial SaaS) mode, the EeModule registers its own
+ * real QuotaService over this one via NestJS DI override.
+ */
 @Injectable()
 export class QuotaService {
-  // Quota limits per subscription tier
-  private readonly QUOTA_LIMITS = {
-    [SubscriptionTier.FREE]: {
-      optimizations: 10, // 10 per hour
-      pdfGenerations: 5, // 5 per month
-      interviews: 3, // 3 per month
-    },
-    [SubscriptionTier.PRO]: {
-      optimizations: -1, // Unlimited
-      pdfGenerations: -1, // Unlimited
-      interviews: -1, // Unlimited
-    },
-    [SubscriptionTier.ENTERPRISE]: {
-      optimizations: -1, // Unlimited
-      pdfGenerations: -1, // Unlimited
-      interviews: -1, // Unlimited
-    },
-  };
-
-  // Time windows
-  private readonly OPTIMIZATION_WINDOW = 3600; // 1 hour in seconds
-  private readonly PDF_WINDOW = 30 * 24 * 3600; // 30 days in seconds
-  private readonly INTERVIEW_WINDOW = 30 * 24 * 3600; // 30 days in seconds
-
-  constructor(
-    private readonly redisService: RedisService,
-    private readonly prismaService: PrismaService
-  ) {}
-
-  /**
-   * Check if user can start an interview session
-   * Requirement: Free users limited to 3 interviews per month
-   */
-  async canStartInterview(userId: string): Promise<boolean> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Pro and Enterprise users have unlimited interviews
-    if (
-      user.subscriptionTier === SubscriptionTier.PRO ||
-      user.subscriptionTier === SubscriptionTier.ENTERPRISE
-    ) {
-      return true;
-    }
-
-    // Free users: check monthly limit
-    const key = `quota:interview:${userId}`;
-    const count = await this.redisService.get(key);
-    const currentCount = count ? parseInt(count, 10) : 0;
-    const limit = this.QUOTA_LIMITS[SubscriptionTier.FREE].interviews;
-
-    return currentCount < limit;
+  async canStartInterview(_userId: string): Promise<boolean> {
+    return true;
   }
 
-  /**
-   * Increment interview counter for user
-   */
-  async incrementInterviewCount(userId: string): Promise<void> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
+  async incrementInterviewCount(_userId: string): Promise<void> {}
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Only track for free users
-    if (user.subscriptionTier === SubscriptionTier.FREE) {
-      const key = `quota:interview:${userId}`;
-      const count = await this.redisService.incr(key);
-
-      // Set expiration on first increment
-      if (count === 1) {
-        await this.redisService.expire(key, this.INTERVIEW_WINDOW);
-      }
-    }
+  async canOptimize(_userId: string): Promise<boolean> {
+    return true;
   }
 
-  /**
-   * Check if user can perform an optimization
-   * Requirement 11.1: Free users limited to 10 optimizations per hour
-   * Requirement 11.3: Pro users have unlimited optimizations
-   */
-  async canOptimize(userId: string): Promise<boolean> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
+  async incrementOptimizationCount(_userId: string): Promise<void> {}
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Pro and Enterprise users have unlimited optimizations
-    if (
-      user.subscriptionTier === SubscriptionTier.PRO ||
-      user.subscriptionTier === SubscriptionTier.ENTERPRISE
-    ) {
-      return true;
-    }
-
-    // Free users: check hourly limit
-    const key = `quota:optimization:${userId}`;
-    const count = await this.redisService.get(key);
-    const currentCount = count ? parseInt(count, 10) : 0;
-    const limit = this.QUOTA_LIMITS[SubscriptionTier.FREE].optimizations;
-
-    return currentCount < limit;
+  async canGeneratePdf(_userId: string): Promise<boolean> {
+    return true;
   }
 
-  /**
-   * Increment optimization counter for user
-   * Requirement 11.1: Track free user optimization usage
-   */
-  async incrementOptimizationCount(userId: string): Promise<void> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
+  async incrementPdfCount(_userId: string): Promise<void> {}
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Only track for free users
-    if (user.subscriptionTier === SubscriptionTier.FREE) {
-      const key = `quota:optimization:${userId}`;
-      const count = await this.redisService.incr(key);
-
-      // Set expiration on first increment
-      if (count === 1) {
-        await this.redisService.expire(key, this.OPTIMIZATION_WINDOW);
-      }
-    }
-  }
-
-  /**
-   * Check if user can generate PDF
-   * Requirement 11.2: Free users limited to 5 PDFs per month
-   * Requirement 11.3: Pro users have unlimited PDFs
-   */
-  async canGeneratePdf(userId: string): Promise<boolean> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Pro and Enterprise users have unlimited PDF generations
-    if (
-      user.subscriptionTier === SubscriptionTier.PRO ||
-      user.subscriptionTier === SubscriptionTier.ENTERPRISE
-    ) {
-      return true;
-    }
-
-    // Free users: check monthly limit
-    const key = `quota:pdf:${userId}`;
-    const count = await this.redisService.get(key);
-    const currentCount = count ? parseInt(count, 10) : 0;
-    const limit = this.QUOTA_LIMITS[SubscriptionTier.FREE].pdfGenerations;
-
-    return currentCount < limit;
-  }
-
-  /**
-   * Increment PDF generation counter for user
-   * Requirement 11.2: Track free user PDF generation usage
-   */
-  async incrementPdfCount(userId: string): Promise<void> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Only track for free users
-    if (user.subscriptionTier === SubscriptionTier.FREE) {
-      const key = `quota:pdf:${userId}`;
-      const count = await this.redisService.incr(key);
-
-      // Set expiration on first increment
-      if (count === 1) {
-        await this.redisService.expire(key, this.PDF_WINDOW);
-      }
-    }
-  }
-
-  /**
-   * Get quota information for user
-   * Requirement 11.5: Display current usage and remaining quota
-   */
-  async getQuotaInfo(userId: string): Promise<QuotaInfo> {
-    const user = await this.prismaService.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    const tier = user.subscriptionTier;
-    const limits = this.QUOTA_LIMITS[tier];
-
-    // Get optimization count
-    const optimizationKey = `quota:optimization:${userId}`;
-    const optimizationCountStr = await this.redisService.get(optimizationKey);
-    const optimizationsUsed = optimizationCountStr
-      ? parseInt(optimizationCountStr, 10)
-      : 0;
-    const optimizationTtl = await this.redisService.ttl(optimizationKey);
-    const optimizationsResetAt = new Date(
-      Date.now() + (optimizationTtl > 0 ? optimizationTtl * 1000 : 0)
-    );
-
-    // Get PDF count
-    const pdfKey = `quota:pdf:${userId}`;
-    const pdfCountStr = await this.redisService.get(pdfKey);
-    const pdfGenerationsUsed = pdfCountStr ? parseInt(pdfCountStr, 10) : 0;
-    const pdfTtl = await this.redisService.ttl(pdfKey);
-    const pdfGenerationsResetAt = new Date(
-      Date.now() + (pdfTtl > 0 ? pdfTtl * 1000 : 0)
-    );
-
-    // Determine if user can perform actions
-    const canOptimize =
-      limits.optimizations === -1 || optimizationsUsed < limits.optimizations;
-    const canGeneratePdf =
-      limits.pdfGenerations === -1 ||
-      pdfGenerationsUsed < limits.pdfGenerations;
-
+  async getQuotaInfo(_userId: string): Promise<QuotaInfo> {
     return {
-      tier,
-      optimizationsUsed,
-      optimizationsLimit:
-        limits.optimizations === -1 ? -1 : limits.optimizations,
-      optimizationsResetAt,
-      pdfGenerationsUsed,
-      pdfGenerationsLimit:
-        limits.pdfGenerations === -1 ? -1 : limits.pdfGenerations,
-      pdfGenerationsResetAt,
-      canOptimize,
-      canGeneratePdf,
+      tier: SubscriptionTier.PRO,
+      optimizationsUsed: 0,
+      optimizationsLimit: -1,
+      optimizationsResetAt: new Date(0),
+      pdfGenerationsUsed: 0,
+      pdfGenerationsLimit: -1,
+      pdfGenerationsResetAt: new Date(0),
+      canOptimize: true,
+      canGeneratePdf: true,
     };
   }
 
-  /**
-   * Enforce quota limit - throws exception if limit exceeded
-   * Requirement 11.4: Return clear error message when limit exceeded
-   */
-  async enforceOptimizationQuota(userId: string): Promise<void> {
-    const canOptimize = await this.canOptimize(userId);
+  async enforceOptimizationQuota(_userId: string): Promise<void> {}
 
-    if (!canOptimize) {
-      const quotaInfo = await this.getQuotaInfo(userId);
-      throw new ForbiddenException(
-        `Optimization quota exceeded. Limit: ${quotaInfo.optimizationsLimit} per hour. Resets at ${quotaInfo.optimizationsResetAt.toISOString()}`
-      );
-    }
-  }
+  async enforcePdfQuota(_userId: string): Promise<void> {}
 
-  /**
-   * Enforce PDF generation quota - throws exception if limit exceeded
-   * Requirement 11.4: Return clear error message when limit exceeded
-   */
-  async enforcePdfQuota(userId: string): Promise<void> {
-    const canGeneratePdf = await this.canGeneratePdf(userId);
-
-    if (!canGeneratePdf) {
-      const quotaInfo = await this.getQuotaInfo(userId);
-      throw new ForbiddenException(
-        `PDF generation quota exceeded. Limit: ${quotaInfo.pdfGenerationsLimit} per month. Resets at ${quotaInfo.pdfGenerationsResetAt.toISOString()}`
-      );
-    }
-  }
-
-  /**
-   * Enforce interview quota - throws exception if limit exceeded
-   */
-  async enforceInterviewQuota(userId: string): Promise<void> {
-    const canInterview = await this.canStartInterview(userId);
-
-    if (!canInterview) {
-      // Need to extend QuotaInfo to include interview info, but for now just throw
-      throw new ForbiddenException(
-        `Interview quota exceeded. Free tier is limited to 3 interviews per month.`
-      );
-    }
-  }
+  async enforceInterviewQuota(_userId: string): Promise<void> {}
 }

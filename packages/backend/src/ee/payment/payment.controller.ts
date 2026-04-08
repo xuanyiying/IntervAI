@@ -8,6 +8,7 @@ import {
   Headers,
   Req,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,7 +17,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { RawBodyRequest } from '@nestjs/common';
 import { CreateCheckoutSessionDto } from './dto/create-checkout-session.dto';
 import { SubscriptionResponseDto } from './dto/subscription-response.dto';
@@ -35,8 +36,13 @@ export class PaymentController {
     @Request() req: any,
     @Body() createCheckoutSessionDto: CreateCheckoutSessionDto
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.paymentService.createCheckoutSession(
-      req.user.id,
+      userId,
       createCheckoutSessionDto.priceId,
       createCheckoutSessionDto.provider,
       { tier: createCheckoutSessionDto.tier }
@@ -53,7 +59,11 @@ export class PaymentController {
     type: SubscriptionResponseDto,
   })
   async getUserSubscription(@Request() req: any) {
-    return this.paymentService.getUserSubscription(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.paymentService.getUserSubscription(userId);
   }
 
   @Post('cancel-subscription')
@@ -62,7 +72,11 @@ export class PaymentController {
   @ApiOperation({ summary: 'Cancel user subscription' })
   @ApiResponse({ status: 200, description: 'Subscription canceled' })
   async cancelSubscription(@Request() req: any) {
-    return this.paymentService.cancelSubscription(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.paymentService.cancelSubscription(userId);
   }
 
   @Get('billing-history')
@@ -71,7 +85,11 @@ export class PaymentController {
   @ApiOperation({ summary: 'Get user billing history' })
   @ApiResponse({ status: 200, description: 'Billing history' })
   async getBillingHistory(@Request() req: any) {
-    return this.paymentService.getBillingHistory(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.paymentService.getBillingHistory(userId);
   }
 
   @Post('webhook')

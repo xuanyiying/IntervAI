@@ -13,6 +13,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ResumeOptimizerService } from '../services/resume-optimizer.service';
 import { JwtAuthGuard } from '../../../core/auth/guards/jwt-auth.guard';
@@ -33,8 +34,13 @@ export class ResumeOptimizerController {
     @Request() req: any,
     @Body() body: { resumeId: string; jobId: string }
   ): Promise<Optimization> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
     return this.resumeOptimizerService.createOptimization(
-      req.user.id,
+      userId,
       body.resumeId,
       body.jobId
     );
@@ -46,7 +52,12 @@ export class ResumeOptimizerController {
    */
   @Get()
   async listOptimizations(@Request() req: any): Promise<Optimization[]> {
-    return this.resumeOptimizerService.listOptimizations(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
+    return this.resumeOptimizerService.listOptimizations(userId);
   }
 
   /**
@@ -58,9 +69,14 @@ export class ResumeOptimizerController {
     @Request() req: any,
     @Param('id') optimizationId: string
   ): Promise<Optimization> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
     return this.resumeOptimizerService.getOptimization(
       optimizationId,
-      req.user.id
+      userId
     );
   }
 
@@ -75,9 +91,14 @@ export class ResumeOptimizerController {
     @Param('id') optimizationId: string,
     @Param('suggestionId') suggestionId: string
   ): Promise<Optimization> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
     return this.resumeOptimizerService.applySuggestion(
       optimizationId,
-      req.user.id,
+      userId,
       suggestionId
     );
   }
@@ -93,9 +114,14 @@ export class ResumeOptimizerController {
     @Param('id') optimizationId: string,
     @Body() body: { suggestionIds: string[] }
   ): Promise<Optimization> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
     return this.resumeOptimizerService.applyBatchSuggestions(
       optimizationId,
-      req.user.id,
+      userId,
       body.suggestionIds
     );
   }
@@ -111,9 +137,14 @@ export class ResumeOptimizerController {
     @Param('id') optimizationId: string,
     @Param('suggestionId') suggestionId: string
   ): Promise<Optimization> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
     return this.resumeOptimizerService.rejectSuggestion(
       optimizationId,
-      req.user.id,
+      userId,
       suggestionId
     );
   }

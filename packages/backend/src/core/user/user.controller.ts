@@ -13,6 +13,7 @@ import {
   Res,
   Query,
   Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
@@ -186,9 +187,14 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async logout(@Request() req: any): Promise<{ message: string }> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     // clean redis cache for user
-    this.userService.cleanUserCache(req.user.id);
-
+    this.userService.cleanUserCache(userId);
+ 
     // JWT is stateless, so logout is primarily handled on the client side by removing the token
     // This endpoint can be used to perform server-side cleanup or token blacklisting if implemented
     return { message: 'Successfully logged out' };
@@ -206,8 +212,13 @@ export class UserController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   async getCurrentUser(@Request() req: any): Promise<UserResponseDto> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     console.log('🚀 [DEBUG] HIT GET_CURRENT_USER ENDPOINT');
-    const user = await this.userService.findById(req.user.id);
+    const user = await this.userService.findById(userId);
     console.log(
       '🔍 [User Controller] User from database:',
       JSON.stringify(
@@ -242,7 +253,12 @@ export class UserController {
   @ApiResponse({ status: 204, description: 'Account successfully deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteAccount(@Request() req: any): Promise<void> {
-    await this.userService.deleteAccount(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    await this.userService.deleteAccount(userId);
   }
 
   @Put('subscription')
@@ -258,8 +274,13 @@ export class UserController {
     @Request() req: any,
     @Body() updateSubscriptionDto: UpdateSubscriptionDto
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const user = await this.userService.updateSubscription(
-      req.user.id,
+      userId,
       updateSubscriptionDto.tier
     );
     return {
@@ -281,7 +302,12 @@ export class UserController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async exportUserData(@Request() req: any): Promise<UserDataExportDto> {
-    return this.userService.exportUserData(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    return this.userService.exportUserData(userId);
   }
 
   @Get('google')
@@ -362,8 +388,13 @@ export class UserHistoryController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '20'
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.userService.getUserHistory(
-      req.user.id,
+      userId,
       parseInt(page, 10),
       parseInt(limit, 10)
     );

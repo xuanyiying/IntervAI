@@ -1,6 +1,12 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { QuotaService, QuotaInfo } from './quota.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 
 @Controller('quota')
 @UseGuards(JwtAuthGuard)
@@ -14,6 +20,10 @@ export class QuotaController {
    */
   @Get()
   async getQuota(@Request() req: any): Promise<QuotaInfo> {
-    return this.quotaService.getQuotaInfo(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.quotaService.getQuotaInfo(userId);
   }
 }

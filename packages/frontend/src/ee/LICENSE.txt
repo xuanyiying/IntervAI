@@ -1,0 +1,8 @@
+Copyright (c) 2026 IntervAI
+
+PROPRIETARY & CONFIDENTIAL 
+
+The files contained within this `ee/` directory represent the Enterprise Edition (EE) features of IntervAI.
+These files, unlike the community edition (CE/OSS) open-source files in the root repository, are strictly CLOSED-SOURCE and PROPRIETARY.
+
+You may NOT modify, distribute, copy, publish, or use any code within this directory for commercial, derivative, or any other purposes without an explicit, active Enterprise License provided by IntervAI.

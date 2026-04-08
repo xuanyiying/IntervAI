@@ -10,6 +10,8 @@ import {
   HttpStatus,
   Logger,
   Res,
+  UnauthorizedException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { Queue } from 'bull';
@@ -60,21 +62,36 @@ export class PdfGenerationController {
     }
   ) {
     this.logger.log(`Queueing PDF generation for optimization ${body.optimizationId}`);
-
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const job = await this.pdfQueue.add('generate_pdf', {
       optimizationId: body.optimizationId,
-      userId: req.user.id,
+      userId,
       templateId: body.templateId,
       resumeData: body.resumeData,
       options: body.options
     });
-
-    const generatedPDF = await job.finished();
-
-    return {
-      success: true,
-      data: generatedPDF,
-    };
+ 
+    // Add timeout and error handling for job completion
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('PDF generation timeout')), 30000)
+    );
+ 
+    try {
+      const generatedPDF = await Promise.race([job.finished(), timeoutPromise]);
+      return {
+        success: true,
+        data: generatedPDF,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`PDF generation failed: ${message}`);
+      throw new ServiceUnavailableException('PDF generation timeout');
+    }
   }
 
   /**
@@ -99,10 +116,15 @@ export class PdfGenerationController {
     }
   ) {
     this.logger.log(`Previewing PDF for optimization ${body.optimizationId}`);
-
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const html = await this.pdfGenerationService.previewPDF(
       body.optimizationId,
-      req.user.id,
+      userId,
       body.templateId,
       body.resumeData,
       body.options
@@ -126,10 +148,15 @@ export class PdfGenerationController {
   })
   async getGeneratedPDF(@Request() req: any, @Param('id') pdfId: string) {
     this.logger.log(`Fetching PDF details: ${pdfId}`);
-
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const pdf = await this.pdfGenerationService.getGeneratedPDF(
       pdfId,
-      req.user.id
+      userId
     );
 
     return {
@@ -153,10 +180,15 @@ export class PdfGenerationController {
     @Param('optimizationId') optimizationId: string
   ) {
     this.logger.log(`Fetching PDFs for optimization: ${optimizationId}`);
-
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const pdfs = await this.pdfGenerationService.listGeneratedPDFs(
       optimizationId,
-      req.user.id
+      userId
     );
 
     return {
@@ -181,10 +213,15 @@ export class PdfGenerationController {
     @Res() res: Response
   ) {
     this.logger.log(`Downloading PDF: ${pdfId}`);
-
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const buffer = await this.pdfGenerationService.downloadPDF(
       pdfId,
-      req.user.id
+      userId
     );
 
     // Set response headers for file download
@@ -211,8 +248,13 @@ export class PdfGenerationController {
   })
   async deleteGeneratedPDF(@Request() req: any, @Param('id') pdfId: string) {
     this.logger.log(`Deleting PDF: ${pdfId}`);
-
-    await this.pdfGenerationService.deleteGeneratedPDF(pdfId, req.user.id);
+    
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    await this.pdfGenerationService.deleteGeneratedPDF(pdfId, userId);
 
     return {
       success: true,
@@ -242,26 +284,41 @@ export class PdfGenerationController {
       };
     }
   ) {
-    this.logger.log(`Queueing PDF from Markdown for user ${req.user.id}`);
-
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    
+    this.logger.log(`Queueing PDF from Markdown for user ${userId}`);
+ 
     const job = await this.pdfQueue.add('generate_pdf', {
       isMarkdown: true,
       markdownContent: body.markdown,
-      userId: req.user.id,
+      userId,
       options: body.options,
       optimizationId: 'markdown',
       templateId: 'markdown'
     });
-
-    const result = await job.finished();
-
-    return {
-      success: true,
-      data: {
-        downloadUrl: result.downloadUrl,
-        expiresAt: result.expiresAt,
-        fileSize: null, // Will be available after generation
-      },
-    };
+ 
+    // Add timeout and error handling for job completion
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('PDF generation timed out')), 60000)
+    );
+ 
+    try {
+      const result = await Promise.race([job.finished(), timeoutPromise]);
+      return {
+        success: true,
+        data: {
+          downloadUrl: result.downloadUrl,
+          expiresAt: result.expiresAt,
+          fileSize: null, // Will be available after generation
+        },
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Markdown PDF generation failed: ${message}`);
+      throw new ServiceUnavailableException('Markdown PDF generation failed or timed out. Please try again later.');
+    }
   }
 }

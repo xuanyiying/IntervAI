@@ -9,6 +9,7 @@ import {
   Query,
   Request,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -289,9 +290,14 @@ export class AdminController {
     @Body() body: { type?: string; count?: number; validDays?: number },
     @Request() req: any
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     const count = body.count || 1;
-    const createdBy = req.user.id;
-
+    const createdBy = userId;
+ 
     return this.invitationService.generateCodes(count, createdBy);
   }
 

@@ -1,3 +1,10 @@
+import React, { Suspense, lazy } from 'react';
+import { createBrowserRouter, RouteObject } from 'react-router-dom';
+import ErrorBoundary from '../components/ErrorBoundary';
+import ProtectedRoute from '../components/ProtectedRoute';
+import AppLayout from '../layouts/AppLayout';
+
+// Pages
 import InviteCodeManagementPage from '@/pages/admin/InviteCodeManagementPage';
 import KnowledgeBasePage from '@/pages/admin/KnowledgeBasePage';
 import ModelManagementPage from '@/pages/admin/ModelManagementPage';
@@ -12,7 +19,6 @@ import ResetPasswordPage from '@/pages/auth/ResetPasswordPage';
 import VerifyEmailPage from '@/pages/auth/VerifyEmailPage';
 import PrivacyPolicyPage from '@/pages/legal/PrivacyPolicyPage';
 import TermsOfServicePage from '@/pages/legal/TermsOfServicePage';
-import PricingPage from '@/pages/marketing/PricingPage';
 import AccountSubscriptionPage from '@/pages/user/AccountSubscriptionPage';
 import AccountUsagePage from '@/pages/user/AccountUsagePage';
 import AgentMetricsPage from '@/pages/user/AgentMetricsPage';
@@ -29,10 +35,19 @@ import SettingsPage from '@/pages/user/SettingsPage';
 import { StrategistPage } from '@/pages/user/StrategistPage';
 import SubscriptionManagementPage from '@/pages/user/SubscriptionManagementPage';
 import TeamPage from '@/pages/user/TeamPage';
-import { createBrowserRouter, RouteObject } from 'react-router-dom';
-import ErrorBoundary from '../components/ErrorBoundary';
-import ProtectedRoute from '../components/ProtectedRoute';
-import AppLayout from '../layouts/AppLayout';
+
+const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
+
+// EE-only pages: lazy load to ensure they are separated in the build
+const PricingPage = IS_EE 
+  ? lazy(() => import('@/ee/pages/marketing/PricingPage'))
+  : () => null;
+
+const SuspenseWrapper = ({ children }: { children: React.ReactNode }) => (
+  <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+    {children}
+  </Suspense>
+);
 
 const routes: RouteObject[] = [
   {
@@ -120,46 +135,51 @@ const routes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-      {
-        path: 'pricing',
-        element: (
-          <ProtectedRoute>
-            <PricingPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'payment/success',
-        element: (
-          <ProtectedRoute>
-            <PaymentSuccessPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'payment/cancel',
-        element: (
-          <ProtectedRoute>
-            <PaymentCancelPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'subscription',
-        element: (
-          <ProtectedRoute>
-            <SubscriptionManagementPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'account/subscription',
-        element: (
-          <ProtectedRoute>
-            <AccountSubscriptionPage />
-          </ProtectedRoute>
-        ),
-      },
+      // Commercial routes (moved to ee/ or only for EE)
+      ...(IS_EE ? [
+        {
+          path: 'pricing',
+          element: (
+            <ProtectedRoute>
+              <SuspenseWrapper>
+                <PricingPage />
+              </SuspenseWrapper>
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: 'payment/success',
+          element: (
+            <ProtectedRoute>
+              <PaymentSuccessPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: 'payment/cancel',
+          element: (
+            <ProtectedRoute>
+              <PaymentCancelPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: 'subscription',
+          element: (
+            <ProtectedRoute>
+              <SubscriptionManagementPage />
+            </ProtectedRoute>
+          ),
+        },
+        {
+          path: 'account/subscription',
+          element: (
+            <ProtectedRoute>
+              <AccountSubscriptionPage />
+            </ProtectedRoute>
+          ),
+        },
+      ] : []),
       {
         path: 'account/usage',
         element: (
@@ -243,14 +263,16 @@ const routes: RouteObject[] = [
               </ProtectedRoute>
             ),
           },
-          {
-            path: 'invite-codes',
-            element: (
-              <ProtectedRoute requiredRole="ADMIN">
-                <InviteCodeManagementPage />
-              </ProtectedRoute>
-            ),
-          },
+          ...(IS_EE ? [
+            {
+              path: 'invite-codes',
+              element: (
+                <ProtectedRoute requiredRole="ADMIN">
+                  <InviteCodeManagementPage />
+                </ProtectedRoute>
+              ),
+            },
+          ] : []),
           {
             path: 'knowledge-base',
             element: (
