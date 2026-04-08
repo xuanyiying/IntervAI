@@ -6,8 +6,11 @@ import { PrismaModule } from '@/shared/database/prisma.module';
 
 @Module({
   imports: [RedisModule, PrismaModule],
-  providers: [QuotaService],
+  providers: [
+    QuotaService,
+    { provide: 'EE_QUOTA_SERVICE', useExisting: QuotaService },
+  ],
   controllers: [QuotaController],
-  exports: [QuotaService],
+  exports: [QuotaService, 'EE_QUOTA_SERVICE'],
 })
 export class QuotaModule {}

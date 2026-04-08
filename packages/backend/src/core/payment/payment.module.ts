@@ -1,38 +1,35 @@
 import { Module, Logger } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ModuleRef } from '@nestjs/core';
 import { PaymentService as CePaymentService } from './payment.service';
 import { PrismaModule } from '@/shared/database/prisma.module';
-import { PrismaService } from '@/shared/database/prisma.service';
 
 const logger = new Logger('PaymentModuleProxy');
 
 @Module({
-  imports: [ConfigModule, PrismaModule],
+  imports: [PrismaModule],
   providers: [
+    CePaymentService,
     {
       provide: CePaymentService,
-      useFactory: (config: ConfigService, prisma: PrismaService) => {
-        const isEE = process.env.APP_EDITION !== 'oss';
-        if (isEE) {
-          try {
-            /* eslint-disable @typescript-eslint/no-var-requires */
-            const { PaymentService: EePaymentService } = require('../../ee/payment/payment.service');
-            const { StripePaymentProvider } = require('../../ee/payment/providers/stripe-payment.provider');
-            const { PaddlePaymentProvider } = require('../../ee/payment/providers/paddle-payment.provider');
-            
-            const stripe = new StripePaymentProvider(config, prisma);
-            const paddle = new PaddlePaymentProvider(config, prisma);
-            
-            logger.log('EE PaymentService active (Stripe + Paddle)');
-            return new EePaymentService(prisma, stripe, paddle);
-          } catch (e) {
-            logger.warn('Failed to load EE PaymentService, falling back to CE');
-            return new CePaymentService();
-          }
+      useFactory: async (moduleRef: ModuleRef, ce: CePaymentService) => {
+        const isOSS = process.env.APP_EDITION === 'oss';
+        if (isOSS) {
+          return ce;
         }
-        return new CePaymentService();
+
+        try {
+          const ee = moduleRef.get('EE_PAYMENT_SERVICE', { strict: false });
+          if (ee) {
+            logger.log('EE PaymentService active (Injected via ModuleRef)');
+            return ee;
+          }
+        } catch (e) {
+          logger.error('CRITICAL: EE Edition enabled but EE_PAYMENT_SERVICE failed to resolve. Falling back to CE.', e);
+        }
+
+        return ce;
       },
-      inject: [ConfigService, PrismaService],
+      inject: [ModuleRef, CePaymentService],
     },
   ],
   exports: [CePaymentService],
