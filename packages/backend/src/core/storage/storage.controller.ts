@@ -14,12 +14,15 @@ import {
   BadRequestException,
   ParseFilePipe,
   MaxFileSizeValidator,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { StorageService } from './storage.service';
 import { DirectUploadService } from './direct-upload.service';
 import { FileType } from './interfaces/storage.interface';
-import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
+import { FILE_UPLOAD_CONFIG, FileUploadValidator } from '@/common/validators/file-upload.validator';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -28,6 +31,8 @@ interface RequestWithUser extends Request {
   };
 }
 
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('/storage')
 export class StorageController {
   constructor(
@@ -63,8 +68,9 @@ export class StorageController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
+    FileUploadValidator.validateFile(file);
     const { fileType, category } = body;
-    const userId = req.user?.id || 'anonymous';
+    const userId = req.user!.id;
 
     return this.storageService.uploadFile({
       buffer: file.buffer,
@@ -96,8 +102,9 @@ export class StorageController {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
+    files.forEach(f => FileUploadValidator.validateFile(f));
     const { fileType, category } = body;
-    const userId = req.user?.id || 'anonymous';
+    const userId = req.user!.id;
 
     const filesData = files.map((file) => ({
       buffer: file.buffer,
@@ -147,7 +154,7 @@ export class StorageController {
    */
   @Delete('files/:id')
   async deleteFile(@Param('id') id: string, @Req() req: RequestWithUser) {
-    await this.storageService.deleteFile(id, req.user?.id || 'anonymous');
+    await this.storageService.deleteFile(id, req.user!.id);
     return { message: 'File deleted successfully' };
   }
 
@@ -161,7 +168,7 @@ export class StorageController {
   ) {
     return this.storageService.deleteFiles(
       body.ids,
-      req.user?.id || 'anonymous'
+      req.user!.id
     );
   }
 
@@ -193,7 +200,7 @@ export class StorageController {
     return this.storageService.updateFile(
       id,
       body,
-      req.user?.id || 'anonymous'
+      req.user!.id
     );
   }
 
@@ -206,7 +213,7 @@ export class StorageController {
     @Req() req: RequestWithUser
   ) {
     return this.directUploadService.generatePresignedUrl({
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
       fileName: body.fileName as string,
       fileSize: body.fileSize as number,
       contentType: body.contentType as string,
@@ -225,7 +232,7 @@ export class StorageController {
     @Req() req: RequestWithUser
   ) {
     return this.directUploadService.initializeChunkUpload({
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
       fileName: body.fileName as string,
       fileSize: body.fileSize as number,
       contentType: body.contentType as string,
@@ -246,7 +253,7 @@ export class StorageController {
   ) {
     return this.directUploadService.generateChunkUploadUrl({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
       chunkIndex: body.chunkIndex as number,
       expires: body.expires as number,
     });
@@ -262,7 +269,7 @@ export class StorageController {
   ) {
     return this.directUploadService.confirmChunkUploaded({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
       chunkIndex: body.chunkIndex as number,
     });
   }
@@ -277,7 +284,7 @@ export class StorageController {
   ) {
     return this.directUploadService.completeChunkUpload({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
     });
   }
 
@@ -291,7 +298,7 @@ export class StorageController {
   ) {
     return this.directUploadService.confirmUpload({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user?.id || 'anonymous',
+      userId: req.user!.id,
       actualFileSize: body.actualFileSize as number,
     });
   }
@@ -305,7 +312,7 @@ export class StorageController {
     @Req() req: RequestWithUser
   ) {
     await this.directUploadService.cancelUpload(
-      req.user?.id || 'anonymous',
+      req.user!.id,
       body.uploadSessionId as string
     );
     return { message: 'Upload cancelled' };

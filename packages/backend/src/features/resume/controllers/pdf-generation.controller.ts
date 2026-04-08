@@ -12,6 +12,8 @@ import {
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bull';
 import PdfGenerationService, {
   PDFOptions,
 } from '../services/pdf-generation.service';
@@ -31,7 +33,10 @@ import {
 export class PdfGenerationController {
   private readonly logger = new Logger(PdfGenerationController.name);
 
-  constructor(private pdfGenerationService: PdfGenerationService) {}
+  constructor(
+    private pdfGenerationService: PdfGenerationService,
+    @InjectQueue('pdf_queue') private readonly pdfQueue: Queue
+  ) {}
 
   /**
    * Generate PDF from resume
@@ -54,15 +59,17 @@ export class PdfGenerationController {
       options: PDFOptions;
     }
   ) {
-    this.logger.log(`Generating PDF for optimization ${body.optimizationId}`);
+    this.logger.log(`Queueing PDF generation for optimization ${body.optimizationId}`);
 
-    const generatedPDF = await this.pdfGenerationService.generatePDF(
-      body.optimizationId,
-      req.user.id,
-      body.templateId,
-      body.resumeData,
-      body.options
-    );
+    const job = await this.pdfQueue.add('generate_pdf', {
+      optimizationId: body.optimizationId,
+      userId: req.user.id,
+      templateId: body.templateId,
+      resumeData: body.resumeData,
+      options: body.options
+    });
+
+    const generatedPDF = await job.finished();
 
     return {
       success: true,
@@ -235,13 +242,18 @@ export class PdfGenerationController {
       };
     }
   ) {
-    this.logger.log(`Generating PDF from Markdown for user ${req.user.id}`);
+    this.logger.log(`Queueing PDF from Markdown for user ${req.user.id}`);
 
-    const result = await this.pdfGenerationService.generatePDFFromMarkdown(
-      body.markdown,
-      req.user.id,
-      body.options
-    );
+    const job = await this.pdfQueue.add('generate_pdf', {
+      isMarkdown: true,
+      markdownContent: body.markdown,
+      userId: req.user.id,
+      options: body.options,
+      optimizationId: 'markdown',
+      templateId: 'markdown'
+    });
+
+    const result = await job.finished();
 
     return {
       success: true,

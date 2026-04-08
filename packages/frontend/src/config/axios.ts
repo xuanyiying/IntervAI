@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { message } from 'antd';
 import { useAuthStore } from '../stores/authStore';
 import { HTTP_TIMEOUT_MS } from './app';
 import { generateTraceparent } from '../utils/trace';
@@ -66,15 +67,17 @@ axiosInstance.interceptors.response.use(
             isAuthenticated: false,
           });
           break;
-        // TODO: TEMPORARY - 403 error handling disabled for testing
-        // This should be re-enabled in production
+        // 403 error handling re-enabled for production
         case 403:
           // Forbidden - quota exceeded or insufficient permissions
           console.error('Access forbidden:', error.response.data);
+          message.error(error.response.data?.error?.message || error.response.data?.message || 'Access denied or quota exceeded. Please upgrade your plan.');
+          window.dispatchEvent(new CustomEvent('app:quota_exceeded'));
           break;
         case 429:
           // Rate limit exceeded
           console.error('Rate limit exceeded:', error.response.data);
+          message.error('Too many requests. Please try again later.');
           break;
         default:
           console.error('API Error:', error.response.data);

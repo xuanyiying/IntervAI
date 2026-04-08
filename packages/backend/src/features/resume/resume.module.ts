@@ -16,6 +16,8 @@ import { AIQueueModule } from '@/core/ai/queue/ai-queue.module';
 import { StorageModule } from '@/core/storage/storage.module';
 import { QuotaModule } from '@/core/quota/quota.module';
 import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
+import { BullModule } from '@nestjs/bull';
+import { PdfProcessor } from './processors/pdf.processor';
 
 @Module({
   imports: [
@@ -30,12 +32,16 @@ import { FILE_UPLOAD_CONFIG } from '@/common/validators/file-upload.validator';
     StorageModule,
     forwardRef(() => AIQueueModule),
     QuotaModule,
+    BullModule.registerQueue({
+      name: 'pdf_queue',
+    }),
   ],
   providers: [
     ResumeService,
     ResumeOptimizerService,
     PdfGenerationService,
     MatchAnalysisService,
+    PdfProcessor,
   ],
   controllers: [
     ResumeController,
