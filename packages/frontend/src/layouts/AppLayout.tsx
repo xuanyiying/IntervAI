@@ -15,13 +15,20 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore, useUIStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
-import GlobalQuotaListener from '../components/GlobalQuotaListener';
-import UsageWidget from '@/components/UsageWidget/UsageWidget';
 import Sidebar from './components/Sidebar';
 import { Logo } from '../components/Logo';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguage } from '../i18n';
 import './AppLayout.css';
+
+// EE-only components: load from ee/ directory. In OSS builds these are absent.
+const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
+const GlobalQuotaListener = IS_EE
+  ? React.lazy(() => import('../ee/components/GlobalQuotaListener'))
+  : () => null;
+const UsageWidget = IS_EE
+  ? React.lazy(() => import('@/components/UsageWidget/UsageWidget'))
+  : () => null;
 
 const { Header, Sider, Content } = Layout;
 
@@ -94,12 +101,16 @@ const AppLayout: React.FC = () => {
       label: t('menu.account', '账户'),
       icon: <UserOutlined />,
       children: [
-        {
-          key: 'account_subscription',
-          label: t('menu.account_subscription', '订阅记录'),
-          icon: <DollarOutlined />,
-          onClick: () => navigate('/account/subscription'),
-        },
+        ...(IS_EE
+          ? [
+              {
+                key: 'account_subscription',
+                label: t('menu.account_subscription', '订阅记录'),
+                icon: <DollarOutlined />,
+                onClick: () => navigate('/account/subscription'),
+              },
+            ]
+          : []),
         {
           key: 'account_usage',
           label: t('menu.account_usage', '使用量'),

@@ -57,6 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [searchText, setSearchText] = React.useState('');
 
   const isAdmin = user?.role === Role.ADMIN;
+  const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
 
   React.useEffect(() => {
     fetchResumes();
@@ -105,12 +106,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: t('menu.chat', '对话'),
       path: '/chat',
     },
-    {
-      key: 'pricing',
-      icon: <WalletOutlined />,
-      label: t('menu.pricing', '订阅与定价'),
-      path: '/pricing',
-    },
+    ...(IS_EE ? [
+      {
+        key: 'pricing',
+        icon: <WalletOutlined />,
+        label: t('menu.pricing', '订阅与定价'),
+        path: '/pricing',
+      },
+    ] : []),
   ];
 
   const filteredConversations = React.useMemo(() => {
@@ -222,12 +225,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: t('menu.prompt_management'),
       path: '/admin/prompts',
     },
-    {
-      key: 'invite-codes',
-      icon: <BarcodeOutlined />,
-      label: t('menu.invite_code_management'),
-      path: '/admin/invite-codes',
-    },
+    ...(IS_EE ? [
+      {
+        key: 'invite-codes',
+        icon: <BarcodeOutlined />,
+        label: t('menu.invite_code_management'),
+        path: '/admin/invite-codes',
+      },
+    ] : []),
     {
       key: 'knowledge-base',
       icon: <FileTextOutlined />,

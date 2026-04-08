@@ -24,7 +24,8 @@
     "resolveJsonModule": true,
     "types": ["node", "jest", "express", "multer"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@/ee/*": ["src/ee/*"]
     }
   },
   "include": ["src/**/*"],

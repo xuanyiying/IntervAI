@@ -1,4 +1,11 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Request,
+  UseGuards,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { AccountService } from './account.service';
@@ -13,7 +20,11 @@ export class AccountController {
   @Get('subscription')
   @ApiOperation({ summary: 'Get subscription records for current user' })
   async getSubscription(@Request() req: any) {
-    return this.accountService.getSubscription(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.accountService.getSubscription(userId);
   }
 
   @Get('usage')
@@ -23,6 +34,10 @@ export class AccountController {
     @Query('start') start?: string,
     @Query('end') end?: string
   ) {
-    return this.accountService.getUsage(req.user.id, { start, end });
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.accountService.getUsage(userId, { start, end });
   }
 }

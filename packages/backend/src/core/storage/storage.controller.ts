@@ -15,8 +15,9 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { StorageService } from './storage.service';
@@ -70,7 +71,10 @@ export class StorageController {
     }
     FileUploadValidator.validateFile(file);
     const { fileType, category } = body;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
 
     return this.storageService.uploadFile({
       buffer: file.buffer,
@@ -104,7 +108,10 @@ export class StorageController {
     }
     files.forEach(f => FileUploadValidator.validateFile(f));
     const { fileType, category } = body;
-    const userId = req.user!.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
 
     const filesData = files.map((file) => ({
       buffer: file.buffer,
@@ -130,10 +137,14 @@ export class StorageController {
     @Query('fileType') fileType?: string,
     @Query('keyword') keyword?: string
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.storageService.getFiles({
       page: parseInt(page, 10),
       pageSize: parseInt(pageSize, 10),
-      userId: req.user?.id,
+      userId,
       fileType: fileType as FileType,
       keyword,
       sortBy: 'createdAt',
@@ -145,7 +156,12 @@ export class StorageController {
    * Get file by ID
    */
   @Get('files/:id')
-  async getFileById(@Param('id') id: string) {
+  @ApiResponse({ status: 404, description: 'File not found' })
+  async getFileById(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.storageService.getFileById(id);
   }
 
@@ -154,7 +170,11 @@ export class StorageController {
    */
   @Delete('files/:id')
   async deleteFile(@Param('id') id: string, @Req() req: RequestWithUser) {
-    await this.storageService.deleteFile(id, req.user!.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    await this.storageService.deleteFile(id, userId);
     return { message: 'File deleted successfully' };
   }
 
@@ -166,9 +186,13 @@ export class StorageController {
     @Body() body: { ids: string[] },
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.storageService.deleteFiles(
       body.ids,
-      req.user!.id
+      userId
     );
   }
 
@@ -176,8 +200,13 @@ export class StorageController {
    * Download file
    */
   @Get('files/:id/download')
+  @ApiResponse({ status: 200, description: 'Success' })
   async downloadFile(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.storageService.downloadFile(id, req.user?.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.storageService.downloadFile(id, userId);
   }
 
   /**
@@ -185,7 +214,11 @@ export class StorageController {
    */
   @Get('stats')
   async getFileStats(@Req() req: RequestWithUser) {
-    return this.storageService.getFileStats(req.user?.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.storageService.getFileStats(userId);
   }
 
   /**
@@ -197,10 +230,14 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.storageService.updateFile(
       id,
       body,
-      req.user!.id
+      userId
     );
   }
 
@@ -212,8 +249,12 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.generatePresignedUrl({
-      userId: req.user!.id,
+      userId,
       fileName: body.fileName as string,
       fileSize: body.fileSize as number,
       contentType: body.contentType as string,
@@ -231,8 +272,12 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.initializeChunkUpload({
-      userId: req.user!.id,
+      userId,
       fileName: body.fileName as string,
       fileSize: body.fileSize as number,
       contentType: body.contentType as string,
@@ -251,9 +296,13 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.generateChunkUploadUrl({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user!.id,
+      userId,
       chunkIndex: body.chunkIndex as number,
       expires: body.expires as number,
     });
@@ -267,9 +316,13 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.confirmChunkUploaded({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user!.id,
+      userId,
       chunkIndex: body.chunkIndex as number,
     });
   }
@@ -282,9 +335,13 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.completeChunkUpload({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user!.id,
+      userId,
     });
   }
 
@@ -296,9 +353,13 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     return this.directUploadService.confirmUpload({
       uploadSessionId: body.uploadSessionId as string,
-      userId: req.user!.id,
+      userId,
       actualFileSize: body.actualFileSize as number,
     });
   }
@@ -311,8 +372,12 @@ export class StorageController {
     @Body() body: Record<string, unknown>,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
     await this.directUploadService.cancelUpload(
-      req.user!.id,
+      userId,
       body.uploadSessionId as string
     );
     return { message: 'Upload cancelled' };
@@ -326,8 +391,9 @@ export class StorageController {
     @Param('uploadSessionId') uploadSessionId: string,
     @Req() req: RequestWithUser
   ) {
+    const userId = req.user?.id;
     return this.directUploadService.getUploadProgress(
-      req.user?.id || 'anonymous',
+      userId || 'anonymous',
       uploadSessionId
     );
   }

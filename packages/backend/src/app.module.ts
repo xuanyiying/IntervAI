@@ -13,14 +13,12 @@ import { JobModule } from '@/features/job/job.module';
 import { TasksModule } from '@/features/tasks/tasks.module';
 import { InterviewModule } from '@/features/interview/interview.module';
 import { CommonModule } from '@/common/common.module';
-import { QuotaModule } from '@/core/quota/quota.module';
 import { LoggerModule } from '@/shared/logger/logger.module';
 import { MonitoringModule } from '@/shared/monitoring/monitoring.module';
 import { ConversationModule } from '@/core/conversation/conversation.module';
 import { EmailModule } from '@/shared/notification/email.module';
-import { PaymentModule } from './core/payment/payment.module';
 import { AIModule } from './core/ai/ai.module';
-import { InvitationModule } from './core/invitation/invitation.module';
+import { QuotaModule } from '@/core/quota/quota.module';
 import { ChatModule } from '@/core/chat/chat.module';
 import { JobSearchModule } from '@/features/job-search';
 import { AccountModule } from '@/core/account/account.module';
@@ -37,6 +35,10 @@ import { ThrottlerModule } from '@nestjs/throttler';
 
 import { AuthModule } from './core/auth/auth.module';
 import { StorageModule } from '@/core/storage/storage.module';
+
+const isOSS = process.env.APP_EDITION === 'oss';
+// Conditionally load EE module
+const dynamicEeModule = !isOSS ? [require('./ee/ee.module').EeModule] : [];
 
 @Module({
   imports: [
@@ -67,14 +69,13 @@ import { StorageModule } from '@/core/storage/storage.module';
     QuotaModule,
     MonitoringModule,
     EmailModule,
-    PaymentModule,
     AIModule,
-    InvitationModule,
     ChatModule,
     JobSearchModule,
     AccountModule,
     VoiceModule,
     AgentsModule,
+    ...dynamicEeModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

@@ -14,6 +14,7 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileTypeValidator,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -67,7 +68,11 @@ export class ResumeController {
     @Body() dto: UploadResumeDto,
     @Request() req: any
   ) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.uploadResume(
       userId,
       file,
@@ -83,7 +88,11 @@ export class ResumeController {
   @Get()
   @ApiOperation({ summary: 'Get all resumes for the current user' })
   async listResumes(@Request() req: any) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.listResumes(userId);
   }
 
@@ -94,7 +103,11 @@ export class ResumeController {
   @Get(':id')
   @ApiOperation({ summary: 'Get a specific resume by ID' })
   async getResume(@Param('id') resumeId: string, @Request() req: any) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.getResume(resumeId, userId);
   }
 
@@ -109,7 +122,11 @@ export class ResumeController {
     @Request() req: any,
     @Query('conversationId') conversationId?: string
   ) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.parseResume(resumeId, userId, conversationId);
   }
 
@@ -124,7 +141,11 @@ export class ResumeController {
     @Body() dto: UpdateResumeDto,
     @Request() req: any
   ) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.updateResume(resumeId, userId, dto);
   }
 
@@ -135,7 +156,11 @@ export class ResumeController {
   @Put(':id/primary')
   @ApiOperation({ summary: 'Set a resume as primary' })
   async setPrimaryResume(@Param('id') resumeId: string, @Request() req: any) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.setPrimaryResume(resumeId, userId);
   }
 
@@ -148,7 +173,11 @@ export class ResumeController {
     summary: 'Analyze a resume and provide scoring and suggestions',
   })
   async analyzeResume(@Param('id') resumeId: string, @Request() req: any) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     return this.resumeService.analyzeResume(resumeId, userId);
   }
 
@@ -159,7 +188,11 @@ export class ResumeController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a resume' })
   async deleteResume(@Param('id') resumeId: string, @Request() req: any) {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
     await this.resumeService.deleteResume(resumeId, userId);
     return { message: 'Resume deleted successfully' };
   }

@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConversationService } from './conversation.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,7 +31,12 @@ export class ConversationController {
     @Request() req: any,
     @Body() body?: { title?: string }
   ) {
-    return this.conversationService.createConversation(req.user.id, body);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    return this.conversationService.createConversation(userId, body);
   }
 
   /**
@@ -39,7 +45,12 @@ export class ConversationController {
    */
   @Get()
   async listConversations(@Request() req: any) {
-    return this.conversationService.listConversations(req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    return this.conversationService.listConversations(userId);
   }
 
   /**
@@ -89,7 +100,12 @@ export class ConversationController {
       metadata?: Record<string, unknown>;
     }
   ) {
-    return this.conversationService.addMessage(conversationId, req.user.id, {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+ 
+    return this.conversationService.addMessage(conversationId, userId, {
       role: body.role,
       content: body.content,
       attachments: body.attachments,

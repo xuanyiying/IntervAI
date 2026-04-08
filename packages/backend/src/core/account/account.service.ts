@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { PaymentService } from '@/core/payment/payment.service';
 import { QuotaService } from '@/core/quota/quota.service';
 import { AIService } from '@/core/ai/ai.service';
+
+// EE-only: imported lazily so OSS builds don't blow up if not loaded
+type IPaymentService = {
+  getUserSubscription: (userId: string) => Promise<any>;
+  getBillingHistory: (userId: string) => Promise<any[]>;
+};
+
+const PAYMENT_SERVICE = 'PAYMENT_SERVICE';
 
 type UsageQuery = { start?: string; end?: string };
 
@@ -10,15 +17,15 @@ type UsageQuery = { start?: string; end?: string };
 export class AccountService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly paymentService: PaymentService,
+    @Optional() private readonly paymentService: IPaymentService | null,
     private readonly quotaService: QuotaService,
     private readonly aiService: AIService
   ) {}
 
   async getSubscription(userId: string) {
     const [current, billingHistory, subscriptionEvents] = await Promise.all([
-      this.paymentService.getUserSubscription(userId).catch(() => null),
-      this.paymentService.getBillingHistory(userId),
+      this.paymentService?.getUserSubscription(userId).catch(() => null) ?? Promise.resolve(null),
+      this.paymentService?.getBillingHistory(userId) ?? Promise.resolve([]),
       this.prisma.subscriptionEvent.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -109,9 +116,9 @@ export class AccountService {
       return { startDate, endDate };
     }
 
-    const subscription = await this.paymentService
-      .getUserSubscription(userId)
-      .catch(() => null);
+    const subscription = this.paymentService
+      ? await this.paymentService.getUserSubscription(userId).catch(() => null)
+      : null;
 
     const endDate = subscription?.currentPeriodEnd
       ? new Date(subscription.currentPeriodEnd)

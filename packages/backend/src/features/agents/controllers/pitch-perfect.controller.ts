@@ -6,6 +6,7 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -43,7 +44,11 @@ export class PitchPerfectController {
     @Request() req: any,
     @Body() dto: GeneratePitchDto
   ): Promise<PitchPerfectOutput> {
-    return this.pitchPerfectService.generatePitch(dto, req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.pitchPerfectService.generatePitch(dto, userId);
   }
 
   @Post('refine')
@@ -58,6 +63,10 @@ export class PitchPerfectController {
     @Request() req: any,
     @Body() dto: RefinePitchDto
   ): Promise<RefinePitchOutput> {
-    return this.pitchPerfectService.refinePitch(dto, req.user.id);
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.pitchPerfectService.refinePitch(dto, userId);
   }
 }

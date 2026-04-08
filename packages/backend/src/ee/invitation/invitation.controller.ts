@@ -1,9 +1,9 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InvitationService } from './invitation.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../user/guards/roles.guard';
-import { Roles } from '../user/decorators/roles.decorator';
+import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
+import { RolesGuard } from '@/core/user/guards/roles.guard';
+import { Roles } from '@/core/user/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 
 @ApiTags('invitations')
