@@ -196,10 +196,35 @@ export class InterviewSessionService {
       },
     });
 
-    // Real-time answer evaluation using answer-evaluator skill
-    let evaluationScore: number | null = null;
-    let evaluationFeedback: string | null = null;
+    // Trigger evaluation asynchronously to avoid blocking the WS gateway response
+    this.triggerAsyncEvaluation(session, content, sessionId);
 
+    // Determine next question
+    const questions = await this.prisma.interviewQuestion.findMany({
+      where: { optimizationId: session.optimizationId },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const answerCount =
+      session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
+
+    if (answerCount < questions.length) {
+      return {
+        nextQuestion: questions[answerCount],
+        isCompleted: false,
+      };
+    } else {
+      return {
+        nextQuestion: null,
+        isCompleted: true,
+      };
+    }
+  }
+
+  /**
+   * Run evaluation in background without blocking response
+   */
+  private async triggerAsyncEvaluation(session: any, content: string, sessionId: string) {
     try {
       const resumeData = session.optimization.resume?.parsedData as unknown as
         | ParsedResumeData
@@ -213,7 +238,7 @@ export class InterviewSessionService {
       });
 
       const answerCount =
-        session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
+        session.messages.filter((m: any) => m.role === MessageRole.USER).length;
       const questionText =
         questions[answerCount - 1]?.question || 'Unknown question';
 
@@ -241,8 +266,8 @@ export class InterviewSessionService {
 
         if (evalResult.success && evalResult.data) {
           const evalData = evalResult.data as any;
-          evaluationScore = evalData.overallScore ?? evalData.score ?? null;
-          evaluationFeedback =
+          const evaluationScore = evalData.overallScore ?? evalData.score ?? null;
+          const evaluationFeedback =
             evalData.feedback ??
             evalData.detailedFeedback ??
             JSON.stringify(evalData);
@@ -257,47 +282,7 @@ export class InterviewSessionService {
         }
       }
     } catch (evalError) {
-      this.logger.warn(
-        `Real-time evaluation failed for session ${sessionId}, continuing without score:`,
-        evalError
-      );
-    }
-
-    // Determine next question
-    const questions = await this.prisma.interviewQuestion.findMany({
-      where: { optimizationId: session.optimizationId },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    const answerCount =
-      session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
-
-    if (answerCount < questions.length) {
-      return {
-        nextQuestion: questions[answerCount],
-        isCompleted: false,
-        ...(evaluationScore !== null
-          ? {
-            evaluation: {
-              score: evaluationScore,
-              feedback: this.getEvaluationFeedback(evaluationFeedback),
-            },
-          }
-          : {}),
-      };
-    } else {
-      return {
-        nextQuestion: null,
-        isCompleted: true,
-        ...(evaluationScore !== null
-          ? {
-            evaluation: {
-              score: evaluationScore,
-              feedback: this.getEvaluationFeedback(evaluationFeedback),
-            },
-          }
-          : {}),
-      };
+      this.logger.warn(`Async evaluation failed for session ${sessionId}`, evalError);
     }
   }
 
@@ -839,12 +824,27 @@ export class InterviewSessionService {
       ? `简历信息：${resumeText}\n\n目标职位：${jobDescription}\n\n面试官问题：${question}\n\n请提供参考答案：`
       : `Resume: ${resumeText}\n\nTarget Position: ${jobDescription}\n\nInterviewer Question: ${question}\n\nPlease provide a reference answer:`;
 
+    const chatHistory = session.messages.map((m: any) => ({
+      role: m.role === MessageRole.USER ? 'user' : 'assistant',
+      content: m.content
+    }));
+
+    // Prevent malicious infinite loops on Free tier or unlimited tier (protects memory)
+    if (chatHistory.length > 30) {
+      this.logger.warn(`Session ${sessionId} reached 30 turns. Terminating stream.`);
+      yield isZh ? "本次会话已达到最大对话回合限制，请开启新一轮面试。" : "This session has reached the maximum turn limit. Please start a new interview.";
+      return;
+    }
+
+    const messages: any[] = [
+      { role: 'system', content: systemPrompt },
+      ...chatHistory,
+      { role: 'user', content: userPrompt }
+    ];
+
     for await (const chunk of this.aiService.stream(
       Models.Chat,
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
+      messages,
       { userId }
     )) {
       fullAnswer += chunk;

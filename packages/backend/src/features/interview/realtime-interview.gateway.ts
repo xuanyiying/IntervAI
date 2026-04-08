@@ -36,6 +36,10 @@ export class RealtimeInterviewGateway
   private activeSessions = new Map<string, string>();
   private sessionVoices = new Map<string, string>();
   private audioBuffers = new Map<string, Buffer[]>();
+  private rateLimiters = new Map<string, number>();
+
+  private readonly MAX_AUDIO_BUFFER_SIZE = 5 * 1024 * 1024; // 5MB MAX
+  private readonly WS_RATE_LIMIT_MS = 2000; // 2 seconds between aggressive events
 
   constructor(
     private readonly jwtService: JwtService,
@@ -82,6 +86,7 @@ export class RealtimeInterviewGateway
       this.activeSessions.delete(client.id);
       this.audioBuffers.delete(sessionId);
     }
+    this.rateLimiters.delete(client.id);
   }
 
   @SubscribeMessage('join_session')
@@ -127,6 +132,16 @@ export class RealtimeInterviewGateway
       : Buffer.from(data.chunk);
     const chunks = this.audioBuffers.get(data.sessionId) || [];
     chunks.push(chunk);
+
+    // Defense: MAX_AUDIO_BUFFER_SIZE check
+    const currentSize = chunks.reduce((acc, c) => acc + c.length, 0);
+    if (currentSize > this.MAX_AUDIO_BUFFER_SIZE) {
+      this.logger.warn(`Session ${data.sessionId} exceeded 5MB max audio buffer! Dropping chunks to prevent OOM.`);
+      this.audioBuffers.delete(data.sessionId);
+      client.emit('error', { message: 'Audio payload too large, connection reset.' });
+      return;
+    }
+
     this.audioBuffers.set(data.sessionId, chunks);
 
     if (chunks.length % 5 === 0) {
@@ -151,6 +166,14 @@ export class RealtimeInterviewGateway
     const userId = this.authenticatedClients.get(client.id);
     if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
       return;
+
+    // Rate limiter
+    const lastActive = this.rateLimiters.get(client.id) || 0;
+    if (Date.now() - lastActive < this.WS_RATE_LIMIT_MS) {
+      this.logger.warn(`Rate limit hit by ${userId} on end_audio`);
+      return;
+    }
+    this.rateLimiters.set(client.id, Date.now());
 
     try {
       const buffer = Buffer.isBuffer(data.audioBuffer)
@@ -197,6 +220,13 @@ export class RealtimeInterviewGateway
     const userId = this.authenticatedClients.get(client.id);
     if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
       return;
+
+    // Rate limiter
+    const lastActive = this.rateLimiters.get(client.id) || 0;
+    if (Date.now() - lastActive < this.WS_RATE_LIMIT_MS) {
+      return; // Silently drop too frequent detects
+    }
+    this.rateLimiters.set(client.id, Date.now());
 
     try {
       const buffer = Buffer.isBuffer(data.audioBuffer)
@@ -258,6 +288,14 @@ export class RealtimeInterviewGateway
     const userId = this.authenticatedClients.get(client.id);
     if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
       return;
+
+    // Rate limiter
+    const lastActive = this.rateLimiters.get(client.id) || 0;
+    if (Date.now() - lastActive < this.WS_RATE_LIMIT_MS) {
+      client.emit('error', { message: 'Too many requests. Please slow down.' });
+      return;
+    }
+    this.rateLimiters.set(client.id, Date.now());
 
     try {
       client.emit('generating_answer');

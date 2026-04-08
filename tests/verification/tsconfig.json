@@ -19,6 +19,7 @@
     "baseUrl": ".",
     "paths": {
       "@/config/*": ["config/*"],
+      "@/core/*": ["core/*"],
       "@/helpers/*": ["helpers/*"],
       "@/modules/*": ["modules/*"],
       "@/fixtures/*": ["fixtures/*"],

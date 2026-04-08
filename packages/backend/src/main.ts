@@ -14,7 +14,7 @@ import { MonitoringGuard } from '@/shared/monitoring/monitoring.guard';
 import { initOpenTelemetry } from '@/shared/monitoring/otel';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Initialize OpenTelemetry (optional, env controlled)
   await initOpenTelemetry();

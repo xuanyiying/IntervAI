@@ -15,6 +15,7 @@ import {
 } from '@ant-design/icons';
 import { useAuthStore, useUIStore } from '@/stores';
 import CookieConsent from '../components/CookieConsent';
+import GlobalQuotaListener from '../components/GlobalQuotaListener';
 import UsageWidget from '@/components/UsageWidget/UsageWidget';
 import Sidebar from './components/Sidebar';
 import { Logo } from '../components/Logo';
@@ -295,6 +296,7 @@ const AppLayout: React.FC = () => {
 
       <UsageWidget />
       <CookieConsent />
+      <GlobalQuotaListener />
     </Layout>
   );
 };
