@@ -1,33 +1,38 @@
 import { Module, Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { QuotaService as CeQuotaService } from './quota.service';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { RedisModule } from '@/shared/cache/redis.module';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { RedisService } from '@/shared/cache/redis.service';
 
 const logger = new Logger('QuotaModuleProxy');
 
 @Module({
   imports: [PrismaModule, RedisModule],
   providers: [
+    CeQuotaService, // Register the CE version for internal use and as fallback
     {
-      provide: CeQuotaService,
-      useFactory: (redis: RedisService, prisma: PrismaService) => {
-        const isEE = process.env.APP_EDITION !== 'oss';
-        if (isEE) {
-          try {
-            /* eslint-disable @typescript-eslint/no-var-requires */
-            const { QuotaService: EeQuotaService } = require('../../ee/quota/quota.service');
-            logger.log('EE QuotaService active');
-            return new EeQuotaService(redis, prisma);
-          } catch (e) {
-            logger.warn('Failed to load EE QuotaService, falling back to CE');
-            return new CeQuotaService();
-          }
+      provide: CeQuotaService, // Use CE class as public token
+      useFactory: async (moduleRef: ModuleRef, ce: CeQuotaService) => {
+        const isOSS = process.env.APP_EDITION === 'oss';
+        if (isOSS) {
+          return ce;
         }
-        return new CeQuotaService();
+
+        try {
+          // Late bound EE service discovery using string token
+          // This avoids direct imports of EE code in the core bundle
+          const ee = moduleRef.get('EE_QUOTA_SERVICE', { strict: false });
+          if (ee) {
+            logger.log('EE QuotaService active (Injected via ModuleRef)');
+            return ee;
+          }
+        } catch (e) {
+          logger.error('CRITICAL: EE Edition enabled but EE_QUOTA_SERVICE failed to resolve. Falling back to CE.', e);
+        }
+
+        return ce;
       },
-      inject: [RedisService, PrismaService],
+      inject: [ModuleRef, CeQuotaService],
     },
   ],
   exports: [CeQuotaService],
