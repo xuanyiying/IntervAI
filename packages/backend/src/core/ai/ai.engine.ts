@@ -55,29 +55,36 @@ export class AIEngine {
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
           const errorMessage = result.error?.message || 'Skill execution failed';
+          lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
           if (this.isTransientError(errorCode) && attempt < this.maxRetries) {
-            lastError = new Error(`[${errorCode}] ${errorMessage}`);
             this.logger.warn(
               `Skill "${skillName}" transient error (attempt ${attempt + 1}): ${errorMessage}`
             );
             continue;
           }
 
-          if (options?.fallback && attempt === this.maxRetries) {
+          if (options?.fallback) {
             this.logger.warn(
-              `Skill "${skillName}" failed after ${this.maxRetries} retries, using fallback`
+              `Skill "${skillName}" permanent error (${errorCode}), using fallback immediately`
             );
             return options.fallback();
           }
 
-          throw new Error(`[${errorCode}] ${errorMessage}`);
+          throw lastError;
         }
 
         if (!result.data) {
-          if (options?.fallback && attempt === this.maxRetries) {
+          if (options?.fallback && attempt < this.maxRetries) {
             this.logger.warn(
-              `Skill "${skillName}" returned no data after ${this.maxRetries} retries, using fallback`
+              `Skill "${skillName}" returned empty data (attempt ${attempt + 1}), retrying...`
+            );
+            continue;
+          }
+
+          if (options?.fallback) {
+            this.logger.warn(
+              `Skill "${skillName}" returned no data after all retries, using fallback`
             );
             return options.fallback();
           }
@@ -95,9 +102,9 @@ export class AIEngine {
           continue;
         }
 
-        if (options?.fallback && attempt === this.maxRetries) {
+        if (options?.fallback) {
           this.logger.warn(
-            `Skill "${skillName}" failed after ${this.maxRetries} retries, using fallback`
+            `Skill "${skillName}" error after attempts, using fallback: ${lastError.message}`
           );
           try {
             return await options.fallback();
@@ -108,6 +115,17 @@ export class AIEngine {
         }
 
         throw lastError;
+      }
+    }
+
+    if (options?.fallback && lastError) {
+      this.logger.warn(
+        `Skill "${skillName}" exhausted all retries, using fallback as last resort`
+      );
+      try {
+        return await options.fallback();
+      } catch (fallbackError) {
+        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
       }
     }
 
