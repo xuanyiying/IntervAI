@@ -20,6 +20,7 @@ import { QuestionGeneratorService } from './services/question-generator.service'
 import { AnswerEvaluationService } from './services/answer-evaluation.service';
 import { EvaluationProcessor } from './processors/evaluation.processor';
 import { InterviewReportService } from './services/interview-report.service';
+import { InterviewAIService } from './services/interview-ai.service';
 
 import { AuthModule } from '@/core/auth/auth.module';
 
@@ -48,12 +49,13 @@ import { AuthModule } from '@/core/auth/auth.module';
     AnswerEvaluationService,
     EvaluationProcessor,
     InterviewReportService,
+    InterviewAIService,
   ],
   controllers: [
     InterviewController,
     InterviewerPersonaController,
     InterviewAssistantController,
   ],
-  exports: [InterviewService, InterviewerPersonaService],
+  exports: [InterviewService, InterviewerPersonaService, InterviewAIService],
 })
 export class InterviewModule {}

@@ -7,7 +7,8 @@ import {
 import { ParseStatus } from '@prisma/client';
 import { ResumeService } from './resume.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '../../../core/ai/ai.engine';
+import { ResumeParserService } from './resume-parser.service';
+import { ResumeAIService } from './resume-ai.service';
 import { StorageService } from '../../../core/storage/storage.service';
 import * as fs from 'fs';
 import { AIQueueService } from '@/core/ai/queue/ai-queue.service';
@@ -68,10 +69,17 @@ describe('ResumeService', () => {
           },
         },
         {
-          provide: AIEngine,
+          provide: ResumeParserService,
           useValue: {
-            extractTextFromFile: jest.fn(),
+            extractText: jest.fn(),
+            parseFile: jest.fn(),
+          },
+        },
+        {
+          provide: ResumeAIService,
+          useValue: {
             parseResumeContent: jest.fn(),
+            analyzeParsedResume: jest.fn(),
           },
         },
         {
@@ -477,7 +485,7 @@ describe('ResumeService', () => {
         projects: [],
       };
 
-      const aiEngine = service['aiEngine'];
+      const resumeParser = service['resumeParser'];
       const aiQueueService = service['aiQueueService'];
 
       (prismaService.resume.findUnique as jest.Mock).mockResolvedValue(
@@ -487,7 +495,7 @@ describe('ResumeService', () => {
       (fs.readFileSync as jest.Mock).mockReturnValue(
         Buffer.from('test content')
       );
-      (aiEngine.extractTextFromFile as jest.Mock).mockResolvedValue(
+      (resumeParser.extractText as jest.Mock).mockResolvedValue(
         'John Doe\\njohn@example.com'
       );
       (aiQueueService.addResumeParsingJob as jest.Mock).mockResolvedValue({
@@ -523,21 +531,14 @@ describe('ResumeService', () => {
     });
 
     it('should update status to PROCESSING when parsing starts', async () => {
-      const aiEngine = service['aiEngine'];
+      const resumeParser = service['resumeParser'];
 
       (prismaService.resume.findUnique as jest.Mock).mockResolvedValue(
         mockResume
       );
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(Buffer.from('test'));
-      (aiEngine.extractTextFromFile as jest.Mock).mockResolvedValue('content');
-      (aiEngine.parseResumeContent as jest.Mock).mockResolvedValue({
-        personalInfo: { name: 'John', email: 'john@example.com' },
-        education: [],
-        experience: [],
-        skills: [],
-        projects: [],
-      });
+      (resumeParser.extractText as jest.Mock).mockResolvedValue('content');
       (prismaService.resume.update as jest.Mock).mockResolvedValue({
         ...mockResume,
         parseStatus: ParseStatus.COMPLETED,
@@ -565,14 +566,14 @@ describe('ResumeService', () => {
     });
 
     it('should set status to FAILED if parsing fails', async () => {
-      const aiEngine = service['aiEngine'];
+      const resumeParser = service['resumeParser'];
 
       (prismaService.resume.findUnique as jest.Mock).mockResolvedValue(
         mockResume
       );
       (fs.existsSync as jest.Mock).mockReturnValue(true);
       (fs.readFileSync as jest.Mock).mockReturnValue(Buffer.from('test'));
-      (aiEngine.extractTextFromFile as jest.Mock).mockRejectedValue(
+      (resumeParser.extractText as jest.Mock).mockRejectedValue(
         new Error('Parse error')
       );
       (prismaService.resume.update as jest.Mock).mockResolvedValue({

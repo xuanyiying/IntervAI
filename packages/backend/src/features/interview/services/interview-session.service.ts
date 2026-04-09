@@ -1,9 +1,10 @@
-import { AIEngine, AIService } from '@/core/ai';
+import { AIService } from '@/core/ai/ai.service';
 import { PromptService } from '@/core/prompts';
 import { QuotaService } from '@/core/quota/quota.service';
 import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
+import { InterviewAIService } from './interview-ai.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,6 +12,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   InterviewMessage,
   InterviewMode,
@@ -35,7 +37,8 @@ export class InterviewSessionService {
     private aiService: AIService,
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService,
-    private promptService: PromptService
+    private promptService: PromptService,
+    private interviewAI: InterviewAIService,
   ) { }
 
   /**
@@ -457,13 +460,17 @@ export class InterviewSessionService {
         responsibilities: jobData.responsibilities || [],
       });
 
+      // Use summary or markdown from parsedData as self-introduction context
+      const selfIntroduction =
+        resumeData.summary || resumeData.markdown || '';
+
       const result = await this.aiService.executeSkill(
         'interview-assistant',
         {
           question,
           resume: resumeText,
           jobDescription,
-          selfIntroduction: '',
+          selfIntroduction,
           interviewType: 'technical',
           language: isZh ? 'zh' : 'en',
         },
@@ -541,8 +548,7 @@ export class InterviewSessionService {
     }));
 
     try {
-      const aiEngine = new AIEngine(this.aiService);
-      const aiResponse = await aiEngine.chatWithInterviewer(
+      const aiResponse = await this.interviewAI.chatWithInterviewer(
         prompts.system + '\n\n' + context,
         userAnswer,
         history

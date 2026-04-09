@@ -1,37 +1,70 @@
-/**
- * AI Engine - Generic AI Operations
- *
- * Provides generic AI capabilities (chat, embedding, skill execution)
- * that are not tied to any specific business domain.
- *
- * Domain-specific logic lives in respective feature modules:
- * - JobAIService (job module) - job description parsing
- * - InterviewAIService (interview module) - interview questions, chat, transcription
- * - ResumeAIService (resume module) - resume parsing, optimization
- */
-
+import { ParsedJobDescription } from '@/types';
+import { AIService } from '@/core/ai/ai.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AIService } from './ai.service';
 
 @Injectable()
-export class AIEngine {
-  private readonly logger = new Logger(AIEngine.name);
+export class JobAIService {
+  private readonly logger = new Logger(JobAIService.name);
   private readonly maxRetries = 3;
   private readonly baseDelayMs = 1000;
 
   constructor(
     private aiService: AIService,
     private configService: ConfigService
-  ) { }
+  ) {}
 
   private get aiModel(): string {
     return this.aiService.getModel() || this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
   }
 
   /**
-   * Execute skill with retry logic and error handling
+   * Parse job description using job-parser skill
    */
+  async parseJobDescription(
+    content: string,
+    userId: string,
+  ): Promise<ParsedJobDescription> {
+    this.logger.log('Parsing job description via job-parser skill');
+
+    try {
+      const data = await this.executeSkillWithRetry(
+        'job-parser',
+        { rawJob: { description: content } },
+        userId,
+        {
+          fallback: async () => {
+            this.logger.warn('Using rule-based parsing as fallback for job description');
+            return this.basicParseJobDescription(content);
+          }
+        }
+      );
+
+      return data as ParsedJobDescription;
+    } catch (error) {
+      this.logger.error('Error parsing job description:', error);
+      throw new Error(`Failed to parse job description: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  private basicParseJobDescription(content: string): ParsedJobDescription {
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+    return {
+      title: lines[0] || '',
+      company: '',
+      location: '',
+      requiredSkills: [],
+      preferredSkills: [],
+      responsibilities: [],
+      keywords: [],
+      salaryRange: '',
+      experienceYears: 0,
+      educationLevel: 'bachelor',
+      description: content
+    };
+  }
+
   private async executeSkillWithRetry(
     skillName: string,
     inputs: Record<string, any>,
@@ -155,31 +188,5 @@ export class AIEngine {
       /socket hang up/i,
     ];
     return networkPatterns.some(pattern => pattern.test(error.message));
-  }
-
-  // ==================== Generic AI ====================
-
-  async generateEmbedding(text: string): Promise<number[]> {
-    return this.aiService.embed(this.aiModel, text);
-  }
-
-  async generateChatCompletion(
-    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-    options?: { temperature?: number; maxTokens?: number }
-  ): Promise<string> {
-    const result = await this.aiService.chat(this.aiModel, messages, options);
-    return result.content;
-  }
-
-  async generate(
-    prompt: string,
-    options?: { temperature?: number; maxTokens?: number }
-  ): Promise<string> {
-    const result = await this.aiService.chat(
-      this.aiModel,
-      [{ role: 'user', content: prompt }],
-      options
-    );
-    return result.content;
   }
 }

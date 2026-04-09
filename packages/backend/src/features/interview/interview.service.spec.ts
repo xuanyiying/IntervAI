@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InterviewService } from './interview.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine, AIService } from '@/core/ai';
+import { AIService } from '@/core/ai/ai.service';
+import { InterviewAIService } from './services/interview-ai.service';
 import { InterviewSessionService } from './services/interview-session.service';
 import { QuestionGeneratorService } from './services/question-generator.service';
 import { PromptService } from '@/core/prompts';
@@ -18,7 +19,7 @@ describe('InterviewService', () => {
   let service: InterviewService;
   let sessionService: jest.Mocked<InterviewSessionService>;
   let questionGenerator: jest.Mocked<QuestionGeneratorService>;
-  let aiEngine: jest.Mocked<AIEngine>;
+  let interviewAI: jest.Mocked<InterviewAIService>;
   let aiService: jest.Mocked<AIService>;
 
   const mockUserId = 'user-123';
@@ -57,11 +58,10 @@ describe('InterviewService', () => {
           },
         },
         {
-          provide: AIEngine,
+          provide: InterviewAIService,
           useValue: {
             generateInterviewQuestions: jest.fn(),
             chatWithInterviewer: jest.fn(),
-            generate: jest.fn(),
             transcribeAudio: jest.fn(),
           },
         },
@@ -83,7 +83,7 @@ describe('InterviewService', () => {
     service = module.get<InterviewService>(InterviewService);
     sessionService = module.get(InterviewSessionService);
     questionGenerator = module.get(QuestionGeneratorService);
-    aiEngine = module.get(AIEngine);
+    interviewAI = module.get(InterviewAIService);
     aiService = module.get(AIService);
   });
 

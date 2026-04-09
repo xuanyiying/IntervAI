@@ -4,14 +4,14 @@ import { Process, Processor } from '@nestjs/bull';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
 import { MessageRole, ParseStatus } from '@prisma/client';
 import { Job } from 'bull';
-import { AIEngine } from '../ai.engine';
+import { ResumeAIService } from '@/features/resume/services/resume-ai.service';
 
 @Processor('ai-processing')
 export class AIQueueProcessor {
   private readonly logger = new Logger(AIQueueProcessor.name);
 
   constructor(
-    private aiEngine: AIEngine,
+    private resumeAI: ResumeAIService,
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
@@ -63,7 +63,7 @@ export class AIQueueProcessor {
       let optimizedContent: string | null = null;
 
       try {
-        const result = await this.aiEngine.parseAndOptimizeResume(content, userId);
+        const result = await this.resumeAI.parseAndOptimizeResume(content, userId);
         parsedData = result.parsedData;
         optimizedContent = result.optimizedContent || null;
         this.logger.log(
@@ -85,7 +85,7 @@ export class AIQueueProcessor {
           `Combined parse+optimize failed for ${resumeId}, falling back to parse-only:`,
           combinedError
         );
-        parsedData = await this.aiEngine.parseResumeContent(content, userId);
+        parsedData = await this.resumeAI.parseResumeContent(content, userId);
 
         // Attempt optimization separately as a non-critical enhancement
         try {
@@ -97,7 +97,7 @@ export class AIQueueProcessor {
               metadata: { resumeId, stage: 'optimizing', progress: 70 },
             });
           }
-          optimizedContent = await this.aiEngine.optimizeResumeContent(content, userId);
+          optimizedContent = await this.resumeAI.optimizeResumeContent(content, userId);
           if (optimizedContent && conversationId) {
             await this.sendOptimizationToConversation(
               userId,

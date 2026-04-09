@@ -5,6 +5,7 @@ import { AIQueueProcessor } from './ai-queue.processor';
 import { AIModule } from '../ai.module';
 import { PrismaModule } from '@/shared/database/prisma.module';
 import { ChatModule } from '@/core/chat/chat.module';
+import { ResumeModule } from '@/features/resume/resume.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ChatModule } from '@/core/chat/chat.module';
     AIModule,
     PrismaModule,
     forwardRef(() => ChatModule),
+    forwardRef(() => ResumeModule),
   ],
   providers: [AIQueueService, AIQueueProcessor],
   exports: [AIQueueService],

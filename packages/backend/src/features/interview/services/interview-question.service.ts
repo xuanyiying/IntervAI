@@ -1,4 +1,4 @@
-import { AIEngine } from '@/core/ai';
+import { InterviewAIService } from './interview-ai.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
@@ -15,7 +15,7 @@ export class InterviewQuestionService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private interviewAI: InterviewAIService
   ) { }
 
   /**
@@ -118,7 +118,7 @@ export class InterviewQuestionService {
     try {
       const jobDescription = JSON.stringify(jobData);
       const resumeContent = JSON.stringify(resumeData);
-      const questions = await this.aiEngine.generateInterviewQuestions(
+      const questions = await this.interviewAI.generateInterviewQuestions(
         jobDescription,
         resumeContent,
         undefined,

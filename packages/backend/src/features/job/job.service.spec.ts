@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JobService } from './job.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '../../core/ai/ai.engine';
+import { JobAIService } from './job-ai.service';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -14,7 +14,7 @@ jest.mock('axios');
 describe('JobService', () => {
   let service: JobService;
   let prismaService: PrismaService;
-  let aiEngine: AIEngine;
+  let jobAI: JobAIService;
 
   const mockJob = {
     id: 'job-1',
@@ -66,7 +66,7 @@ describe('JobService', () => {
           },
         },
         {
-          provide: AIEngine,
+          provide: JobAIService,
           useValue: {
             parseJobDescription: jest.fn(),
           },
@@ -76,7 +76,7 @@ describe('JobService', () => {
 
     service = module.get<JobService>(JobService);
     prismaService = module.get<PrismaService>(PrismaService);
-    aiEngine = module.get<AIEngine>(AIEngine);
+    jobAI = module.get<JobAIService>(JobAIService);
   });
 
   afterEach(() => {
@@ -85,7 +85,7 @@ describe('JobService', () => {
 
   describe('createJob', () => {
     it('should create a job successfully', async () => {
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue(
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue(
         mockJob.parsedRequirements
       );
       (prismaService.job.create as jest.Mock).mockResolvedValue(mockJob);
@@ -122,14 +122,14 @@ describe('JobService', () => {
     });
 
     it('should parse job description when creating job', async () => {
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue(
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue(
         mockJob.parsedRequirements
       );
       (prismaService.job.create as jest.Mock).mockResolvedValue(mockJob);
 
       await service.createJob('user-1', mockJobInput);
 
-      expect(aiEngine.parseJobDescription).toHaveBeenCalledWith(
+      expect(jobAI.parseJobDescription).toHaveBeenCalledWith(
         mockJobInput.jobDescription
       );
     });
@@ -137,7 +137,7 @@ describe('JobService', () => {
 
   describe('parseJobDescription', () => {
     it('should parse job description successfully', async () => {
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue(
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue(
         mockJob.parsedRequirements
       );
 
@@ -166,7 +166,7 @@ describe('JobService', () => {
         'We need JavaScript, TypeScript, React, and Node.js developers';
       const expectedSkills = ['javascript', 'typescript', 'react', 'node.js'];
 
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue({
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue({
         requiredSkills: expectedSkills,
         preferredSkills: [],
         responsibilities: [],
@@ -181,7 +181,7 @@ describe('JobService', () => {
     it('should extract experience years from job description', async () => {
       const description = 'We require 5+ years of experience';
 
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue({
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue({
         requiredSkills: [],
         preferredSkills: [],
         experienceYears: 5,
@@ -197,7 +197,7 @@ describe('JobService', () => {
     it('should extract education level from job description', async () => {
       const description = 'Bachelor degree required';
 
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue({
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue({
         requiredSkills: [],
         preferredSkills: [],
         educationLevel: 'bachelor',
@@ -290,7 +290,7 @@ describe('JobService', () => {
       };
 
       (prismaService.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue(
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue(
         mockJob.parsedRequirements
       );
       (prismaService.job.update as jest.Mock).mockResolvedValue({
@@ -310,7 +310,7 @@ describe('JobService', () => {
       };
 
       (prismaService.job.findUnique as jest.Mock).mockResolvedValue(mockJob);
-      (aiEngine.parseJobDescription as jest.Mock).mockResolvedValue({
+      (jobAI.parseJobDescription as jest.Mock).mockResolvedValue({
         requiredSkills: ['python', 'django'],
         preferredSkills: [],
         responsibilities: [],
@@ -323,7 +323,7 @@ describe('JobService', () => {
 
       await service.updateJob('job-1', 'user-1', updatedData);
 
-      expect(aiEngine.parseJobDescription).toHaveBeenCalledWith(
+      expect(jobAI.parseJobDescription).toHaveBeenCalledWith(
         updatedData.jobDescription
       );
     });

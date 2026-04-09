@@ -3,7 +3,7 @@
  * Handles intent recognition and dispatches to appropriate handlers
  */
 
-import { AI_MODEL, AIService} from '@/core/ai';
+import { AIService } from '@/core/ai';
 import { LanguageInput, PromptService } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
 import {
@@ -199,7 +199,7 @@ export class ChatIntentService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
-    private readonly promptService: PromptService  ) { }
+    private readonly promptService: PromptService) { }
 
   async onModuleInit(): Promise<void> {
     this.logger.log(
@@ -616,7 +616,7 @@ export class ChatIntentService implements OnModuleInit {
       );
 
       const response = await this.aiService.chat(
-        AI_MODEL,
+        this.aiService.getModel(),
         [
           {
             role: 'system',
@@ -772,7 +772,7 @@ export class ChatIntentService implements OnModuleInit {
       );
 
       const response = await this.aiService.chat(
-        AI_MODEL,
+        this.aiService.getModel(),
         [
           {
             role: 'system',

@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
+import { JobAIService } from './job-ai.service';
 
 import { Sanitizer } from '@/common/utils/sanitizer';
 import { Job } from '@prisma/client';
@@ -20,7 +20,7 @@ export class JobService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine
+    private jobAI: JobAIService
   ) {}
 
   /**
@@ -100,7 +100,7 @@ export class JobService {
 
     try {
       // Use new AI engine adapter to parse job description with multi-provider support
-      return await this.aiEngine.parseJobDescription(description, userId || 'system');
+      return await this.jobAI.parseJobDescription(description, userId || 'system');
     } catch (error) {
       this.logger.error('Error parsing job description:', error);
       // Fall back to rule-based parsing

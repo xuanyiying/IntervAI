@@ -5,6 +5,8 @@ import { ResumeService } from './services/resume.service';
 import { ResumeOptimizerService } from './services/resume-optimizer.service';
 import { PdfGenerationService } from './services/pdf-generation.service';
 import { MatchAnalysisService } from './services/match-analysis.service';
+import { ResumeParserService } from './services/resume-parser.service';
+import { ResumeAIService } from './services/resume-ai.service';
 import { ResumeController } from './controllers/resume.controller';
 import { ResumeOptimizerController } from './controllers/resume-optimizer.controller';
 import { PdfGenerationController } from './controllers/pdf-generation.controller';
@@ -41,6 +43,8 @@ import { PdfProcessor } from './processors/pdf.processor';
     ResumeOptimizerService,
     PdfGenerationService,
     MatchAnalysisService,
+    ResumeParserService,
+    ResumeAIService,
     PdfProcessor,
   ],
   controllers: [
@@ -55,6 +59,8 @@ import { PdfProcessor } from './processors/pdf.processor';
     ResumeOptimizerService,
     MatchAnalysisService,
     PdfGenerationService,
+    ResumeParserService,
+    ResumeAIService,
   ],
 })
 export class ResumeModule {}

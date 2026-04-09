@@ -314,7 +314,7 @@ export class SkillLoader {
       definition.outputs?.type === 'array';
 
     const result = await ai.chat(
-      ctx.model || 'openai:gpt-4o',
+      ctx.model || ai.getModel(),
       [{ role: 'user', content: prompt }],
       {
         maxTokens: 2000,
