@@ -1,8 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
-import { AIEngine } from './ai.engine';
-import * as fc from 'fast-check';
 import { ParsedResumeData } from '@/types';
+import { Logger } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import * as fc from 'fast-check';
+import { AIEngine } from './ai.engine';
 
 describe('AIEngine', () => {
   let engine: AIEngine;
@@ -18,10 +18,10 @@ describe('AIEngine', () => {
     jest.clearAllMocks();
 
     // Mock Logger to prevent console noise during tests
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
-    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => { });
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => { });
+    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => { });
+    jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => { });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -97,7 +97,7 @@ describe('AIEngine', () => {
         github.com/johndoe
       `;
 
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result.personalInfo).toBeDefined();
       expect(result.personalInfo.email).toBe('john.doe@example.com');
@@ -129,7 +129,7 @@ describe('AIEngine', () => {
         finishReason: 'stop',
       });
 
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result.personalInfo.email).toBe('john.doe@example.com');
     });
@@ -154,7 +154,7 @@ describe('AIEngine', () => {
           finishReason: 'stop',
         });
 
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result.personalInfo.email).toBe('john.doe@example.com');
       expect(mockAIEngineService.call).toHaveBeenCalledTimes(2);
@@ -176,7 +176,7 @@ describe('AIEngine', () => {
         finishReason: 'stop',
       });
 
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result.personalInfo.email).toBe('john.doe@example.com');
     });
@@ -185,7 +185,7 @@ describe('AIEngine', () => {
       mockAIEngineService.call.mockRejectedValue(new Error('AI service error'));
 
       const content = 'John Doe\njohn@example.com';
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       // Should return empty resume data on error
       expect(result).toBeDefined();
@@ -197,7 +197,7 @@ describe('AIEngine', () => {
     it('should return valid ParsedResumeData structure', async () => {
       const content = 'John Doe\njohn@example.com';
 
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result).toHaveProperty('personalInfo');
       expect(result).toHaveProperty('education');
@@ -235,7 +235,7 @@ describe('AIEngine', () => {
       const description =
         'Looking for a frontend developer with React experience';
 
-      const result = await engine.parseJobDescription(description);
+      const result = await engine.parseJobDescription(description, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.requiredSkills).toContain('JavaScript');
@@ -256,7 +256,7 @@ describe('AIEngine', () => {
       mockAIEngineService.call.mockRejectedValue(new Error('Parsing failed'));
 
       const description = 'Test job description';
-      const result = await engine.parseJobDescription(description);
+      const result = await engine.parseJobDescription(description, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.requiredSkills).toEqual([]);
@@ -298,7 +298,8 @@ describe('AIEngine', () => {
 
       const result = await engine.generateOptimizationSuggestions(
         resumeContent,
-        jobDescription
+        jobDescription,
+        'test-user-id'
       );
 
       expect(result).toBeDefined();
@@ -329,7 +330,8 @@ describe('AIEngine', () => {
 
       const result = await engine.generateOptimizationSuggestions(
         resumeContent,
-        'job description'
+        'job description',
+        'test-user-id'
       );
 
       expect(result).toEqual([]);
@@ -370,7 +372,9 @@ describe('AIEngine', () => {
 
       const result = await engine.generateInterviewQuestions(
         resumeContent,
-        jobDescription
+        jobDescription,
+        undefined,
+        'test-user-id'
       );
 
       expect(result).toBeDefined();
@@ -401,7 +405,9 @@ describe('AIEngine', () => {
 
       const result = await engine.generateInterviewQuestions(
         resumeContent,
-        'job description'
+        'job description',
+        undefined,
+        'test-user-id'
       );
 
       expect(result).toEqual([]);
@@ -446,7 +452,7 @@ describe('AIEngine', () => {
         JavaScript, TypeScript, React, Node.js, PostgreSQL
       `;
 
-      const result = await engine.parseResumeContent(resumeContent);
+      const result = await engine.parseResumeContent(resumeContent, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.personalInfo).toBeDefined();
@@ -489,7 +495,7 @@ describe('AIEngine', () => {
               ${skills.join(', ')}
             `;
 
-            const result = await engine.parseResumeContent(resumeContent);
+            const result = await engine.parseResumeContent(resumeContent, 'test-user-id');
 
             // Verify structure
             expect(result).toHaveProperty('personalInfo');
@@ -524,7 +530,7 @@ describe('AIEngine', () => {
       `;
 
       // Should return empty data structure on error
-      const result = await engine.parseResumeContent(content);
+      const result = await engine.parseResumeContent(content, 'test-user-id');
 
       expect(result).toBeDefined();
       expect(result.personalInfo).toBeDefined();

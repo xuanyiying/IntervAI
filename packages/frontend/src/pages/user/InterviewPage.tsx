@@ -1,4 +1,5 @@
 import StreamingMarkdownBubble from '@/components/StreamingMarkdownBubble';
+import { useInterviewSocket } from '@/hooks/useInterviewSocket';
 import '@/styles/agents.css';
 import '@/styles/common.css';
 import { InterviewQuestion, InterviewSession } from '@/types';
@@ -35,11 +36,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PersonaSelector } from '../../components/PersonaSelector';
 import VoiceInterviewCall from '../../components/VoiceInterviewCall';
 import VoiceManager from '../../components/VoiceManager';
+import axios from '../../config/axios';
 import {
   InterviewerPersona,
   interviewService,
 } from '../../services/interview-service';
-import { useInterviewSocket } from '@/hooks/useInterviewSocket';
 
 const { Title, Text, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -76,6 +77,7 @@ const InterviewPage: React.FC = () => {
     string | undefined
   >();
   const [currentStep, setCurrentStep] = useState(0);
+  const [resolvedOptimizationId, setResolvedOptimizationId] = useState<string | null>(null);
 
   // 新增：面试模式和语言选择
   const [interviewMode, setInterviewMode] = useState<InterviewMode>('assist');
@@ -111,9 +113,32 @@ const InterviewPage: React.FC = () => {
     try {
       setLoading(true);
 
-      const activeSession = await interviewService.getActiveSession(
-        optimizationId!
-      );
+      let effectiveOptimizationId = optimizationId || resolvedOptimizationId || undefined;
+
+      if (!effectiveOptimizationId) {
+        if (interviewMode === 'assist') {
+          try {
+            const { data: optimizations } = await axios.get<any[]>('/optimizations');
+            if (optimizations && optimizations.length > 0) {
+              effectiveOptimizationId = optimizations[0].id;
+              setResolvedOptimizationId(optimizations[0].id);
+            }
+          } catch (e) {
+            console.warn('Could not fetch optimizations, starting without one');
+          }
+        }
+
+        if (!effectiveOptimizationId && interviewMode === 'mock') {
+          message.warning(t('interview.optimization_required', '模拟面试需要先进行简历优化'));
+          setCurrentStep(0);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const activeSession = effectiveOptimizationId
+        ? await interviewService.getActiveSession(effectiveOptimizationId)
+        : null;
 
       if (activeSession) {
         setSession(activeSession);
@@ -127,7 +152,7 @@ const InterviewPage: React.FC = () => {
         }
       } else {
         const result = await interviewService.startSession(
-          optimizationId!,
+          effectiveOptimizationId!,
           selectedVoiceId,
           selectedPersonaId,
           interviewMode,
@@ -870,9 +895,9 @@ const AssistModeView: React.FC<{
                 : !isConnected
                   ? t('interview.waiting_connection', '等待连接...')
                   : t(
-                      'interview.input_or_voice',
-                      '输入问题或点击麦克风语音输入'
-                    )}
+                    'interview.input_or_voice',
+                    '输入问题或点击麦克风语音输入'
+                  )}
             </Text>
           </div>
         </div>
@@ -916,84 +941,84 @@ const MockModeView: React.FC<{
   handleSubmitAnswer,
   t,
 }) => {
-  return (
-    <>
-      <Card
-        type="inner"
-        title={currentQuestion.questionType}
-        style={{ backgroundColor: '#f9f9f9' }}
-      >
-        <Title level={4}>{currentQuestion.question}</Title>
-        {currentQuestion.tips && currentQuestion.tips.length > 0 && (
-          <div style={{ marginTop: 16 }}>
-            <Text type="secondary" strong>
-              {t('interview.tips')}:
-            </Text>
-            <ul>
-              {currentQuestion.tips.map((tip, idx) => (
-                <li key={idx}>
-                  <Text type="secondary">{tip}</Text>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Card>
+    return (
+      <>
+        <Card
+          type="inner"
+          title={currentQuestion.questionType}
+          style={{ backgroundColor: '#f9f9f9' }}
+        >
+          <Title level={4}>{currentQuestion.question}</Title>
+          {currentQuestion.tips && currentQuestion.tips.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary" strong>
+                {t('interview.tips')}:
+              </Text>
+              <ul>
+                {currentQuestion.tips.map((tip, idx) => (
+                  <li key={idx}>
+                    <Text type="secondary">{tip}</Text>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
 
-      <Divider>{t('interview.your_answer')}</Divider>
+        <Divider>{t('interview.your_answer')}</Divider>
 
-      <TextArea
-        rows={6}
-        value={answerText}
-        onChange={(e) => setAnswerText(e.target.value)}
-        placeholder={t('interview.answer_placeholder')}
-        disabled={processing || recording}
-      />
+        <TextArea
+          rows={6}
+          value={answerText}
+          onChange={(e) => setAnswerText(e.target.value)}
+          placeholder={t('interview.answer_placeholder')}
+          disabled={processing || recording}
+        />
 
-      <div style={{ marginTop: '24px', textAlign: 'center' }}>
-        <Space size="large">
-          {!recording ? (
-            <Button
-              shape="circle"
-              icon={<AudioOutlined style={{ fontSize: '24px' }} />}
-              size="large"
-              style={{ width: '64px', height: '64px' }}
-              onClick={startRecording}
-              disabled={processing}
-            />
-          ) : (
+        <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <Space size="large">
+            {!recording ? (
+              <Button
+                shape="circle"
+                icon={<AudioOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={startRecording}
+                disabled={processing}
+              />
+            ) : (
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<StopOutlined style={{ fontSize: '24px' }} />}
+                size="large"
+                style={{ width: '64px', height: '64px' }}
+                onClick={stopRecording}
+              />
+            )}
+
             <Button
               type="primary"
-              danger
-              shape="circle"
-              icon={<StopOutlined style={{ fontSize: '24px' }} />}
               size="large"
-              style={{ width: '64px', height: '64px' }}
-              onClick={stopRecording}
-            />
-          )}
-
-          <Button
-            type="primary"
-            size="large"
-            icon={<SendOutlined />}
-            onClick={handleSubmitAnswer}
-            disabled={recording || processing || !answerText.trim()}
-            loading={processing}
-          >
-            {t('interview.submit_answer')}
-          </Button>
-        </Space>
-        <div style={{ marginTop: 8 }}>
-          <Text type="secondary">
-            {recording
-              ? t('interview.recording_hint_recording')
-              : t('interview.recording_hint_idle')}
-          </Text>
+              icon={<SendOutlined />}
+              onClick={handleSubmitAnswer}
+              disabled={recording || processing || !answerText.trim()}
+              loading={processing}
+            >
+              {t('interview.submit_answer')}
+            </Button>
+          </Space>
+          <div style={{ marginTop: 8 }}>
+            <Text type="secondary">
+              {recording
+                ? t('interview.recording_hint_recording')
+                : t('interview.recording_hint_idle')}
+            </Text>
+          </div>
         </div>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
 export default InterviewPage;

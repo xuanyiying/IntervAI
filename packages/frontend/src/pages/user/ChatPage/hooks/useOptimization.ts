@@ -89,16 +89,7 @@ export const useOptimization = ({
 
         if (!suggestions || suggestions.length === 0) return;
 
-        const pendingIds = suggestions
-          .filter((s) => s.status === 'pending')
-          .map((s) => s.id);
-
-        if (pendingIds.length === 0) return;
-
-        await optimizationService.acceptBatchSuggestions(
-          optimizationId,
-          pendingIds
-        );
+        await optimizationService.acceptAllSuggestions(optimizationId);
         message.success(t('chat.all_suggestions_accepted', '所有建议已接受'));
         if (currentConversation) {
           await loadMessages(currentConversation.id);

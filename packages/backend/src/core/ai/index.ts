@@ -25,7 +25,7 @@ export {
 } from './types';
 
 // Models
-export { Models, getModelCost, PROVIDER_BASE_URLS } from './models';
+export { AI_MODEL, PROVIDER_BASE_URLS } from './models';
 
 // Provider
 export { AIProvider, ProviderClient } from './providers/provider';

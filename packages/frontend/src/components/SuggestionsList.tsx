@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { theme } from 'antd';
 import SuggestionCard from './SuggestionCard';
+import SuggestionDiffCard from './SuggestionDiffCard';
 import { Suggestion, SuggestionStatus } from '../types';
 
 interface SuggestionsListProps {
@@ -26,6 +27,7 @@ interface SuggestionsListProps {
   onReject: (suggestionId: string) => Promise<void>;
   onAcceptAll?: () => Promise<void>;
   loading?: boolean;
+  useDiffView?: boolean;
 }
 
 const SuggestionsList: React.FC<SuggestionsListProps> = ({
@@ -34,6 +36,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
   onReject,
   onAcceptAll,
   loading = false,
+  useDiffView = true,
 }) => {
   const { token } = theme.useToken();
   const [acceptAllLoading, setAcceptAllLoading] = useState(false);
@@ -82,7 +85,6 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
       }}
     >
       <Spin spinning={loading}>
-        {/* Summary Statistics */}
         <Row gutter={16} style={{ marginBottom: '24px' }}>
           <Col xs={8} sm={6}>
             <Statistic
@@ -143,20 +145,28 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
           </>
         )}
 
-        {/* Suggestions List */}
         <div style={{ maxHeight: '600px', overflow: 'auto' }}>
-          {suggestions.map((suggestion, index) => (
-            <SuggestionCard
-              key={suggestion.id}
-              suggestion={suggestion}
-              onAccept={onAccept}
-              onReject={onReject}
-              index={index}
-            />
-          ))}
+          {suggestions.map((suggestion, index) =>
+            useDiffView ? (
+              <SuggestionDiffCard
+                key={suggestion.id}
+                suggestion={suggestion}
+                onAccept={onAccept}
+                onReject={onReject}
+                index={index}
+              />
+            ) : (
+              <SuggestionCard
+                key={suggestion.id}
+                suggestion={suggestion}
+                onAccept={onAccept}
+                onReject={onReject}
+                index={index}
+              />
+            )
+          )}
         </div>
 
-        {/* Summary Footer */}
         <Divider style={{ margin: '16px 0' }} />
         <div
           style={{

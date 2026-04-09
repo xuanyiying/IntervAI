@@ -96,64 +96,8 @@ describe('ResumeOptimizerService', () => {
     prismaService = module.get(PrismaService);
   });
 
-  describe('calculateMatchScore', () => {
-    it('should calculate correct match score with high skill overlap', () => {
-      const result = service.calculateMatchScore(
-        mockResumeData as any,
-        mockJobData as any
-      );
-
-      expect(result.overall).toBeGreaterThanOrEqual(0);
-      expect(result.overall).toBeLessThanOrEqual(100);
-      expect(result.skillMatch).toBeGreaterThanOrEqual(0);
-      expect(result.experienceMatch).toBeGreaterThanOrEqual(0);
-      expect(result.educationMatch).toBeGreaterThanOrEqual(0);
-      expect(result.keywordCoverage).toBeGreaterThanOrEqual(0);
-      expect(result.strengths).toBeInstanceOf(Array);
-      expect(result.weaknesses).toBeInstanceOf(Array);
-      expect(result.missingKeywords).toBeInstanceOf(Array);
-    });
-
-    it('should identify missing keywords from job description', () => {
-      const result = service.calculateMatchScore(
-        mockResumeData as any,
-        mockJobData as any
-      );
-
-      expect(result.missingKeywords).toContain('Python');
-      expect(result.missingKeywords).toContain('AWS');
-    });
-
-    it('should return 100 for all scores when job has no requirements', () => {
-      const emptyJobData = {
-        requiredSkills: [],
-        preferredSkills: [],
-        keywords: [],
-        responsibilities: [],
-      };
-
-      const result = service.calculateMatchScore(
-        mockResumeData as any,
-        emptyJobData as any
-      );
-
-      expect(result.skillMatch).toBe(100);
-      expect(result.keywordCoverage).toBe(100);
-    });
-  });
-
   describe('generateSuggestions', () => {
-    it('should generate STAR method suggestions for experience', async () => {
-      const result = await service.generateSuggestions(
-        mockResumeData as any,
-        mockJobData as any
-      );
-
-      expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBeGreaterThanOrEqual(10);
-    });
-
-    it('should include AI-enhanced suggestions when AI service succeeds', async () => {
+    it('should generate AI-powered suggestions using resume-writer skill', async () => {
       aiService.executeSkill.mockResolvedValue({
         success: true,
         data: {
@@ -165,6 +109,13 @@ describe('ResumeOptimizerService', () => {
               after: 'Built scalable web applications serving 1M+ users',
               reason: 'Added quantification',
             },
+            {
+              section: 'skills',
+              type: 'keyword',
+              before: 'JavaScript, TypeScript',
+              after: 'JavaScript, TypeScript, Python',
+              reason: 'Add missing required skill from JD',
+            },
           ],
         },
         metadata: {
@@ -175,47 +126,63 @@ describe('ResumeOptimizerService', () => {
 
       const result = await service.generateSuggestions(
         mockResumeData as any,
-        mockJobData as any
+        mockJobData as any,
+        'test-user-id'
       );
 
       expect(aiService.executeSkill).toHaveBeenCalledWith(
         'resume-writer',
-        expect.any(Object),
+        expect.objectContaining({
+          resumeData: JSON.stringify(mockResumeData),
+          targetJob: JSON.stringify(mockJobData),
+          optimizationFocus: 'all',
+          style: 'professional',
+        }),
         ''
       );
-      expect(result.length).toBeGreaterThan(0);
+      expect(result.length).toBe(2);
+      expect(result[0].section).toBe('experience');
+      expect(result[1].type).toBe(SuggestionType.KEYWORD);
     });
 
-    it('should gracefully degrade when AI service fails', async () => {
+    it('should return empty array when AI skill fails', async () => {
       aiService.executeSkill.mockRejectedValue(
         new Error('AI service unavailable')
       );
 
       const result = await service.generateSuggestions(
         mockResumeData as any,
-        mockJobData as any
+        mockJobData as any,
+        'test-user-id'
       );
 
       expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBeGreaterThanOrEqual(10);
+      expect(result.length).toBe(0);
     });
 
-    it('should generate keyword suggestions for missing skills', async () => {
+    it('should return empty array when AI skill returns no data', async () => {
+      aiService.executeSkill.mockResolvedValue({
+        success: false,
+        data: null,
+        metadata: {
+          skillName: 'resume-writer',
+          duration: 0,
+        },
+      });
+
       const result = await service.generateSuggestions(
         mockResumeData as any,
-        mockJobData as any
+        mockJobData as any,
+        'test-user-id'
       );
 
-      const keywordSuggestions = result.filter(
-        (s) => s.type === SuggestionType.KEYWORD
-      );
-
-      expect(keywordSuggestions.length).toBeGreaterThan(0);
+      expect(result).toBeInstanceOf(Array);
+      expect(result.length).toBe(0);
     });
   });
 
-  describe('applySuggestion', () => {
-    it('should apply suggestion and update resume version', async () => {
+  describe('suggestion acceptance/rejection', () => {
+    it('should accept a single suggestion', async () => {
       const mockOptimization = {
         id: 'opt-id',
         userId: mockUserId,
@@ -236,21 +203,9 @@ describe('ResumeOptimizerService', () => {
         ],
       };
 
-      const mockResume = {
-        id: mockResumeId,
-        userId: mockUserId,
-        version: 1,
-        parsedData: mockResumeData,
-      };
-
       prismaService.optimization.findUnique.mockResolvedValue(
         mockOptimization as any
       );
-      prismaService.resume.findUnique.mockResolvedValue(mockResume as any);
-      prismaService.resume.update.mockResolvedValue({
-        ...mockResume,
-        version: 2,
-      } as any);
       prismaService.optimization.update.mockResolvedValue({
         ...mockOptimization,
         suggestions: [
@@ -261,17 +216,56 @@ describe('ResumeOptimizerService', () => {
         ],
       } as any);
 
-      const result = await service.applySuggestion(
+      const result = await service.acceptSuggestion(
         'opt-id',
         mockUserId,
         'suggestion-1'
       );
 
-      expect(prismaService.resume.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ version: 2 }),
-        })
+      expect(result.status).toBe('accepted');
+      expect(result.suggestion.status).toBe(SuggestionStatus.ACCEPTED);
+      expect(prismaService.optimization.update).toHaveBeenCalled();
+    });
+
+    it('should reject a single suggestion', async () => {
+      const mockOptimization = {
+        id: 'opt-id',
+        userId: mockUserId,
+        resumeId: mockResumeId,
+        suggestions: [
+          {
+            id: 'suggestion-1',
+            type: SuggestionType.KEYWORD,
+            section: 'skills',
+            original: 'JavaScript',
+            optimized: 'JavaScript, Python',
+            reason: 'Add missing skill',
+            status: SuggestionStatus.PENDING,
+          },
+        ],
+      };
+
+      prismaService.optimization.findUnique.mockResolvedValue(
+        mockOptimization as any
       );
+      prismaService.optimization.update.mockResolvedValue({
+        ...mockOptimization,
+        suggestions: [
+          {
+            ...mockOptimization.suggestions[0],
+            status: SuggestionStatus.REJECTED,
+          },
+        ],
+      } as any);
+
+      const result = await service.rejectSuggestion(
+        'opt-id',
+        mockUserId,
+        'suggestion-1'
+      );
+
+      expect(result.status).toBe('rejected');
+      expect(result.suggestion.status).toBe(SuggestionStatus.REJECTED);
     });
 
     it('should throw NotFoundException for non-existent suggestion', async () => {
@@ -287,8 +281,8 @@ describe('ResumeOptimizerService', () => {
       );
 
       await expect(
-        service.applySuggestion('opt-id', mockUserId, 'non-existent')
-      ).rejects.toThrow('Suggestion with ID non-existent not found');
+        service.acceptSuggestion('opt-id', mockUserId, 'non-existent')
+      ).rejects.toThrow('Suggestion non-existent not found');
     });
   });
 

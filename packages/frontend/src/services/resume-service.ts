@@ -1,6 +1,7 @@
+import { ParsedResumeData, Resume } from '@/types';
+import { PARSE_TIMEOUT_MS } from '../config/app';
 import axios from '../config/axios';
 import { upload } from './upload-service';
-import { Resume, ParsedResumeData } from '@/types';
 
 /**
  * Service for handling resume-related operations
@@ -44,9 +45,11 @@ export const resumeService = {
     conversationId?: string
   ): Promise<ParsedResumeData> => {
     const params = conversationId ? { conversationId } : {};
+    // Use extended timeout for parsing since AI processing can take time.
+    // Frontend polling handles the case where this still times out.
     const response = await axios.get<ParsedResumeData>(
       `/resumes/${resumeId}/parse`,
-      { params }
+      { params, timeout: PARSE_TIMEOUT_MS }
     );
     return response.data;
   },
@@ -108,7 +111,9 @@ export const resumeService = {
    * @returns The analysis result
    */
   analyzeResume: async (resumeId: string): Promise<any> => {
-    const response = await axios.get<any>(`/resumes/${resumeId}/analyze`);
+    const response = await axios.get<any>(`/resumes/${resumeId}/analyze`, {
+      timeout: PARSE_TIMEOUT_MS,
+    });
     return response.data;
   },
 };

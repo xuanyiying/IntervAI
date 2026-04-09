@@ -40,13 +40,18 @@ export class AnswerEvaluationService {
         return;
       }
 
-      const resumeData = session.optimization.resume
-        .parsedData as unknown as ParsedResumeData;
-      const jobData = session.optimization.job
-        .parsedRequirements as unknown as ParsedJobData;
+      if (!session.optimization) {
+        this.logger.warn(`Session ${sessionId} has no optimization, skipping detailed evaluation`);
+        return;
+      }
 
-      const jobTitle = session.optimization.job.title || 'Unknown Role';
-      const company = session.optimization.job.company || 'Unknown Company';
+      const resumeData = session.optimization.resume
+        ?.parsedData as unknown as ParsedResumeData;
+      const jobData = session.optimization.job
+        ?.parsedRequirements as unknown as ParsedJobData;
+
+      const jobTitle = session.optimization.job?.title || 'Unknown Role';
+      const company = session.optimization.job?.company || 'Unknown Company';
 
       const requirements = [
         ...(jobData.requiredSkills || []),

@@ -233,47 +233,75 @@ export const useResumeUpload = ({
             parseTimeoutPromise,
           ])) as ParsedResumeData;
 
-          updateAttachmentStatus(
-            parsingMessageId,
-            { parseProgress: 100, status: 'completed' },
-            'parse'
-          );
+          // Check if backend returned a "still processing" status (timeout on backend side)
+          const isStillProcessing =
+            parsedData &&
+            typeof parsedData === 'object' &&
+            'parseStatus' in parsedData &&
+            (parsedData as any).parseStatus === 'PROCESSING';
 
-          setFailedFiles((prev) => {
-            const next = new Map(prev);
-            next.delete(messageId);
-            return next;
-          });
+          if (isStillProcessing) {
+            // Backend is still processing — enter polling mode instead of showing error
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'processing', parseProgress: 50 },
+              'parse'
+            );
+            message.info('简历解析中，请稍候...');
+            pollResumeStatus(resume.id, parsingMessageId, targetConversationId);
+          } else {
+            // Successfully parsed
+            updateAttachmentStatus(
+              parsingMessageId,
+              { parseProgress: 100, status: 'completed' },
+              'parse'
+            );
 
-          // Add success message
-          setUploadItems((prev) => [
-            ...prev,
-            {
-              key: `parsing-done-${Date.now()}`,
-              role: MessageRole.ASSISTANT,
-              content: '简历解析完成，正在为您优化内容...',
-              type: 'text',
-            },
-          ]);
+            setFailedFiles((prev) => {
+              const next = new Map(prev);
+              next.delete(messageId);
+              return next;
+            });
 
-          const resumeMarkdown =
-            parsedData?.markdown ||
-            parsedData?.extractedText ||
-            JSON.stringify(parsedData);
-          if (resumeMarkdown && onResumeParsed) {
-            onResumeParsed(resume.id, resumeMarkdown, targetConversationId);
+            // Add success message
+            setUploadItems((prev) => [
+              ...prev,
+              {
+                key: `parsing-done-${Date.now()}`,
+                role: MessageRole.ASSISTANT,
+                content: '简历解析完成，正在为您优化内容...',
+                type: 'text',
+              },
+            ]);
+
+            const resumeMarkdown =
+              parsedData?.markdown ||
+              parsedData?.extractedText ||
+              JSON.stringify(parsedData);
+            if (resumeMarkdown && onResumeParsed) {
+              onResumeParsed(resume.id, resumeMarkdown, targetConversationId);
+            }
           }
         } catch (parseError: any) {
           const isTimeout = parseError.message?.includes('超时');
-          updateAttachmentStatus(
-            parsingMessageId,
-            { status: 'error', error: parseError.message || '解析失败' },
-            'parse'
-          );
 
           if (isTimeout) {
-            message.warning('解析时间较长，请稍候或重试');
+            // Timeout from frontend Promise.race — don't mark as error,
+            // backend is still processing, start polling
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'processing', parseProgress: 50 },
+              'parse'
+            );
+            message.info('解析时间较长，后台仍在处理中，请稍候...');
+            pollResumeStatus(resume.id, parsingMessageId, targetConversationId);
           } else {
+            // Real error
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'error', error: parseError.message || '解析失败' },
+              'parse'
+            );
             message.error(parseError.message || '解析失败');
           }
         }
@@ -287,6 +315,109 @@ export const useResumeUpload = ({
       }
     },
     [currentConversationId, onResumeParsed, updateAttachmentStatus]
+  );
+
+  /**
+   * Poll resume status until parsing completes or fails.
+   * Called when the initial parse request times out but backend is still processing.
+   */
+  const pollResumeStatus = useCallback(
+    (
+      resumeId: string,
+      parsingMessageId: string,
+      conversationId: string
+    ) => {
+      const MAX_POLL_ATTEMPTS = 24; // 24 * 5s = 2 minutes max polling
+      const POLL_INTERVAL = 5000; // 5 seconds
+      let attempts = 0;
+
+      const poll = async () => {
+        attempts++;
+        try {
+          const resume = await resumeService.getResume(resumeId);
+
+          if (resume.parseStatus === 'COMPLETED') {
+            updateAttachmentStatus(
+              parsingMessageId,
+              { parseProgress: 100, status: 'completed' },
+              'parse'
+            );
+
+            setFailedFiles((prev) => {
+              const next = new Map(prev);
+              next.delete(resumeId);
+              return next;
+            });
+
+            // Add success message
+            setUploadItems((prev) => [
+              ...prev,
+              {
+                key: `parsing-done-${Date.now()}`,
+                role: MessageRole.ASSISTANT,
+                content: '简历解析完成！',
+                type: 'text',
+              },
+            ]);
+
+            const resumeMarkdown =
+              resume.parsedData?.markdown ||
+              resume.parsedData?.extractedText ||
+              (resume.parsedData
+                ? JSON.stringify(resume.parsedData)
+                : '');
+            if (resumeMarkdown && onResumeParsed) {
+              onResumeParsed(resumeId, resumeMarkdown, conversationId);
+            }
+            return; // Done polling
+          }
+
+          if (resume.parseStatus === 'FAILED') {
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'error', error: '解析失败' },
+              'parse'
+            );
+            message.error('简历解析失败，请重新上传');
+            return;
+          }
+
+          // Still processing — update progress and continue polling
+          const progress = Math.min(50 + attempts * 2, 90);
+          updateAttachmentStatus(
+            parsingMessageId,
+            { parseProgress: progress },
+            'parse'
+          );
+
+          if (attempts < MAX_POLL_ATTEMPTS) {
+            setTimeout(poll, POLL_INTERVAL);
+          } else {
+            // Max polling attempts reached
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'error', error: '解析超时，请稍后刷新页面查看' },
+              'parse'
+            );
+            message.warning('解析时间过长，请稍后在简历页面查看结果');
+          }
+        } catch (error) {
+          if (attempts < MAX_POLL_ATTEMPTS) {
+            setTimeout(poll, POLL_INTERVAL);
+          } else {
+            updateAttachmentStatus(
+              parsingMessageId,
+              { status: 'error', error: '查询解析状态失败' },
+              'parse'
+            );
+          }
+        }
+      };
+
+      // Start first poll after a short delay
+      setTimeout(poll, POLL_INTERVAL);
+    },
+    [onResumeParsed, updateAttachmentStatus]
   );
 
   const removeUploadItem = useCallback((key: string) => {

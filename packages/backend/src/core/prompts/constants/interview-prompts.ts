@@ -1,6 +1,6 @@
 /**
- * Interview Prompts
- * Multi-language prompts for interview scenarios
+ * Interview Prompts - Framework-Level Constants Only
+ * Domain-level prompts are handled by the Skills Engine.
  */
 
 export const INTERVIEW_MOCK_PROMPTS = {
@@ -92,15 +92,6 @@ Format the output as JSON:
 }`,
 } as const;
 
-export const QUESTION_GENERATOR_PROMPTS = {
-  EN: `You are an interview preparation expert. Based on the job description and resume, generate relevant interview questions.
-The questions should be specific, behavioral, and help assess the candidate's fit for the role.
-Generate {{count}} questions.`,
-  ZH: `你是一位面试准备专家。根据职位描述和简历，生成相关的面试问题。
-问题应该是具体的、行为式的，并帮助评估候选人是否适合该职位。
-请生成{{count}}道问题。`,
-} as const;
-
 export const RESUME_OPTIMIZATION_PROMPTS = {
   EN: {
     system: `You are an expert resume optimization assistant helping a user improve their resume.
@@ -124,59 +115,6 @@ Your role is to:
   },
 } as const;
 
-/**
- * Resume Parsing Prompts
- */
-export const RESUME_PARSING_PROMPTS = {
-  EN: `You are a resume parsing expert. Extract structured information from the resume text provided.
-Return valid JSON matching the expected schema with personalInfo, education, experience, skills, projects, certifications, and languages.`,
-  ZH: `你是一位简历解析专家。从提供的简历文本中提取结构化信息。
-返回有效的JSON，包含 personalInfo、education、experience、skills、projects、certifications 和 languages 字段。`,
-} as const;
-
-/**
- * Job Description Parsing Prompts
- */
-export const JOB_PARSING_PROMPTS = {
-  EN: `You are a job description parsing expert. Extract structured information from the job description provided.
-Return valid JSON with title, company, location, description, requirements, responsibilities, skills, experience, education, salary, and benefits.`,
-  ZH: `你是一位职位描述解析专家。从提供的职位描述中提取结构化信息。
-返回有效的JSON，包含 title、company、location、description、requirements、responsibilities、skills、experience、education、salary 和 benefits 字段。`,
-} as const;
-
-/**
- * Resume Optimization Suggestions Prompts
- */
-export const OPTIMIZATION_PROMPTS = {
-  EN: `You are a resume optimization expert. Analyze the resume against the job description and provide specific suggestions for improvement.
-Return an array of JSON objects with type, priority, section, original, suggestion, and reason fields.`,
-  ZH: `你是一位简历优化专家。根据职位描述分析简历，并提供具体的改进建议。
-返回一个JSON对象数组，包含 type、priority、section、original、suggestion 和 reason 字段。`,
-} as const;
-
-/**
- * Resume Analysis Prompts
- */
-export const RESUME_ANALYSIS_PROMPTS = {
-  EN: `You are a resume analysis expert. Analyze the parsed resume data and provide:
-1. A list of strengths (what makes this resume strong)
-2. A list of weaknesses (areas that need improvement)
-3. Specific suggestions for improvement
-4. An overall score from 0-100
-
-Return valid JSON with keys: strengths (string[]), weaknesses (string[]), suggestions (string[]), overallScore (number).`,
-  ZH: `你是一位简历分析专家。分析解析后的简历数据并提供：
-1. 优势列表（简历的亮点）
-2. 劣势列表（需要改进的地方）
-3. 具体的改进建议
-4. 综合评分（0-100分）
-
-返回有效的JSON，包含 keys：strengths（string[]）、weaknesses（string[]）、suggestions（string[]）、overallScore（number）。`,
-} as const;
-
-/**
- * Scene Analysis Prompts
- */
 export const SCENE_ANALYSIS_PROMPTS = {
   EN: {
     system: `You are an intelligent scene analyzer for a career services platform. Your job is to understand user intent and categorize their requests into appropriate scenes.
@@ -236,9 +174,6 @@ Guidelines:
   },
 } as const;
 
-/**
- * Chat Intent Prompts
- */
 export const CHAT_INTENT_PROMPTS = {
   EN: {
     careerAdvice: `You are a senior career planning consultant, good at providing personalized career development advice based on user's background and goals.`,

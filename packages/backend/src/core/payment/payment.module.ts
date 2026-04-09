@@ -8,7 +8,10 @@ const logger = new Logger('PaymentModuleProxy');
 @Module({
   imports: [PrismaModule],
   providers: [
-    CePaymentService,
+    {
+      provide: 'PAYMENT_SERVICE',
+      useClass: CePaymentService,
+    },
     {
       provide: CePaymentService,
       useFactory: async (moduleRef: ModuleRef, ce: CePaymentService) => {
@@ -29,7 +32,7 @@ const logger = new Logger('PaymentModuleProxy');
 
         return ce;
       },
-      inject: [ModuleRef, CePaymentService],
+      inject: [ModuleRef, 'PAYMENT_SERVICE'],
     },
   ],
   exports: [CePaymentService],

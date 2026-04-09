@@ -14,6 +14,7 @@ export interface StudyTopic {
   priority: 'high' | 'medium' | 'low';
   estimatedHours: number;
   resources: string[];
+  category?: string;
 }
 
 export interface StudyMilestone {
@@ -22,6 +23,14 @@ export interface StudyMilestone {
   description: string;
   topics: StudyTopic[];
   deadline?: Date;
+  day?: number;
+  estimatedHours?: number;
+}
+
+export interface MockInterviewQuestion {
+  question: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category?: string;
 }
 
 export interface StudyPlan {
@@ -33,6 +42,10 @@ export interface StudyPlan {
   createdAt: Date;
   updatedAt: Date;
   interviewDate?: Date;
+  totalDays: number;
+  estimatedTotalHours: number;
+  prioritySkillGaps: string[];
+  mockInterviewQuestions: MockInterviewQuestion[];
 }
 
 @Injectable()
@@ -83,6 +96,7 @@ export class InterviewPrepService {
     );
 
     const planId = `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const totalDays = _daysUntilInterview || 7;
 
     const plan: StudyPlan = {
       id: planId,
@@ -93,28 +107,76 @@ export class InterviewPrepService {
       createdAt: new Date(),
       updatedAt: new Date(),
       interviewDate: _interviewDate,
+      totalDays,
+      estimatedTotalHours: 0,
+      prioritySkillGaps: [],
+      mockInterviewQuestions: [],
     };
 
     if (result.success && result.data) {
       const data = result.data as any;
+
+      // Extract skill gaps
+      if (data.skillGaps) {
+        plan.prioritySkillGaps = data.skillGaps.map((gap: any) =>
+          typeof gap === 'string' ? gap : gap.skill
+        );
+      }
+
+      // Extract mock interview questions
+      if (data.mockInterviewQuestions) {
+        plan.mockInterviewQuestions = data.mockInterviewQuestions.map(
+          (q: any) => ({
+            question: q.question || q,
+            difficulty: q.difficulty || 'medium',
+            category: q.category,
+          })
+        );
+      }
+
+      // Build milestones from practice schedule
       if (data.practiceSchedule) {
         plan.milestones = data.practiceSchedule.map(
-          (day: any, index: number) => ({
-            id: `milestone-${index}`,
-            title: day.focus || `Day ${day.day}`,
-            description: day.focus || '',
-            topics: (day.exercises || []).map(
-              (exercise: string, exIndex: number) => ({
+          (day: any, index: number) => {
+            const topics = (day.exercises || []).map(
+              (exercise: any, exIndex: number) => ({
                 id: `topic-${index}-${exIndex}`,
-                title: exercise,
-                description: exercise,
+                title: typeof exercise === 'string' ? exercise : exercise.title,
+                description:
+                  typeof exercise === 'string'
+                    ? exercise
+                    : exercise.description || exercise.title,
                 completed: false,
-                priority: 'medium' as const,
-                estimatedHours: 1,
-                resources: [],
+                priority: (exercise.priority || 'medium') as
+                  | 'high'
+                  | 'medium'
+                  | 'low',
+                estimatedHours: exercise.estimatedHours || 1,
+                resources: exercise.resources || [],
+                category: exercise.category || 'general',
               })
-            ),
-          })
+            );
+
+            const milestoneHours = topics.reduce(
+              (sum: number, t: StudyTopic) => sum + t.estimatedHours,
+              0
+            );
+
+            return {
+              id: `milestone-${index}`,
+              title: day.focus || `Day ${day.day || index + 1}`,
+              description: day.focus || '',
+              topics,
+              day: day.day || index + 1,
+              estimatedHours: milestoneHours,
+            };
+          }
+        );
+
+        // Calculate total hours
+        plan.estimatedTotalHours = plan.milestones.reduce(
+          (sum: number, m: StudyMilestone) => sum + (m.estimatedHours || 0),
+          0
         );
       }
     }

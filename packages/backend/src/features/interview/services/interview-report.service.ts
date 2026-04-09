@@ -1,8 +1,9 @@
 import { AIEngine } from '@/core/ai';
+import { PromptService } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
-import { PromptService } from '@/core/prompts';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -66,7 +67,7 @@ export class InterviewReportService {
     private prisma: PrismaService,
     private aiEngine: AIEngine,
     private promptService: PromptService
-  ) {}
+  ) { }
 
   async generateReport(
     sessionId: string,
@@ -103,15 +104,23 @@ export class InterviewReportService {
       );
     }
 
-    const resumeData = session.optimization.resume
-      .parsedData as unknown as ParsedResumeData;
-    const jobData = session.optimization.job
-      .parsedRequirements as unknown as ParsedJobData;
+    if (!session.optimization) {
+      throw new BadRequestException(
+        'Cannot generate report for session without optimization context'
+      );
+    }
 
-    const questions = await this.prisma.interviewQuestion.findMany({
-      where: { optimizationId: session.optimizationId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const resumeData = session.optimization.resume
+      ?.parsedData as unknown as ParsedResumeData;
+    const jobData = session.optimization.job
+      ?.parsedRequirements as unknown as ParsedJobData;
+
+    const questions = session.optimizationId
+      ? await this.prisma.interviewQuestion.findMany({
+        where: { optimizationId: session.optimizationId },
+        orderBy: { createdAt: 'asc' },
+      })
+      : [];
 
     const analysis = await this.analyzeInterview(
       session,
@@ -140,8 +149,8 @@ export class InterviewReportService {
         email: resumeData.personalInfo?.email,
       },
       jobInfo: {
-        title: session.optimization.job.title || '未知职位',
-        company: session.optimization.job.company || '未知公司',
+        title: session.optimization.job?.title || '未知职位',
+        company: session.optimization.job?.company || '未知公司',
       },
       interviewDuration: duration,
       totalQuestions: questions.length,
@@ -233,11 +242,11 @@ export class InterviewReportService {
 
     const overallScore = Math.round(
       dimensions.accuracy * 0.25 +
-        dimensions.fluency * 0.15 +
-        dimensions.logicalThinking * 0.2 +
-        dimensions.professionalKnowledge * 0.25 +
-        dimensions.communication * 0.1 +
-        dimensions.confidence * 0.05
+      dimensions.fluency * 0.15 +
+      dimensions.logicalThinking * 0.2 +
+      dimensions.professionalKnowledge * 0.25 +
+      dimensions.communication * 0.1 +
+      dimensions.confidence * 0.05
     );
 
     const detailedAnalysis = (parsed.detailedAnalysis || [])
@@ -471,11 +480,11 @@ Please ensure to return pure JSON format, without any other text.`;
 | 维度 | 得分 | 等级 |
 |------|------|------|
 ${Object.entries(analysis.dimensions)
-  .map(
-    ([key, value]) =>
-      `| ${dimensionLabels[key] || key} | ${getScoreEmoji(value)} ${value} 分 | ${getScoreLevel(value)} |`
-  )
-  .join('\n')}
+        .map(
+          ([key, value]) =>
+            `| ${dimensionLabels[key] || key} | ${getScoreEmoji(value)} ${value} 分 | ${getScoreLevel(value)} |`
+        )
+        .join('\n')}
 
 ---
 

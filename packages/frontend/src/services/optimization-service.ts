@@ -1,32 +1,54 @@
 import axios from '../config/axios';
 import { Optimization } from '@/types';
 
-/**
- * Service for managing resume optimization records and suggestions
- */
+export interface SuggestionResult {
+  status: string;
+  suggestion: any;
+}
+
+export interface BatchResult {
+  accepted?: number;
+  rejected?: number;
+  total: number;
+}
+
+export interface ApplyResult {
+  version: number;
+  appliedCount: number;
+  parsedData: any;
+}
+
+export interface VersionInfo {
+  id: string;
+  resumeId: string;
+  version: number;
+  label: string;
+  createdAt: string;
+}
+
 export const optimizationService = {
-  /**
-   * Create a new optimization record for a resume and job
-   * @param resumeId - The ID of the resume
-   * @param jobId - The ID of the job
-   * @returns The created optimization record
-   */
   createOptimization: async (
     resumeId: string,
-    jobId: string
+    jobId?: string
   ): Promise<Optimization> => {
     const response = await axios.post<Optimization>('/optimizations', {
       resumeId,
-      jobId,
+      ...(jobId ? { jobId } : {}),
     });
     return response.data;
   },
 
-  /**
-   * Get details of a specific optimization record
-   * @param optimizationId - The ID of the optimization
-   * @returns The optimization record with suggestions
-   */
+  triggerOptimization: async (
+    resumeId: string,
+    jobId?: string
+  ): Promise<Optimization> => {
+    const response = await axios.post<Optimization>(
+      `/optimizations/resume/${resumeId}/optimize`,
+      jobId ? { jobId } : {}
+    );
+    return response.data;
+  },
+
   getOptimization: async (optimizationId: string): Promise<Optimization> => {
     const response = await axios.get<Optimization>(
       `/optimizations/${optimizationId}`
@@ -34,60 +56,78 @@ export const optimizationService = {
     return response.data;
   },
 
-  /**
-   * List all optimization records for the current user
-   * @returns List of optimization records
-   */
   listOptimizations: async (): Promise<Optimization[]> => {
     const response = await axios.get<Optimization[]>('/optimizations');
     return response.data;
   },
 
-  /**
-   * Accept a specific optimization suggestion
-   * @param optimizationId - The ID of the optimization
-   * @param suggestionId - The ID of the suggestion to accept
-   * @returns Updated optimization record or success status
-   */
+  listResumeOptimizations: async (
+    resumeId: string
+  ): Promise<Optimization[]> => {
+    const response = await axios.get<Optimization[]>(
+      `/optimizations/resume/${resumeId}/list`
+    );
+    return response.data;
+  },
+
   acceptSuggestion: async (
     optimizationId: string,
     suggestionId: string
-  ): Promise<Optimization> => {
-    const response = await axios.post<Optimization>(
+  ): Promise<SuggestionResult> => {
+    const response = await axios.patch<SuggestionResult>(
       `/optimizations/${optimizationId}/suggestions/${suggestionId}/accept`
     );
     return response.data;
   },
 
-  /**
-   * Reject a specific optimization suggestion
-   * @param optimizationId - The ID of the optimization
-   * @param suggestionId - The ID of the suggestion to reject
-   * @returns Updated optimization record or success status
-   */
   rejectSuggestion: async (
     optimizationId: string,
     suggestionId: string
-  ): Promise<Optimization> => {
-    const response = await axios.post<Optimization>(
+  ): Promise<SuggestionResult> => {
+    const response = await axios.patch<SuggestionResult>(
       `/optimizations/${optimizationId}/suggestions/${suggestionId}/reject`
     );
     return response.data;
   },
 
-  /**
-   * Accept multiple optimization suggestions at once
-   * @param optimizationId - The ID of the optimization
-   * @param suggestionIds - List of suggestion IDs to accept
-   * @returns Updated optimization record or success status
-   */
-  acceptBatchSuggestions: async (
-    optimizationId: string,
-    suggestionIds: string[]
-  ): Promise<Optimization> => {
-    const response = await axios.post<Optimization>(
-      `/optimizations/${optimizationId}/suggestions/accept-batch`,
-      { suggestionIds }
+  acceptAllSuggestions: async (
+    optimizationId: string
+  ): Promise<BatchResult> => {
+    const response = await axios.post<BatchResult>(
+      `/optimizations/${optimizationId}/accept-all`
+    );
+    return response.data;
+  },
+
+  rejectAllSuggestions: async (
+    optimizationId: string
+  ): Promise<BatchResult> => {
+    const response = await axios.post<BatchResult>(
+      `/optimizations/${optimizationId}/reject-all`
+    );
+    return response.data;
+  },
+
+  applyChanges: async (optimizationId: string): Promise<ApplyResult> => {
+    const response = await axios.post<ApplyResult>(
+      `/optimizations/${optimizationId}/apply`
+    );
+    return response.data;
+  },
+
+  getVersions: async (resumeId: string): Promise<VersionInfo[]> => {
+    const response = await axios.get<VersionInfo[]>(
+      `/optimizations/resume/${resumeId}/versions`
+    );
+    return response.data;
+  },
+
+  restoreVersion: async (
+    resumeId: string,
+    versionId: string
+  ): Promise<{ restoredTo: number; label: string }> => {
+    const response = await axios.post<{ restoredTo: number; label: string }>(
+      `/optimizations/resume/${resumeId}/versions/${versionId}/restore`
     );
     return response.data;
   },

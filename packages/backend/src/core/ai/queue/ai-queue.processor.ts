@@ -1,10 +1,10 @@
+import { ChatGateway } from '@/core/chat/chat.gateway';
+import { PrismaService } from '@/shared/database/prisma.service';
 import { Process, Processor } from '@nestjs/bull';
-import { Logger, Inject, forwardRef } from '@nestjs/common';
+import { Inject, Logger, forwardRef } from '@nestjs/common';
+import { MessageRole, ParseStatus } from '@prisma/client';
 import { Job } from 'bull';
 import { AIEngine } from '../ai.engine';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { ParseStatus, MessageRole } from '@prisma/client';
-import { ChatGateway } from '@/core/chat/chat.gateway';
 
 @Processor('ai-processing')
 export class AIQueueProcessor {
@@ -15,7 +15,7 @@ export class AIQueueProcessor {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
-  ) {}
+  ) { }
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(
@@ -48,35 +48,29 @@ export class AIQueueProcessor {
         });
       }
 
-      // 2. Call AI Engine to parse resume
-      // Send progress update: AI Parsing
+      // 2. Call AI Engine to parse AND optimize resume in a single call
+      // This combines the previous two serial AI calls into one, saving ~50% time and cost
       if (conversationId) {
         this.chatGateway.emitToUser(userId, 'system', {
           type: 'system',
-          content: 'AI 正在分析您的技能和经历...',
+          content: 'AI 正在分析并优化您的简历...',
           timestamp: Date.now(),
           metadata: { resumeId, stage: 'parsing', progress: 40 },
         });
       }
-      const parsedData = await this.aiEngine.parseResumeContent(content);
 
-      // 3. Optimize resume content
-      this.logger.log(`Starting resume optimization for resume ${resumeId}`);
+      let parsedData: any;
       let optimizedContent: string | null = null;
-      try {
-        // Send progress update: Optimizing
-        if (conversationId) {
-          this.chatGateway.emitToUser(userId, 'system', {
-            type: 'system',
-            content: '正在根据您的背景优化简历内容...',
-            timestamp: Date.now(),
-            metadata: { resumeId, stage: 'optimizing', progress: 70 },
-          });
-        }
-        optimizedContent = await this.aiEngine.optimizeResumeContent(content);
-        this.logger.log(`Resume optimization completed for resume ${resumeId}`);
 
-        // 4. Send optimized content to conversation if conversationId is provided
+      try {
+        const result = await this.aiEngine.parseAndOptimizeResume(content, userId);
+        parsedData = result.parsedData;
+        optimizedContent = result.optimizedContent || null;
+        this.logger.log(
+          `Resume parsing and optimization completed in single call for resume ${resumeId}`
+        );
+
+        // 3. Send optimized content to conversation if conversationId is provided
         if (optimizedContent && conversationId) {
           await this.sendOptimizationToConversation(
             userId,
@@ -85,11 +79,39 @@ export class AIQueueProcessor {
             optimizedContent
           );
         }
-      } catch (optimizeError) {
+      } catch (combinedError) {
+        // Fallback: try parse-only if combined call fails
         this.logger.warn(
-          `Resume optimization failed for ${resumeId}, continuing with parsed data only:`,
-          optimizeError
+          `Combined parse+optimize failed for ${resumeId}, falling back to parse-only:`,
+          combinedError
         );
+        parsedData = await this.aiEngine.parseResumeContent(content, userId);
+
+        // Attempt optimization separately as a non-critical enhancement
+        try {
+          if (conversationId) {
+            this.chatGateway.emitToUser(userId, 'system', {
+              type: 'system',
+              content: '正在优化简历内容...',
+              timestamp: Date.now(),
+              metadata: { resumeId, stage: 'optimizing', progress: 70 },
+            });
+          }
+          optimizedContent = await this.aiEngine.optimizeResumeContent(content, userId);
+          if (optimizedContent && conversationId) {
+            await this.sendOptimizationToConversation(
+              userId,
+              conversationId,
+              resumeId,
+              optimizedContent
+            );
+          }
+        } catch (optimizeError) {
+          this.logger.warn(
+            `Resume optimization also failed for ${resumeId}, continuing with parsed data only:`,
+            optimizeError
+          );
+        }
       }
 
       // Send progress update: Finalizing

@@ -135,7 +135,7 @@ model Verification {
 }
 
 model Resume {
-  id               String         @id @default(uuid())
+  id               String          @id @default(uuid())
   userId           String
   title            String
   originalFilename String?
@@ -143,23 +143,46 @@ model Resume {
   fileType         String?
   fileSize         Int?
   parsedData       Json?
-  version          Int            @default(1)
-  isPrimary        Boolean        @default(false)
-  parseStatus      ParseStatus    @default(PENDING)
+  version          Int             @default(1)
+  isPrimary        Boolean         @default(false)
+  parseStatus      ParseStatus     @default(PENDING)
   fileMd5          String?
   extractedText    String?
   conversationId   String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  currentVersionId String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   optimizations    Optimization[]
-  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  conversation     Conversation?  @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  versions         ResumeVersion[]
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation     Conversation?   @relation(fields: [conversationId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, createdAt])
   @@index([userId, isPrimary])
   @@index([userId, fileMd5])
   @@map("resumes")
+}
+
+model ResumeVersion {
+  id             String   @id @default(uuid())
+  resumeId       String
+  version        Int
+  label          String
+  personalInfo   Json
+  summary        Json?
+  education      Json?
+  experience     Json?
+  skills         Json?
+  projects       Json?
+  certifications Json?
+  languages      Json?
+  markdown       String?
+  createdAt      DateTime @default(now())
+  resume         Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId, version])
+  @@map("resume_versions")
 }
 
 model Job {
@@ -188,7 +211,7 @@ model Optimization {
   id                 String              @id @default(uuid())
   userId             String
   resumeId           String
-  jobId              String
+  jobId              String?
   matchScore         Json?
   suggestions        Json[]
   optimizedContent   Json?
@@ -198,7 +221,7 @@ model Optimization {
   generatedPdfs      GeneratedPDF[]
   interviewQuestions InterviewQuestion[]
   interviewSessions  InterviewSession[]
-  job                Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job                Job?                @relation(fields: [jobId], references: [id], onDelete: Cascade)
   resume             Resume              @relation(fields: [resumeId], references: [id], onDelete: Cascade)
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -563,7 +586,7 @@ model InterviewerPersona {
 model InterviewSession {
   id             String              @id @default(uuid())
   userId         String
-  optimizationId String
+  optimizationId String?
   personaId      String?
   mode           InterviewMode       @default(MOCK)
   language       InterviewLanguage   @default(EN)
@@ -576,7 +599,7 @@ model InterviewSession {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   messages       InterviewMessage[]
-  optimization   Optimization        @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
+  optimization   Optimization?       @relation(fields: [optimizationId], references: [id], onDelete: Cascade)
   user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   persona        InterviewerPersona? @relation(fields: [personaId], references: [id], onDelete: SetNull)
 

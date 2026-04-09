@@ -608,10 +608,10 @@ export class ResumeService {
       }
 
       const parsedData = parsedResume.parsedData as unknown as ParsedResumeData;
-      return this.aiEngine.analyzeParsedResume(parsedData);
+      return this.aiEngine.analyzeParsedResume(parsedData, userId);
     }
 
     const parsedData = resume.parsedData as unknown as ParsedResumeData;
-    return this.aiEngine.analyzeParsedResume(parsedData);
+    return this.aiEngine.analyzeParsedResume(parsedData, userId);
   }
 }

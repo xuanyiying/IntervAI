@@ -1,8 +1,3 @@
-/**
- * Property-based tests for ResumeOptimizerService
- * Tests streaming functionality with various inputs
- */
-// eslint-disable-next-line require-yield
 import { AIService } from '@/core/ai';
 import { QuotaService } from '@/core/quota/quota.service';
 import { PrismaService } from '@/shared/database/prisma.service';
@@ -14,7 +9,6 @@ describe('ResumeOptimizerService Property Tests', () => {
   let service: ResumeOptimizerService;
   let aiService: jest.Mocked<AIService>;
 
-  // Mock implementations
   const mockPrismaService = {
     optimization: {
       create: jest.fn(),
@@ -54,270 +48,183 @@ describe('ResumeOptimizerService Property Tests', () => {
 
     service = module.get<ResumeOptimizerService>(ResumeOptimizerService);
     aiService = module.get(AIService);
-
-    // Reset mocks
     jest.clearAllMocks();
   });
 
-  // Arbitrary generators
-  const arbitraryResumeContent = (): fc.Arbitrary<string> => {
-    return fc.string({ minLength: 10, maxLength: 1000 });
-  };
-
-  const arbitraryUserId = (): fc.Arbitrary<string> => {
-    return fc.uuid();
-  };
-
-  const arbitraryStreamChunks = (): fc.Arbitrary<
-    Array<{ content: string }>
-  > => {
-    return fc.array(
-      fc.record({
-        content: fc.string({ minLength: 1, maxLength: 100 }),
-      }),
-      { minLength: 1, maxLength: 10 }
-    );
-  };
-
-  // Generate language codes
-  const arbitraryLanguage = (): fc.Arbitrary<string> => {
-    return fc.constantFrom('zh-CN', 'en-US', 'en', 'zh');
-  };
-
-  describe('optimizeResume streaming', () => {
-    it('should stream content in semantic chunks', async () => {
+  describe('createOptimization', () => {
+    it('should create optimization with valid inputs', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          arbitraryResumeContent(),
-          arbitraryUserId(),
-          arbitraryLanguage(),
-          arbitraryStreamChunks(),
-          async (resumeContent, userId, language, streamChunks) => {
-            // Mock AI service to return the provided chunks
-            aiService.stream.mockImplementation(async function* () {
-              for (const chunk of streamChunks) {
-                yield chunk.content;
-              }
-            });
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, resumeId) => {
+          mockPrismaService.resume.findUnique.mockResolvedValue({
+            id: resumeId,
+            userId,
+          });
+          mockPrismaService.optimization.create.mockResolvedValue({
+            id: 'opt-id',
+            userId,
+            resumeId,
+            status: 'PENDING',
+          });
 
-            // Collect all output chunks
-            const outputChunks: string[] = [];
-            const stream = service.optimizeResume(resumeContent, userId, {
-              language,
-            });
+          const result = await service.createOptimization(userId, resumeId);
 
-            for await (const chunk of stream) {
-              if (chunk.type === 'chunk' && chunk.content) {
-                outputChunks.push(chunk.content);
-              }
-            }
-
-            // Calculate expected total content
-            const expectedContent = streamChunks
-              .map((chunk) => chunk.content)
-              .join('');
-
-            // Verify total content matches
-            const actualContent = outputChunks.join('');
-            expect(actualContent).toBe(expectedContent);
-
-            // Verify AI service was called
-            expect(aiService.stream).toHaveBeenCalled();
-          }
-        ),
-        { numRuns: 20 }
+          expect(result.userId).toBe(userId);
+          expect(result.resumeId).toBe(resumeId);
+          expect(mockPrismaService.optimization.create).toHaveBeenCalled();
+        }),
+        { numRuns: 10 }
       );
     });
 
-    it('should handle empty content gracefully', async () => {
+    it('should reject when user does not own resume', async () => {
+      await fc.assert(
+        fc.asyncProperty(fc.uuid(), fc.uuid(), async (userId, resumeId) => {
+          mockPrismaService.resume.findUnique.mockResolvedValue({
+            id: resumeId,
+            userId: 'other-user',
+          });
+
+          await expect(
+            service.createOptimization(userId, resumeId)
+          ).rejects.toThrow();
+        }),
+        { numRuns: 10 }
+      );
+    });
+  });
+
+  describe('suggestion acceptance/rejection', () => {
+    it('should accept a single suggestion', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.constantFrom('', '   ', '\n\n', '\t\t'),
-          arbitraryUserId(),
-          arbitraryLanguage(),
-          async (emptyContent, userId, language) => {
-            // Collect all output chunks
-            const allChunks: any[] = [];
-            const stream = service.optimizeResume(emptyContent, userId, {
-              language,
-            });
+          fc.uuid(),
+          fc.uuid(),
+          fc.uuid(),
+          async (optimizationId, userId, suggestionId) => {
+            const mockSuggestions = [
+              {
+                id: suggestionId,
+                type: 'CONTENT',
+                section: 'experience',
+                original: '负责项目开发',
+                optimized: '主导核心系统架构设计与开发',
+                reason: '使用更强有力的动词',
+                status: 'PENDING',
+              },
+            ];
 
-            for await (const chunk of stream) {
-              allChunks.push(chunk);
-            }
+            mockPrismaService.optimization.findUnique.mockResolvedValue({
+              id: optimizationId,
+              userId,
+              status: 'PENDING',
+              suggestions: JSON.stringify(mockSuggestions),
+            } as any);
 
-            // Should have at least one error chunk
-            const errorChunks = allChunks.filter(
-              (chunk) => chunk.type === 'error'
+            mockPrismaService.optimization.update.mockImplementation(
+              async (args: any) => ({
+                ...args.data,
+                id: optimizationId,
+              })
             );
-            expect(errorChunks.length).toBeGreaterThan(0);
-            expect(errorChunks[0].message).toBe('Resume content is required');
 
-            // AI engine should not be called
-            expect(aiService.stream).not.toHaveBeenCalled();
-          }
-        ),
-        { numRuns: 10 }
-      );
-    });
-
-    it('should handle empty userId gracefully', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          arbitraryResumeContent(),
-          fc.constantFrom('', '   ', '\n'),
-          arbitraryLanguage(),
-          async (resumeContent, emptyUserId, language) => {
-            // Collect all output chunks
-            const allChunks: any[] = [];
-            const stream = service.optimizeResume(resumeContent, emptyUserId, {
-              language,
-            });
-
-            for await (const chunk of stream) {
-              allChunks.push(chunk);
-            }
-
-            // Should have at least one error chunk
-            const errorChunks = allChunks.filter(
-              (chunk) => chunk.type === 'error'
+            const result = await service.acceptSuggestion(
+              optimizationId,
+              userId,
+              suggestionId
             );
-            expect(errorChunks.length).toBeGreaterThan(0);
-            expect(errorChunks[0].message).toBe('User ID is required');
 
-            // AI engine should not be called
-            expect(aiService.stream).not.toHaveBeenCalled();
+            expect(result.suggestion.status).toBe('ACCEPTED');
+            expect(mockPrismaService.optimization.update).toHaveBeenCalled();
           }
         ),
         { numRuns: 10 }
       );
     });
 
-    it('should handle large content with proper chunking', async () => {
+    it('should reject a single suggestion', async () => {
       await fc.assert(
         fc.asyncProperty(
-          arbitraryResumeContent(),
-          arbitraryUserId(),
-          arbitraryLanguage(),
-          // Generate meaningful long content that will trigger chunking
-          fc.array(
-            fc.string({ minLength: 50, maxLength: 200 }).map((s) => ({
-              content: s + '\n\n',
-            })),
-            { minLength: 3, maxLength: 8 }
-          ),
-          async (resumeContent, userId, language, longContentParts) => {
-            // Create meaningful content with paragraph breaks
-            const longContent = longContentParts
-              .map((part) => part.content)
-              .join('');
+          fc.uuid(),
+          fc.uuid(),
+          fc.uuid(),
+          async (optimizationId, userId, suggestionId) => {
+            const mockSuggestions = [
+              {
+                id: suggestionId,
+                type: 'KEYWORD',
+                section: 'skills',
+                original: 'Java, Python',
+                optimized: 'Java, Python, Go, Kubernetes',
+                reason: '补充云原生技术栈关键词',
+                status: 'PENDING',
+              },
+            ];
 
-            // Mock AI engine to return long content
-            aiService.stream.mockImplementation(async function* () {
-              yield longContent;
-            });
+            mockPrismaService.optimization.findUnique.mockResolvedValue({
+              id: optimizationId,
+              userId,
+              status: 'PENDING',
+              suggestions: JSON.stringify(mockSuggestions),
+            } as any);
 
-            // Collect all output chunks
-            const outputChunks: string[] = [];
-            const stream = service.optimizeResume(resumeContent, userId, {
-              language,
-            });
-
-            for await (const chunk of stream) {
-              if (chunk.type === 'chunk' && chunk.content) {
-                outputChunks.push(chunk.content);
-              }
-            }
-
-            // Verify content is properly chunked (should have multiple chunks for long content)
-            if (longContent.length > 300) {
-              expect(outputChunks.length).toBeGreaterThan(1);
-            }
-
-            // Verify total content matches
-            const actualContent = outputChunks.join('');
-            expect(actualContent).toBe(longContent);
-          }
-        ),
-        { numRuns: 15 }
-      );
-    });
-
-    it('should handle AI engine errors gracefully', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          arbitraryResumeContent(),
-          arbitraryUserId(),
-          arbitraryLanguage(),
-          fc.string({ minLength: 5, maxLength: 100 }),
-          async (resumeContent, userId, language, errorMessage) => {
-            // Mock AI engine to throw error
-            // eslint-disable-next-line require-yield
-            aiService.stream.mockImplementation(async function* () {
-              throw new Error(errorMessage);
-            });
-
-            // Collect all output chunks
-            const allChunks: any[] = [];
-            const stream = service.optimizeResume(resumeContent, userId, {
-              language,
-            });
-
-            for await (const chunk of stream) {
-              allChunks.push(chunk);
-            }
-
-            // Should have at least one error chunk
-            const errorChunks = allChunks.filter(
-              (chunk) => chunk.type === 'error'
+            mockPrismaService.optimization.update.mockImplementation(
+              async (args: any) => ({
+                ...args.data,
+                id: optimizationId,
+              })
             );
-            expect(errorChunks.length).toBeGreaterThan(0);
-            expect(errorChunks[0].message).toBe(errorMessage);
+
+            const result = await service.rejectSuggestion(
+              optimizationId,
+              userId,
+              suggestionId
+            );
+
+            expect(result.suggestion.status).toBe('REJECTED');
           }
         ),
         { numRuns: 10 }
       );
     });
+  });
 
-    it('should preserve Chinese characters and formatting', async () => {
+  describe('generateSuggestions', () => {
+    it('should delegate to resume-writer skill', async () => {
       await fc.assert(
         fc.asyncProperty(
-          fc.record({
-            name: fc.string({ minLength: 2, maxLength: 10 }),
-            phone: fc.string({ minLength: 8, maxLength: 15 }),
-            company: fc.string({ minLength: 3, maxLength: 20 }),
-          }),
-          arbitraryUserId(),
-          arbitraryLanguage(),
-          async (data, userId, language) => {
-            const originalContent = `姓名: ${data.name}\n电话: ${data.phone}\n公司: ${data.company}`;
-
-            // Mock AI engine to return content with Chinese characters
-            aiService.stream.mockImplementation(async function* () {
-              yield `优化后的${originalContent}`;
+          fc.string({ minLength: 1, maxLength: 100 }),
+          fc.string({ minLength: 1, maxLength: 100 }),
+          async (resumeContent, jobContent) => {
+            mockAIService.executeSkill.mockResolvedValue({
+              success: true,
+              data: {
+                optimizations: [
+                  {
+                    section: 'summary',
+                    type: 'content',
+                    before: resumeContent,
+                    after: `Optimized: ${resumeContent}`,
+                    reason: 'Improved clarity',
+                  },
+                ],
+              },
             });
 
-            // Collect all output chunks
-            const outputChunks: string[] = [];
-            const stream = service.optimizeResume(originalContent, userId, {
-              language,
-            });
+            const result = await service.generateSuggestions(
+              { summary: resumeContent, skills: [], experience: [], education: [], projects: [] } as any,
+              { title: jobContent, requiredSkills: [], preferredSkills: [], keywords: [], responsibilities: [] } as any,
+              'test-user-id'
+            );
 
-            for await (const chunk of stream) {
-              if (chunk.type === 'chunk' && chunk.content) {
-                outputChunks.push(chunk.content);
-              }
-            }
-
-            // Verify Chinese characters are preserved
-            const actualContent = outputChunks.join('');
-            expect(actualContent).toContain('优化后的');
-            expect(actualContent).toContain(data.name);
-            expect(actualContent).toContain(data.phone);
-            expect(actualContent).toContain(data.company);
+            expect(mockAIService.executeSkill).toHaveBeenCalledWith(
+              'resume-writer',
+              expect.any(Object),
+              'test-user-id'
+            );
+            expect(result).toBeInstanceOf(Array);
           }
         ),
-        { numRuns: 10 }
+        { numRuns: 5 }
       );
     });
   });

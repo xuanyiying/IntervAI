@@ -1,4 +1,4 @@
-import { AIService, Models } from '@/core/ai';
+import { AI_MODEL, AIService} from '@/core/ai';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { MessageRole } from '@prisma/client';
@@ -119,7 +119,7 @@ If the user wants to make changes, provide the specific content they can use.
 Format your response in a clear, structured way.`;
 
     const response = await this.aiService.chat(
-      Models.Chat,
+      AI_MODEL,
       [{ role: 'user', content: prompt }],
       {
         temperature: 0.7,

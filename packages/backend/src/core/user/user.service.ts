@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { User, SubscriptionTier } from '@prisma/client';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { RedisService } from '@/shared/cache/redis.service';
 import { Cacheable } from '@/common/decorators/cache.decorator';
-import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
 import { ErrorCode } from '@/common/exceptions/error-codes';
+import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
+import { RedisService } from '@/shared/cache/redis.service';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { Injectable, Logger } from '@nestjs/common';
+import { SubscriptionTier, User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -19,7 +19,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService
-  ) {}
+  ) { }
 
   /**
    * Delete user account
@@ -296,9 +296,9 @@ export class UserService {
       id: opt.id,
       type: 'optimization',
       status: opt.status,
-      resumeTitle: opt.resume.title,
-      jobTitle: opt.job.title,
-      company: opt.job.company,
+      resumeTitle: opt.resume?.title ?? 'Unknown',
+      jobTitle: opt.job?.title ?? 'Unknown',
+      company: opt.job?.company ?? 'Unknown',
       createdAt: opt.createdAt,
       completedAt: opt.completedAt,
     }));
