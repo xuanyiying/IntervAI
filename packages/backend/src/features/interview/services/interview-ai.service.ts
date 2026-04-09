@@ -169,9 +169,9 @@ Be encouraging but thorough. Keep responses concise and focused.`;
           const errorMessage = result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
-          if (this.isTransientError(errorCode) && attempt < this.maxRetries) {
+          if (this.isTransientError(errorCode) && attempt < this.maxRetries - 1) {
             this.logger.warn(
-              `Skill "${skillName}" transient error (attempt ${attempt + 1}): ${errorMessage}`
+              `Skill "${skillName}" transient error (attempt ${attempt + 1}/${this.maxRetries}): ${errorMessage}`
             );
             continue;
           }
@@ -187,9 +187,9 @@ Be encouraging but thorough. Keep responses concise and focused.`;
         }
 
         if (!result.data) {
-          if (options?.fallback && attempt < this.maxRetries) {
+          if (options?.fallback && attempt < this.maxRetries - 1) {
             this.logger.warn(
-              `Skill "${skillName}" returned empty data (attempt ${attempt + 1}), retrying...`
+              `Skill "${skillName}" returned empty data (attempt ${attempt + 1}/${this.maxRetries}), retrying...`
             );
             continue;
           }
@@ -207,9 +207,9 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        if (this.isNetworkError(lastError) && attempt < this.maxRetries) {
+        if (this.isNetworkError(lastError) && attempt < this.maxRetries - 1) {
           this.logger.warn(
-            `Network error for skill "${skillName}" (attempt ${attempt + 1}): ${lastError.message}`
+            `Network error for skill "${skillName}" (attempt ${attempt + 1}/${this.maxRetries}): ${lastError.message}`
           );
           continue;
         }

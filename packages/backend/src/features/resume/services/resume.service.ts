@@ -558,7 +558,9 @@ export class ResumeService {
   }
 
   /**
-   * Analyze a resume and provide scoring and suggestions
+   * Analyze a resume and provide scoring and suggestions.
+   * If the resume is not yet parsed, triggers async parsing and returns
+   * a status response instead of blocking.
    */
   async analyzeResume(resumeId: string, userId: string): Promise<any> {
     const resume = await this.prisma.resume.findUnique({
@@ -573,47 +575,50 @@ export class ResumeService {
       throw new ForbiddenException('Access denied');
     }
 
-    // If not parsed yet, auto-trigger parsing first
-    if (!resume.parsedData || resume.parseStatus !== ParseStatus.COMPLETED) {
-      this.logger.log(
-        `Resume ${resumeId} not parsed yet, auto-triggering parsing`
-      );
-
-      try {
-        await this.parseResume(resumeId, userId);
-      } catch (parseError) {
-        this.logger.error(
-          `Auto-parsing failed for resume ${resumeId}:`,
-          parseError
-        );
-        // Provide more helpful error message
-        const errorMsg =
-          parseError instanceof Error ? parseError.message : 'Unknown error';
-        if (errorMsg.includes('Storage record not found')) {
-          throw new BadRequestException('简历文件未找到，请重新上传简历');
-        }
-        if (errorMsg.includes('timeout')) {
-          throw new BadRequestException(
-            '简历解析超时，请稍后重试或重新上传简历'
-          );
-        }
-        throw new BadRequestException(`简历解析失败: ${errorMsg}`);
-      }
-
-      // Re-fetch the resume after parsing
-      const parsedResume = await this.prisma.resume.findUnique({
-        where: { id: resumeId },
-      });
-
-      if (!parsedResume?.parsedData) {
-        throw new BadRequestException('简历解析失败，请重新上传');
-      }
-
-      const parsedData = parsedResume.parsedData as unknown as ParsedResumeData;
-      return this.resumeAI.analyzeParsedResume(parsedData, userId);
+    // If currently being processed, return status immediately (don't block)
+    if (resume.parseStatus === ParseStatus.PROCESSING) {
+      return {
+        status: 'processing',
+        message: '简历正在解析中，请稍后重试',
+        parseStatus: ParseStatus.PROCESSING,
+      };
     }
 
+    // If failed, return error
+    if (resume.parseStatus === ParseStatus.FAILED) {
+      return {
+        status: 'failed',
+        message: '简历解析失败，请重新上传',
+        parseStatus: ParseStatus.FAILED,
+      };
+    }
+
+    // If not parsed yet, trigger async parsing (don't block)
+    if (!resume.parsedData || resume.parseStatus !== ParseStatus.COMPLETED) {
+      this.logger.log(
+        `Resume ${resumeId} not parsed yet, triggering async parsing`
+      );
+
+      // Trigger parse in background — do NOT await
+      this.parseResume(resumeId, userId).catch((parseError) => {
+        this.logger.error(
+          `Async parsing failed for resume ${resumeId}:`,
+          parseError
+        );
+      });
+
+      return {
+        status: 'processing',
+        message: '已开始解析简历，请稍后重试获取分析结果',
+        parseStatus: ParseStatus.PROCESSING,
+      };
+    }
+
+    // Already parsed — run local analysis (no AI call, instant)
     const parsedData = resume.parsedData as unknown as ParsedResumeData;
-    return this.resumeAI.analyzeParsedResume(parsedData, userId);
+    return {
+      status: 'completed',
+      ...this.resumeAI.analyzeParsedResume(parsedData, userId),
+    };
   }
 }

@@ -106,14 +106,46 @@ export const resumeService = {
   },
 
   /**
-   * Analyze a resume
+   * Analyze a resume (with polling for processing status)
    * @param resumeId - The ID of the resume to analyze
+   * @param maxRetries - Maximum number of polling retries (default 12)
+   * @param interval - Polling interval in ms (default 5000)
    * @returns The analysis result
    */
-  analyzeResume: async (resumeId: string): Promise<any> => {
-    const response = await axios.get<any>(`/resumes/${resumeId}/analyze`, {
-      timeout: PARSE_TIMEOUT_MS,
-    });
-    return response.data;
+  analyzeResume: async (
+    resumeId: string,
+    maxRetries: number = 12,
+    interval: number = 5000
+  ): Promise<any> => {
+    const poll = async (retriesLeft: number): Promise<any> => {
+      const response = await axios.get<any>(`/resumes/${resumeId}/analyze`, {
+        timeout: PARSE_TIMEOUT_MS,
+      });
+      const data = response.data;
+
+      if (data.status === 'completed') {
+        return data;
+      }
+
+      if (data.status === 'failed') {
+        throw new Error(data.message || 'Analysis failed');
+      }
+
+      // status === 'processing' — poll again
+      if (data.status === 'processing' && retriesLeft > 0) {
+        await new Promise((resolve) => setTimeout(resolve, interval));
+        return poll(retriesLeft - 1);
+      }
+
+      // No status field or unknown status — treat as direct result
+      if (!data.status) {
+        return data;
+      }
+
+      // Exhausted retries
+      throw new Error('Analysis timed out. Please try again later.');
+    };
+
+    return poll(maxRetries);
   },
 };
