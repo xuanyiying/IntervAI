@@ -62,43 +62,66 @@ export class AIQueueProcessor {
       let parsedData: any;
       let optimizedContent: string | null = null;
 
+      // Step 1: Parse resume (critical — must complete)
       try {
-        const result = await this.resumeAI.parseAndOptimizeResume(content, userId);
-        parsedData = result.parsedData;
-        optimizedContent = result.optimizedContent || null;
-        this.logger.log(
-          `Resume parsing and optimization completed in single call for resume ${resumeId}`
-        );
-
-        // 3. Send optimized content to conversation if conversationId is provided
-        if (optimizedContent && conversationId) {
-          await this.sendOptimizationToConversation(
-            userId,
-            conversationId,
-            resumeId,
-            optimizedContent
-          );
-        }
-      } catch (combinedError) {
-        // Fallback: try parse-only if combined call fails
-        this.logger.warn(
-          `Combined parse+optimize failed for ${resumeId}, falling back to parse-only:`,
-          combinedError
-        );
         parsedData = await this.resumeAI.parseResumeContent(content, userId);
+        this.logger.log(
+          `Resume parsing completed for resume ${resumeId}`
+        );
+      } catch (parseError) {
+        this.logger.error(`Resume parsing failed for ${resumeId}:`, parseError);
+        throw parseError;
+      }
 
-        // Attempt optimization separately as a non-critical enhancement
-        try {
+      // Step 2: Save parsedData IMMEDIATELY — downstream services can use it right away
+      await this.prisma.resume.update({
+        where: { id: resumeId, userId: userId },
+        data: {
+          parsedData: {
+            ...parsedData,
+            optimizedContent: null, // Will be filled by async optimization
+          },
+          extractedText: content,
+          parseStatus: ParseStatus.COMPLETED,
+          version: { increment: 1 },
+        },
+      });
+
+      this.logger.log(
+        `Resume parsing results saved for resume ${resumeId}`
+      );
+
+      // Step 3: Optimize resume asynchronously (non-blocking)
+      // This runs in the same job but after critical data is already saved
+      if (conversationId) {
+        this.chatGateway.emitToUser(userId, 'system', {
+          type: 'system',
+          content: '正在优化简历内容...',
+          timestamp: Date.now(),
+          metadata: { resumeId, stage: 'optimizing', progress: 70 },
+        });
+      }
+
+      try {
+        optimizedContent = await this.resumeAI.optimizeResumeContent(
+          JSON.stringify(parsedData),
+          userId
+        );
+
+        if (optimizedContent) {
+          // Update with optimized content
+          await this.prisma.resume.update({
+            where: { id: resumeId, userId: userId },
+            data: {
+              parsedData: {
+                ...parsedData,
+                optimizedContent,
+              },
+            },
+          });
+
+          // Send optimized content to conversation
           if (conversationId) {
-            this.chatGateway.emitToUser(userId, 'system', {
-              type: 'system',
-              content: '正在优化简历内容...',
-              timestamp: Date.now(),
-              metadata: { resumeId, stage: 'optimizing', progress: 70 },
-            });
-          }
-          optimizedContent = await this.resumeAI.optimizeResumeContent(content, userId);
-          if (optimizedContent && conversationId) {
             await this.sendOptimizationToConversation(
               userId,
               conversationId,
@@ -106,12 +129,12 @@ export class AIQueueProcessor {
               optimizedContent
             );
           }
-        } catch (optimizeError) {
-          this.logger.warn(
-            `Resume optimization also failed for ${resumeId}, continuing with parsed data only:`,
-            optimizeError
-          );
         }
+      } catch (optimizeError) {
+        this.logger.warn(
+          `Resume optimization failed for ${resumeId}, parsed data already saved:`,
+          optimizeError
+        );
       }
 
       // Send progress update: Finalizing
@@ -124,24 +147,9 @@ export class AIQueueProcessor {
         });
       }
 
-      // 5. Update resume with results (include optimized content if available)
-      const updateData: any = {
-        parsedData: {
-          ...parsedData,
-          optimizedContent: optimizedContent,
-        },
-        extractedText: content, // Save extracted text to top-level field
-        parseStatus: ParseStatus.COMPLETED,
-        version: { increment: 1 }, // Increment version when completed
-      };
-
-      await this.prisma.resume.update({
-        where: { id: resumeId, userId: userId },
-        data: updateData,
-      });
-
+      // parsedData was already saved in Step 2; optimization update happened in Step 3 if successful
       this.logger.log(
-        `Resume parsing and optimization completed for resume ${resumeId}`
+        `Resume processing completed for resume ${resumeId}`
       );
       return {
         ...parsedData,

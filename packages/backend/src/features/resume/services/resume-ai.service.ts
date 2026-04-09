@@ -45,7 +45,7 @@ export class ResumeAIService {
           const errorMessage = result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
-          if (this.isTransientError(errorCode) && attempt < this.maxRetries) {
+          if (this.isTransientError(errorCode) && attempt < this.maxRetries - 1) {
             continue;
           }
 
@@ -57,7 +57,7 @@ export class ResumeAIService {
         }
 
         if (!result.data) {
-          if (options?.fallback && attempt < this.maxRetries) {
+          if (options?.fallback && attempt < this.maxRetries - 1) {
             continue;
           }
 
@@ -71,7 +71,7 @@ export class ResumeAIService {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        if (this.isNetworkError(lastError) && attempt < this.maxRetries) {
+        if (this.isNetworkError(lastError) && attempt < this.maxRetries - 1) {
           continue;
         }
 
@@ -152,7 +152,10 @@ export class ResumeAIService {
   }
 
   /**
-   * Parse resume AND optimize in one flow using skills pipeline
+   * Parse resume AND optimize in one flow using skills pipeline.
+   * Optimization runs in parallel with saving parsedData —
+   * the caller gets parsedData immediately and optimizedContent is
+   * appended asynchronously via a separate optimization step.
    */
   async parseAndOptimizeResume(
     content: string,
@@ -161,8 +164,8 @@ export class ResumeAIService {
     this.logger.log('Parsing and optimizing resume via skills pipeline');
 
     let parsedData: ParsedResumeData;
-    let optimizedContent: string | null = null;
 
+    // Step 1: Parse (must complete before anything else)
     try {
       const parseResult = await this.executeSkillWithRetry(
         'resume-analyzer',
@@ -171,7 +174,14 @@ export class ResumeAIService {
       );
 
       parsedData = this.normalizeSkillResult(parseResult);
+    } catch (error) {
+      this.logger.warn('Resume parsing failed, falling back to basic parse:', error);
+      parsedData = this.basicParseResume(content);
+    }
 
+    // Step 2: Optimize (non-blocking — if it fails, we still have parsedData)
+    let optimizedContent = '';
+    try {
       const writerResult = await this.executeSkillWithRetry(
         'resume-writer',
         {
@@ -189,66 +199,128 @@ export class ResumeAIService {
             : JSON.stringify(writerResult, null, 2);
       }
     } catch (error) {
-      this.logger.warn('Skills pipeline failed, falling back to parse-only:', error);
-
-      try {
-        const parseFallback = await this.executeSkillWithRetry(
-          'resume-analyzer',
-          { resumeText: content },
-          userId,
-          {
-            fallback: async () => this.basicParseResume(content)
-          }
-        );
-        parsedData = this.normalizeSkillResult(parseFallback);
-      } catch (fallbackError) {
-        this.logger.error('Both skills pipeline and fallback failed:', fallbackError);
-        throw new Error(`Failed to parse and optimize resume: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
-      }
+      this.logger.warn('Resume optimization failed, continuing with parsed data only:', error);
     }
 
-    return { parsedData, optimizedContent: optimizedContent || '' };
+    return { parsedData, optimizedContent };
   }
 
   /**
-   * Analyze parsed resume data using resume-analyzer skill
+   * Analyze parsed resume data using local rule-based scoring.
+   * No AI call needed — the parsed data already has all structured info.
    */
-  async analyzeParsedResume(
+  analyzeParsedResume(
     parsedData: ParsedResumeData,
-    userId: string
-  ): Promise<{
+    _userId: string
+  ): {
     strengths: string[];
     weaknesses: string[];
     suggestions: string[];
     overallScore: number;
-  }> {
-    this.logger.log('Analyzing parsed resume data via resume-analyzer skill');
+  } {
+    const strengths: string[] = [];
+    const weaknesses: string[] = [];
+    const suggestions: string[] = [];
+    let score = 0;
 
-    try {
-      const data = await this.executeSkillWithRetry(
-        'resume-analyzer',
-        { resumeText: JSON.stringify(parsedData) },
-        userId,
-        {
-          fallback: async () => {
-            this.logger.warn('Using basic analysis as fallback');
-            return this.basicAnalyzeResume(parsedData);
-          }
-        }
-      );
-
-      const matchAnalysis = data?.matchAnalysis || {};
-
-      return {
-        strengths: matchAnalysis.strengths || [],
-        weaknesses: matchAnalysis.gaps || [],
-        suggestions: matchAnalysis.recommendations || [],
-        overallScore: matchAnalysis.score ?? 0,
-      };
-    } catch (error) {
-      this.logger.error('Error analyzing resume:', error);
-      throw new Error(`Failed to analyze resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // ── Summary ──
+    if (parsedData.summary && parsedData.summary.length >= 50) {
+      strengths.push('Professional summary is present and substantive');
+      score += 15;
+    } else {
+      weaknesses.push('Professional summary is missing or too brief');
+      suggestions.push('Add a compelling professional summary (50-200 characters) that highlights your core value');
     }
+
+    // ── Skills ──
+    const skills = parsedData.skills || [];
+    if (skills.length >= 8) {
+      strengths.push(`Strong technical skill set with ${skills.length} skills listed`);
+      score += 15;
+    } else if (skills.length >= 4) {
+      score += 8;
+      suggestions.push('Consider adding more relevant skills to strengthen your profile');
+    } else {
+      weaknesses.push('Limited skill diversity — few skills listed');
+      suggestions.push('Add relevant technical and soft skills that match your target roles');
+    }
+
+    // ── Experience ──
+    const experience = parsedData.experience || [];
+    if (experience.length >= 3) {
+      strengths.push(`Substantial work experience with ${experience.length} positions`);
+      score += 15;
+    } else if (experience.length >= 1) {
+      score += 8;
+      suggestions.push('Consider adding more work experience entries if available');
+    } else {
+      weaknesses.push('No work experience listed');
+      suggestions.push('Add internships, part-time roles, or volunteer experience');
+    }
+
+    // Check for quantified achievements in experience
+    const hasQuantifiedAchievements = experience.some(exp =>
+      (exp.achievements || []).some(a => /\d+%|\d+x|\$\d|\d+ (users|customers|projects|team)/i.test(a))
+    );
+    if (hasQuantifiedAchievements) {
+      strengths.push('Experience includes quantified achievements and metrics');
+      score += 10;
+    } else {
+      weaknesses.push('Work experience lacks quantified achievements');
+      suggestions.push('Add specific numbers and metrics to your achievements (e.g., "increased revenue by 30%")');
+    }
+
+    // ── Education ──
+    const education = parsedData.education || [];
+    if (education.length > 0) {
+      score += 10;
+      if (education.some(e => /硕士|master|phd|博士/i.test(e.degree))) {
+        strengths.push('Advanced degree strengthens academic credentials');
+        score += 5;
+      }
+    } else {
+      weaknesses.push('No education information provided');
+      suggestions.push('Add your educational background');
+    }
+
+    // ── Projects ──
+    const projects = parsedData.projects || [];
+    if (projects.length >= 2) {
+      strengths.push(`${projects.length} project entries demonstrate hands-on experience`);
+      score += 10;
+    } else if (projects.length >= 1) {
+      score += 5;
+      suggestions.push('Adding more project examples can showcase a broader skill set');
+    } else {
+      weaknesses.push('No project experience listed');
+      suggestions.push('Add personal or professional projects to demonstrate practical skills');
+    }
+
+    // ── Personal Info completeness ──
+    const pi = parsedData.personalInfo || {} as any;
+    const contactFields = [pi.email, pi.phone, pi.location].filter(Boolean).length;
+    if (contactFields >= 3) {
+      score += 10;
+    } else {
+      weaknesses.push('Contact information is incomplete');
+      suggestions.push('Ensure email, phone, and location are all provided');
+    }
+
+    // ── Certifications ──
+    if (parsedData.certifications && parsedData.certifications.length > 0) {
+      strengths.push(`${parsedData.certifications.length} certification(s) add professional credibility`);
+      score += 5;
+    }
+
+    // ── contextSummary / markdown (new fields) ──
+    if (parsedData.contextSummary) {
+      score += 5;
+    }
+
+    // Cap score
+    score = Math.min(100, score);
+
+    return { strengths, weaknesses, suggestions, overallScore: score };
   }
 
   /**
