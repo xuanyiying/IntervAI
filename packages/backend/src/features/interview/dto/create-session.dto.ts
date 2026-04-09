@@ -11,9 +11,9 @@ export enum InterviewLanguage {
 }
 
 export class CreateSessionDto {
-  @IsNotEmpty()
   @IsString()
-  optimizationId: string;
+  @IsOptional()
+  optimizationId?: string;
 
   @IsString()
   @IsOptional()

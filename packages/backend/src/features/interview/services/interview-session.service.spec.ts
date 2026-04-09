@@ -1,17 +1,19 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { InterviewSessionService } from './interview-session.service';
 import { AIService } from '@/core/ai';
 import { PromptService } from '@/core/prompts';
 import { QuotaService } from '@/core/quota/quota.service';
 import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { InterviewStatus, InterviewMode, MessageRole } from '@prisma/client';
+import { Test, TestingModule } from '@nestjs/testing';
+import { InterviewMode, InterviewStatus, MessageRole } from '@prisma/client';
+import { InterviewSessionService } from './interview-session.service';
 
 describe('InterviewSessionService', () => {
   let service: InterviewSessionService;
   let aiService: jest.Mocked<AIService>;
-  let prismaService: jest.Mocked<PrismaService>;
+  let prismaService: any;
   let voiceService: jest.Mocked<AlibabaVoiceService>;
+  let quotaService: jest.Mocked<QuotaService>;
+  let promptService: jest.Mocked<PromptService>;
 
   const mockUserId = 'test-user-id';
   const mockSessionId = 'test-session-id';
@@ -259,6 +261,7 @@ describe('InterviewSessionService', () => {
           keyPoints: ['Point 1', 'Point 2'],
           estimatedTime: '60 seconds',
         },
+        metadata: { skillName: 'interview-assistant', duration: 1000 },
       });
 
       const result = await service.handleMessage(mockUserId, mockSessionId, {
@@ -282,6 +285,7 @@ describe('InterviewSessionService', () => {
       aiService.executeSkill.mockResolvedValue({
         success: true,
         data: { response: 'Follow-up question' },
+        metadata: { skillName: 'interview-assistant', duration: 1000 },
       });
 
       const result = await service.handleMessage(mockUserId, mockSessionId, {

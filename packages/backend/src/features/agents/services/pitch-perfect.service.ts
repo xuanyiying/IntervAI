@@ -26,7 +26,7 @@ export interface RefinePitchOutput {
 export class PitchPerfectService {
   private readonly logger = new Logger(PitchPerfectService.name);
 
-  constructor(private readonly aiService: AIService) {}
+  constructor(private readonly aiService: AIService) { }
 
   async generatePitch(
     dto: GeneratePitchDto,
@@ -94,9 +94,9 @@ export class PitchPerfectService {
         feedback
       );
 
-      const { Models } = await import('@/core/ai/models');
+      const { AI_MODEL } = await import('@/core/ai/models');
       const refinedIntroduction = await this.aiService.generate(
-        Models.Chat,
+        AI_MODEL,
         refinementPrompt,
         userId
       );

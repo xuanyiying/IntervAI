@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AIService, Models } from '@/core/ai';
+import { AI_MODEL, AIService} from '@/core/ai';
 import { RedisService } from '@/shared/cache/redis.service';
 import { PromptService, LanguageInput } from '@/core/prompts';
 
@@ -89,7 +89,7 @@ Analyze this message and determine the user's intent/scene. Return a JSON object
 Return JSON only, no markdown.`;
 
     const response = await this.aiService.chat(
-      Models.Chat,
+      AI_MODEL,
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

@@ -144,11 +144,17 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
   const handleAcceptSuggestion = async (suggestionId: string) => {
     if (!optimization) return;
     try {
-      const updated = await optimizationService.acceptSuggestion(
-        optimization.id,
-        suggestionId
+      await optimizationService.acceptSuggestion(optimization.id, suggestionId);
+      setOptimization((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestions: (prev.suggestions || []).map((s) =>
+                s.id === suggestionId ? { ...s, status: SuggestionStatus.ACCEPTED } : s
+              ),
+            }
+          : prev
       );
-      setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));
@@ -158,11 +164,17 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
   const handleRejectSuggestion = async (suggestionId: string) => {
     if (!optimization) return;
     try {
-      const updated = await optimizationService.rejectSuggestion(
-        optimization.id,
-        suggestionId
+      await optimizationService.rejectSuggestion(optimization.id, suggestionId);
+      setOptimization((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestions: (prev.suggestions || []).map((s) =>
+                s.id === suggestionId ? { ...s, status: SuggestionStatus.REJECTED } : s
+              ),
+            }
+          : prev
       );
-      setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));
@@ -171,18 +183,21 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
 
   const handleAcceptAll = async () => {
     if (!optimization) return;
-    const pendingIds = optimization.suggestions
-      .filter((s) => s.status === SuggestionStatus.PENDING)
-      .map((s) => s.id);
-
-    if (pendingIds.length === 0) return;
 
     try {
-      const updated = await optimizationService.acceptBatchSuggestions(
-        optimization.id,
-        pendingIds
+      await optimizationService.acceptAllSuggestions(optimization.id);
+      setOptimization((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestions: (prev.suggestions || []).map((s) =>
+                s.status === SuggestionStatus.PENDING
+                  ? { ...s, status: SuggestionStatus.ACCEPTED }
+                  : s
+              ),
+            }
+          : prev
       );
-      setOptimization(updated);
       message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));

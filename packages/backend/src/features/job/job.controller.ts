@@ -89,8 +89,9 @@ export class JobController {
    */
   @Post('parse')
   async parseJobDescription(
+    @Request() req: any,
     @Body() body: { description: string }
   ): Promise<any> {
-    return this.jobService.parseJobDescription(body.description);
+    return this.jobService.parseJobDescription(body.description, req.user?.id);
   }
 }

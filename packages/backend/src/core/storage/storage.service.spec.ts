@@ -1,9 +1,9 @@
+import { PrismaService } from '@/shared/database/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { StorageService } from './storage.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { OssConfigService } from './config/oss.config';
-import { OssFactory } from './providers/oss.factory';
 import { FileType, OssType } from './interfaces/storage.interface';
+import { OssFactory } from './providers/oss.factory';
+import { StorageService } from './storage.service';
 
 // Mock dependencies
 const mockPrismaService = {

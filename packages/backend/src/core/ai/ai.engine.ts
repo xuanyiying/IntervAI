@@ -1,110 +1,29 @@
 /**
- * AI Engine - Refactored Version
- * Now uses AIService for unified AI operations
- * This class serves as a facade providing backward compatibility
- * and file extraction utilities
+ * AI Engine - Skills-First Architecture
+ * Delegates domain-level AI operations to the Skills Engine.
+ * Retains backward-compatible API surface for all consumers.
+ * Framework-level prompts (interview mock, chat intent, etc.) remain in PromptService.
  */
 
+import {
+  InterviewQuestion,
+  OptimizationSuggestion,
+  ParsedJobDescription,
+  ParsedResumeData,
+} from '@/types';
+import { SuggestionStatus, SuggestionType } from '@/types/ai';
 import { Injectable, Logger } from '@nestjs/common';
 import mammoth from 'mammoth';
-import pdfParse from 'pdf-parse';
-import { z } from 'zod';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { AIService } from './ai.service';
-import { Models } from './models';
-import {
-  ParsedResumeData,
-  ParsedJobDescription,
-  OptimizationSuggestion,
-  InterviewQuestion,
-} from '@/types';
-import { PromptService, LanguageInput } from '@/core/prompts';
-
-// Define Zod schema for ParsedResumeData for validation and potential fixing
-const ParsedResumeDataSchema = z.object({
-  personalInfo: z.object({
-    name: z.string().default(''),
-    email: z.string().default(''),
-    phone: z.string().optional(),
-    location: z.string().optional(),
-    linkedin: z.string().optional(),
-    github: z.string().optional(),
-    website: z.string().optional(),
-  }),
-  summary: z.string().optional(),
-  education: z
-    .array(
-      z.object({
-        institution: z.string(),
-        degree: z.string(),
-        field: z.string().optional().default(''),
-        startDate: z.string().optional().default(''),
-        endDate: z.string().optional(),
-        gpa: z.string().optional(),
-        achievements: z.array(z.string()).optional(),
-      })
-    )
-    .default([]),
-  experience: z
-    .array(
-      z.object({
-        company: z.string(),
-        position: z.string(),
-        startDate: z.string().optional().default(''),
-        endDate: z.string().optional(),
-        location: z.string().optional(),
-        description: z.array(z.string()).default([]),
-        achievements: z.array(z.string()).optional(),
-      })
-    )
-    .default([]),
-  skills: z.array(z.string()).default([]),
-  projects: z
-    .array(
-      z.object({
-        name: z.string(),
-        description: z.string(),
-        technologies: z.array(z.string()).default([]),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
-        url: z.string().optional(),
-        highlights: z.array(z.string()).default([]),
-      })
-    )
-    .default([]),
-  certifications: z
-    .array(
-      z.object({
-        name: z.string(),
-        issuer: z.string(),
-        date: z.string(),
-        expiryDate: z.string().optional(),
-        credentialId: z.string().optional(),
-      })
-    )
-    .optional(),
-  languages: z
-    .array(
-      z.object({
-        name: z.string(),
-        proficiency: z.string(),
-      })
-    )
-    .optional(),
-  markdown: z.string().optional(),
-});
+import { AI_MODEL } from './models';
 
 @Injectable()
 export class AIEngine {
   private readonly logger = new Logger(AIEngine.name);
 
-  constructor(
-    private aiService: AIService,
-    private promptService: PromptService
-  ) {}
+  constructor(private aiService: AIService) { }
 
-  /**
-   * Extract text content from a file buffer based on file type
-   */
   async extractTextFromFile(
     fileBuffer: Buffer,
     fileType: string
@@ -137,22 +56,38 @@ export class AIEngine {
     return text;
   }
 
-  /**
-   * Extract text from PDF file
-   */
   private async extractTextFromPDF(fileBuffer: Buffer): Promise<string> {
     try {
-      const data = await pdfParse(fileBuffer);
-      return data.text;
+      const data = new Uint8Array(fileBuffer);
+      const doc = await pdfjsLib.getDocument({ data, useSystemFonts: true }).promise;
+      const textParts: string[] = [];
+
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        textParts.push(pageText);
+      }
+
+      const fullText = textParts.join('\n\n');
+
+      const avgCharsPerPage = fullText.length / doc.numPages;
+      if (avgCharsPerPage < 50 && doc.numPages > 0) {
+        this.logger.warn(
+          `PDF may be scanned/image-based (avg ${avgCharsPerPage.toFixed(0)} chars/page). ` +
+          `Text extraction may be incomplete.`
+        );
+      }
+
+      return fullText;
     } catch (error) {
-      this.logger.error('Error parsing PDF:', error);
+      this.logger.error('Error parsing PDF with pdfjs-dist:', error);
       throw new Error('Failed to parse PDF file');
     }
   }
 
-  /**
-   * Extract text from DOCX file
-   */
   private async extractTextFromDOCX(fileBuffer: Buffer): Promise<string> {
     try {
       const result = await mammoth.extractRawText({ buffer: fileBuffer });
@@ -164,97 +99,169 @@ export class AIEngine {
   }
 
   /**
-   * Parse resume content using AI
-   * Delegates to AIService with unified AI support
+   * Parse resume content using resume-analyzer skill
    */
   async parseResumeContent(
     content: string,
-    language: LanguageInput = 'EN'
+    userId: string,
+    _language?: string
   ): Promise<ParsedResumeData> {
-    this.logger.log(`Parsing resume content (language: ${language})`);
-
-    const systemPrompt =
-      this.promptService?.getResumeParsingPrompt(language) ??
-      `You are a resume parsing expert. Extract structured information from the resume text provided.
-Return valid JSON matching the expected schema with personalInfo, education, experience, skills, projects, certifications, and languages.`;
-
-    const userPrompt =
-      this.promptService?.buildResumeParsingPrompt(content) ??
-      `Parse this resume and return structured JSON data:\n\n${content}`;
+    this.logger.log(`Parsing resume content via resume-analyzer skill`);
 
     try {
-      const response = await this.aiService.generate(
-        Models.ResumeParser,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'resume-analyzer',
+        { resumeText: content },
+        userId
       );
 
-      // Try to parse the JSON response
-      let parsedData: any;
-      try {
-        // Try direct JSON parsing first
-        parsedData = JSON.parse(response);
-      } catch (e) {
-        // Try to extract JSON from markdown code blocks
-        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          parsedData = JSON.parse(jsonMatch[1].trim());
-        } else {
-          throw new Error('Could not parse JSON from AI response');
-        }
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
       }
 
-      // Validate and fix the parsed data using Zod
-      const validatedData = ParsedResumeDataSchema.parse(parsedData);
-
-      this.logger.log('Resume parsed successfully');
-      return validatedData;
+      return this.normalizeSkillResult(result.data);
     } catch (error) {
-      this.logger.error('Error parsing resume:', error);
+      this.logger.error('Error parsing resume via skill:', error);
       throw new Error('Failed to parse resume content');
     }
   }
 
   /**
-   * Parse job description using AI
+   * Parse resume AND optimize in one flow using skills pipeline
+   */
+  async parseAndOptimizeResume(
+    content: string,
+    userId: string,
+    _language?: string
+  ): Promise<{ parsedData: ParsedResumeData; optimizedContent: string }> {
+    this.logger.log('Parsing and optimizing resume via skills pipeline');
+
+    let parsedData: ParsedResumeData;
+    let optimizedContent: string | null = null;
+
+    try {
+      const parseResult = await this.aiService.executeSkill(
+        'resume-analyzer',
+        { resumeText: content },
+        userId
+      );
+
+      if (!parseResult.success || !parseResult.data) {
+        throw new Error('resume-analyzer skill failed');
+      }
+
+      parsedData = this.normalizeSkillResult(parseResult.data);
+
+      const writerResult = await this.aiService.executeSkill(
+        'resume-writer',
+        {
+          resumeData: JSON.stringify(parsedData),
+          optimizationFocus: 'all',
+          style: 'professional',
+        },
+        userId
+      );
+
+      if (writerResult.success && writerResult.data) {
+        const writerData = writerResult.data as any;
+        optimizedContent =
+          typeof writerData === 'string'
+            ? writerData
+            : JSON.stringify(writerData, null, 2);
+      }
+    } catch (error) {
+      this.logger.warn('Skills pipeline failed, falling back to parse-only:', error);
+
+      const parseResult = await this.aiService.executeSkill(
+        'resume-analyzer',
+        { resumeText: content },
+        userId
+      );
+
+      if (parseResult.success && parseResult.data) {
+        parsedData = this.normalizeSkillResult(parseResult.data);
+      } else {
+        throw new Error('Both skills pipeline and fallback failed');
+      }
+    }
+
+    return { parsedData, optimizedContent: optimizedContent || '' };
+  }
+
+  /**
+   * Generate structured optimization suggestions using resume-writer skill
+   */
+  async generateSuggestions(
+    parsedData: ParsedResumeData,
+    userId: string,
+    _language?: string
+  ): Promise<OptimizationSuggestion[]> {
+    this.logger.log('Generating optimization suggestions via resume-writer skill');
+
+    try {
+      const result = await this.aiService.executeSkill(
+        'resume-writer',
+        {
+          resumeData: JSON.stringify(parsedData),
+          optimizationFocus: 'all',
+          style: 'professional',
+        },
+        userId
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
+      }
+
+      const data = result.data as any;
+      const optimizations =
+        data?.optimizations ||
+        (Array.isArray(data) ? data : []);
+
+      if (!Array.isArray(optimizations)) {
+        return [];
+      }
+
+      return optimizations.map((opt: any, index: number) => ({
+        id: `sug_${Date.now()}_${index}`,
+        type:
+          (SuggestionType as any)[(opt.type as string)?.toUpperCase()] ??
+          SuggestionType.CONTENT,
+        section: opt.section || 'experience',
+        itemIndex: opt.sectionIndex ?? 0,
+        original: opt.before || opt.original || '',
+        optimized: opt.after || opt.optimized || '',
+        reason: opt.reason || opt.change || '',
+        status: SuggestionStatus.PENDING,
+      }));
+    } catch (error) {
+      this.logger.error('Error generating suggestions:', error);
+      throw new Error('Failed to generate optimization suggestions');
+    }
+  }
+
+  /**
+   * Parse job description using job-parser skill
    */
   async parseJobDescription(
     content: string,
-    language: LanguageInput = 'EN'
+    userId: string,
+    _language?: string
   ): Promise<ParsedJobDescription> {
-    this.logger.log(`Parsing job description (language: ${language})`);
-
-    const systemPrompt =
-      this.promptService?.getJobParsingPrompt(language) ??
-      `You are a job description parsing expert. Extract structured information from the job description provided.
-Return valid JSON with title, company, location, description, requirements, responsibilities, skills, experience, education, salary, and benefits.`;
-
-    const userPrompt =
-      this.promptService?.buildJobParsingPrompt(content) ??
-      `Parse this job description and return structured JSON data:\n\n${content}`;
+    this.logger.log('Parsing job description via job-parser skill');
 
     try {
-      const response = await this.aiService.generate(
-        Models.JobParser,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'job-parser',
+        { rawJob: { description: content } },
+        userId
       );
 
-      // Try to parse the JSON response
-      let parsedData: any;
-      try {
-        parsedData = JSON.parse(response);
-      } catch (e) {
-        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          parsedData = JSON.parse(jsonMatch[1].trim());
-        } else {
-          throw new Error('Could not parse JSON from AI response');
-        }
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
       }
 
-      this.logger.log('Job description parsed successfully');
-      return parsedData;
+      return result.data as ParsedJobDescription;
     } catch (error) {
       this.logger.error('Error parsing job description:', error);
       throw new Error('Failed to parse job description');
@@ -262,52 +269,51 @@ Return valid JSON with title, company, location, description, requirements, resp
   }
 
   /**
-   * Generate optimization suggestions
+   * Generate JD-based optimization suggestions using resume-writer skill
    */
   async generateOptimizationSuggestions(
     resumeContent: string,
     jobDescription: string,
-    language: LanguageInput = 'EN'
+    userId: string,
+    _language?: string
   ): Promise<OptimizationSuggestion[]> {
-    this.logger.log(
-      `Generating optimization suggestions (language: ${language})`
-    );
-
-    const systemPrompt =
-      this.promptService?.getOptimizationPrompt(language) ??
-      `You are a resume optimization expert. Analyze the resume against the job description and provide specific suggestions for improvement.
-Return an array of JSON objects with type, priority, section, original, suggestion, and reason fields.`;
-
-    const userPrompt =
-      this.promptService?.buildOptimizationPrompt(
-        resumeContent,
-        jobDescription
-      ) ??
-      `Resume:\n${resumeContent}\n\nJob Description:\n${jobDescription}\n\nProvide optimization suggestions as a JSON array.`;
+    this.logger.log('Generating JD-based optimization suggestions via resume-writer skill');
 
     try {
-      const response = await this.aiService.generate(
-        Models.Optimization,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'resume-writer',
+        {
+          resumeData: resumeContent,
+          targetJob: jobDescription,
+          optimizationFocus: 'all',
+          style: 'professional',
+        },
+        userId
       );
 
-      let suggestions: any;
-      try {
-        suggestions = JSON.parse(response);
-      } catch (e) {
-        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          suggestions = JSON.parse(jsonMatch[1].trim());
-        } else {
-          throw new Error('Could not parse JSON from AI response');
-        }
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
       }
 
-      this.logger.log(
-        `Generated ${suggestions.length} optimization suggestions`
-      );
-      return suggestions;
+      const data = result.data as any;
+      const optimizations = data?.optimizations || [];
+
+      if (!Array.isArray(optimizations)) {
+        return [];
+      }
+
+      return optimizations.map((opt: any, index: number) => ({
+        id: `sug_${Date.now()}_${index}`,
+        type:
+          (SuggestionType as any)[(opt.type as string)?.toUpperCase()] ??
+          SuggestionType.CONTENT,
+        section: opt.section || 'general',
+        itemIndex: opt.sectionIndex ?? 0,
+        original: opt.before || opt.original || '',
+        optimized: opt.after || opt.optimized || opt.suggestion || '',
+        reason: opt.reason || '',
+        status: SuggestionStatus.PENDING,
+      }));
     } catch (error) {
       this.logger.error('Error generating optimization suggestions:', error);
       throw new Error('Failed to generate optimization suggestions');
@@ -315,94 +321,79 @@ Return an array of JSON objects with type, priority, section, original, suggesti
   }
 
   /**
-   * Generate interview questions
+   * Generate interview questions using interview-question-generator skill
    */
   async generateInterviewQuestions(
     jobDescription: string,
     resumeContent: string,
     count: number = 10,
-    language: LanguageInput = 'EN'
+    userId: string,
+    _language?: string
   ): Promise<InterviewQuestion[]> {
     this.logger.log(
-      `Generating interview questions (language: ${language}, count: ${count})`
+      `Generating interview questions via interview-question-generator skill (count: ${count})`
     );
 
-    const systemPrompt =
-      this.promptService?.getQuestionGeneratorPrompt(language, count) ??
-      `You are an interview preparation expert. Based on the job description and resume, generate relevant interview questions.
-Return an array of JSON objects with category, question, suggestedAnswer, and tips fields.`;
-
-    const userPrompt =
-      this.promptService?.buildInterviewQuestionsPrompt(
-        jobDescription,
-        resumeContent,
-        count
-      ) ??
-      `Job Description:\n${jobDescription}\n\nResume:\n${resumeContent}\n\nGenerate ${count} interview questions as a JSON array.`;
-
     try {
-      const response = await this.aiService.generate(
-        Models.InterviewPrep,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'interview-question-generator',
+        {
+          jobDescription,
+          resumeText: resumeContent,
+          count,
+          difficulty: 'mixed',
+        },
+        userId
       );
 
-      let questions: any;
-      try {
-        questions = JSON.parse(response);
-      } catch (e) {
-        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          questions = JSON.parse(jsonMatch[1].trim());
-        } else {
-          throw new Error('Could not parse JSON from AI response');
-        }
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
       }
 
-      this.logger.log(`Generated ${questions.length} interview questions`);
-      return questions;
+      const data = result.data as any;
+      const questions = data?.questions || [];
+
+      if (!Array.isArray(questions)) {
+        return [];
+      }
+
+      return questions.map((q: any) => ({
+        questionType: q.category || q.questionType || 'behavioral',
+        question: q.question,
+        suggestedAnswer: q.sampleAnswer?.example || q.suggestedAnswer || q.context || '',
+        tips: Array.isArray(q.tips) ? q.tips : [q.tips].filter(Boolean),
+        difficulty: q.difficulty || 'medium',
+      }));
     } catch (error) {
       this.logger.error('Error generating interview questions:', error);
       throw new Error('Failed to generate interview questions');
     }
   }
 
-  /**
-   * Generate embeddings for text
-   */
   async generateEmbedding(text: string): Promise<number[]> {
-    return this.aiService.embed(Models.Embedding, text);
+    return this.aiService.embed(AI_MODEL, text);
   }
 
-  /**
-   * Generate chat completion
-   */
   async generateChatCompletion(
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     options?: { temperature?: number; maxTokens?: number }
   ): Promise<string> {
-    const result = await this.aiService.chat(Models.Default, messages, options);
+    const result = await this.aiService.chat(AI_MODEL, messages, options);
     return result.content;
   }
 
-  /**
-   * Generate completion from a prompt (simplified API)
-   */
   async generate(
     prompt: string,
     options?: { temperature?: number; maxTokens?: number }
   ): Promise<string> {
     const result = await this.aiService.chat(
-      Models.Default,
+      AI_MODEL,
       [{ role: 'user', content: prompt }],
       options
     );
     return result.content;
   }
 
-  /**
-   * Chat with interviewer persona
-   */
   async chatWithInterviewer(
     context: string,
     message: string,
@@ -417,27 +408,24 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       role: 'system' | 'user' | 'assistant';
       content: string;
     }> = [
-      { role: 'system', content: systemPrompt },
-      ...history.map((h) => ({
-        role: h.role as 'user' | 'assistant',
-        content: h.content,
-      })),
-      { role: 'user', content: message },
-    ];
+        { role: 'system', content: systemPrompt },
+        ...history.map((h) => ({
+          role: h.role as 'user' | 'assistant',
+          content: h.content,
+        })),
+        { role: 'user', content: message },
+      ];
 
-    const result = await this.aiService.chat(Models.InterviewChat, messages, {
+    const result = await this.aiService.chat(AI_MODEL, messages, {
       temperature: 0.7,
     });
     return result.content;
   }
 
-  /**
-   * Transcribe audio (placeholder - requires Whisper API)
-   */
   async transcribeAudio(_audioBuffer: Buffer): Promise<string> {
     this.logger.log('Transcribing audio...');
     const result = await this.aiService.chat(
-      Models.Default,
+      AI_MODEL,
       [
         {
           role: 'system',
@@ -456,58 +444,39 @@ Be encouraging but thorough. Keep responses concise and focused.`;
   }
 
   /**
-   * Analyze parsed resume data
+   * Analyze parsed resume data using resume-analyzer skill
    */
   async analyzeParsedResume(
     parsedData: ParsedResumeData,
-    language: LanguageInput = 'EN'
+    userId: string,
+    _language?: string
   ): Promise<{
     strengths: string[];
     weaknesses: string[];
     suggestions: string[];
     overallScore: number;
   }> {
-    this.logger.log(`Analyzing parsed resume data (language: ${language})`);
-
-    const systemPrompt =
-      this.promptService?.getAnalysisPrompt(language) ??
-      `You are a resume analysis expert. Analyze the parsed resume data and provide:
-1. A list of strengths (what makes this resume strong)
-2. A list of weaknesses (areas that need improvement)
-3. Specific suggestions for improvement
-4. An overall score from 0-100
-
-Return valid JSON with keys: strengths (string[]), weaknesses (string[]), suggestions (string[]), overallScore (number).`;
-
-    const userPrompt =
-      this.promptService?.buildAnalysisPrompt(parsedData) ??
-      `Analyze this resume data:\n\n${JSON.stringify(parsedData, null, 2)}`;
+    this.logger.log('Analyzing parsed resume data via resume-analyzer skill');
 
     try {
-      const response = await this.aiService.generate(
-        Models.ResumeParser,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'resume-analyzer',
+        { resumeText: JSON.stringify(parsedData) },
+        userId
       );
 
-      let analysis: any;
-      try {
-        analysis = JSON.parse(response);
-      } catch (e) {
-        const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
-        if (jsonMatch) {
-          analysis = JSON.parse(jsonMatch[1].trim());
-        } else {
-          throw new Error('Could not parse JSON from AI response');
-        }
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
       }
 
-      this.logger.log('Resume analysis completed');
+      const data = result.data as any;
+      const matchAnalysis = data?.matchAnalysis || {};
+
       return {
-        strengths: analysis.strengths || [],
-        weaknesses: analysis.weaknesses || [],
-        suggestions: analysis.suggestions || [],
-        overallScore: analysis.overallScore || 0,
+        strengths: matchAnalysis.strengths || [],
+        weaknesses: matchAnalysis.gaps || [],
+        suggestions: matchAnalysis.recommendations || [],
+        overallScore: matchAnalysis.score ?? 0,
       };
     } catch (error) {
       this.logger.error('Error analyzing resume:', error);
@@ -516,33 +485,78 @@ Return valid JSON with keys: strengths (string[]), weaknesses (string[]), sugges
   }
 
   /**
-   * Optimize resume content
+   * Optimize resume content using resume-writer skill
    */
-  async optimizeResumeContent(content: string): Promise<string> {
-    this.logger.log('Optimizing resume content');
-
-    const systemPrompt = `You are a resume optimization expert. Improve the given resume content to:
-1. Use strong action verbs
-2. Quantify achievements where possible
-3. Highlight relevant skills and experiences
-4. Improve clarity and conciseness
-5. Maintain the original structure and format
-
-Return the optimized resume content as plain text.`;
-
-    const userPrompt = `Optimize this resume content:\n\n${content}`;
+  async optimizeResumeContent(
+    content: string,
+    userId: string
+  ): Promise<string> {
+    this.logger.log('Optimizing resume content via resume-writer skill');
 
     try {
-      const response = await this.aiService.generate(
-        Models.ResumeOptimization,
-        systemPrompt,
-        userPrompt
+      const result = await this.aiService.executeSkill(
+        'resume-writer',
+        {
+          resumeData: content,
+          optimizationFocus: 'content',
+          style: 'professional',
+        },
+        userId
       );
-      this.logger.log('Resume content optimized');
-      return response;
+
+      if (!result.success || !result.data) {
+        throw new Error('Skill returned no data');
+      }
+
+      const data = result.data as any;
+      return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     } catch (error) {
       this.logger.error('Error optimizing resume content:', error);
       throw new Error('Failed to optimize resume content');
     }
+  }
+
+  private normalizeSkillResult(data: any): ParsedResumeData {
+    if (typeof data === 'string') {
+      try {
+        return JSON.parse(data);
+      } catch {
+        return data as unknown as ParsedResumeData;
+      }
+    }
+
+    const normalized: any = { ...data };
+
+    if (normalized.skills && typeof normalized.skills === 'object' && !Array.isArray(normalized.skills)) {
+      const skillsObj = normalized.skills;
+      normalized.skills = [
+        ...(skillsObj.technical || []),
+        ...(skillsObj.soft || []),
+        ...(skillsObj.languages || []),
+        ...(skillsObj.tools || []),
+      ];
+    }
+
+    if (normalized.experience && Array.isArray(normalized.experience)) {
+      normalized.experience = normalized.experience.map((exp: any) => ({
+        company: exp.company || '',
+        position: exp.title || exp.position || '',
+        startDate: exp.startDate || exp.dates || '',
+        endDate: exp.endDate || exp.current ? undefined : '',
+        description: exp.responsibilities || exp.description || [],
+        achievements: exp.achievements || [],
+      }));
+    }
+
+    if (normalized.education && Array.isArray(normalized.education)) {
+      normalized.education = normalized.education.map((edu: any) => ({
+        institution: edu.institution || '',
+        degree: edu.degree || '',
+        field: edu.field || '',
+        year: edu.year || edu.graduationYear || '',
+      }));
+    }
+
+    return normalized;
   }
 }

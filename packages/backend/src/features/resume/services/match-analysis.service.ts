@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { AIService } from '@/core/ai/ai.service';
-import { Models } from '@/core/ai/models';
+import { AI_MODEL } from '@/core/ai/models';
 
 export interface MatchAnalysisResult {
   overallScore: number;
@@ -84,11 +84,11 @@ export class MatchAnalysisService {
 
     try {
       const resumeEmbedding = await this.aiService.embed(
-        Models.Embedding,
+        AI_MODEL,
         resumeText
       );
       const jobEmbedding = await this.aiService.embed(
-        Models.Embedding,
+        AI_MODEL,
         jobDescription
       );
       const similarity = this.cosineSimilarity(resumeEmbedding, jobEmbedding);

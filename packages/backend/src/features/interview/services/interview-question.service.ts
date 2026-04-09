@@ -1,13 +1,13 @@
+import { AIEngine } from '@/core/ai';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
-import { InterviewQuestion, QuestionType, Difficulty } from '@prisma/client';
-import { ParsedJobData, ParsedResumeData } from '@/types';
+import { Difficulty, InterviewQuestion, QuestionType } from '@prisma/client';
 
 @Injectable()
 export class InterviewQuestionService {
@@ -16,7 +16,7 @@ export class InterviewQuestionService {
   constructor(
     private prisma: PrismaService,
     private aiEngine: AIEngine
-  ) {}
+  ) { }
 
   /**
    * Generate interview questions based on resume and job
@@ -55,12 +55,12 @@ export class InterviewQuestionService {
     try {
       // Get resume and job data
       const resumeData = optimization.resume
-        .parsedData as unknown as ParsedResumeData;
+        ?.parsedData as unknown as ParsedResumeData;
       const jobData = optimization.job
-        .parsedRequirements as unknown as ParsedJobData;
+        ?.parsedRequirements as unknown as ParsedJobData;
 
       // Generate questions using AI engine
-      let questions = await this.generateQuestionsWithAI(resumeData, jobData);
+      let questions = await this.generateQuestionsWithAI(resumeData, jobData, userId);
 
       // If AI generation fails or returns insufficient questions, use rule-based generation
       if (!questions || questions.length < questionCount) {
@@ -94,9 +94,9 @@ export class InterviewQuestionService {
       this.logger.error('Error generating interview questions:', error);
       // Get resume and job data for fallback
       const resumeData = optimization.resume
-        .parsedData as unknown as ParsedResumeData;
+        ?.parsedData as unknown as ParsedResumeData;
       const jobData = optimization.job
-        .parsedRequirements as unknown as ParsedJobData;
+        ?.parsedRequirements as unknown as ParsedJobData;
       // Fall back to rule-based generation
       return this.generateQuestionsWithRulesAndSave(
         optimizationId,
@@ -112,14 +112,17 @@ export class InterviewQuestionService {
    */
   private async generateQuestionsWithAI(
     resumeData: ParsedResumeData,
-    jobData: ParsedJobData
+    jobData: ParsedJobData,
+    userId: string
   ): Promise<Omit<InterviewQuestion, 'id' | 'createdAt' | 'optimizationId'>[]> {
     try {
       const jobDescription = JSON.stringify(jobData);
       const resumeContent = JSON.stringify(resumeData);
       const questions = await this.aiEngine.generateInterviewQuestions(
         jobDescription,
-        resumeContent
+        resumeContent,
+        undefined,
+        userId
       );
 
       if (!Array.isArray(questions)) {

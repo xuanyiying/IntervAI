@@ -3,12 +3,10 @@
  * Handles intent recognition and dispatches to appropriate handlers
  */
 
-import { AIService, Models } from '@/core/ai';
-import { ResumeOptimizerService } from '@/features/resume/services/resume-optimizer.service';
+import { AI_MODEL, AIService} from '@/core/ai';
+import { LanguageInput, PromptService } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
 import {
-  forwardRef,
-  Inject,
   Injectable,
   Logger,
   OnModuleInit,
@@ -19,7 +17,6 @@ import {
   SceneAnalysisService,
   SceneContext,
 } from './scene-analysis.service';
-import { PromptService, LanguageInput } from '@/core/prompts';
 
 export enum ChatIntent {
   OPTIMIZE_RESUME = 'optimize_resume',
@@ -202,10 +199,7 @@ export class ChatIntentService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
-    private readonly promptService: PromptService,
-    @Inject(forwardRef(() => ResumeOptimizerService))
-    private readonly resumeOptimizerService: ResumeOptimizerService
-  ) {}
+    private readonly promptService: PromptService  ) { }
 
   async onModuleInit(): Promise<void> {
     this.logger.log(
@@ -622,7 +616,7 @@ export class ChatIntentService implements OnModuleInit {
       );
 
       const response = await this.aiService.chat(
-        Models.Chat,
+        AI_MODEL,
         [
           {
             role: 'system',
@@ -778,7 +772,7 @@ export class ChatIntentService implements OnModuleInit {
       );
 
       const response = await this.aiService.chat(
-        Models.Chat,
+        AI_MODEL,
         [
           {
             role: 'system',

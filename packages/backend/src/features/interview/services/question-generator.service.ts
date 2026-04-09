@@ -1,13 +1,13 @@
+import { AIEngine } from '@/core/ai';
+import { PrismaService } from '@/shared/database/prisma.service';
+import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
-import { InterviewQuestion, QuestionType, Difficulty } from '@prisma/client';
-import { ParsedJobData, ParsedResumeData } from '@/types';
+import { Difficulty, InterviewQuestion, QuestionType } from '@prisma/client';
 
 @Injectable()
 export class QuestionGeneratorService {
@@ -16,7 +16,7 @@ export class QuestionGeneratorService {
   constructor(
     private prisma: PrismaService,
     private aiEngine: AIEngine
-  ) {}
+  ) { }
 
   /**
    * Generate interview questions based on resume and job
@@ -51,11 +51,15 @@ export class QuestionGeneratorService {
 
     try {
       const resumeData = optimization.resume
-        .parsedData as unknown as ParsedResumeData;
+        ?.parsedData as unknown as ParsedResumeData;
       const jobData = optimization.job
-        .parsedRequirements as unknown as ParsedJobData;
+        ?.parsedRequirements as unknown as ParsedJobData;
 
-      let questions = await this.generateQuestionsWithAI(resumeData, jobData);
+      if (!resumeData || !jobData) {
+        throw new Error('Resume or job data not found');
+      }
+
+      let questions = await this.generateQuestionsWithAI(resumeData, jobData, userId);
 
       if (!questions || questions.length < questionCount) {
         questions = this.generateQuestionsWithRules(
@@ -86,9 +90,14 @@ export class QuestionGeneratorService {
     } catch (error) {
       this.logger.error('Error generating interview questions:', error);
       const resumeData = optimization.resume
-        .parsedData as unknown as ParsedResumeData;
+        ?.parsedData as unknown as ParsedResumeData;
       const jobData = optimization.job
-        .parsedRequirements as unknown as ParsedJobData;
+        ?.parsedRequirements as unknown as ParsedJobData;
+
+      if (!resumeData || !jobData) {
+        throw new Error('Resume or job data not found');
+      }
+
       return this.generateQuestionsWithRulesAndSave(
         optimizationId,
         resumeData,
@@ -100,14 +109,17 @@ export class QuestionGeneratorService {
 
   private async generateQuestionsWithAI(
     resumeData: ParsedResumeData,
-    jobData: ParsedJobData
+    jobData: ParsedJobData,
+    userId: string
   ): Promise<Omit<InterviewQuestion, 'id' | 'createdAt' | 'optimizationId'>[]> {
     try {
       const jobDescription = JSON.stringify(jobData);
       const resumeContent = JSON.stringify(resumeData);
       const questions = await this.aiEngine.generateInterviewQuestions(
         jobDescription,
-        resumeContent
+        resumeContent,
+        undefined,
+        userId
       );
 
       if (!Array.isArray(questions)) {

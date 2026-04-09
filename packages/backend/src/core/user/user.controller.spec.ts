@@ -6,8 +6,8 @@ import { UserService } from './user.service';
 import { AuthService } from '@/core/auth/auth.service';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { SubscriptionTier, Role } from '@prisma/client';
-import { ResourceNotFoundException } from '../../../common/exceptions/resource-not-found.exception';
-import { ErrorCode } from '../../../common/exceptions/error-codes';
+import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
+import { ErrorCode } from '@/common/exceptions/error-codes';
 
 describe('UserController', () => {
   let controller: UserController;

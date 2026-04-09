@@ -5,6 +5,7 @@ import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -52,12 +53,10 @@ export class InterviewSessionService {
     const { optimizationId, voiceId, personaId, mode, language } =
       createSessionDto;
 
-    // Map DTO mode to Prisma enum
     const sessionMode =
       mode === InterviewModeEnum.ASSIST
         ? InterviewMode.ASSIST
         : InterviewMode.MOCK;
-    // Map DTO language to Prisma enum
     const sessionLanguage = language === 'zh' ? 'ZH' : 'EN';
 
     if (voiceId) {
@@ -83,39 +82,43 @@ export class InterviewSessionService {
       }
     }
 
-    const optimization = await this.prisma.optimization.findUnique({
-      where: { id: optimizationId },
-      include: {
-        resume: true,
-        job: true,
-      },
-    });
-
-    if (!optimization) {
-      throw new NotFoundException(
-        `Optimization with ID ${optimizationId} not found`
+    if (!optimizationId && sessionMode === InterviewMode.MOCK) {
+      throw new BadRequestException(
+        'optimizationId is required for mock interview mode'
       );
     }
 
-    if (optimization.userId !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to access this optimization'
-      );
+    let effectiveOptimizationId = optimizationId;
+    if (optimizationId) {
+      const optimization = await this.prisma.optimization.findUnique({
+        where: { id: optimizationId },
+        include: { resume: true, job: true },
+      });
+
+      if (!optimization) {
+        throw new NotFoundException(
+          `Optimization with ID ${optimizationId} not found`
+        );
+      }
+
+      if (optimization.userId !== userId) {
+        throw new ForbiddenException(
+          'You do not have permission to access this optimization'
+        );
+      }
     }
 
     const session = await this.prisma.interviewSession.create({
       data: {
         userId,
-        optimizationId,
+        optimizationId: effectiveOptimizationId ?? null,
         voiceId: createSessionDto.voiceId,
         personaId: createSessionDto.personaId,
         mode: sessionMode,
         language: sessionLanguage,
         status: InterviewStatus.IN_PROGRESS,
       },
-      include: {
-        messages: true,
-      },
+      include: { messages: true },
     });
 
     await this.quotaService.incrementInterviewCount(userId);
@@ -127,22 +130,19 @@ export class InterviewSessionService {
       });
     }
 
-    const questions = await this.prisma.interviewQuestion.findMany({
-      where: { optimizationId },
-      orderBy: { createdAt: 'asc' },
-    });
+    let firstQuestion: InterviewQuestion | null = null;
+    if (effectiveOptimizationId) {
+      const questions = await this.prisma.interviewQuestion.findMany({
+        where: { optimizationId: effectiveOptimizationId },
+        orderBy: { createdAt: 'asc' },
+      });
 
-    // For ASSIST mode, don't return预设 questions - user will input questions
-    // For MOCK mode, return the first question
-    const firstQuestion =
-      sessionMode === InterviewMode.MOCK && questions.length > 0
-        ? questions[0]
-        : null;
+      if (sessionMode === InterviewMode.MOCK && questions.length > 0) {
+        firstQuestion = questions[0];
+      }
+    }
 
-    return {
-      session,
-      firstQuestion,
-    };
+    return { session, firstQuestion };
   }
 
   /**
@@ -199,11 +199,12 @@ export class InterviewSessionService {
     // Trigger evaluation asynchronously to avoid blocking the WS gateway response
     this.triggerAsyncEvaluation(session, content, sessionId);
 
-    // Determine next question
-    const questions = await this.prisma.interviewQuestion.findMany({
-      where: { optimizationId: session.optimizationId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const questions = session.optimizationId
+      ? await this.prisma.interviewQuestion.findMany({
+        where: { optimizationId: session.optimizationId },
+        orderBy: { createdAt: 'asc' },
+      })
+      : [];
 
     const answerCount =
       session.messages.filter((m) => m.role === MessageRole.USER).length + 1;
@@ -315,10 +316,12 @@ export class InterviewSessionService {
       );
     }
 
-    const questions = await this.prisma.interviewQuestion.findMany({
-      where: { optimizationId: session.optimizationId },
-      orderBy: { createdAt: 'asc' },
-    });
+    const questions = session.optimizationId
+      ? await this.prisma.interviewQuestion.findMany({
+        where: { optimizationId: session.optimizationId },
+        orderBy: { createdAt: 'asc' },
+      })
+      : [];
 
     const answerCount = session.messages.filter(
       (m) => m.role === MessageRole.USER
@@ -387,28 +390,27 @@ export class InterviewSessionService {
     });
 
     // Get resume and job data
-    const resumeData = session.optimization.resume
-      .parsedData as unknown as ParsedResumeData;
-    const jobData = session.optimization.job
-      .parsedRequirements as unknown as ParsedJobData;
+    const optimization = session.optimization;
+    const resumeData = optimization?.resume
+      ?.parsedData as unknown as ParsedResumeData | undefined;
+    const jobData = optimization?.job
+      ?.parsedRequirements as unknown as ParsedJobData | undefined;
 
     let aiResponse: string;
 
     if (session.mode === InterviewMode.ASSIST) {
-      // ASSIST 模式：用户输入面试官问题，AI 生成参考答案
       aiResponse = await this.generateAssistAnswer(
-        content, // 用户输入的面试官问题
-        resumeData,
-        jobData,
+        content,
+        resumeData ?? {} as ParsedResumeData,
+        jobData ?? {} as ParsedJobData,
         session.language
       );
     } else {
-      // MOCK 模式：AI 作为面试官继续提问
       aiResponse = await this.generateMockResponse(
         session,
         content,
-        resumeData,
-        jobData
+        resumeData ?? {} as ParsedResumeData,
+        jobData ?? {} as ParsedJobData
       );
     }
 
@@ -539,7 +541,7 @@ export class InterviewSessionService {
     }));
 
     try {
-      const aiEngine = new AIEngine(this.aiService, this.promptService);
+      const aiEngine = new AIEngine(this.aiService);
       const aiResponse = await aiEngine.chatWithInterviewer(
         prompts.system + '\n\n' + context,
         userAnswer,
@@ -723,9 +725,9 @@ export class InterviewSessionService {
     );
 
     try {
-      const { Models } = await import('@/core/ai/models');
+      const { AI_MODEL } = await import('@/core/ai/models');
       const result = await this.aiService.generate(
-        Models.InterviewPrep,
+        AI_MODEL,
         prompt,
         ''
       );
@@ -815,7 +817,7 @@ export class InterviewSessionService {
 
     let fullAnswer = '';
 
-    const { Models } = await import('@/core/ai/models');
+    const { AI_MODEL } = await import('@/core/ai/models');
     const systemPrompt = isZh
       ? '你是一位经验丰富的面试辅导专家。根据候选人的简历和目标职位，为面试问题提供专业、有深度的参考答案。'
       : "You are an experienced interview coach. Based on the candidate's resume and target position, provide professional and insightful reference answers to interview questions.";
@@ -843,7 +845,7 @@ export class InterviewSessionService {
     ];
 
     for await (const chunk of this.aiService.stream(
-      Models.Chat,
+      AI_MODEL,
       messages,
       { userId }
     )) {

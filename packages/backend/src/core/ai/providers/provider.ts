@@ -6,7 +6,7 @@
 
 import OpenAI from 'openai';
 import { Logger } from '@nestjs/common';
-import { PROVIDER_BASE_URLS, DefaultParams } from '../models';
+import { PROVIDER_BASE_URLS } from '../models';
 import {
   AIError,
   AIErrorCode,
@@ -45,7 +45,7 @@ export class AIProvider {
         const client = new OpenAI({
           apiKey: cfg.apiKey,
           baseURL: baseUrl,
-          timeout: cfg.timeout || DefaultParams.timeout,
+          timeout: cfg.timeout || 120000,
           maxRetries: 2,
         });
 
@@ -161,9 +161,9 @@ export class AIProvider {
       const response = await pc.client.chat.completions.create({
         model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        temperature: options?.temperature ?? DefaultParams.temperature,
-        max_tokens: options?.maxTokens ?? DefaultParams.maxTokens,
-        top_p: options?.topP ?? DefaultParams.topP,
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens ?? 4096,
+        top_p: options?.topP ?? 1,
         stop: options?.stopSequences,
         response_format: options?.responseFormat,
         stream: false,
@@ -227,9 +227,9 @@ export class AIProvider {
       const stream = await pc.client.chat.completions.create({
         model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        temperature: options?.temperature ?? DefaultParams.temperature,
-        max_tokens: options?.maxTokens ?? DefaultParams.maxTokens,
-        top_p: options?.topP ?? DefaultParams.topP,
+        temperature: options?.temperature ?? 0.7,
+        max_tokens: options?.maxTokens ?? 4096,
+        top_p: options?.topP ?? 1,
         stop: options?.stopSequences,
         stream: true,
       });

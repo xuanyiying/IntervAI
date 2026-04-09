@@ -1,21 +1,21 @@
 import {
-  S3Client,
   CreateBucketCommand,
-  PutObjectCommand,
-  GetObjectCommand,
   DeleteObjectCommand,
-  ListObjectsV2Command,
-  HeadObjectCommand,
+  GetObjectCommand,
   HeadBucketCommand,
+  HeadObjectCommand,
+  ListObjectsV2Command,
   PutBucketPolicyCommand,
+  PutObjectCommand,
+  S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Readable } from 'stream';
-import path from 'path';
-import { OssService, UploadResult, FileInfo } from './oss.interface';
-import { OssConfig } from '../config/oss.config';
 import { Logger } from '@nestjs/common';
+import path from 'path';
+import { Readable } from 'stream';
 import { v4 as uuid } from 'uuid';
+import { OssConfig } from '../config/oss.config';
+import { FileInfo, OssService, UploadResult } from './oss.interface';
 
 export class MinIOService implements OssService {
   public bucketName: string;
@@ -92,14 +92,8 @@ export class MinIOService implements OssService {
       }
     }
 
-    // 可选：设置存储桶公共策略（默认禁用，生产推荐使用私有桶 + 预签名访问）
-    if (process.env.OSS_PUBLIC_READ === 'true') {
-      await this.setBucketPublicPolicy();
-    } else {
-      this.logger.log(
-        `Skip public policy for bucket ${this.bucket} (OSS_PUBLIC_READ !== 'true')`
-      );
-    }
+    // 设置存储桶为公共读策略（允许通过 URL 直接访问文件）
+    await this.setBucketPublicPolicy();
   }
 
   /**

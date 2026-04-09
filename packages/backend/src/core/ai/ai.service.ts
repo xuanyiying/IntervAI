@@ -5,19 +5,19 @@
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AI_MODEL } from './models';
 import { AIProvider } from './providers/provider';
-import { Models, getModelCost } from './models';
+import { SkillContext, SkillRegistry, SkillResult } from './skills';
 import {
+  AIError,
+  AIErrorCode,
   AIMessage,
   AIResult,
   ChatOptions,
-  StreamOptions,
   EmbedOptions,
-  AIError,
-  AIErrorCode,
+  StreamOptions,
 } from './types';
-import { UsageTrackerService, UsageStats } from './utils/usage-tracker.service';
-import { SkillRegistry, SkillContext, SkillResult } from './skills';
+import { UsageStats, UsageTrackerService } from './utils/usage-tracker.service';
 
 /**
  * Unified AI Service
@@ -32,7 +32,7 @@ export class AIService implements OnModuleInit {
     private configService: ConfigService,
     private skillRegistry: SkillRegistry,
     private usageTracker: UsageTrackerService
-  ) {}
+  ) { }
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Initializing AI Service');
@@ -80,7 +80,8 @@ export class AIService implements OnModuleInit {
     options?: ChatOptions
   ): Promise<AIResult> {
     const startTime = Date.now();
-    const [provider, modelName] = this.parseModel(model);
+    const [requestedProvider, modelName] = this.parseModel(model);
+    const provider = this.resolveProvider(requestedProvider);
 
     try {
       const response = await this.provider.chat(
@@ -151,7 +152,8 @@ export class AIService implements OnModuleInit {
     messages: AIMessage[],
     options?: StreamOptions
   ): AsyncGenerator<string> {
-    const [provider, modelName] = this.parseModel(model);
+    const [requestedProvider, modelName] = this.parseModel(model);
+    const provider = this.resolveProvider(requestedProvider);
 
     try {
       for await (const chunk of this.provider.stream(
@@ -180,7 +182,7 @@ export class AIService implements OnModuleInit {
     prompt: string,
     options?: StreamOptions & { model?: string }
   ): AsyncGenerator<string> {
-    const model = options?.model || Models.Chat;
+    const model = options?.model || AI_MODEL;
     yield* this.stream(model, [{ role: 'user', content: prompt }], options);
   }
 
@@ -192,7 +194,8 @@ export class AIService implements OnModuleInit {
     text: string,
     _options?: EmbedOptions
   ): Promise<number[]> {
-    const [provider, modelName] = this.parseModel(model);
+    const [requestedProvider, modelName] = this.parseModel(model);
+    const provider = this.resolveProvider(requestedProvider);
 
     try {
       const embedding = await this.provider.embed(provider, modelName, text);
@@ -369,15 +372,33 @@ export class AIService implements OnModuleInit {
     return [model.slice(0, idx), model.slice(idx + 1)];
   }
 
+  private resolveProvider(requestedProvider: string): string {
+    if (this.provider.hasProvider(requestedProvider)) {
+      return requestedProvider;
+    }
+
+    const available = this.provider.getAvailableProviders();
+    if (available.length === 0) {
+      throw new AIError(
+        AIErrorCode.PROVIDER_UNAVAILABLE,
+        `No AI providers configured. Please set at least one API key (OPENROUTER_API_KEY, OPENAI_API_KEY, DEEPSEEK_API_KEY, etc.)`,
+        undefined,
+        false
+      );
+    }
+
+    this.logger.warn(
+      `Provider '${requestedProvider}' not configured, falling back to '${available[0]}'`
+    );
+    return available[0];
+  }
+
   private calculateCost(
-    model: string,
+    _model: string,
     inputTokens: number,
     outputTokens: number
   ): number {
-    const costs = getModelCost(model);
-    return (
-      (inputTokens / 1000) * costs.input + (outputTokens / 1000) * costs.output
-    );
+    return 0;
   }
 
   private async trackUsage(record: {

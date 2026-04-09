@@ -1,15 +1,18 @@
-import { Module, Logger } from '@nestjs/common';
+import { RedisModule } from '@/shared/cache/redis.module';
+import { PrismaModule } from '@/shared/database/prisma.module';
+import { Logger, Module } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { InvitationService as CeInvitationService } from './invitation.service';
-import { PrismaModule } from '@/shared/database/prisma.module';
-import { RedisModule } from '@/shared/cache/redis.module';
 
 const logger = new Logger('InvitationModuleProxy');
 
 @Module({
   imports: [PrismaModule, RedisModule],
   providers: [
-    CeInvitationService,
+    {
+      provide: 'INVITATION_SERVICE',
+      useClass: CeInvitationService,
+    },
     {
       provide: CeInvitationService,
       useFactory: async (moduleRef: ModuleRef, ce: CeInvitationService) => {
@@ -30,9 +33,9 @@ const logger = new Logger('InvitationModuleProxy');
 
         return ce;
       },
-      inject: [ModuleRef, CeInvitationService],
+      inject: [ModuleRef, 'INVITATION_SERVICE'],
     },
   ],
   exports: [CeInvitationService],
 })
-export class InvitationModule {}
+export class InvitationModule { }

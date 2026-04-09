@@ -1,4 +1,4 @@
-import { AIEngine, AIService, Models } from '@/core/ai';
+import { AI_MODEL, AIEngine, AIService} from '@/core/ai';
 import { PrismaService } from '@/shared/database/prisma.service';
 import {
   ForbiddenException,
@@ -44,7 +44,7 @@ Type: ${dto.type || 'general'}
 Language: ${language}`;
 
     const result = await this.aiService.chat(
-      Models.InterviewPrep,
+      AI_MODEL,
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },

@@ -1,17 +1,20 @@
-import { Module, Logger } from '@nestjs/common';
+import { RedisModule } from '@/shared/cache/redis.module';
+import { PrismaModule } from '@/shared/database/prisma.module';
+import { Logger, Module } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { QuotaService as CeQuotaService } from './quota.service';
-import { PrismaModule } from '@/shared/database/prisma.module';
-import { RedisModule } from '@/shared/cache/redis.module';
 
 const logger = new Logger('QuotaModuleProxy');
 
 @Module({
   imports: [PrismaModule, RedisModule],
-  providers: [
-    CeQuotaService, // Register the CE version for internal use and as fallback
+   providers: [
     {
-      provide: CeQuotaService, // Use CE class as public token
+      provide: 'QUOTA_SERVICE',
+      useClass: CeQuotaService,
+    },
+    {
+      provide: CeQuotaService,
       useFactory: async (moduleRef: ModuleRef, ce: CeQuotaService) => {
         const isOSS = process.env.APP_EDITION === 'oss';
         if (isOSS) {
@@ -19,8 +22,6 @@ const logger = new Logger('QuotaModuleProxy');
         }
 
         try {
-          // Late bound EE service discovery using string token
-          // This avoids direct imports of EE code in the core bundle
           const ee = moduleRef.get('EE_QUOTA_SERVICE', { strict: false });
           if (ee) {
             logger.log('EE QuotaService active (Injected via ModuleRef)');
@@ -32,9 +33,9 @@ const logger = new Logger('QuotaModuleProxy');
 
         return ce;
       },
-      inject: [ModuleRef, CeQuotaService],
+      inject: [ModuleRef, 'QUOTA_SERVICE'],
     },
   ],
   exports: [CeQuotaService],
 })
-export class QuotaModule {}
+export class QuotaModule { }
