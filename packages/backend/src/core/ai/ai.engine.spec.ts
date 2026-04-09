@@ -1,540 +1,87 @@
-import { ParsedResumeData } from '@/types';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import * as fc from 'fast-check';
 import { AIEngine } from './ai.engine';
+import { AIService } from './ai.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('AIEngine', () => {
   let engine: AIEngine;
 
-  const mockAIEngineService = {
-    call: jest.fn(),
-    stream: jest.fn(),
-    getAvailableModels: jest.fn(),
-    reloadModels: jest.fn(),
+  const mockAIService = {
+    executeSkill: jest.fn(),
+    chat: jest.fn(),
+    embed: jest.fn(),
+    getModel: jest.fn().mockReturnValue('test-model'),
+  };
+
+  const mockConfigService = {
+    get: jest.fn().mockReturnValue('test-model'),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // Mock Logger to prevent console noise during tests
-    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => { });
-    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => { });
-    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => { });
-    jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => { });
+    jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
+    jest.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AIEngine,
-        {
-          provide: 'AIEngineService',
-          useValue: mockAIEngineService,
-        },
+        { provide: AIService, useValue: mockAIService },
+        { provide: ConfigService, useValue: mockConfigService },
       ],
     }).compile();
 
     engine = module.get<AIEngine>(AIEngine);
   });
 
-  describe('extractTextFromFile', () => {
-    it('should extract text from TXT file', async () => {
-      const content = 'John Doe\njohn@example.com\n123-456-7890';
-      const buffer = Buffer.from(content, 'utf-8');
+  describe('generateChatCompletion', () => {
+    it('should return chat completion content', async () => {
+      mockAIService.chat.mockResolvedValue({
+        content: 'Hello, how can I help you?',
+        model: 'test-model',
+        provider: 'test-provider',
+        usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
+      });
 
-      const result = await engine.extractTextFromFile(buffer, 'txt');
+      const result = await engine.generateChatCompletion([
+        { role: 'user', content: 'Hi' },
+      ]);
 
-      expect(result).toBe(content);
+      expect(result).toBe('Hello, how can I help you?');
     });
+  });
 
-    it('should extract text from MD file', async () => {
-      const content = '# John Doe\n\n- Email: john@example.com';
-      const buffer = Buffer.from(content, 'utf-8');
+  describe('generate', () => {
+    it('should generate text from a prompt', async () => {
+      mockAIService.chat.mockResolvedValue({
+        content: 'Generated text',
+        model: 'test-model',
+        provider: 'test-provider',
+        usage: { inputTokens: 5, outputTokens: 5, totalTokens: 10 },
+      });
 
-      const result = await engine.extractTextFromFile(buffer, 'md');
+      const result = await engine.generate('Tell me about React');
 
-      expect(result).toBe(content);
-    });
-
-    it('should throw error for unsupported file type', async () => {
-      const buffer = Buffer.from('test');
-
-      await expect(engine.extractTextFromFile(buffer, 'xyz')).rejects.toThrow(
-        'Unsupported file type'
+      expect(result).toBe('Generated text');
+      expect(mockAIService.chat).toHaveBeenCalledWith(
+        'test-model',
+        [{ role: 'user', content: 'Tell me about React' }],
+        undefined
       );
     });
   });
 
-  describe('parseResumeContent', () => {
-    const mockResumeData: ParsedResumeData = {
-      personalInfo: {
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '(555) 123-4567',
-      },
-      education: [],
-      experience: [],
-      skills: ['JavaScript', 'TypeScript', 'React'],
-      projects: [],
-    };
+  describe('generateEmbedding', () => {
+    it('should generate embedding', async () => {
+      const mockEmbedding = [0.1, 0.2, 0.3];
+      mockAIService.embed.mockResolvedValue(mockEmbedding);
 
-    beforeEach(() => {
-      mockAIEngineService.call.mockResolvedValue({
-        content: JSON.stringify(mockResumeData),
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-    });
+      const result = await engine.generateEmbedding('test text');
 
-    it('should parse resume and extract personal info', async () => {
-      const content = `
-        John Doe
-        john.doe@example.com
-        (555) 123-4567
-        New York, NY
-        linkedin.com/in/johndoe
-        github.com/johndoe
-      `;
-
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result.personalInfo).toBeDefined();
-      expect(result.personalInfo.email).toBe('john.doe@example.com');
-      expect(result.personalInfo.name).toBe('John Doe');
-      expect(mockAIEngineService.call).toHaveBeenCalledWith(
-        expect.objectContaining({
-          prompt: expect.stringContaining(content.trim()),
-          metadata: expect.objectContaining({
-            templateName: 'resume_parsing',
-          }),
-        }),
-        'system',
-        'resume-parsing',
-        'zh-CN'
-      );
-    });
-
-    it('should parse resume from markdown code block', async () => {
-      const content = 'John Doe';
-      // Response with markdown code block but starting with JSON-like content
-      const markdownResponse =
-        '```json\n' + JSON.stringify(mockResumeData) + '\n```';
-
-      mockAIEngineService.call.mockResolvedValue({
-        content: markdownResponse,
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result.personalInfo.email).toBe('john.doe@example.com');
-    });
-
-    it('should retry with explicit prompt when AI returns conversational text', async () => {
-      const content = 'John Doe';
-      // First call returns conversational text
-      mockAIEngineService.call
-        .mockResolvedValueOnce({
-          content: '这份简历已经包含了非常完整的信息...',
-          model: 'test-model',
-          provider: 'test-provider',
-          usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-          finishReason: 'stop',
-        })
-        // Second call returns valid JSON
-        .mockResolvedValueOnce({
-          content: JSON.stringify(mockResumeData),
-          model: 'test-model',
-          provider: 'test-provider',
-          usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-          finishReason: 'stop',
-        });
-
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result.personalInfo.email).toBe('john.doe@example.com');
-      expect(mockAIEngineService.call).toHaveBeenCalledTimes(2);
-    });
-
-    it('should recover from malformed JSON response', async () => {
-      const content = 'John Doe';
-      const malformedResponse =
-        'Some text before JSON {' +
-        '"personalInfo": {"name": "John Doe", "email": "john.doe@example.com"},' +
-        '"education": [], "experience": [], "skills": [], "projects": []' +
-        '} some text after';
-
-      mockAIEngineService.call.mockResolvedValue({
-        content: malformedResponse,
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result.personalInfo.email).toBe('john.doe@example.com');
-    });
-
-    it('should handle AI service error gracefully', async () => {
-      mockAIEngineService.call.mockRejectedValue(new Error('AI service error'));
-
-      const content = 'John Doe\njohn@example.com';
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      // Should return empty resume data on error
-      expect(result).toBeDefined();
-      expect(result.personalInfo).toBeDefined();
-      expect(result.personalInfo.name).toBe('');
-      expect(result.personalInfo.email).toBe('');
-    });
-
-    it('should return valid ParsedResumeData structure', async () => {
-      const content = 'John Doe\njohn@example.com';
-
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result).toHaveProperty('personalInfo');
-      expect(result).toHaveProperty('education');
-      expect(result).toHaveProperty('experience');
-      expect(result).toHaveProperty('skills');
-      expect(result).toHaveProperty('projects');
-      expect(Array.isArray(result.education)).toBe(true);
-      expect(Array.isArray(result.experience)).toBe(true);
-      expect(Array.isArray(result.skills)).toBe(true);
-      expect(Array.isArray(result.projects)).toBe(true);
-    });
-  });
-
-  describe('parseJobDescription', () => {
-    const mockJobData = {
-      requiredSkills: ['JavaScript', 'React'],
-      preferredSkills: ['TypeScript', 'Node.js'],
-      experienceYears: 3,
-      educationLevel: 'Bachelor',
-      responsibilities: ['Develop features', 'Write tests'],
-      keywords: ['frontend', 'web development'],
-    };
-
-    beforeEach(() => {
-      mockAIEngineService.call.mockResolvedValue({
-        content: JSON.stringify(mockJobData),
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-    });
-
-    it('should parse job description', async () => {
-      const description =
-        'Looking for a frontend developer with React experience';
-
-      const result = await engine.parseJobDescription(description, 'test-user-id');
-
-      expect(result).toBeDefined();
-      expect(result.requiredSkills).toContain('JavaScript');
-      expect(mockAIEngineService.call).toHaveBeenCalledWith(
-        expect.objectContaining({
-          prompt: expect.stringContaining(description),
-          metadata: expect.objectContaining({
-            templateName: 'job_description_parsing',
-          }),
-        }),
-        'system',
-        'job-description-parsing',
-        'zh-CN'
-      );
-    });
-
-    it('should handle parsing errors gracefully', async () => {
-      mockAIEngineService.call.mockRejectedValue(new Error('Parsing failed'));
-
-      const description = 'Test job description';
-      const result = await engine.parseJobDescription(description, 'test-user-id');
-
-      expect(result).toBeDefined();
-      expect(result.requiredSkills).toEqual([]);
-      expect(result.preferredSkills).toEqual([]);
-    });
-  });
-
-  describe('generateOptimizationSuggestions', () => {
-    const mockSuggestions = [
-      {
-        type: 'keyword',
-        section: 'skills',
-        original: 'Missing keywords',
-        optimized: 'Add React, TypeScript',
-        reason: 'Job requires these skills',
-      },
-    ];
-
-    beforeEach(() => {
-      mockAIEngineService.call.mockResolvedValue({
-        content: JSON.stringify(mockSuggestions),
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-    });
-
-    it('should generate optimization suggestions', async () => {
-      const resumeContent = JSON.stringify({
-        personalInfo: { name: 'John', email: 'john@example.com' },
-        education: [],
-        experience: [],
-        skills: ['JavaScript'],
-        projects: [],
-      });
-
-      const jobDescription = 'Looking for React developer';
-
-      const result = await engine.generateOptimizationSuggestions(
-        resumeContent,
-        jobDescription,
-        'test-user-id'
-      );
-
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(mockAIEngineService.call).toHaveBeenCalledWith(
-        expect.objectContaining({
-          metadata: expect.objectContaining({
-            templateName: 'resume_optimization',
-          }),
-        }),
-        'system',
-        'resume-optimization',
-        'zh-CN'
-      );
-    });
-
-    it('should return empty array on error', async () => {
-      mockAIEngineService.call.mockRejectedValue(new Error('AI error'));
-
-      const resumeContent = JSON.stringify({
-        personalInfo: { name: 'John', email: 'john@example.com' },
-        education: [],
-        experience: [],
-        skills: [],
-        projects: [],
-      });
-
-      const result = await engine.generateOptimizationSuggestions(
-        resumeContent,
-        'job description',
-        'test-user-id'
-      );
-
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('generateInterviewQuestions', () => {
-    const mockQuestions = [
-      {
-        questionType: 'technical',
-        question: 'Explain React hooks',
-        suggestedAnswer: 'React hooks are...',
-        tips: ['Be specific', 'Give examples'],
-        difficulty: 'medium',
-      },
-    ];
-
-    beforeEach(() => {
-      mockAIEngineService.call.mockResolvedValue({
-        content: JSON.stringify(mockQuestions),
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-    });
-
-    it('should generate interview questions', async () => {
-      const resumeContent = JSON.stringify({
-        personalInfo: { name: 'John', email: 'john@example.com' },
-        education: [],
-        experience: [],
-        skills: ['React', 'TypeScript'],
-        projects: [],
-      });
-
-      const jobDescription = 'Frontend developer role';
-
-      const result = await engine.generateInterviewQuestions(
-        resumeContent,
-        jobDescription,
-        undefined,
-        'test-user-id'
-      );
-
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
-      expect(mockAIEngineService.call).toHaveBeenCalledWith(
-        expect.objectContaining({
-          metadata: expect.objectContaining({
-            templateName: 'interview_question_generation',
-          }),
-        }),
-        'system',
-        'interview-question-generation',
-        'zh-CN'
-      );
-    });
-
-    it('should return empty array on error', async () => {
-      mockAIEngineService.call.mockRejectedValue(new Error('AI error'));
-
-      const resumeContent = JSON.stringify({
-        personalInfo: { name: 'John', email: 'john@example.com' },
-        education: [],
-        experience: [],
-        skills: [],
-        projects: [],
-      });
-
-      const result = await engine.generateInterviewQuestions(
-        resumeContent,
-        'job description',
-        undefined,
-        'test-user-id'
-      );
-
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('Property Tests', () => {
-    /**
-     * **Feature: interview-ai-mvp, Property 5: 简历解析性能**
-     * For any valid resume content, the system should handle parsing request
-     */
-    it('should handle resume parsing for various inputs', async () => {
-      mockAIEngineService.call.mockResolvedValue({
-        content: JSON.stringify({
-          personalInfo: { name: 'Test', email: 'test@example.com' },
-          education: [],
-          experience: [],
-          skills: [],
-          projects: [],
-        }),
-        model: 'test-model',
-        provider: 'test-provider',
-        usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-        finishReason: 'stop',
-      });
-
-      const resumeContent = `
-        John Doe
-        john@example.com
-        (555) 123-4567
-
-        Education
-        Bachelor of Science in Computer Science
-        University of California, Berkeley
-
-        Experience
-        Senior Software Engineer at Tech Corp
-        - Led development of microservices
-        - Improved performance by 40%
-
-        Skills
-        JavaScript, TypeScript, React, Node.js, PostgreSQL
-      `;
-
-      const result = await engine.parseResumeContent(resumeContent, 'test-user-id');
-
-      expect(result).toBeDefined();
-      expect(result.personalInfo).toBeDefined();
-    });
-
-    /**
-     * **Feature: interview-ai-mvp, Property 6: 解析数据结构完整性**
-     * For any successfully parsed resume, the returned JSON data should contain
-     * personalInfo, education, experience, and skills fields
-     */
-    it('should return complete parsed data structure for all resumes', async () => {
-      await fc.assert(
-        fc.asyncProperty(
-          fc.string({ minLength: 1, maxLength: 100 }),
-          fc.string({ minLength: 5, maxLength: 50 }),
-          fc.array(fc.string({ minLength: 1, maxLength: 50 }), {
-            minLength: 1,
-            maxLength: 5,
-          }),
-          async (name, email, skills) => {
-            mockAIEngineService.call.mockResolvedValue({
-              content: JSON.stringify({
-                personalInfo: { name, email: `${email}@example.com` },
-                education: [],
-                experience: [],
-                skills,
-                projects: [],
-              }),
-              model: 'test-model',
-              provider: 'test-provider',
-              usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 },
-              finishReason: 'stop',
-            });
-
-            const resumeContent = `
-              ${name}
-              ${email}@example.com
-
-              Skills
-              ${skills.join(', ')}
-            `;
-
-            const result = await engine.parseResumeContent(resumeContent, 'test-user-id');
-
-            // Verify structure
-            expect(result).toHaveProperty('personalInfo');
-            expect(result.personalInfo).toHaveProperty('name');
-            expect(result.personalInfo).toHaveProperty('email');
-            expect(Array.isArray(result.education)).toBe(true);
-            expect(Array.isArray(result.experience)).toBe(true);
-            expect(Array.isArray(result.skills)).toBe(true);
-
-            return true;
-          }
-        ),
-        { numRuns: 100 }
-      );
-    });
-
-    /**
-     * **Feature: interview-ai-mvp, Property 32: AI 调用重试机制**
-     * For any AI model call failure, the system should handle errors gracefully
-     */
-    it('should handle AI call failures gracefully', async () => {
-      mockAIEngineService.call.mockRejectedValue(
-        new Error('AI service unavailable')
-      );
-
-      const content = `
-        John Doe
-        john@example.com
-
-        Skills
-        JavaScript, TypeScript, React
-      `;
-
-      // Should return empty data structure on error
-      const result = await engine.parseResumeContent(content, 'test-user-id');
-
-      expect(result).toBeDefined();
-      expect(result.personalInfo).toBeDefined();
-      expect(Array.isArray(result.skills)).toBe(true);
+      expect(result).toEqual(mockEmbedding);
     });
   });
 });

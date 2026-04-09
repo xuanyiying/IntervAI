@@ -5,7 +5,6 @@
 
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AI_MODEL } from './models';
 import { AIProvider } from './providers/provider';
 import { SkillContext, SkillRegistry, SkillResult } from './skills';
 import {
@@ -27,6 +26,7 @@ import { UsageStats, UsageTrackerService } from './utils/usage-tracker.service';
 export class AIService implements OnModuleInit {
   private readonly logger = new Logger(AIService.name);
   private provider!: AIProvider;
+  private aiModel!: string;
 
   constructor(
     private configService: ConfigService,
@@ -36,6 +36,9 @@ export class AIService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Initializing AI Service');
+
+    this.aiModel = this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+    this.logger.log(`Using AI Model: ${this.aiModel}`);
 
     this.provider = new AIProvider({
       openai: {
@@ -82,6 +85,8 @@ export class AIService implements OnModuleInit {
     const startTime = Date.now();
     const [requestedProvider, modelName] = this.parseModel(model);
     const provider = this.resolveProvider(requestedProvider);
+
+    this.logger.log(`Chat: provider=${provider}, model=${modelName}, original=${model}`);
 
     try {
       const response = await this.provider.chat(
@@ -182,7 +187,7 @@ export class AIService implements OnModuleInit {
     prompt: string,
     options?: StreamOptions & { model?: string }
   ): AsyncGenerator<string> {
-    const model = options?.model || AI_MODEL;
+    const model = options?.model || this.aiModel;
     yield* this.stream(model, [{ role: 'user', content: prompt }], options);
   }
 
@@ -399,6 +404,10 @@ export class AIService implements OnModuleInit {
     outputTokens: number
   ): number {
     return 0;
+  }
+
+  getModel(): string {
+    return this.aiModel;
   }
 
   private async trackUsage(record: {

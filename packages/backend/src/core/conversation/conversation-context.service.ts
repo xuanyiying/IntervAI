@@ -1,8 +1,9 @@
-import { AI_MODEL, AIService} from '@/core/ai';
+import { AIService } from '@/core/ai';
+import { LanguageInput, PromptService } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
+import { ParsedResumeData } from '@/types';
 import { Injectable, Logger } from '@nestjs/common';
 import { MessageRole } from '@prisma/client';
-import { PromptService, LanguageInput } from '@/core/prompts';
 
 export interface ConversationContext {
   conversationId: string;
@@ -21,6 +22,8 @@ export interface ConversationContext {
     concerns: string[];
     preferences: string[];
   };
+  /** Concise resume summary (~200 tokens) built from parsedData, NOT the full markdown */
+  resumeSummary?: string;
   currentOptimizationStep?: string;
 }
 
@@ -41,7 +44,7 @@ export class ConversationContextService {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly promptService: PromptService
-  ) {}
+  ) { }
 
   async buildContext(
     conversationId: string,
@@ -73,14 +76,29 @@ export class ConversationContextService {
       }))
       .slice(0, 20);
 
-    const extractedEntities = await this.extractEntities(previousMessages);
+    // Extract resume data for skill enrichment and concise summary
+    const resumeRecord = conversation.resumes[0];
+    let resumeData: ParsedResumeData | undefined;
+    let resumeSummary: string | undefined;
+
+    if (resumeRecord?.parsedData) {
+      resumeData = resumeRecord.parsedData as unknown as ParsedResumeData;
+      // Use LLM-generated contextSummary directly — zero runtime token cost
+      resumeSummary = resumeData.contextSummary;
+    }
+
+    const extractedEntities = await this.extractEntities(
+      previousMessages,
+      resumeData
+    );
 
     return {
       conversationId,
       userId,
-      resumeId: conversation.resumes[0]?.id,
+      resumeId: resumeRecord?.id,
       previousMessages,
       extractedEntities,
+      resumeSummary,
     };
   }
 
@@ -119,7 +137,7 @@ If the user wants to make changes, provide the specific content they can use.
 Format your response in a clear, structured way.`;
 
     const response = await this.aiService.chat(
-      AI_MODEL,
+      this.aiService.getModel(),
       [{ role: 'user', content: prompt }],
       {
         temperature: 0.7,
@@ -156,8 +174,14 @@ Current context:`;
       prompt += `\n- Optimization goal: ${context.optimizationGoal}`;
     }
 
-    if (context.extractedEntities.skills.length > 0) {
-      prompt += `\n- Discussed skills: ${context.extractedEntities.skills.join(', ')}`;
+    // Use concise resume summary (~200 tokens) instead of full markdown to control cost
+    if (context.resumeSummary) {
+      prompt += `\n\n--- Candidate Profile ---\n${context.resumeSummary}\n--- End Profile ---`;
+    } else {
+      // Fallback: use extracted skills if no resume data
+      if (context.extractedEntities.skills.length > 0) {
+        prompt += `\n- Discussed skills: ${context.extractedEntities.skills.join(', ')}`;
+      }
     }
 
     if (context.extractedEntities.concerns.length > 0) {
@@ -168,7 +192,8 @@ Current context:`;
   }
 
   private async extractEntities(
-    messages: Array<{ role: MessageRole; content: string; timestamp: Date }>
+    messages: Array<{ role: MessageRole; content: string; timestamp: Date }>,
+    resumeData?: ParsedResumeData
   ): Promise<ConversationContext['extractedEntities']> {
     const entities: ConversationContext['extractedEntities'] = {
       skills: [],
@@ -182,31 +207,51 @@ Current context:`;
       .map((m) => m.content)
       .join(' ');
 
-    const skillKeywords = [
-      'JavaScript',
-      'Python',
-      'Java',
-      'React',
-      'Node.js',
-      'TypeScript',
-      'SQL',
-      'AWS',
-      'Docker',
-      'Kubernetes',
-      'Git',
-      'MongoDB',
-      'PostgreSQL',
-      'GraphQL',
-      'REST',
-      'Agile',
-      'Scrum',
-    ];
-
-    skillKeywords.forEach((skill) => {
-      if (userMessages.toLowerCase().includes(skill.toLowerCase())) {
-        entities.skills.push(skill);
+    // Use real skills from parsedData instead of hardcoded keyword list
+    if (resumeData?.skills && resumeData.skills.length > 0) {
+      // Check which resume skills are mentioned in the conversation
+      resumeData.skills.forEach((skill) => {
+        if (userMessages.toLowerCase().includes(skill.toLowerCase())) {
+          entities.skills.push(skill);
+        }
+      });
+      // If no skills were mentioned in conversation, seed with top resume skills
+      if (entities.skills.length === 0) {
+        entities.skills.push(...resumeData.skills.slice(0, 10));
       }
-    });
+    } else {
+      // Fallback: basic keyword matching for conversations without a resume
+      const fallbackKeywords = [
+        'JavaScript', 'Python', 'Java', 'React', 'Node.js',
+        'TypeScript', 'SQL', 'AWS', 'Docker', 'Kubernetes',
+        'Git', 'MongoDB', 'PostgreSQL', 'GraphQL', 'REST',
+        'Agile', 'Scrum',
+      ];
+      fallbackKeywords.forEach((skill) => {
+        if (userMessages.toLowerCase().includes(skill.toLowerCase())) {
+          entities.skills.push(skill);
+        }
+      });
+    }
+
+    // Extract experiences from resumeData
+    if (resumeData?.experience && resumeData.experience.length > 0) {
+      resumeData.experience.forEach((exp) => {
+        const expSummary = `${exp.position} @ ${exp.company}`;
+        if (userMessages.toLowerCase().includes(exp.company.toLowerCase()) ||
+            userMessages.toLowerCase().includes(exp.position.toLowerCase())) {
+          entities.experiences.push(expSummary);
+        }
+      });
+      // Seed with top experiences if none mentioned
+      if (entities.experiences.length === 0) {
+        entities.experiences.push(
+          ...resumeData.experience.slice(0, 3).map(
+            (exp) => `${exp.position} @ ${exp.company}`
+          )
+        );
+      }
+    }
 
     const concernPatterns = [
       /worried about (.+?)/gi,
@@ -458,8 +503,8 @@ Current context:`;
 
     const baseMetadata =
       latestMessage.metadata &&
-      typeof latestMessage.metadata === 'object' &&
-      !Array.isArray(latestMessage.metadata)
+        typeof latestMessage.metadata === 'object' &&
+        !Array.isArray(latestMessage.metadata)
         ? (latestMessage.metadata as Record<string, unknown>)
         : {};
 

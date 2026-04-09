@@ -8,7 +8,6 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { AIEngine } from '@/core/ai';
 import { Sanitizer } from '@/common/utils/sanitizer';
 import { ParseStatus, Resume } from '@prisma/client';
 import * as fs from 'fs';
@@ -20,6 +19,8 @@ import { AIQueueService } from '@/core/ai/queue/ai-queue.service';
 
 import { FileUploadValidator } from '@/common/validators/file-upload.validator';
 import { ParsedResumeData } from '@/types';
+import { ResumeParserService } from './resume-parser.service';
+import { ResumeAIService } from './resume-ai.service';
 
 export interface ResumeUploadResult {
   resume: Resume;
@@ -32,7 +33,8 @@ export class ResumeService {
 
   constructor(
     private prisma: PrismaService,
-    private aiEngine: AIEngine,
+    private resumeParser: ResumeParserService,
+    private resumeAI: ResumeAIService,
     private storageService: StorageService,
     @Inject(forwardRef(() => AIQueueService))
     private aiQueueService: AIQueueService
@@ -481,7 +483,7 @@ export class ResumeService {
 
       // Extract text from file - pass original filename for better encoding handling
       this.logger.debug(`Extracting text from ${fileType} buffer`);
-      const textContent = await this.aiEngine.extractTextFromFile(
+      const textContent = await this.resumeParser.extractText(
         fileBuffer,
         fileType
       );
@@ -608,10 +610,10 @@ export class ResumeService {
       }
 
       const parsedData = parsedResume.parsedData as unknown as ParsedResumeData;
-      return this.aiEngine.analyzeParsedResume(parsedData, userId);
+      return this.resumeAI.analyzeParsedResume(parsedData, userId);
     }
 
     const parsedData = resume.parsedData as unknown as ParsedResumeData;
-    return this.aiEngine.analyzeParsedResume(parsedData, userId);
+    return this.resumeAI.analyzeParsedResume(parsedData, userId);
   }
 }

@@ -56,6 +56,8 @@ export interface ParsedResumeData {
     name: string;
     proficiency: string;
   }>;
+  /** LLM-generated concise profile (~150-200 words) for injecting into conversation context */
+  contextSummary?: string;
   markdown?: string;
 }
 

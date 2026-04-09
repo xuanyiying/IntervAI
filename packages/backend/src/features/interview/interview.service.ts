@@ -1,4 +1,6 @@
-import { AI_MODEL, AIEngine, AIService} from '@/core/ai';
+import { AIService } from '@/core/ai/ai.service';
+import { InterviewAIService } from './services/interview-ai.service';
+import { PromptService, normalizeLanguage } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
 import {
   ForbiddenException,
@@ -15,7 +17,6 @@ import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { InterviewSessionService } from './services/interview-session.service';
 import { QuestionGeneratorService } from './services/question-generator.service';
-import { PromptService, normalizeLanguage } from '@/core/prompts';
 
 @Injectable()
 export class InterviewService {
@@ -24,9 +25,9 @@ export class InterviewService {
     private questionGenerator: QuestionGeneratorService,
     private sessionService: InterviewSessionService,
     private aiService: AIService,
-    private aiEngine: AIEngine,
+    private interviewAI: InterviewAIService,
     private promptService: PromptService
-  ) {}
+  ) { }
 
   async getPreparationGuide(dto: GetPreparationGuideDto): Promise<string> {
     // Convert language like 'zh-CN' to 'zh' for our system
@@ -44,7 +45,7 @@ Type: ${dto.type || 'general'}
 Language: ${language}`;
 
     const result = await this.aiService.chat(
-      AI_MODEL,
+      this.aiService.getModel(),
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -148,17 +149,16 @@ Language: ${language}`;
       <strong>Suggested Answer:</strong>
       <p>${this.escapeHtml(q.suggestedAnswer).replace(/\n/g, '<br>')}</p>
     </div>
-    ${
-      q.tips && q.tips.length > 0
-        ? `
+    ${q.tips && q.tips.length > 0
+            ? `
     <div class="tips">
       <div class="tips-title">Tips:</div>
       <ul>
         ${q.tips.map((tip) => `<li>${this.escapeHtml(tip)}</li>`).join('')}
       </ul>
     </div>`
-        : ''
-    }
+            : ''
+          }
   </div>`;
       });
     }
@@ -274,7 +274,7 @@ Language: ${language}`;
   }
 
   async transcribeAudio(file: Express.Multer.File): Promise<{ text: string }> {
-    const text = await this.aiEngine.transcribeAudio(file.buffer);
+    const text = await this.interviewAI.transcribeAudio(file.buffer);
     return { text };
   }
 }
