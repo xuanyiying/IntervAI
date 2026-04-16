@@ -17,6 +17,7 @@ build/
 .env.test
 .env.production
 .env.*.local
+.env.*
 
 # Logs
 logs/
@@ -61,7 +62,6 @@ uploads/
 temp/
 
 # Production Configuration
-.env.production.local
 config/ssl/*.pem
 config/ssl/*.key
 config/ssl/*.crt
@@ -72,8 +72,13 @@ certbot/
 # Docker volumes
 postgres_data/
 redis_data/
+
 # Turborepo
 .turbo/
 /packages/backend/prisma/migrations
 packages/frontend/html
 packages/frontend/dev-dist
+
+# Sensitive files (never commit!)
+# Any file containing secrets, API keys, passwords, etc.
+
