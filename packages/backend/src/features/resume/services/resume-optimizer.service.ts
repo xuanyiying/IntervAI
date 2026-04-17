@@ -33,7 +33,7 @@ export class ResumeOptimizerService {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly quotaService: QuotaService
-  ) { }
+  ) {}
 
   async createOptimization(
     userId: string,
@@ -52,9 +52,11 @@ export class ResumeOptimizerService {
       );
     }
 
-    const job = jobId ? await this.prisma.job.findUnique({
-      where: { id: jobId },
-    }) : null;
+    const job = jobId
+      ? await this.prisma.job.findUnique({
+          where: { id: jobId },
+        })
+      : null;
 
     if (jobId && (!job || job.userId !== userId)) {
       throw new ForbiddenException(
@@ -138,7 +140,9 @@ export class ResumeOptimizerService {
         }));
       }
 
-      this.logger.warn('AI skill returned no data, returning empty suggestions');
+      this.logger.warn(
+        'AI skill returned no data, returning empty suggestions'
+      );
       return [];
     } catch (error) {
       this.logger.error('Error generating suggestions:', error);
@@ -305,7 +309,9 @@ export class ResumeOptimizerService {
       where: {
         resumeId,
         userId,
-        status: { in: [OptimizationStatus.PENDING, OptimizationStatus.PROCESSING] },
+        status: {
+          in: [OptimizationStatus.PENDING, OptimizationStatus.PROCESSING],
+        },
       },
     });
 
@@ -558,7 +564,9 @@ export class ResumeOptimizerService {
         } as any,
       });
 
-      this.logger.log(`Restored resume ${resumeId} to version ${version.version}`);
+      this.logger.log(
+        `Restored resume ${resumeId} to version ${version.version}`
+      );
 
       return {
         restoredTo: version.version,
@@ -566,7 +574,9 @@ export class ResumeOptimizerService {
       };
     } catch (error) {
       if (error instanceof NotFoundException) throw error;
-      throw new NotFoundException('Version restore failed - run database migration first');
+      throw new NotFoundException(
+        'Version restore failed - run database migration first'
+      );
     }
   }
 }

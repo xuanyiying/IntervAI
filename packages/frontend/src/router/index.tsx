@@ -39,7 +39,7 @@ import TeamPage from '@/pages/user/TeamPage';
 const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
 
 // EE-only pages: lazy load to ensure they are separated in the build
-const PricingPage = IS_EE 
+const PricingPage = IS_EE
   ? lazy(() => import('@/ee/pages/marketing/PricingPage'))
   : () => null;
 
@@ -136,50 +136,52 @@ const routes: RouteObject[] = [
         ),
       },
       // Commercial routes (moved to ee/ or only for EE)
-      ...(IS_EE ? [
-        {
-          path: 'pricing',
-          element: (
-            <ProtectedRoute>
-              <SuspenseWrapper>
-                <PricingPage />
-              </SuspenseWrapper>
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: 'payment/success',
-          element: (
-            <ProtectedRoute>
-              <PaymentSuccessPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: 'payment/cancel',
-          element: (
-            <ProtectedRoute>
-              <PaymentCancelPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: 'subscription',
-          element: (
-            <ProtectedRoute>
-              <SubscriptionManagementPage />
-            </ProtectedRoute>
-          ),
-        },
-        {
-          path: 'account/subscription',
-          element: (
-            <ProtectedRoute>
-              <AccountSubscriptionPage />
-            </ProtectedRoute>
-          ),
-        },
-      ] : []),
+      ...(IS_EE
+        ? [
+            {
+              path: 'pricing',
+              element: (
+                <ProtectedRoute>
+                  <SuspenseWrapper>
+                    <PricingPage />
+                  </SuspenseWrapper>
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'payment/success',
+              element: (
+                <ProtectedRoute>
+                  <PaymentSuccessPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'payment/cancel',
+              element: (
+                <ProtectedRoute>
+                  <PaymentCancelPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'subscription',
+              element: (
+                <ProtectedRoute>
+                  <SubscriptionManagementPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: 'account/subscription',
+              element: (
+                <ProtectedRoute>
+                  <AccountSubscriptionPage />
+                </ProtectedRoute>
+              ),
+            },
+          ]
+        : []),
       {
         path: 'account/usage',
         element: (
@@ -263,16 +265,18 @@ const routes: RouteObject[] = [
               </ProtectedRoute>
             ),
           },
-          ...(IS_EE ? [
-            {
-              path: 'invite-codes',
-              element: (
-                <ProtectedRoute requiredRole="ADMIN">
-                  <InviteCodeManagementPage />
-                </ProtectedRoute>
-              ),
-            },
-          ] : []),
+          ...(IS_EE
+            ? [
+                {
+                  path: 'invite-codes',
+                  element: (
+                    <ProtectedRoute requiredRole="ADMIN">
+                      <InviteCodeManagementPage />
+                    </ProtectedRoute>
+                  ),
+                },
+              ]
+            : []),
           {
             path: 'knowledge-base',
             element: (

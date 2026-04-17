@@ -65,10 +65,12 @@ export class ResumeParserService {
    */
   async parseFile(
     fileBuffer: Buffer,
-    fileType: string,
+    fileType: string
   ): Promise<ResumeParseResult> {
     const type = fileType.toLowerCase();
-    this.logger.log(`Parsing resume file (${type}, ${fileBuffer.length} bytes)`);
+    this.logger.log(
+      `Parsing resume file (${type}, ${fileBuffer.length} bytes)`
+    );
 
     let rawText = '';
     let markdown = '';
@@ -77,7 +79,8 @@ export class ResumeParserService {
 
     switch (type) {
       case 'pdf':
-        ({ rawText, markdown, pageCount, isScanned } = await this.parsePDF(fileBuffer));
+        ({ rawText, markdown, pageCount, isScanned } =
+          await this.parsePDF(fileBuffer));
         break;
       case 'docx':
         ({ rawText, markdown } = await this.parseDOCX(fileBuffer));
@@ -136,7 +139,10 @@ export class ResumeParserService {
       let markdown = '';
 
       if (tableResult && tableResult.mergedTables?.length > 0) {
-        markdown = this.buildMarkdownWithTables(textResult, tableResult.mergedTables);
+        markdown = this.buildMarkdownWithTables(
+          textResult,
+          tableResult.mergedTables
+        );
       } else {
         markdown = this.rawTextToMarkdown(rawText);
       }
@@ -146,7 +152,7 @@ export class ResumeParserService {
 
       if (isScanned) {
         this.logger.warn(
-          `PDF may be scanned/image-based (avg ${avgCharsPerPage.toFixed(0)} chars/page). Text extraction may be incomplete.`,
+          `PDF may be scanned/image-based (avg ${avgCharsPerPage.toFixed(0)} chars/page). Text extraction may be incomplete.`
         );
       }
 
@@ -213,7 +219,7 @@ export class ResumeParserService {
    */
   private buildMarkdownWithTables(
     textResult: { pages: Array<{ num: number; text: string }>; text: string },
-    mergedTables: string[][][],
+    mergedTables: string[][][]
   ): string {
     const parts: string[] = [];
 
@@ -241,7 +247,9 @@ export class ResumeParserService {
     for (let i = 0; i < table.length; i++) {
       const row = table[i];
       while (row.length < colCount) row.push('');
-      const line = row.map((cell) => cell.trim().replace(/\|/g, '\\|')).join(' | ');
+      const line = row
+        .map((cell) => cell.trim().replace(/\|/g, '\\|'))
+        .join(' | ');
       lines.push(`| ${line} |`);
 
       if (i === 0) {
@@ -271,7 +279,7 @@ export class ResumeParserService {
 
       if (htmlResult.messages?.length) {
         this.logger.debug(
-          `Mammoth HTML conversion warnings: ${htmlResult.messages.length}`,
+          `Mammoth HTML conversion warnings: ${htmlResult.messages.length}`
         );
       }
 

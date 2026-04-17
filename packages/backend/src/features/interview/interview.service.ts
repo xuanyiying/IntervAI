@@ -27,7 +27,7 @@ export class InterviewService {
     private aiService: AIService,
     private interviewAI: InterviewAIService,
     private promptService: PromptService
-  ) { }
+  ) {}
 
   async getPreparationGuide(dto: GetPreparationGuideDto): Promise<string> {
     // Convert language like 'zh-CN' to 'zh' for our system
@@ -149,16 +149,17 @@ Language: ${language}`;
       <strong>Suggested Answer:</strong>
       <p>${this.escapeHtml(q.suggestedAnswer).replace(/\n/g, '<br>')}</p>
     </div>
-    ${q.tips && q.tips.length > 0
-            ? `
+    ${
+      q.tips && q.tips.length > 0
+        ? `
     <div class="tips">
       <div class="tips-title">Tips:</div>
       <ul>
         ${q.tips.map((tip) => `<li>${this.escapeHtml(tip)}</li>`).join('')}
       </ul>
     </div>`
-            : ''
-          }
+        : ''
+    }
   </div>`;
       });
     }

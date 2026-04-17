@@ -27,7 +27,10 @@ const logger = new Logger('PaymentModuleProxy');
             return ee;
           }
         } catch (e) {
-          logger.error('CRITICAL: EE Edition enabled but EE_PAYMENT_SERVICE failed to resolve. Falling back to CE.', e);
+          logger.error(
+            'CRITICAL: EE Edition enabled but EE_PAYMENT_SERVICE failed to resolve. Falling back to CE.',
+            e
+          );
         }
 
         return ce;

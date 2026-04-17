@@ -191,10 +191,10 @@ export class UserController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     // clean redis cache for user
     this.userService.cleanUserCache(userId);
- 
+
     // JWT is stateless, so logout is primarily handled on the client side by removing the token
     // This endpoint can be used to perform server-side cleanup or token blacklisting if implemented
     return { message: 'Successfully logged out' };
@@ -216,7 +216,7 @@ export class UserController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     console.log('🚀 [DEBUG] HIT GET_CURRENT_USER ENDPOINT');
     const user = await this.userService.findById(userId);
     console.log(
@@ -257,7 +257,7 @@ export class UserController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     await this.userService.deleteAccount(userId);
   }
 
@@ -278,7 +278,7 @@ export class UserController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     const user = await this.userService.updateSubscription(
       userId,
       updateSubscriptionDto.tier
@@ -306,7 +306,7 @@ export class UserController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.userService.exportUserData(userId);
   }
 
@@ -392,7 +392,7 @@ export class UserHistoryController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.userService.getUserHistory(
       userId,
       parseInt(page, 10),

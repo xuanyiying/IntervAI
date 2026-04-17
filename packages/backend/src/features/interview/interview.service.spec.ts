@@ -74,7 +74,9 @@ describe('InterviewService', () => {
         {
           provide: PromptService,
           useValue: {
-            getPreparationGuidancePrompt: jest.fn().mockReturnValue('Test prompt'),
+            getPreparationGuidancePrompt: jest
+              .fn()
+              .mockReturnValue('Test prompt'),
           },
         },
       ],
@@ -102,7 +104,9 @@ describe('InterviewService', () => {
         },
       ];
 
-      questionGenerator.generateQuestions.mockResolvedValue(mockQuestions as any);
+      questionGenerator.generateQuestions.mockResolvedValue(
+        mockQuestions as any
+      );
 
       const result = await service.generateQuestions(
         mockOptimizationId,
@@ -167,7 +171,11 @@ describe('InterviewService', () => {
         aiMessage: mockAiMessage as any,
       });
 
-      const result = await service.sendMessage(sessionId, mockUserId, sendMessageDto);
+      const result = await service.sendMessage(
+        sessionId,
+        mockUserId,
+        sendMessageDto
+      );
 
       expect(result.userMessage).toEqual(mockUserMessage);
       expect(result.aiMessage).toEqual(mockAiMessage);
@@ -194,10 +202,9 @@ describe('InterviewService', () => {
       const result = await service.endSession(sessionId, mockUserId);
 
       expect(result.status).toBe(InterviewStatus.COMPLETED);
-      expect(sessionService.endSession).toHaveBeenCalledWith(
-        mockUserId,
-        { sessionId }
-      );
+      expect(sessionService.endSession).toHaveBeenCalledWith(mockUserId, {
+        sessionId,
+      });
     });
   });
 });

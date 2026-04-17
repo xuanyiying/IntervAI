@@ -32,12 +32,13 @@ export class AIService implements OnModuleInit {
     private configService: ConfigService,
     private skillRegistry: SkillRegistry,
     private usageTracker: UsageTrackerService
-  ) { }
+  ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log('Initializing AI Service');
 
-    this.aiModel = this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+    this.aiModel =
+      this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
     this.logger.log(`Using AI Model: ${this.aiModel}`);
 
     this.provider = new AIProvider({
@@ -86,7 +87,9 @@ export class AIService implements OnModuleInit {
     const [requestedProvider, modelName] = this.parseModel(model);
     const provider = this.resolveProvider(requestedProvider);
 
-    this.logger.log(`Chat: provider=${provider}, model=${modelName}, original=${model}`);
+    this.logger.log(
+      `Chat: provider=${provider}, model=${modelName}, original=${model}`
+    );
 
     try {
       const response = await this.provider.chat(

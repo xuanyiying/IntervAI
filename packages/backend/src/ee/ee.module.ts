@@ -4,15 +4,7 @@ import { QuotaModule } from './quota/quota.module';
 import { InvitationModule } from './invitation/invitation.module';
 
 @Module({
-  imports: [
-    PaymentModule,
-    QuotaModule,
-    InvitationModule,
-  ],
-  exports: [
-    PaymentModule,
-    QuotaModule,
-    InvitationModule,
-  ]
+  imports: [PaymentModule, QuotaModule, InvitationModule],
+  exports: [PaymentModule, QuotaModule, InvitationModule],
 })
 export class EeModule {}

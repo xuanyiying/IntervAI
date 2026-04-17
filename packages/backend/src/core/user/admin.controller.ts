@@ -294,10 +294,10 @@ export class AdminController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     const count = body.count || 1;
     const createdBy = userId;
- 
+
     return this.invitationService.generateCodes(count, createdBy);
   }
 

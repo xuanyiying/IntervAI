@@ -23,7 +23,10 @@ import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { StorageService } from './storage.service';
 import { DirectUploadService } from './direct-upload.service';
 import { FileType } from './interfaces/storage.interface';
-import { FILE_UPLOAD_CONFIG, FileUploadValidator } from '@/common/validators/file-upload.validator';
+import {
+  FILE_UPLOAD_CONFIG,
+  FileUploadValidator,
+} from '@/common/validators/file-upload.validator';
 
 interface RequestWithUser extends Request {
   user?: {
@@ -106,7 +109,7 @@ export class StorageController {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }
-    files.forEach(f => FileUploadValidator.validateFile(f));
+    files.forEach((f) => FileUploadValidator.validateFile(f));
     const { fileType, category } = body;
     const userId = req.user?.id;
     if (!userId) {
@@ -190,10 +193,7 @@ export class StorageController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
-    return this.storageService.deleteFiles(
-      body.ids,
-      userId
-    );
+    return this.storageService.deleteFiles(body.ids, userId);
   }
 
   /**
@@ -234,11 +234,7 @@ export class StorageController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
-    return this.storageService.updateFile(
-      id,
-      body,
-      userId
-    );
+    return this.storageService.updateFile(id, body, userId);
   }
 
   /**

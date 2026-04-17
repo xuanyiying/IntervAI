@@ -24,7 +24,7 @@ import { ResumeOptimizerService } from '../services/resume-optimizer.service';
 @Controller('optimizations')
 @UseGuards(JwtAuthGuard)
 export class ResumeOptimizerController {
-  constructor(private resumeOptimizerService: ResumeOptimizerService) { }
+  constructor(private resumeOptimizerService: ResumeOptimizerService) {}
 
   /**
    * Create a new optimization
@@ -231,10 +231,7 @@ export class ResumeOptimizerController {
    * GET /api/v1/resumes/:id/versions
    */
   @Get('resume/:resumeId/versions')
-  async getVersions(
-    @Request() req: any,
-    @Param('resumeId') resumeId: string
-  ) {
+  async getVersions(@Request() req: any, @Param('resumeId') resumeId: string) {
     const userId = req.user?.id;
     if (!userId) {
       throw new UnauthorizedException('User ID required');

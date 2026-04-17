@@ -2,8 +2,13 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class InvitationService {
-  async generateCodes(count: number, createdBy: string): Promise<{ count: number, codes: string[] }> {
-    const codes = Array.from({ length: count }, () => Math.random().toString(36).substring(2, 8).toUpperCase());
+  async generateCodes(
+    count: number,
+    createdBy: string
+  ): Promise<{ count: number; codes: string[] }> {
+    const codes = Array.from({ length: count }, () =>
+      Math.random().toString(36).substring(2, 8).toUpperCase()
+    );
     return { count, codes };
   }
 

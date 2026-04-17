@@ -15,7 +15,7 @@ export class AIQueueProcessor {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
-  ) { }
+  ) {}
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(
@@ -63,7 +63,10 @@ export class AIQueueProcessor {
       let optimizedContent: string | null = null;
 
       try {
-        const result = await this.resumeAI.parseAndOptimizeResume(content, userId);
+        const result = await this.resumeAI.parseAndOptimizeResume(
+          content,
+          userId
+        );
         parsedData = result.parsedData;
         optimizedContent = result.optimizedContent || null;
         this.logger.log(
@@ -97,7 +100,10 @@ export class AIQueueProcessor {
               metadata: { resumeId, stage: 'optimizing', progress: 70 },
             });
           }
-          optimizedContent = await this.resumeAI.optimizeResumeContent(content, userId);
+          optimizedContent = await this.resumeAI.optimizeResumeContent(
+            content,
+            userId
+          );
           if (optimizedContent && conversationId) {
             await this.sendOptimizationToConversation(
               userId,

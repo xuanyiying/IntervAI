@@ -39,7 +39,7 @@ export class MatchAnalysisService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AIService
-  ) { }
+  ) {}
 
   async analyzeMatch(
     resumeId: string,

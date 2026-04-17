@@ -35,14 +35,19 @@ export class ResumeAIService {
           this.logger.warn(
             `Retry ${attempt}/${this.maxRetries} for skill "${skillName}" after ${delay}ms`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        const result = await this.aiService.executeSkill(skillName, inputs, userId);
+        const result = await this.aiService.executeSkill(
+          skillName,
+          inputs,
+          userId
+        );
 
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
-          const errorMessage = result.error?.message || 'Skill execution failed';
+          const errorMessage =
+            result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
           if (this.isTransientError(errorCode) && attempt < this.maxRetries) {
@@ -79,7 +84,10 @@ export class ResumeAIService {
           try {
             return await options.fallback();
           } catch (fallbackError) {
-            this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+            this.logger.error(
+              `Fallback also failed for skill "${skillName}":`,
+              fallbackError
+            );
             throw lastError;
           }
         }
@@ -92,7 +100,10 @@ export class ResumeAIService {
       try {
         return await options.fallback();
       } catch (fallbackError) {
-        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+        this.logger.error(
+          `Fallback also failed for skill "${skillName}":`,
+          fallbackError
+        );
         throw lastError;
       }
     }
@@ -119,7 +130,7 @@ export class ResumeAIService {
       /ETIMEDOUT/i,
       /fetch failed/i,
       /socket hang up/i,
-    ].some(pattern => pattern.test(error.message));
+    ].some((pattern) => pattern.test(error.message));
   }
 
   /**
@@ -138,16 +149,20 @@ export class ResumeAIService {
         userId,
         {
           fallback: async () => {
-            this.logger.warn('Using basic parsing as fallback for resume content');
+            this.logger.warn(
+              'Using basic parsing as fallback for resume content'
+            );
             return this.basicParseResume(content);
-          }
+          },
         }
       );
 
       return this.normalizeSkillResult(data);
     } catch (error) {
       this.logger.error('Error parsing resume via skill:', error);
-      throw new Error(`Failed to parse resume content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse resume content: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -189,7 +204,10 @@ export class ResumeAIService {
             : JSON.stringify(writerResult, null, 2);
       }
     } catch (error) {
-      this.logger.warn('Skills pipeline failed, falling back to parse-only:', error);
+      this.logger.warn(
+        'Skills pipeline failed, falling back to parse-only:',
+        error
+      );
 
       try {
         const parseFallback = await this.executeSkillWithRetry(
@@ -197,13 +215,18 @@ export class ResumeAIService {
           { resumeText: content },
           userId,
           {
-            fallback: async () => this.basicParseResume(content)
+            fallback: async () => this.basicParseResume(content),
           }
         );
         parsedData = this.normalizeSkillResult(parseFallback);
       } catch (fallbackError) {
-        this.logger.error('Both skills pipeline and fallback failed:', fallbackError);
-        throw new Error(`Failed to parse and optimize resume: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`);
+        this.logger.error(
+          'Both skills pipeline and fallback failed:',
+          fallbackError
+        );
+        throw new Error(
+          `Failed to parse and optimize resume: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -233,7 +256,7 @@ export class ResumeAIService {
           fallback: async () => {
             this.logger.warn('Using basic analysis as fallback');
             return this.basicAnalyzeResume(parsedData);
-          }
+          },
         }
       );
 
@@ -247,7 +270,9 @@ export class ResumeAIService {
       };
     } catch (error) {
       this.logger.error('Error analyzing resume:', error);
-      throw new Error(`Failed to analyze resume: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to analyze resume: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -274,7 +299,9 @@ export class ResumeAIService {
       return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     } catch (error) {
       this.logger.error('Error optimizing resume content:', error);
-      throw new Error(`Failed to optimize resume content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to optimize resume content: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -286,7 +313,9 @@ export class ResumeAIService {
     jobDescription: string,
     userId: string
   ): Promise<OptimizationSuggestion[]> {
-    this.logger.log('Generating JD-based optimization suggestions via resume-writer skill');
+    this.logger.log(
+      'Generating JD-based optimization suggestions via resume-writer skill'
+    );
 
     try {
       const data = await this.executeSkillWithRetry(
@@ -302,7 +331,7 @@ export class ResumeAIService {
           fallback: async () => {
             this.logger.warn('Using basic JD-based suggestions as fallback');
             return this.generateBasicJDSuggestions();
-          }
+          },
         }
       );
 
@@ -326,14 +355,19 @@ export class ResumeAIService {
       }));
     } catch (error) {
       this.logger.error('Error generating optimization suggestions:', error);
-      throw new Error(`Failed to generate optimization suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to generate optimization suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   // ---- Fallback methods ----
 
   private basicParseResume(content: string): ParsedResumeData {
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    const lines = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     return {
       personalInfo: {
@@ -343,7 +377,7 @@ export class ResumeAIService {
         location: '',
         linkedin: '',
         github: '',
-        website: ''
+        website: '',
       },
       summary: lines.slice(1, 3).join(' ') || '',
       skills: [],
@@ -351,7 +385,7 @@ export class ResumeAIService {
       education: [],
       projects: [],
       certifications: [],
-      languages: []
+      languages: [],
     };
   }
 
@@ -379,27 +413,40 @@ export class ResumeAIService {
 
     if (!parsedData.summary || parsedData.summary.length < 50) {
       weaknesses.push('Weak or missing professional summary');
-      suggestions.push('Write a compelling professional summary (50-200 characters)');
+      suggestions.push(
+        'Write a compelling professional summary (50-200 characters)'
+      );
     }
 
-    const score = Math.min(100, (strengths.length * 20) + (skills.length * 2) + (experienceCount * 10));
+    const score = Math.min(
+      100,
+      strengths.length * 20 + skills.length * 2 + experienceCount * 10
+    );
 
     return {
-      matchAnalysis: { strengths, weaknesses, recommendations: suggestions, score }
+      matchAnalysis: {
+        strengths,
+        weaknesses,
+        recommendations: suggestions,
+        score,
+      },
     };
   }
 
   private generateBasicJDSuggestions(): OptimizationSuggestion[] {
-    return [{
-      id: `sug_${Date.now()}_jd_0`,
-      type: SuggestionType.CONTENT,
-      section: 'summary',
-      itemIndex: 0,
-      original: '',
-      optimized: 'Tailor your summary to match the key requirements from the job description',
-      reason: 'Align your professional summary with job requirements',
-      status: SuggestionStatus.PENDING
-    }];
+    return [
+      {
+        id: `sug_${Date.now()}_jd_0`,
+        type: SuggestionType.CONTENT,
+        section: 'summary',
+        itemIndex: 0,
+        original: '',
+        optimized:
+          'Tailor your summary to match the key requirements from the job description',
+        reason: 'Align your professional summary with job requirements',
+        status: SuggestionStatus.PENDING,
+      },
+    ];
   }
 
   private normalizeSkillResult(data: any): ParsedResumeData {
@@ -416,7 +463,10 @@ export class ResumeAIService {
     const normalized: any = { ...data };
 
     // ── personalInfo ──
-    if (!normalized.personalInfo || typeof normalized.personalInfo !== 'object') {
+    if (
+      !normalized.personalInfo ||
+      typeof normalized.personalInfo !== 'object'
+    ) {
       normalized.personalInfo = {};
     }
     normalized.personalInfo = {
@@ -435,7 +485,11 @@ export class ResumeAIService {
     }
 
     // ── skills ── Flatten categorized skills object into string array
-    if (normalized.skills && typeof normalized.skills === 'object' && !Array.isArray(normalized.skills)) {
+    if (
+      normalized.skills &&
+      typeof normalized.skills === 'object' &&
+      !Array.isArray(normalized.skills)
+    ) {
       const skillsObj = normalized.skills;
       normalized.skills = [
         ...(skillsObj.technical || []),
@@ -455,7 +509,11 @@ export class ResumeAIService {
         let endDate: string | undefined;
         if (exp.endDate) {
           endDate = exp.endDate;
-        } else if (exp.current === true || exp.endDate === '至今' || exp.endDate === 'present') {
+        } else if (
+          exp.current === true ||
+          exp.endDate === '至今' ||
+          exp.endDate === 'present'
+        ) {
           endDate = undefined;
         } else {
           endDate = '';
@@ -509,8 +567,11 @@ export class ResumeAIService {
         startDate: proj.startDate || '',
         endDate: proj.endDate || '',
         url: proj.url || '',
-        highlights: Array.isArray(proj.highlights) ? proj.highlights :
-                    Array.isArray(proj.achievements) ? proj.achievements : [],
+        highlights: Array.isArray(proj.highlights)
+          ? proj.highlights
+          : Array.isArray(proj.achievements)
+            ? proj.achievements
+            : [],
       }));
     } else {
       normalized.projects = [];
@@ -520,7 +581,13 @@ export class ResumeAIService {
     if (normalized.certifications && Array.isArray(normalized.certifications)) {
       normalized.certifications = normalized.certifications.map((cert: any) => {
         if (typeof cert === 'string') {
-          return { name: cert, issuer: '', date: '', expiryDate: '', credentialId: '' };
+          return {
+            name: cert,
+            issuer: '',
+            date: '',
+            expiryDate: '',
+            credentialId: '',
+          };
         }
         return {
           name: cert.name || '',

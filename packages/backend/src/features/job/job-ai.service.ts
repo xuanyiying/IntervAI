@@ -15,7 +15,11 @@ export class JobAIService {
   ) {}
 
   private get aiModel(): string {
-    return this.aiService.getModel() || this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+    return (
+      this.aiService.getModel() ||
+      this.configService.get('AI_MODEL') ||
+      'openrouter:deepseek/deepseek-chat'
+    );
   }
 
   /**
@@ -23,7 +27,7 @@ export class JobAIService {
    */
   async parseJobDescription(
     content: string,
-    userId: string,
+    userId: string
   ): Promise<ParsedJobDescription> {
     this.logger.log('Parsing job description via job-parser skill');
 
@@ -34,21 +38,28 @@ export class JobAIService {
         userId,
         {
           fallback: async () => {
-            this.logger.warn('Using rule-based parsing as fallback for job description');
+            this.logger.warn(
+              'Using rule-based parsing as fallback for job description'
+            );
             return this.basicParseJobDescription(content);
-          }
+          },
         }
       );
 
       return data as ParsedJobDescription;
     } catch (error) {
       this.logger.error('Error parsing job description:', error);
-      throw new Error(`Failed to parse job description: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse job description: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   private basicParseJobDescription(content: string): ParsedJobDescription {
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    const lines = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     return {
       title: lines[0] || '',
@@ -61,7 +72,7 @@ export class JobAIService {
       salaryRange: '',
       experienceYears: 0,
       educationLevel: 'bachelor',
-      description: content
+      description: content,
     };
   }
 
@@ -80,14 +91,19 @@ export class JobAIService {
           this.logger.warn(
             `Retry ${attempt}/${this.maxRetries} for skill "${skillName}" after ${delay}ms`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        const result = await this.aiService.executeSkill(skillName, inputs, userId);
+        const result = await this.aiService.executeSkill(
+          skillName,
+          inputs,
+          userId
+        );
 
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
-          const errorMessage = result.error?.message || 'Skill execution failed';
+          const errorMessage =
+            result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
           if (this.isTransientError(errorCode) && attempt < this.maxRetries) {
@@ -142,7 +158,10 @@ export class JobAIService {
           try {
             return await options.fallback();
           } catch (fallbackError) {
-            this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+            this.logger.error(
+              `Fallback also failed for skill "${skillName}":`,
+              fallbackError
+            );
             throw lastError;
           }
         }
@@ -158,7 +177,10 @@ export class JobAIService {
       try {
         return await options.fallback();
       } catch (fallbackError) {
-        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+        this.logger.error(
+          `Fallback also failed for skill "${skillName}":`,
+          fallbackError
+        );
         throw lastError;
       }
     }
@@ -187,6 +209,6 @@ export class JobAIService {
       /fetch failed/i,
       /socket hang up/i,
     ];
-    return networkPatterns.some(pattern => pattern.test(error.message));
+    return networkPatterns.some((pattern) => pattern.test(error.message));
   }
 }
