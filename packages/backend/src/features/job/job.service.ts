@@ -93,14 +93,20 @@ export class JobService {
    * Parse job description text to extract structured data
    * Extracts required skills, responsibilities, keywords, etc.
    */
-  async parseJobDescription(description: string, userId?: string): Promise<ParsedJobData> {
+  async parseJobDescription(
+    description: string,
+    userId?: string
+  ): Promise<ParsedJobData> {
     if (!description || description.trim().length === 0) {
       throw new BadRequestException('Job description cannot be empty');
     }
 
     try {
       // Use new AI engine adapter to parse job description with multi-provider support
-      return await this.jobAI.parseJobDescription(description, userId || 'system');
+      return await this.jobAI.parseJobDescription(
+        description,
+        userId || 'system'
+      );
     } catch (error) {
       this.logger.error('Error parsing job description:', error);
       // Fall back to rule-based parsing

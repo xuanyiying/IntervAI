@@ -24,7 +24,8 @@ export class AccountService {
 
   async getSubscription(userId: string) {
     const [current, billingHistory, subscriptionEvents] = await Promise.all([
-      this.paymentService?.getUserSubscription(userId).catch(() => null) ?? Promise.resolve(null),
+      this.paymentService?.getUserSubscription(userId).catch(() => null) ??
+        Promise.resolve(null),
       this.paymentService?.getBillingHistory(userId) ?? Promise.resolve([]),
       this.prisma.subscriptionEvent.findMany({
         where: { userId },

@@ -8,4 +8,5 @@ export const PROVIDER_BASE_URLS: Record<string, string> = {
   openrouter: 'https://openrouter.ai/api/v1',
 };
 
-export const AI_MODEL = process.env.AI_MODEL || 'openrouter:deepseek/deepseek-chat';
+export const AI_MODEL =
+  process.env.AI_MODEL || 'openrouter:deepseek/deepseek-chat';

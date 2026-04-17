@@ -72,7 +72,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.uploadResume(
       userId,
       file,
@@ -92,7 +92,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.listResumes(userId);
   }
 
@@ -107,7 +107,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.getResume(resumeId, userId);
   }
 
@@ -126,7 +126,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.parseResume(resumeId, userId, conversationId);
   }
 
@@ -145,7 +145,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.updateResume(resumeId, userId, dto);
   }
 
@@ -160,7 +160,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.setPrimaryResume(resumeId, userId);
   }
 
@@ -177,7 +177,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.resumeService.analyzeResume(resumeId, userId);
   }
 
@@ -192,7 +192,7 @@ export class ResumeController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     await this.resumeService.deleteResume(resumeId, userId);
     return { message: 'Resume deleted successfully' };
   }

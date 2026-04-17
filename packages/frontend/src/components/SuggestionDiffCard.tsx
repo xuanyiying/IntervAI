@@ -1,8 +1,4 @@
-import {
-  CheckOutlined,
-  CloseOutlined,
-  DiffOutlined,
-} from '@ant-design/icons';
+import { CheckOutlined, CloseOutlined, DiffOutlined } from '@ant-design/icons';
 import { Button, Card, message, Space, Tag, theme, Tooltip } from 'antd';
 import React, { useState } from 'react';
 import { Suggestion, SuggestionStatus, SuggestionType } from '../types';
@@ -91,12 +87,13 @@ const SuggestionDiffCard: React.FC<SuggestionDiffCardProps> = ({
       size="small"
       style={{
         marginBottom: '12px',
-        borderLeft: `4px solid ${suggestion.status === SuggestionStatus.ACCEPTED
+        borderLeft: `4px solid ${
+          suggestion.status === SuggestionStatus.ACCEPTED
             ? token.colorSuccess
             : suggestion.status === SuggestionStatus.REJECTED
               ? token.colorError
               : token.colorPrimary
-          }`,
+        }`,
         opacity: isDisabled ? 0.75 : 1,
         transition: 'all 0.3s ease',
       }}

@@ -8,7 +8,7 @@ const logger = new Logger('QuotaModuleProxy');
 
 @Module({
   imports: [PrismaModule, RedisModule],
-   providers: [
+  providers: [
     {
       provide: 'QUOTA_SERVICE',
       useClass: CeQuotaService,
@@ -28,7 +28,10 @@ const logger = new Logger('QuotaModuleProxy');
             return ee;
           }
         } catch (e) {
-          logger.error('CRITICAL: EE Edition enabled but EE_QUOTA_SERVICE failed to resolve. Falling back to CE.', e);
+          logger.error(
+            'CRITICAL: EE Edition enabled but EE_QUOTA_SERVICE failed to resolve. Falling back to CE.',
+            e
+          );
         }
 
         return ce;
@@ -38,4 +41,4 @@ const logger = new Logger('QuotaModuleProxy');
   ],
   exports: [CeQuotaService],
 })
-export class QuotaModule { }
+export class QuotaModule {}

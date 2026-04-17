@@ -18,7 +18,12 @@ interface OptimizationState {
   suggestions: Suggestion[];
   loading: boolean;
   error: string | null;
-  versions: Array<{ id: string; version: number; label: string; createdAt: string }>;
+  versions: Array<{
+    id: string;
+    version: number;
+    label: string;
+    createdAt: string;
+  }>;
   history: OptimizationVersion[];
 
   setLoading: (loading: boolean) => void;
@@ -27,9 +32,18 @@ interface OptimizationState {
   setSuggestions: (suggestions: Suggestion[]) => void;
 
   fetchOptimization: (optimizationId: string) => Promise<void>;
-  triggerOptimization: (resumeId: string, jobId?: string) => Promise<Optimization>;
-  acceptSuggestion: (optimizationId: string, suggestionId: string) => Promise<SuggestionResult>;
-  rejectSuggestion: (optimizationId: string, suggestionId: string) => Promise<SuggestionResult>;
+  triggerOptimization: (
+    resumeId: string,
+    jobId?: string
+  ) => Promise<Optimization>;
+  acceptSuggestion: (
+    optimizationId: string,
+    suggestionId: string
+  ) => Promise<SuggestionResult>;
+  rejectSuggestion: (
+    optimizationId: string,
+    suggestionId: string
+  ) => Promise<SuggestionResult>;
   acceptAllSuggestions: (optimizationId: string) => Promise<BatchResult>;
   rejectAllSuggestions: (optimizationId: string) => Promise<BatchResult>;
   applyChanges: (optimizationId: string) => Promise<any>;
@@ -101,8 +115,10 @@ export const useOptimizationStore = create<OptimizationState>()(
       triggerOptimization: async (resumeId: string, jobId?: string) => {
         try {
           set({ loading: true, error: null });
-          const optimization =
-            await optimizationService.triggerOptimization(resumeId, jobId);
+          const optimization = await optimizationService.triggerOptimization(
+            resumeId,
+            jobId
+          );
           set({
             currentOptimization: optimization,
             suggestions: (optimization.suggestions || []) as Suggestion[],
@@ -118,7 +134,10 @@ export const useOptimizationStore = create<OptimizationState>()(
         }
       },
 
-      acceptSuggestion: async (optimizationId: string, suggestionId: string) => {
+      acceptSuggestion: async (
+        optimizationId: string,
+        suggestionId: string
+      ) => {
         try {
           const result = await optimizationService.acceptSuggestion(
             optimizationId,
@@ -134,7 +153,10 @@ export const useOptimizationStore = create<OptimizationState>()(
         }
       },
 
-      rejectSuggestion: async (optimizationId: string, suggestionId: string) => {
+      rejectSuggestion: async (
+        optimizationId: string,
+        suggestionId: string
+      ) => {
         try {
           const result = await optimizationService.rejectSuggestion(
             optimizationId,
@@ -158,9 +180,10 @@ export const useOptimizationStore = create<OptimizationState>()(
 
           const updated = get().suggestions.map((s) => ({
             ...s,
-            status: s.status === SuggestionStatus.PENDING
-              ? SuggestionStatus.ACCEPTED
-              : s.status,
+            status:
+              s.status === SuggestionStatus.PENDING
+                ? SuggestionStatus.ACCEPTED
+                : s.status,
           }));
           set({ suggestions: updated, loading: false });
           return result;
@@ -178,9 +201,10 @@ export const useOptimizationStore = create<OptimizationState>()(
 
           const updated = get().suggestions.map((s) => ({
             ...s,
-            status: s.status === SuggestionStatus.PENDING
-              ? SuggestionStatus.REJECTED
-              : s.status,
+            status:
+              s.status === SuggestionStatus.PENDING
+                ? SuggestionStatus.REJECTED
+                : s.status,
           }));
           set({ suggestions: updated, loading: false });
           return result;
@@ -218,14 +242,12 @@ export const useOptimizationStore = create<OptimizationState>()(
           .length,
 
       getAcceptedCount: () =>
-        get().suggestions.filter(
-          (s) => s.status === SuggestionStatus.ACCEPTED
-        ).length,
+        get().suggestions.filter((s) => s.status === SuggestionStatus.ACCEPTED)
+          .length,
 
       getRejectedCount: () =>
-        get().suggestions.filter(
-          (s) => s.status === SuggestionStatus.REJECTED
-        ).length,
+        get().suggestions.filter((s) => s.status === SuggestionStatus.REJECTED)
+          .length,
 
       getSuggestionsBySection: (section: string) =>
         get().suggestions.filter((s) => s.section === section),

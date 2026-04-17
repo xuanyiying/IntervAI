@@ -14,10 +14,16 @@ const GlobalQuotaListener: React.FC = () => {
       setVisible(true);
     };
 
-    window.addEventListener('app:quota_exceeded', handleQuotaExceeded as EventListener);
+    window.addEventListener(
+      'app:quota_exceeded',
+      handleQuotaExceeded as EventListener
+    );
 
     return () => {
-      window.removeEventListener('app:quota_exceeded', handleQuotaExceeded as EventListener);
+      window.removeEventListener(
+        'app:quota_exceeded',
+        handleQuotaExceeded as EventListener
+      );
     };
   }, []);
 
@@ -44,7 +50,12 @@ const GlobalQuotaListener: React.FC = () => {
         <Button key="cancel" onClick={handleCancel}>
           {t('common.cancel', 'Cancel')}
         </Button>,
-        <Button key="upgrade" type="primary" onClick={handleUpgrade} style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96' }}>
+        <Button
+          key="upgrade"
+          type="primary"
+          onClick={handleUpgrade}
+          style={{ backgroundColor: '#eb2f96', borderColor: '#eb2f96' }}
+        >
           {t('quota.upgrade_button', 'Upgrade Now')}
         </Button>,
       ]}

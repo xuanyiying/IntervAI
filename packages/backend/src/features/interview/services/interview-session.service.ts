@@ -38,8 +38,8 @@ export class InterviewSessionService {
     private quotaService: QuotaService,
     private voiceService: AlibabaVoiceService,
     private promptService: PromptService,
-    private interviewAI: InterviewAIService,
-  ) { }
+    private interviewAI: InterviewAIService
+  ) {}
 
   /**
    * Start a new interview session
@@ -91,7 +91,7 @@ export class InterviewSessionService {
       );
     }
 
-    let effectiveOptimizationId = optimizationId;
+    const effectiveOptimizationId = optimizationId;
     if (optimizationId) {
       const optimization = await this.prisma.optimization.findUnique({
         where: { id: optimizationId },
@@ -204,9 +204,9 @@ export class InterviewSessionService {
 
     const questions = session.optimizationId
       ? await this.prisma.interviewQuestion.findMany({
-        where: { optimizationId: session.optimizationId },
-        orderBy: { createdAt: 'asc' },
-      })
+          where: { optimizationId: session.optimizationId },
+          orderBy: { createdAt: 'asc' },
+        })
       : [];
 
     const answerCount =
@@ -228,7 +228,11 @@ export class InterviewSessionService {
   /**
    * Run evaluation in background without blocking response
    */
-  private async triggerAsyncEvaluation(session: any, content: string, sessionId: string) {
+  private async triggerAsyncEvaluation(
+    session: any,
+    content: string,
+    sessionId: string
+  ) {
     try {
       const resumeData = session.optimization.resume?.parsedData as unknown as
         | ParsedResumeData
@@ -241,8 +245,9 @@ export class InterviewSessionService {
         orderBy: { createdAt: 'asc' },
       });
 
-      const answerCount =
-        session.messages.filter((m: any) => m.role === MessageRole.USER).length;
+      const answerCount = session.messages.filter(
+        (m: any) => m.role === MessageRole.USER
+      ).length;
       const questionText =
         questions[answerCount - 1]?.question || 'Unknown question';
 
@@ -270,7 +275,8 @@ export class InterviewSessionService {
 
         if (evalResult.success && evalResult.data) {
           const evalData = evalResult.data as any;
-          const evaluationScore = evalData.overallScore ?? evalData.score ?? null;
+          const evaluationScore =
+            evalData.overallScore ?? evalData.score ?? null;
           const evaluationFeedback =
             evalData.feedback ??
             evalData.detailedFeedback ??
@@ -286,7 +292,10 @@ export class InterviewSessionService {
         }
       }
     } catch (evalError) {
-      this.logger.warn(`Async evaluation failed for session ${sessionId}`, evalError);
+      this.logger.warn(
+        `Async evaluation failed for session ${sessionId}`,
+        evalError
+      );
     }
   }
 
@@ -321,9 +330,9 @@ export class InterviewSessionService {
 
     const questions = session.optimizationId
       ? await this.prisma.interviewQuestion.findMany({
-        where: { optimizationId: session.optimizationId },
-        orderBy: { createdAt: 'asc' },
-      })
+          where: { optimizationId: session.optimizationId },
+          orderBy: { createdAt: 'asc' },
+        })
       : [];
 
     const answerCount = session.messages.filter(
@@ -394,26 +403,28 @@ export class InterviewSessionService {
 
     // Get resume and job data
     const optimization = session.optimization;
-    const resumeData = optimization?.resume
-      ?.parsedData as unknown as ParsedResumeData | undefined;
-    const jobData = optimization?.job
-      ?.parsedRequirements as unknown as ParsedJobData | undefined;
+    const resumeData = optimization?.resume?.parsedData as unknown as
+      | ParsedResumeData
+      | undefined;
+    const jobData = optimization?.job?.parsedRequirements as unknown as
+      | ParsedJobData
+      | undefined;
 
     let aiResponse: string;
 
     if (session.mode === InterviewMode.ASSIST) {
       aiResponse = await this.generateAssistAnswer(
         content,
-        resumeData ?? {} as ParsedResumeData,
-        jobData ?? {} as ParsedJobData,
+        resumeData ?? ({} as ParsedResumeData),
+        jobData ?? ({} as ParsedJobData),
         session.language
       );
     } else {
       aiResponse = await this.generateMockResponse(
         session,
         content,
-        resumeData ?? {} as ParsedResumeData,
-        jobData ?? {} as ParsedJobData
+        resumeData ?? ({} as ParsedResumeData),
+        jobData ?? ({} as ParsedJobData)
       );
     }
 
@@ -461,8 +472,7 @@ export class InterviewSessionService {
       });
 
       // Use summary or markdown from parsedData as self-introduction context
-      const selfIntroduction =
-        resumeData.summary || resumeData.markdown || '';
+      const selfIntroduction = resumeData.summary || resumeData.markdown || '';
 
       const result = await this.aiService.executeSkill(
         'interview-assistant',
@@ -732,11 +742,7 @@ export class InterviewSessionService {
 
     try {
       const { AI_MODEL } = await import('@/core/ai/models');
-      const result = await this.aiService.generate(
-        AI_MODEL,
-        prompt,
-        ''
-      );
+      const result = await this.aiService.generate(AI_MODEL, prompt, '');
 
       // Parse JSON from result
       // Assuming result is a string that might contain JSON
@@ -834,27 +840,29 @@ export class InterviewSessionService {
 
     const chatHistory = session.messages.map((m: any) => ({
       role: m.role === MessageRole.USER ? 'user' : 'assistant',
-      content: m.content
+      content: m.content,
     }));
 
     // Prevent malicious infinite loops on Free tier or unlimited tier (protects memory)
     if (chatHistory.length > 30) {
-      this.logger.warn(`Session ${sessionId} reached 30 turns. Terminating stream.`);
-      yield isZh ? "本次会话已达到最大对话回合限制，请开启新一轮面试。" : "This session has reached the maximum turn limit. Please start a new interview.";
+      this.logger.warn(
+        `Session ${sessionId} reached 30 turns. Terminating stream.`
+      );
+      yield isZh
+        ? '本次会话已达到最大对话回合限制，请开启新一轮面试。'
+        : 'This session has reached the maximum turn limit. Please start a new interview.';
       return;
     }
 
     const messages: any[] = [
       { role: 'system', content: systemPrompt },
       ...chatHistory,
-      { role: 'user', content: userPrompt }
+      { role: 'user', content: userPrompt },
     ];
 
-    for await (const chunk of this.aiService.stream(
-      AI_MODEL,
-      messages,
-      { userId }
-    )) {
+    for await (const chunk of this.aiService.stream(AI_MODEL, messages, {
+      userId,
+    })) {
       fullAnswer += chunk;
       yield chunk;
     }

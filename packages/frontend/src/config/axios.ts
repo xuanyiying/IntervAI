@@ -71,7 +71,11 @@ axiosInstance.interceptors.response.use(
         case 403:
           // Forbidden - quota exceeded or insufficient permissions
           console.error('Access forbidden:', error.response.data);
-          message.error(error.response.data?.error?.message || error.response.data?.message || 'Access denied or quota exceeded. Please upgrade your plan.');
+          message.error(
+            error.response.data?.error?.message ||
+              error.response.data?.message ||
+              'Access denied or quota exceeded. Please upgrade your plan.'
+          );
           window.dispatchEvent(new CustomEvent('app:quota_exceeded'));
           break;
         case 429:

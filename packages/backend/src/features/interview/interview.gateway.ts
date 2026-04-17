@@ -121,9 +121,13 @@ export class InterviewGateway
     // Defense: MAX_AUDIO_BUFFER_SIZE check
     const currentSize = chunks.reduce((acc, c) => acc + c.length, 0);
     if (currentSize > this.MAX_AUDIO_BUFFER_SIZE) {
-      this.logger.warn(`Session ${data.sessionId} exceeded 5MB max audio buffer! Dropping chunks to prevent OOM.`);
+      this.logger.warn(
+        `Session ${data.sessionId} exceeded 5MB max audio buffer! Dropping chunks to prevent OOM.`
+      );
       this.audioBuffers.delete(data.sessionId);
-      client.emit('error', { message: 'Audio payload too large, connection reset.' });
+      client.emit('error', {
+        message: 'Audio payload too large, connection reset.',
+      });
       return;
     }
 

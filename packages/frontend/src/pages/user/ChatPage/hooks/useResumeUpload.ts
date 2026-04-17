@@ -322,11 +322,7 @@ export const useResumeUpload = ({
    * Called when the initial parse request times out but backend is still processing.
    */
   const pollResumeStatus = useCallback(
-    (
-      resumeId: string,
-      parsingMessageId: string,
-      conversationId: string
-    ) => {
+    (resumeId: string, parsingMessageId: string, conversationId: string) => {
       const MAX_POLL_ATTEMPTS = 24; // 24 * 5s = 2 minutes max polling
       const POLL_INTERVAL = 5000; // 5 seconds
       let attempts = 0;
@@ -363,9 +359,7 @@ export const useResumeUpload = ({
             const resumeMarkdown =
               resume.parsedData?.markdown ||
               resume.parsedData?.extractedText ||
-              (resume.parsedData
-                ? JSON.stringify(resume.parsedData)
-                : '');
+              (resume.parsedData ? JSON.stringify(resume.parsedData) : '');
             if (resumeMarkdown && onResumeParsed) {
               onResumeParsed(resumeId, resumeMarkdown, conversationId);
             }

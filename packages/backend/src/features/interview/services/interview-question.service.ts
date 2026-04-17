@@ -16,7 +16,7 @@ export class InterviewQuestionService {
   constructor(
     private prisma: PrismaService,
     private interviewAI: InterviewAIService
-  ) { }
+  ) {}
 
   /**
    * Generate interview questions based on resume and job
@@ -60,7 +60,11 @@ export class InterviewQuestionService {
         ?.parsedRequirements as unknown as ParsedJobData;
 
       // Generate questions using AI engine
-      let questions = await this.generateQuestionsWithAI(resumeData, jobData, userId);
+      let questions = await this.generateQuestionsWithAI(
+        resumeData,
+        jobData,
+        userId
+      );
 
       // If AI generation fails or returns insufficient questions, use rule-based generation
       if (!questions || questions.length < questionCount) {

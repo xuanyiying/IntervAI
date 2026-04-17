@@ -19,7 +19,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService
-  ) { }
+  ) {}
 
   /**
    * Delete user account

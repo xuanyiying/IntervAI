@@ -6,11 +6,7 @@
 import { AIService } from '@/core/ai';
 import { LanguageInput, PromptService } from '@/core/prompts';
 import { PrismaService } from '@/shared/database/prisma.service';
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ChatResponse } from './chat.gateway';
 import {
   SceneAnalysisResult,
@@ -199,7 +195,8 @@ export class ChatIntentService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
-    private readonly promptService: PromptService) { }
+    private readonly promptService: PromptService
+  ) {}
 
   async onModuleInit(): Promise<void> {
     this.logger.log(
