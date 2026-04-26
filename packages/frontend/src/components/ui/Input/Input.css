@@ -1,0 +1,74 @@
+.glass-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.glass-input-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.glass-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.glass-input-icon {
+  position: absolute;
+  left: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.glass-input,
+.glass-textarea {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-body);
+  transition: all var(--duration-fast) ease;
+}
+
+.glass-input:focus,
+.glass-textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.glass-input-with-icon {
+  padding-left: var(--spacing-10);
+}
+
+.glass-input::placeholder,
+.glass-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.glass-input-error {
+  border-color: var(--danger-color);
+}
+
+.glass-input-error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.glass-input-error-text {
+  font-size: var(--font-size-xs);
+  color: var(--danger-color);
+}
+
+.glass-textarea {
+  min-height: 100px;
+  resize: vertical;
+}

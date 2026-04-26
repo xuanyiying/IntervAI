@@ -1,34 +1,175 @@
 import { Logo } from '@/components/Logo';
 import { useAuthStore, useConversationStore, useResumeStore } from '@/stores';
 import { Role } from '@/types';
-import {
-  ApiOutlined,
-  BarcodeOutlined,
-  DashboardOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  FileSearchOutlined,
-  FileTextOutlined,
-  HomeOutlined,
-  LineChartOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  MessageOutlined,
-  PlusOutlined,
-  RobotOutlined,
-  SearchOutlined,
-  StarOutlined,
-  TeamOutlined,
-  ToolOutlined,
-  UserOutlined,
-  WalletOutlined,
-} from '@ant-design/icons';
-import { Badge, Button, Input, Modal, Tooltip } from 'antd';
+import { Button, Badge, Input, Modal, useToast } from '@/components/ui';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// Interface for props if needed, though we use stores mostly
+const IconHome: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+
+const IconFileSearch: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+
+const IconRobot: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="11" width="18" height="10" rx="2"/>
+    <circle cx="12" cy="5" r="2"/>
+    <path d="M12 7v4"/>
+    <line x1="8" y1="16" x2="8" y2="16"/>
+    <line x1="16" y1="16" x2="16" y2="16"/>
+  </svg>
+);
+
+const IconUser: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const IconStar: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
+);
+
+const IconChart: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/>
+  </svg>
+);
+
+const IconMenuFold: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
+const IconMenuUnfold: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
+const IconMessage: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+
+const IconPlus: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const IconSearch: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </svg>
+);
+
+const IconEdit: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+
+const IconDelete: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+  </svg>
+);
+
+const IconDashboard: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7"/>
+    <rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/>
+  </svg>
+);
+
+const IconTeam: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+const IconApi: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+    <polyline points="22,6 12,13 2,6"/>
+  </svg>
+);
+
+const IconFileText: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="16" y1="13" x2="8" y2="13"/>
+    <line x1="16" y1="17" x2="8" y2="17"/>
+    <polyline points="10 9 9 9 8 9"/>
+  </svg>
+);
+
+const IconBarcode: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 5v14"/>
+    <path d="M8 5v14"/>
+    <path d="M12 5v14"/>
+    <path d="M17 5v14"/>
+    <path d="M21 5v14"/>
+  </svg>
+);
+
+const IconTool: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+);
+
+const IconWallet: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+    <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+  </svg>
+);
+
+const IconX: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
 interface SidebarProps {
   isCollapsed: boolean;
   onToggleCollapse?: () => void;
@@ -45,6 +186,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { user } = useAuthStore();
   const { fetchResumes } = useResumeStore();
+  const { success, error: showError } = useToast();
   const {
     conversations,
     currentConversation,
@@ -55,6 +197,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   } = useConversationStore();
 
   const [searchText, setSearchText] = React.useState('');
+  const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
+  const [chatIdToDelete, setChatIdToDelete] = React.useState<string | null>(null);
 
   const isAdmin = user?.role === Role.ADMIN;
   const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
@@ -66,50 +210,50 @@ const Sidebar: React.FC<SidebarProps> = ({
   const mainNavItems = [
     {
       key: 'home',
-      icon: <HomeOutlined />,
+      icon: <IconHome />,
       label: t('menu.home', '主页'),
       path: '/',
     },
     {
       key: 'my-resumes',
-      icon: <FileSearchOutlined />,
+      icon: <IconFileSearch />,
       label: t('menu.my_resumes', '我的简历'),
       path: '/resumes',
     },
     {
       key: 'interview',
-      icon: <RobotOutlined />,
+      icon: <IconRobot />,
       label: t('menu.interview_spirit', 'AI 面试精灵'),
       path: '/interview',
     },
     {
       key: 'mock-interview',
-      icon: <UserOutlined />,
+      icon: <IconUser />,
       label: t('menu.mock_interview', '模拟面试'),
       path: '/role-play',
     },
     {
       key: 'pitch-perfect',
-      icon: <StarOutlined />,
+      icon: <IconStar />,
       label: t('menu.pitch_perfect', '自我介绍'),
       path: '/pitch-perfect',
     },
     {
       key: 'interview-prediction',
-      icon: <LineChartOutlined />,
+      icon: <IconChart />,
       label: t('menu.interview_prediction', '面试押题'),
       path: '/strategist',
     },
     {
       key: 'chat',
-      icon: <MessageOutlined />,
+      icon: <IconMessage />,
       label: t('menu.chat', '对话'),
       path: '/chat',
     },
     ...(IS_EE ? [
       {
         key: 'pricing',
-        icon: <WalletOutlined />,
+        icon: <IconWallet />,
         label: t('menu.pricing', '订阅与定价'),
         path: '/pricing',
       },
@@ -130,118 +274,110 @@ const Sidebar: React.FC<SidebarProps> = ({
       setCurrentConversation(conversation);
       if (setMobileDrawerOpen) setMobileDrawerOpen(false);
     } catch {
-      // Error handling is managed by store or global message usually,
-      // but simplistic here for brevity as per original
+      showError('创建对话失败');
     }
   };
 
-  const handleDeleteChat = (chatId: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    Modal.confirm({
-      title: t('common.delete'),
-      content: t('common.delete_confirm'),
-      okText: t('common.delete'),
-      okType: 'danger',
-      cancelText: t('common.cancel'),
-      onOk: async () => {
-        try {
-          // Calculate navigation target before deletion
-          const { conversations: currentList, currentConversation: current } =
-            useConversationStore.getState();
-          const isDeletingCurrent = current?.id === chatId;
-          let nextId: string | null = null;
+    setChatIdToDelete(chatId);
+    setDeleteModalVisible(true);
+  };
 
-          if (isDeletingCurrent) {
-            const currentIndex = currentList.findIndex((c) => c.id === chatId);
-            // Try next (newer/below) first, then previous (older/above)
-            // Note: conversations are usually sorted desc by date, so index + 1 is older
-            const nextConvo =
-              currentList[currentIndex + 1] || currentList[currentIndex - 1];
-            if (nextConvo) {
-              nextId = nextConvo.id;
-            }
-          }
+  const handleConfirmDelete = async () => {
+    if (!chatIdToDelete) return;
+    try {
+      const { conversations: currentList, currentConversation: current } =
+        useConversationStore.getState();
+      const isDeletingCurrent = current?.id === chatIdToDelete;
+      let nextId: string | null = null;
 
-          await deleteConversation(chatId);
-
-          if (isDeletingCurrent) {
-            navigate('/chat');
-            if (nextId) {
-              await switchConversation(nextId);
-            } else {
-              setCurrentConversation(null);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to delete conversation:', error);
-          // Ideally show a message to user
+      if (isDeletingCurrent) {
+        const currentIndex = currentList.findIndex((c) => c.id === chatIdToDelete);
+        const nextConvo =
+          currentList[currentIndex + 1] || currentList[currentIndex - 1];
+        if (nextConvo) {
+          nextId = nextConvo.id;
         }
-      },
-    });
+      }
+
+      await deleteConversation(chatIdToDelete);
+      success('对话已删除');
+
+      if (isDeletingCurrent) {
+        navigate('/chat');
+        if (nextId) {
+          await switchConversation(nextId);
+        } else {
+          setCurrentConversation(null);
+        }
+      }
+    } catch {
+      showError('删除失败');
+    } finally {
+      setDeleteModalVisible(false);
+      setChatIdToDelete(null);
+    }
   };
 
   const handleSelectChat = async (chatId: string) => {
-    // Close drawer immediately for mobile
     if (setMobileDrawerOpen) setMobileDrawerOpen(false);
 
-    // If it's already the current chat, just navigate to ensure we are on the chat page
     if (currentConversation?.id === chatId) {
       navigate('/chat');
       return;
     }
 
     try {
-      // Navigate first to show loading state on ChatPage
       navigate('/chat');
-      // Then switch the conversation
       await switchConversation(chatId);
-    } catch (error) {
-      console.error('Failed to switch conversation:', error);
+    } catch {
+      showError('切换对话失败');
     }
   };
 
   const adminNavItems = [
     {
       key: 'dashboard',
-      icon: <DashboardOutlined />,
+      icon: <IconDashboard />,
       label: t('menu.dashboard', '控制台'),
       path: '/admin/dashboard',
     },
     {
       key: 'users',
-      icon: <TeamOutlined />,
+      icon: <IconTeam />,
       label: t('menu.user_management'),
       path: '/admin/users',
     },
     {
       key: 'models',
-      icon: <ApiOutlined />,
+      icon: <IconApi />,
       label: t('menu.model_management'),
       path: '/admin/models',
     },
     {
       key: 'prompts',
-      icon: <FileTextOutlined />,
+      icon: <IconFileText />,
       label: t('menu.prompt_management'),
       path: '/admin/prompts',
     },
     ...(IS_EE ? [
       {
         key: 'invite-codes',
-        icon: <BarcodeOutlined />,
+        icon: <IconBarcode />,
         label: t('menu.invite_code_management'),
         path: '/admin/invite-codes',
       },
     ] : []),
     {
       key: 'knowledge-base',
-      icon: <FileTextOutlined />,
+      icon: <IconFileText />,
       label: t('menu.knowledge_base', '知识库'),
       path: '/admin/knowledge-base',
     },
     {
       key: 'system-settings',
-      icon: <ToolOutlined />,
+      icon: <IconTool />,
       label: t('menu.system_settings'),
       path: '/admin/system-settings',
     },
@@ -252,7 +388,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       className={`sidebar-wrapper ${isCollapsed ? 'collapsed' : ''}`}
       style={{ background: 'transparent' }}
     >
-      {/* Brand */}
       <div
         className={`sidebar-brand h-16 flex items-center px-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}
       >
@@ -265,188 +400,141 @@ const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
         {onToggleCollapse && (
-          <Tooltip
+          <button
+            onClick={onToggleCollapse}
+            className={`p-2 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)] transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
             title={isCollapsed ? t('menu.expand') : t('menu.collapse')}
-            placement="right"
           >
-            <Button
-              type="text"
-              icon={isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={onToggleCollapse}
-              className={`text-[var(--text-secondary)] hover:text-[var(--text-primary)] ${isCollapsed ? '' : 'ml-auto'}`}
-            />
-          </Tooltip>
+            {isCollapsed ? <IconMenuUnfold size={20} /> : <IconMenuFold size={20} />}
+          </button>
         )}
       </div>
 
-      {/* Main Navigation */}
       <div className="px-2 space-y-1">
         {mainNavItems.map((item) => (
-          <Tooltip
+          <div
             key={item.key}
+            onClick={() => {
+              navigate(item.path);
+              if (setMobileDrawerOpen) setMobileDrawerOpen(false);
+            }}
+            className={`
+              flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200
+              ${
+                location.pathname === item.path ||
+                (item.path !== '/' && location.pathname.startsWith(item.path))
+                  ? 'border-l-[3px] border-l-primary bg-[var(--sidebar-item-active)] text-primary'
+                  : 'border-l-[3px] border-l-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'
+              }
+            `}
+            style={{
+              paddingLeft: 'calc(var(--sidebar-item-padding-x) - 3px)',
+              paddingRight: 'var(--sidebar-item-padding-x)',
+              paddingTop: 'var(--sidebar-item-padding-y)',
+              paddingBottom: 'var(--sidebar-item-padding-y)',
+            }}
             title={isCollapsed ? item.label : ''}
-            placement="right"
           >
-            <div
-              onClick={() => {
-                navigate(item.path);
-                if (setMobileDrawerOpen) setMobileDrawerOpen(false);
-              }}
-              className={`
-                flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200
-                ${
-                  location.pathname === item.path ||
-                  (item.path !== '/' && location.pathname.startsWith(item.path))
-                    ? 'border-l-[3px] border-l-primary bg-[var(--sidebar-item-active)] text-primary'
-                    : 'border-l-[3px] border-l-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--sidebar-item-hover)]'
-                }
-              `}
-              style={{
-                paddingLeft: 'calc(var(--sidebar-item-padding-x) - 3px)',
-                paddingRight: 'var(--sidebar-item-padding-x)',
-                paddingTop: 'var(--sidebar-item-padding-y)',
-                paddingBottom: 'var(--sidebar-item-padding-y)',
-              }}
-            >
-              <span className="flex items-center justify-center w-5">
-                {item.icon}
+            <span className="flex items-center justify-center w-5">
+              {item.icon}
+            </span>
+            {!isCollapsed && (
+              <span className="truncate text-sm font-medium">
+                {item.label}
               </span>
-              {!isCollapsed && (
-                <span className="truncate text-sm font-medium">
-                  {item.label}
-                </span>
-              )}
-            </div>
-          </Tooltip>
+            )}
+          </div>
         ))}
       </div>
 
-      {/* Divider between main nav and chat area */}
       <div className="border-t border-[var(--glass-border)] mt-2 pt-2" />
 
-      {/* New Chat */}
       <div className="px-4 mb-4">
-        <Tooltip
+        <button
+          onClick={handleNewChat}
+          className={`w-full gradient-button flex items-center justify-center gap-2 ${isCollapsed ? 'p-2' : ''}`}
           title={isCollapsed ? t('menu.new_chat') : ''}
-          placement="right"
         >
-          <button
-            onClick={handleNewChat}
-            className={`w-full gradient-button flex items-center justify-center gap-2 ${isCollapsed ? 'p-2' : ''}`}
-          >
-            <PlusOutlined />
-            {!isCollapsed && <span>{t('menu.new_chat')}</span>}
-          </button>
-        </Tooltip>
+          <IconPlus size={18} />
+          {!isCollapsed && <span>{t('menu.new_chat')}</span>}
+        </button>
       </div>
 
-      {/* Search */}
       {!isCollapsed && (
         <div className="px-4 mb-4">
           <Input
             placeholder={`${t('common.search')}... (⌘K)`}
-            prefix={<SearchOutlined className="text-[var(--text-tertiary)]" />}
+            prefix={<IconSearch size={16} />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{ backgroundColor: 'var(--sidebar-item-hover)' }}
-            className="glass-input border-none text-current"
             allowClear
           />
         </div>
       )}
 
-      {/* Chat List */}
       <div className="flex-1 overflow-y-auto px-2 space-y-1 scrollbar-hide">
         {!isCollapsed && (
           <div className="px-3 py-2 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider flex justify-between items-center">
             {t('menu.history')}
-            <Badge
-              count={filteredConversations.length}
-              style={{
-                backgroundColor: 'var(--sidebar-item-active)',
-                color: 'var(--text-tertiary)',
-                boxShadow: 'none',
-              }}
-            />
+            <Badge variant="default">
+              {filteredConversations.length}
+            </Badge>
           </div>
         )}
 
         {filteredConversations.map((item) => (
-          <Tooltip
+          <div
             key={item.id}
+            onClick={() => handleSelectChat(item.id)}
+            className={`
+              group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200 relative
+              ${currentConversation?.id === item.id ? 'text-primary-500 shadow-sm' : 'text-[var(--text-secondary)]'}
+            `}
+            style={{
+              paddingLeft: 'var(--sidebar-item-padding-x)',
+              paddingRight: 'var(--sidebar-item-padding-x)',
+              paddingTop: 'var(--sidebar-item-padding-y)',
+              paddingBottom: 'var(--sidebar-item-padding-y)',
+              marginTop: 'var(--sidebar-item-margin-y)',
+              marginBottom: 'var(--sidebar-item-margin-y)',
+              backgroundColor:
+                currentConversation?.id === item.id
+                  ? 'var(--sidebar-item-active)'
+                  : 'transparent',
+            }}
             title={isCollapsed ? item.title || t('menu.new_chat') : ''}
-            placement="right"
           >
-            <div
-              onClick={() => handleSelectChat(item.id)}
-              className={`
-                group flex items-center gap-3 rounded-xl cursor-pointer transition-all duration-200 relative
-                ${currentConversation?.id === item.id ? 'text-primary-500 shadow-sm' : 'text-[var(--text-secondary)]'}
-              `}
-              style={{
-                paddingLeft: 'var(--sidebar-item-padding-x)',
-                paddingRight: 'var(--sidebar-item-padding-x)',
-                paddingTop: 'var(--sidebar-item-padding-y)',
-                paddingBottom: 'var(--sidebar-item-padding-y)',
-                marginTop: 'var(--sidebar-item-margin-y)',
-                marginBottom: 'var(--sidebar-item-margin-y)',
-                backgroundColor:
-                  currentConversation?.id === item.id
-                    ? 'var(--sidebar-item-active)'
-                    : 'transparent',
-              }}
-              onMouseEnter={(e) => {
-                if (currentConversation?.id !== item.id) {
-                  e.currentTarget.style.backgroundColor =
-                    'var(--sidebar-item-hover)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currentConversation?.id !== item.id) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
-            >
-              <MessageOutlined />
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    {item.title || t('menu.new_chat')}
-                  </div>
+            <IconMessage size={18} />
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <div className="truncate text-sm font-medium">
+                  {item.title || t('menu.new_chat')}
                 </div>
-              )}
-              {/* Actions (visible on hover) */}
-              {!isCollapsed && (
-                <div
-                  className={`flex gap-1 ${currentConversation?.id === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+              </div>
+            )}
+            {!isCollapsed && (
+              <div
+                className={`flex gap-1 ${currentConversation?.id === item.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
+              >
+                <button
+                  className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+                  title="重命名"
                 >
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={<EditOutlined />}
-                    className="text-gray-400 hover:text-white"
-                    onClick={(e) => {
-                      e.stopPropagation(); /* Rename logic */
-                    }}
-                  />
-                  <Button
-                    type="text"
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                    className="hover:bg-red-500/20"
-                    onClick={(e) => handleDeleteChat(item.id, e)}
-                  />
-                </div>
-              )}
-            </div>
-          </Tooltip>
+                  <IconEdit size={14} />
+                </button>
+                <button
+                  className="p-1 rounded text-gray-400 hover:text-red-400 hover:bg-red-500/20 transition-colors"
+                  onClick={(e) => handleDeleteClick(item.id, e)}
+                  title="删除"
+                >
+                  <IconDelete size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
-      {/* Admin Links */}
       {isAdmin && !isCollapsed && (
         <div className="mt-4 px-4 pb-4 border-t border-[var(--sidebar-item-hover)]">
           <div className="px-2 py-4 text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-widest text-center">
@@ -474,6 +562,26 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       )}
+
+      <Modal
+        open={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        title={t('common.delete', '删除')}
+        footer={
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setDeleteModalVisible(false)}>
+              {t('common.cancel', '取消')}
+            </Button>
+            <Button variant="danger" onClick={handleConfirmDelete}>
+              {t('common.delete', '删除')}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[var(--text-secondary)]">
+          {t('common.delete_confirm', '确定要删除这个对话吗？此操作无法撤销。')}
+        </p>
+      </Modal>
     </div>
   );
 };

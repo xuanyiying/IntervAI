@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
-import { PdfGenerationService, PDFOptions } from '../services/pdf-generation.service';
+import { PdfGenerationService } from '../services/pdf-generation.service';
 import { ParsedResumeData } from '@/types';
 
 export interface GeneratePdfJobData {
