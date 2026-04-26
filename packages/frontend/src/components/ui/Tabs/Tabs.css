@@ -1,0 +1,40 @@
+.glass-tabs {
+  width: 100%;
+}
+
+.glass-tabs-list {
+  display: flex;
+  gap: var(--spacing-1);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.glass-tabs-trigger {
+  position: relative;
+  padding: var(--spacing-3) var(--spacing-4);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.glass-tabs-trigger:hover {
+  color: var(--text-primary);
+}
+
+.glass-tabs-active {
+  color: var(--primary-color);
+}
+
+.glass-tabs-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-color);
+  border-radius: 2px 2px 0 0;
+}

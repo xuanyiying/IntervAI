@@ -1,0 +1,63 @@
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-normal) ease;
+}
+
+.glass-card:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-light);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.glass-card-padding-sm {
+  padding: var(--spacing-3);
+}
+
+.glass-card-padding-md {
+  padding: var(--spacing-6);
+}
+
+.glass-card-padding-lg {
+  padding: var(--spacing-8);
+}
+
+.glass-card-hoverable {
+  transition: all var(--duration-normal) ease;
+}
+
+.glass-card-hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.glass-card-variant-indigo {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.glass-card-variant-indigo:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+}
+
+.glass-card-variant-purple {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.glass-card-variant-purple:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+}
+
+.glass-card-variant-warm {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.glass-card-variant-warm:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.15);
+}

@@ -1,0 +1,47 @@
+.glass-switch-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  cursor: pointer;
+}
+
+.glass-switch-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.glass-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  transition: all var(--duration-fast) ease;
+}
+
+.glass-switch-checked {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.glass-switch-handle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: all var(--duration-fast) ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.glass-switch-checked .glass-switch-handle {
+  transform: translateX(20px);
+}
+
+.glass-switch-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}

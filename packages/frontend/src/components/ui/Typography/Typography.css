@@ -1,0 +1,80 @@
+.glass-typography {
+  color: var(--text-primary);
+  line-height: var(--line-height-normal);
+}
+
+.glass-typography-primary {
+  color: var(--primary-color);
+}
+
+.glass-typography-secondary {
+  color: var(--text-secondary);
+}
+
+.glass-typography-danger {
+  color: var(--danger-color);
+}
+
+.glass-typography-success {
+  color: var(--success-color);
+}
+
+.glass-typography-warning {
+  color: var(--warning-color);
+}
+
+.glass-typography-strong {
+  font-weight: 600;
+}
+
+h1.glass-typography,
+h2.glass-typography,
+h3.glass-typography,
+h4.glass-typography,
+h5.glass-typography,
+h6.glass-typography {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+h1.glass-typography {
+  font-size: var(--font-size-4xl);
+  line-height: var(--line-height-tight);
+}
+
+h2.glass-typography {
+  font-size: var(--font-size-3xl);
+  line-height: var(--line-height-tight);
+}
+
+h3.glass-typography {
+  font-size: var(--font-size-2xl);
+  line-height: var(--line-height-tight);
+}
+
+h4.glass-typography {
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-normal);
+}
+
+h5.glass-typography {
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-normal);
+}
+
+h6.glass-typography {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+p.glass-typography {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+span.glass-typography {
+  font-size: inherit;
+  line-height: inherit;
+}
