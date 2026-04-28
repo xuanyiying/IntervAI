@@ -54,8 +54,8 @@ Choose one object storage provider:
                          │ HTTPS (443)
                          ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Nginx Load Balancer                         │
-│         (SSL/TLS Termination + Rate Limiting)           │
+│              Caddy Reverse Proxy                         │
+│    (Automatic HTTPS + SSL/TLS + Load Balancing)         │
 └─────────────────────────────────────────────────────────┘
                          │
           ┌──────────────┴──────────────┐
@@ -63,8 +63,8 @@ Choose one object storage provider:
           ▼                             ▼
 ┌──────────────────┐          ┌──────────────────┐
 │  Backend API     │          │  Frontend App    │
-│  (NestJS)        │          │  (React)         │
-│  Replicas: 2     │          │  Replicas: 2     │
+│  (NestJS)        │          │  (Static Files)  │
+│  Replicas: 2     │          │                  │
 └──────────────────┘          └──────────────────┘
           │
           │
@@ -290,43 +290,56 @@ The deployment script will:
 4. Run database migrations
 5. Seed initial data
 6. Start application services
-7. Start Nginx load balancer
+7. Start Caddy reverse proxy (automatic HTTPS)
 8. Start backup service
 9. Perform health checks
 
 ### Step 6: Configure SSL/TLS (Requirement 9.1)
 
-```bash
-# Make SSL setup script executable
-chmod +x scripts/setup-ssl.sh
+**Automatic HTTPS with Caddy:**
 
-# Run SSL setup
-./scripts/setup-ssl.sh
+Caddy automatically obtains and manages SSL certificates from Let's Encrypt. No manual configuration is required.
+
+1. Ensure your domain DNS is pointing to the server IP
+2. Ensure ports 80 and 443 are accessible from the internet
+3. Start the services:
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-This will:
+Caddy will automatically:
+- Obtain Let's Encrypt SSL certificate
+- Configure HTTPS with best practices
+- Set up automatic certificate renewal (30 days before expiry)
+- Redirect HTTP to HTTPS
 
-1. Generate temporary self-signed certificate
-2. Start Nginx
-3. Obtain Let's Encrypt certificate
-4. Configure automatic renewal
+**Verify SSL Certificate:**
+
+```bash
+# Check certificate status
+docker-compose -f docker-compose.prod.yml exec caddy caddy list-certificates
+
+# View certificate files
+docker-compose -f docker-compose.prod.yml exec caddy ls -la /data/caddy/certificates/
+```
+
+**Test Environment (Optional):**
+
+To test certificate issuance without hitting Let's Encrypt rate limits, add to `.env.production`:
+
+```bash
+ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory
+```
 
 **Manual SSL Certificate (Alternative):**
 
-If using a commercial SSL certificate:
+If using a commercial SSL certificate, you can configure Caddy to use it:
 
-```bash
-# Copy your certificates
-cp your-cert.crt config/ssl/cert.pem
-cp your-key.key config/ssl/key.pem
-cp your-chain.crt config/ssl/chain.pem
+1. Place certificates in `deployment/config/ssl/`
+2. Update Caddyfile to use manual certificate configuration
 
-# Update Nginx configuration
-nano config/nginx/conf.d/default.conf
-
-# Restart Nginx
-docker-compose -f docker-compose.prod.yml restart nginx
-```
+For more details, see [Caddy Documentation](https://caddyserver.com/docs/).
 
 ### Step 7: Configure DNS
 
@@ -402,14 +415,15 @@ Production Redis configuration includes:
 
 ## Load Balancing & High Availability
 
-### Nginx Configuration
+### Caddy Configuration
 
-- **SSL/TLS termination** (Requirement 9.1)
-- **Load balancing**: Least connections algorithm
-- **Rate limiting** (Requirement 11.1)
+- **Automatic HTTPS** (Requirement 9.1)
+- **Load balancing**: Built-in reverse proxy
+- **Rate limiting**: Configurable via Caddyfile
 - **Health checks**: Automatic failover
 - **Caching**: Static assets cached for 1 year
-- **Compression**: Gzip enabled for text content
+- **Compression**: Gzip and Zstandard enabled
+- **HTTP/3 support**: QUIC protocol enabled by default
 
 ### Scaling
 
@@ -422,17 +436,7 @@ backend:
     replicas: 4 # Increase from 2 to 4
 ```
 
-Update Nginx upstream configuration:
-
-```nginx
-upstream backend_servers {
-    least_conn;
-    server backend:3000 max_fails=3 fail_timeout=30s;
-    server backend-2:3000 max_fails=3 fail_timeout=30s;
-    server backend-3:3000 max_fails=3 fail_timeout=30s;
-    server backend-4:3000 max_fails=3 fail_timeout=30s;
-}
-```
+Caddy automatically load balances to all available backend instances.
 
 ## Monitoring & Alerting (Requirement 10.5, 12.6)
 
@@ -458,11 +462,11 @@ docker-compose -f docker-compose.prod.yml logs -f
 # View specific service logs
 docker-compose -f docker-compose.prod.yml logs -f backend
 
-# View Nginx access logs
-tail -f logs/nginx/access.log
+# View Caddy access logs
+tail -f logs/caddy/access.log
 
-# View Nginx error logs
-tail -f logs/nginx/error.log
+# View Caddy container logs
+docker-compose -f docker-compose.prod.yml logs -f caddy
 ```
 
 ### Metrics
@@ -540,15 +544,23 @@ docker-compose -f docker-compose.prod.yml restart
 ### SSL Certificate Issues
 
 ```bash
+# Check certificate status
+docker-compose -f docker-compose.prod.yml exec caddy caddy list-certificates
+
+# View certificate files
+docker-compose -f docker-compose.prod.yml exec caddy ls -la /data/caddy/certificates/
+
 # Test certificate
 openssl s_client -connect yourdomain.com:443 -servername yourdomain.com
 
-# Renew certificate manually
-docker-compose -f docker-compose.prod.yml run --rm certbot renew
+# Reload Caddy configuration (triggers certificate check)
+docker-compose -f docker-compose.prod.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-# Check certificate expiry
-docker-compose -f docker-compose.prod.yml run --rm certbot certificates
+# View Caddy logs for certificate issues
+docker-compose -f docker-compose.prod.yml logs caddy | grep -i certificate
 ```
+
+**Note**: Caddy automatically renews certificates 30 days before expiry. No manual renewal is needed.
 
 ### Database Connection Issues
 

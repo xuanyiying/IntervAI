@@ -26,6 +26,28 @@
   pointer-events: none;
 }
 
+.glass-input-clear {
+  position: absolute;
+  right: var(--spacing-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  transition: all var(--duration-fast) ease;
+}
+
+.glass-input-clear:hover {
+  background: var(--glass-border);
+  color: var(--text-primary);
+}
+
 .glass-input,
 .glass-textarea {
   width: 100%;

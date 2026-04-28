@@ -21,7 +21,7 @@ docker-compose -f docker-compose.prod.yml down
 ```bash
 docker-compose -f docker-compose.prod.yml restart backend
 docker-compose -f docker-compose.prod.yml restart frontend
-docker-compose -f docker-compose.prod.yml restart nginx
+docker-compose -f docker-compose.prod.yml restart caddy
 ```
 
 ### View Service Status
@@ -54,7 +54,7 @@ docker-compose -f docker-compose.prod.yml logs -f
 docker-compose -f docker-compose.prod.yml logs -f backend
 docker-compose -f docker-compose.prod.yml logs -f postgres
 docker-compose -f docker-compose.prod.yml logs -f redis
-docker-compose -f docker-compose.prod.yml logs -f nginx
+docker-compose -f docker-compose.prod.yml logs -f caddy
 ```
 
 ### View Last N Lines
@@ -63,16 +63,16 @@ docker-compose -f docker-compose.prod.yml logs -f nginx
 docker-compose -f docker-compose.prod.yml logs --tail=100 backend
 ```
 
-### View Nginx Access Logs
+### View Caddy Access Logs
 
 ```bash
-tail -f logs/nginx/access.log
+tail -f logs/caddy/access.log
 ```
 
-### View Nginx Error Logs
+### View Caddy Container Logs
 
 ```bash
-tail -f logs/nginx/error.log
+docker-compose -f docker-compose.prod.yml logs -f caddy
 ```
 
 ## Database Operations
@@ -153,17 +153,16 @@ docker-compose -f docker-compose.prod.yml exec redis redis-cli -a ${REDIS_PASSWO
 
 ## SSL/TLS Operations
 
-### Renew SSL Certificate
+### Check Certificate Status
 
 ```bash
-docker-compose -f docker-compose.prod.yml run --rm certbot renew
-docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+docker-compose -f docker-compose.prod.yml exec caddy caddy list-certificates
 ```
 
-### Check Certificate Expiry
+### View Certificate Files
 
 ```bash
-docker-compose -f docker-compose.prod.yml run --rm certbot certificates
+docker-compose -f docker-compose.prod.yml exec caddy ls -la /data/caddy/certificates/
 ```
 
 ### Test SSL Configuration
@@ -172,11 +171,13 @@ docker-compose -f docker-compose.prod.yml run --rm certbot certificates
 openssl s_client -connect yourdomain.com:443 -servername yourdomain.com
 ```
 
-### Force Certificate Renewal
+### Reload Caddy Configuration
 
 ```bash
-docker-compose -f docker-compose.prod.yml run --rm certbot renew --force-renewal
+docker-compose -f docker-compose.prod.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 ```
+
+**Note**: Caddy automatically renews SSL certificates 30 days before expiry. Manual renewal is not required.
 
 ## Health Checks
 
@@ -204,10 +205,10 @@ docker-compose -f docker-compose.prod.yml exec postgres pg_isready -U interview_
 docker-compose -f docker-compose.prod.yml exec redis redis-cli -a ${REDIS_PASSWORD} ping
 ```
 
-### Nginx Health
+### Caddy Health
 
 ```bash
-docker-compose -f docker-compose.prod.yml exec nginx nginx -t
+docker-compose -f docker-compose.prod.yml exec caddy caddy validate --config /etc/caddy/Caddyfile
 ```
 
 ## Performance Monitoring
@@ -285,17 +286,20 @@ docker-compose -f docker-compose.prod.yml exec postgres psql -U interview_ai_pro
 docker-compose -f docker-compose.prod.yml restart postgres
 ```
 
-### Nginx Configuration Issues
+### Caddy Configuration Issues
 
 ```bash
-# Test configuration
-docker-compose -f docker-compose.prod.yml exec nginx nginx -t
+# Validate configuration
+docker-compose -f docker-compose.prod.yml exec caddy caddy validate --config /etc/caddy/Caddyfile
 
 # Reload configuration
-docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+docker-compose -f docker-compose.prod.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-# View error logs
-docker-compose -f docker-compose.prod.yml logs nginx
+# View logs
+docker-compose -f docker-compose.prod.yml logs caddy
+
+# Format Caddyfile
+docker-compose -f docker-compose.prod.yml exec caddy caddy fmt --overwrite /etc/caddy/Caddyfile
 ```
 
 ## Updates & Maintenance
@@ -456,8 +460,8 @@ docker-compose -f docker-compose.prod.yml exec redis redis-cli -a ${REDIS_PASSWO
 ### Request Rate
 
 ```bash
-# Requests per minute
-tail -n 1000 logs/nginx/access.log | wc -l
+# Requests per minute (Caddy logs are JSON format)
+tail -n 1000 logs/caddy/access.log | wc -l
 ```
 
 ## Emergency Procedures
