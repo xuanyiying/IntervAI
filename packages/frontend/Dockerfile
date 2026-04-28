@@ -37,14 +37,23 @@ COPY turbo.json turbo.json
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 RUN cd packages/frontend && pnpm run build
 
-# Stage 3: Runtime
-FROM nginx:alpine
-COPY --from=builder /app/packages/frontend/dist /usr/share/nginx/html
-COPY packages/frontend/nginx.conf /etc/nginx/nginx.conf
+# Stage 3: Export static files
+# This stage creates a minimal image that only contains the built static files
+# The static files will be served by Caddy, not by this container
+FROM alpine:latest
+WORKDIR /app
 
-EXPOSE 80
+# Copy built files from builder
+COPY --from=builder /app/packages/frontend/dist ./dist
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/health || exit 1
+# Create a simple health check script
+RUN echo '#!/bin/sh' > /health.sh && \
+    echo 'exit 0' >> /health.sh && \
+    chmod +x /health.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+# This container doesn't serve files - Caddy will mount and serve them
+# We keep this container running just to hold the built files
+CMD ["tail", "-f", "/dev/null"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD /health.sh
