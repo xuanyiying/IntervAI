@@ -31,7 +31,7 @@ export const Input: React.FC<InputProps> = ({
           className={`glass-input ${error ? 'glass-input-error' : ''} ${icon ? 'glass-input-with-icon' : ''}`}
           {...props}
         />
-        {allowClear && props.value && (props.value as string) && isHovered && (
+        {allowClear && props.value && isHovered && (
           <button 
             className="glass-input-clear"
             onClick={(e) => {
