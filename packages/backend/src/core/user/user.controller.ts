@@ -217,21 +217,7 @@ export class UserController {
       throw new UnauthorizedException('User ID required');
     }
 
-    console.log('🚀 [DEBUG] HIT GET_CURRENT_USER ENDPOINT');
     const user = await this.userService.findById(userId);
-    console.log(
-      '🔍 [User Controller] User from database:',
-      JSON.stringify(
-        {
-          userId: user?.id,
-          email: user?.email,
-          role: user?.role,
-          roleType: typeof user?.role,
-        },
-        null,
-        2
-      )
-    );
     return {
       id: user.id,
       email: user.email,
@@ -376,6 +362,47 @@ export class UserController {
 @Controller('user')
 export class UserHistoryController {
   constructor(private readonly userService: UserService) {}
+
+  @Put('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @Request() req: any,
+    @Body() body: { username?: string; avatar?: string; bio?: string; phone?: string }
+  ) {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    return this.userService.updateProfile(userId, body);
+  }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Current password is incorrect' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async changePassword(
+    @Request() req: any,
+    @Body() body: { currentPassword: string; newPassword: string }
+  ): Promise<{ message: string }> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+    await this.userService.changePassword(
+      userId,
+      body.currentPassword,
+      body.newPassword
+    );
+    return { message: 'Password changed successfully' };
+  }
 
   @Get('history')
   @UseGuards(JwtAuthGuard)

@@ -12,8 +12,8 @@ import {
 import { InterviewerPersonaService } from './services/interviewer-persona.service';
 import { CreatePersonaDto, UpdatePersonaDto } from './dto/persona.dto';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
-import { RolesGuard } from '@/core/user/guards/roles.guard';
-import { Roles } from '@/core/user/decorators/roles.decorator';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/guards/roles.decorator';
 import { Role } from '@prisma/client';
 
 @Controller('interviewer-personas')

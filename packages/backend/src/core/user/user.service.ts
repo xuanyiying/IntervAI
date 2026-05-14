@@ -3,8 +3,9 @@ import { ErrorCode } from '@/common/exceptions/error-codes';
 import { ResourceNotFoundException } from '@/common/exceptions/resource-not-found.exception';
 import { RedisService } from '@/shared/cache/redis.service';
 import { PrismaService } from '@/shared/database/prisma.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { SubscriptionTier, User } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserService {
@@ -19,7 +20,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService
-  ) {}
+  ) { }
 
   /**
    * Delete user account
@@ -85,19 +86,6 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    console.log(
-      '🔍 [User Service] User from database:',
-      JSON.stringify(
-        {
-          userId: user?.id,
-          email: user?.email,
-          role: user?.role,
-          roleType: typeof user?.role,
-        },
-        null,
-        2
-      )
-    );
     if (!user) {
       throw new ResourceNotFoundException(
         ErrorCode.USER_NOT_FOUND,
@@ -322,5 +310,53 @@ export class UserService {
       recentConversations: conversations,
       recentInterviews: interviewSessions,
     };
+  }
+
+  async updateProfile(
+    userId: string,
+    data: { username?: string; avatar?: string; bio?: string; phone?: string }
+  ): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.username !== undefined && { username: data.username }),
+        ...(data.avatar !== undefined && { avatarUrl: data.avatar }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+      },
+    });
+
+    await this.cleanUserCache(userId);
+    return updated;
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found');
+    }
+
+    if (!user.passwordHash) {
+      throw new BadRequestException('OAuth accounts cannot change password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: hashedPassword },
+    });
   }
 }

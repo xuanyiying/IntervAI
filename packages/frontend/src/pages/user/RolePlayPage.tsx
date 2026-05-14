@@ -88,7 +88,7 @@ const RolePlayPage: React.FC = () => {
       success('面试会话已创建');
       navigate(`/interview/${result.sessionId}`);
     } catch (err) {
-      const axiosError = err as AxiosError;
+      const axiosError = err as AxiosError<any>;
       error(axiosError.response?.data?.message || '启动失败，请重试');
     } finally {
       setLoading(false);
@@ -181,7 +181,7 @@ const RolePlayPage: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                            {currentResume.fileName || '简历文件'}
+                            {currentResume.title || currentResume.originalFilename || '简历文件'}
                           </p>
                           <p className="text-xs text-[var(--text-tertiary)]">
                             已上传
