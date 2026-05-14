@@ -19,8 +19,15 @@ export class ResumeAIService {
   // LLMs may return alternative field names; these maps normalize them.
   // When adding a new known alias, just append to the array.
   private static readonly SKILL_CATEGORIES = [
-    'technical', 'soft', 'languages', 'tools', 'frameworks',
-    'databases', 'devops', 'methodologies', 'other',
+    'technical',
+    'soft',
+    'languages',
+    'tools',
+    'frameworks',
+    'databases',
+    'devops',
+    'methodologies',
+    'other',
   ] as const;
 
   private static readonly EXPERIENCE_ALIASES: Record<string, string[]> = {
@@ -52,13 +59,32 @@ export class ResumeAIService {
 
   // Scoring rules for resume analysis — easy to tune without touching logic
   private static readonly SCORING = {
-    summary:     { present: 15, minLength: 50 },
-    skills:      { high: { threshold: 8, score: 15 }, mid: { threshold: 4, score: 8 } },
-    experience:  { high: { threshold: 3, score: 15 }, mid: { threshold: 1, score: 8 } },
-    achievements: { quantified: 10, pattern: /\d+%|\d+x|\$\d|\d+ (users|customers|projects|team)/i },
-    education:   { present: 10, advanced: 5, advancedPattern: /硕士|master|phd|博士/i },
-    projects:    { high: { threshold: 2, score: 10 }, mid: { threshold: 1, score: 5 } },
-    contact:     { complete: 10, requiredFields: ['email', 'phone', 'location'] as const },
+    summary: { present: 15, minLength: 50 },
+    skills: {
+      high: { threshold: 8, score: 15 },
+      mid: { threshold: 4, score: 8 },
+    },
+    experience: {
+      high: { threshold: 3, score: 15 },
+      mid: { threshold: 1, score: 8 },
+    },
+    achievements: {
+      quantified: 10,
+      pattern: /\d+%|\d+x|\$\d|\d+ (users|customers|projects|team)/i,
+    },
+    education: {
+      present: 10,
+      advanced: 5,
+      advancedPattern: /硕士|master|phd|博士/i,
+    },
+    projects: {
+      high: { threshold: 2, score: 10 },
+      mid: { threshold: 1, score: 5 },
+    },
+    contact: {
+      complete: 10,
+      requiredFields: ['email', 'phone', 'location'] as const,
+    },
     certifications: { perItem: 5 },
     contextSummary: { present: 5 },
     maxScore: 100,
@@ -84,17 +110,25 @@ export class ResumeAIService {
           this.logger.warn(
             `Retry ${attempt}/${this.maxRetries} for skill "${skillName}" after ${delay}ms`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        const result = await this.aiService.executeSkill(skillName, inputs, userId);
+        const result = await this.aiService.executeSkill(
+          skillName,
+          inputs,
+          userId
+        );
 
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
-          const errorMessage = result.error?.message || 'Skill execution failed';
+          const errorMessage =
+            result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
-          if (this.isTransientError(errorCode) && attempt < this.maxRetries - 1) {
+          if (
+            this.isTransientError(errorCode) &&
+            attempt < this.maxRetries - 1
+          ) {
             continue;
           }
 
@@ -128,7 +162,10 @@ export class ResumeAIService {
           try {
             return await options.fallback();
           } catch (fallbackError) {
-            this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+            this.logger.error(
+              `Fallback also failed for skill "${skillName}":`,
+              fallbackError
+            );
             throw lastError;
           }
         }
@@ -141,7 +178,10 @@ export class ResumeAIService {
       try {
         return await options.fallback();
       } catch (fallbackError) {
-        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+        this.logger.error(
+          `Fallback also failed for skill "${skillName}":`,
+          fallbackError
+        );
         throw lastError;
       }
     }
@@ -168,7 +208,7 @@ export class ResumeAIService {
       /ETIMEDOUT/i,
       /fetch failed/i,
       /socket hang up/i,
-    ].some(pattern => pattern.test(error.message));
+    ].some((pattern) => pattern.test(error.message));
   }
 
   // ── Smart extraction (post-processing correction) ──
@@ -177,12 +217,24 @@ export class ResumeAIService {
    * Resolve a field value from an object, trying the primary key first,
    * then each alias in order. Returns the first truthy value found.
    */
-  private resolveField(obj: Record<string, any>, primary: string, aliases: readonly string[]): any {
-    if (obj[primary] !== undefined && obj[primary] !== null && obj[primary] !== '') {
+  private resolveField(
+    obj: Record<string, any>,
+    primary: string,
+    aliases: readonly string[]
+  ): any {
+    if (
+      obj[primary] !== undefined &&
+      obj[primary] !== null &&
+      obj[primary] !== ''
+    ) {
       return obj[primary];
     }
     for (const alias of aliases) {
-      if (obj[alias] !== undefined && obj[alias] !== null && obj[alias] !== '') {
+      if (
+        obj[alias] !== undefined &&
+        obj[alias] !== null &&
+        obj[alias] !== ''
+      ) {
         return obj[alias];
       }
     }
@@ -197,7 +249,7 @@ export class ResumeAIService {
    */
   private correctPersonalInfo(
     info: { name: string; email: string; phone: string; location: string },
-    ctx: string,
+    ctx: string
   ): typeof info | null {
     let changed = false;
     const result = { ...info };
@@ -216,7 +268,9 @@ export class ResumeAIService {
 
     // Email
     if (!result.email) {
-      const emailMatch = ctx.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/);
+      const emailMatch = ctx.match(
+        /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/
+      );
       if (emailMatch?.[0]) {
         result.email = emailMatch[0];
         changed = true;
@@ -252,8 +306,15 @@ export class ResumeAIService {
     if (!trimmed) return true;
 
     // Short generic nouns that are never real names
-    const genericTitles = ['简历', '个人简历', 'Resume', 'CV', 'Curriculum Vitae'];
-    if (genericTitles.some(t => trimmed.toLowerCase() === t.toLowerCase())) return true;
+    const genericTitles = [
+      '简历',
+      '个人简历',
+      'Resume',
+      'CV',
+      'Curriculum Vitae',
+    ];
+    if (genericTitles.some((t) => trimmed.toLowerCase() === t.toLowerCase()))
+      return true;
 
     // Too long for a name (most names are under 20 chars)
     if (trimmed.length > 20) return true;
@@ -265,7 +326,8 @@ export class ResumeAIService {
     if (/[/\\|—–\-–_]/.test(trimmed)) return true;
 
     // ALL CAPS English longer than 2 words (e.g. "CURRICULUM VITAE")
-    if (/^[A-Z\s]+$/.test(trimmed) && trimmed.split(/\s+/).length > 2) return true;
+    if (/^[A-Z\s]+$/.test(trimmed) && trimmed.split(/\s+/).length > 2)
+      return true;
 
     return false;
   }
@@ -286,16 +348,20 @@ export class ResumeAIService {
         userId,
         {
           fallback: async () => {
-            this.logger.warn('Using basic parsing as fallback for resume content');
+            this.logger.warn(
+              'Using basic parsing as fallback for resume content'
+            );
             return this.basicParseResume(content);
-          }
+          },
         }
       );
 
       return this.normalizeSkillResult(data);
     } catch (error) {
       this.logger.error('Error parsing resume via skill:', error);
-      throw new Error(`Failed to parse resume content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to parse resume content: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -323,7 +389,10 @@ export class ResumeAIService {
 
       parsedData = this.normalizeSkillResult(parseResult);
     } catch (error) {
-      this.logger.warn('Resume parsing failed, falling back to basic parse:', error);
+      this.logger.warn(
+        'Resume parsing failed, falling back to basic parse:',
+        error
+      );
       parsedData = this.basicParseResume(content);
     }
 
@@ -347,7 +416,10 @@ export class ResumeAIService {
             : JSON.stringify(writerResult, null, 2);
       }
     } catch (error) {
-      this.logger.warn('Resume optimization failed, continuing with parsed data only:', error);
+      this.logger.warn(
+        'Resume optimization failed, continuing with parsed data only:',
+        error
+      );
     }
 
     return { parsedData, optimizedContent };
@@ -374,57 +446,76 @@ export class ResumeAIService {
     let score = 0;
 
     // ── Summary ──
-    if (parsedData.summary && parsedData.summary.length >= S.summary.minLength) {
+    if (
+      parsedData.summary &&
+      parsedData.summary.length >= S.summary.minLength
+    ) {
       strengths.push('Professional summary is present and substantive');
       score += S.summary.present;
     } else {
       weaknesses.push('Professional summary is missing or too brief');
-      suggestions.push('Add a compelling professional summary (50-200 characters) that highlights your core value');
+      suggestions.push(
+        'Add a compelling professional summary (50-200 characters) that highlights your core value'
+      );
     }
 
     // ── Skills ──
     const skills = parsedData.skills || [];
     if (skills.length >= S.skills.high.threshold) {
-      strengths.push(`Strong technical skill set with ${skills.length} skills listed`);
+      strengths.push(
+        `Strong technical skill set with ${skills.length} skills listed`
+      );
       score += S.skills.high.score;
     } else if (skills.length >= S.skills.mid.threshold) {
       score += S.skills.mid.score;
-      suggestions.push('Consider adding more relevant skills to strengthen your profile');
+      suggestions.push(
+        'Consider adding more relevant skills to strengthen your profile'
+      );
     } else {
       weaknesses.push('Limited skill diversity — few skills listed');
-      suggestions.push('Add relevant technical and soft skills that match your target roles');
+      suggestions.push(
+        'Add relevant technical and soft skills that match your target roles'
+      );
     }
 
     // ── Experience ──
     const experience = parsedData.experience || [];
     if (experience.length >= S.experience.high.threshold) {
-      strengths.push(`Substantial work experience with ${experience.length} positions`);
+      strengths.push(
+        `Substantial work experience with ${experience.length} positions`
+      );
       score += S.experience.high.score;
     } else if (experience.length >= S.experience.mid.threshold) {
       score += S.experience.mid.score;
-      suggestions.push('Consider adding more work experience entries if available');
+      suggestions.push(
+        'Consider adding more work experience entries if available'
+      );
     } else {
       weaknesses.push('No work experience listed');
-      suggestions.push('Add internships, part-time roles, or volunteer experience');
+      suggestions.push(
+        'Add internships, part-time roles, or volunteer experience'
+      );
     }
 
     // Quantified achievements
-    const hasQuantifiedAchievements = experience.some(exp =>
-      (exp.achievements || []).some(a => S.achievements.pattern.test(a))
+    const hasQuantifiedAchievements = experience.some((exp) =>
+      (exp.achievements || []).some((a) => S.achievements.pattern.test(a))
     );
     if (hasQuantifiedAchievements) {
       strengths.push('Experience includes quantified achievements and metrics');
       score += S.achievements.quantified;
     } else {
       weaknesses.push('Work experience lacks quantified achievements');
-      suggestions.push('Add specific numbers and metrics to your achievements (e.g., "increased revenue by 30%")');
+      suggestions.push(
+        'Add specific numbers and metrics to your achievements (e.g., "increased revenue by 30%")'
+      );
     }
 
     // ── Education ──
     const education = parsedData.education || [];
     if (education.length > 0) {
       score += S.education.present;
-      if (education.some(e => S.education.advancedPattern.test(e.degree))) {
+      if (education.some((e) => S.education.advancedPattern.test(e.degree))) {
         strengths.push('Advanced degree strengthens academic credentials');
         score += S.education.advanced;
       }
@@ -436,19 +527,27 @@ export class ResumeAIService {
     // ── Projects ──
     const projects = parsedData.projects || [];
     if (projects.length >= S.projects.high.threshold) {
-      strengths.push(`${projects.length} project entries demonstrate hands-on experience`);
+      strengths.push(
+        `${projects.length} project entries demonstrate hands-on experience`
+      );
       score += S.projects.high.score;
     } else if (projects.length >= S.projects.mid.threshold) {
       score += S.projects.mid.score;
-      suggestions.push('Adding more project examples can showcase a broader skill set');
+      suggestions.push(
+        'Adding more project examples can showcase a broader skill set'
+      );
     } else {
       weaknesses.push('No project experience listed');
-      suggestions.push('Add personal or professional projects to demonstrate practical skills');
+      suggestions.push(
+        'Add personal or professional projects to demonstrate practical skills'
+      );
     }
 
     // ── Personal Info completeness ──
-    const pi = parsedData.personalInfo || {} as any;
-    const filledContactFields = S.contact.requiredFields.filter(f => pi[f]).length;
+    const pi = parsedData.personalInfo || ({} as any);
+    const filledContactFields = S.contact.requiredFields.filter(
+      (f) => pi[f]
+    ).length;
     if (filledContactFields >= S.contact.requiredFields.length) {
       score += S.contact.complete;
     } else {
@@ -458,7 +557,9 @@ export class ResumeAIService {
 
     // ── Certifications ──
     if (parsedData.certifications && parsedData.certifications.length > 0) {
-      strengths.push(`${parsedData.certifications.length} certification(s) add professional credibility`);
+      strengths.push(
+        `${parsedData.certifications.length} certification(s) add professional credibility`
+      );
       score += S.certifications.perItem;
     }
 
@@ -467,7 +568,12 @@ export class ResumeAIService {
       score += S.contextSummary.present;
     }
 
-    return { strengths, weaknesses, suggestions, overallScore: Math.min(S.maxScore, score) };
+    return {
+      strengths,
+      weaknesses,
+      suggestions,
+      overallScore: Math.min(S.maxScore, score),
+    };
   }
 
   /**
@@ -493,7 +599,9 @@ export class ResumeAIService {
       return typeof data === 'string' ? data : JSON.stringify(data, null, 2);
     } catch (error) {
       this.logger.error('Error optimizing resume content:', error);
-      throw new Error(`Failed to optimize resume content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to optimize resume content: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -505,7 +613,9 @@ export class ResumeAIService {
     jobDescription: string,
     userId: string
   ): Promise<OptimizationSuggestion[]> {
-    this.logger.log('Generating JD-based optimization suggestions via resume-writer skill');
+    this.logger.log(
+      'Generating JD-based optimization suggestions via resume-writer skill'
+    );
 
     try {
       const data = await this.executeSkillWithRetry(
@@ -521,7 +631,7 @@ export class ResumeAIService {
           fallback: async () => {
             this.logger.warn('Using basic JD-based suggestions as fallback');
             return this.generateBasicJDSuggestions();
-          }
+          },
         }
       );
 
@@ -546,14 +656,19 @@ export class ResumeAIService {
       }));
     } catch (error) {
       this.logger.error('Error generating optimization suggestions:', error);
-      throw new Error(`Failed to generate optimization suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to generate optimization suggestions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
   // ---- Fallback methods ----
 
   private basicParseResume(content: string): ParsedResumeData {
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    const lines = content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
 
     return {
       personalInfo: {
@@ -563,7 +678,7 @@ export class ResumeAIService {
         location: '',
         linkedin: '',
         github: '',
-        website: ''
+        website: '',
       },
       summary: lines.slice(1, 3).join(' ') || '',
       skills: [],
@@ -571,21 +686,24 @@ export class ResumeAIService {
       education: [],
       projects: [],
       certifications: [],
-      languages: []
+      languages: [],
     };
   }
 
   private generateBasicJDSuggestions(): OptimizationSuggestion[] {
-    return [{
-      id: `sug_${Date.now()}_jd_0`,
-      type: SuggestionType.CONTENT,
-      section: 'summary',
-      itemIndex: 0,
-      original: '',
-      optimized: 'Tailor your summary to match the key requirements from the job description',
-      reason: 'Align your professional summary with job requirements',
-      status: SuggestionStatus.PENDING
-    }];
+    return [
+      {
+        id: `sug_${Date.now()}_jd_0`,
+        type: SuggestionType.CONTENT,
+        section: 'summary',
+        itemIndex: 0,
+        original: '',
+        optimized:
+          'Tailor your summary to match the key requirements from the job description',
+        reason: 'Align your professional summary with job requirements',
+        status: SuggestionStatus.PENDING,
+      },
+    ];
   }
 
   private normalizeSkillResult(data: any): ParsedResumeData {
@@ -601,7 +719,10 @@ export class ResumeAIService {
     const normalized: any = { ...data };
 
     // ── personalInfo ──
-    if (!normalized.personalInfo || typeof normalized.personalInfo !== 'object') {
+    if (
+      !normalized.personalInfo ||
+      typeof normalized.personalInfo !== 'object'
+    ) {
       normalized.personalInfo = {};
     }
     const pi = normalized.personalInfo;
@@ -640,7 +761,9 @@ export class ResumeAIService {
     normalized.projects = this.normalizeProjects(normalized.projects);
 
     // ── certifications ──
-    normalized.certifications = this.normalizeCertifications(normalized.certifications);
+    normalized.certifications = this.normalizeCertifications(
+      normalized.certifications
+    );
 
     // ── languages ──
     normalized.languages = this.normalizeLanguages(normalized.languages);
@@ -656,8 +779,9 @@ export class ResumeAIService {
   private normalizeSkills(skills: any): string[] {
     if (Array.isArray(skills)) return skills;
     if (skills && typeof skills === 'object') {
-      return ResumeAIService.SKILL_CATEGORIES
-        .flatMap(cat => Array.isArray(skills[cat]) ? skills[cat] : []);
+      return ResumeAIService.SKILL_CATEGORIES.flatMap((cat) =>
+        Array.isArray(skills[cat]) ? skills[cat] : []
+      );
     }
     return [];
   }
@@ -673,7 +797,11 @@ export class ResumeAIService {
       let endDate: string | undefined;
       if (exp.endDate && exp.endDate !== '至今' && exp.endDate !== 'present') {
         endDate = exp.endDate;
-      } else if (exp.current === true || exp.endDate === '至今' || exp.endDate === 'present') {
+      } else if (
+        exp.current === true ||
+        exp.endDate === '至今' ||
+        exp.endDate === 'present'
+      ) {
         endDate = undefined;
       } else {
         endDate = '';
@@ -681,8 +809,11 @@ export class ResumeAIService {
 
       // description: array of strings, may come from aliases
       const descRaw = this.resolveField(exp, 'description', A.description);
-      const description = Array.isArray(descRaw) ? descRaw
-        : typeof descRaw === 'string' ? [descRaw] : [];
+      const description = Array.isArray(descRaw)
+        ? descRaw
+        : typeof descRaw === 'string'
+          ? [descRaw]
+          : [];
 
       // achievements: also has aliases
       const achRaw = this.resolveField(exp, 'achievements', A.achievements);
@@ -717,8 +848,11 @@ export class ResumeAIService {
   private normalizeProjects(projects: any): any[] {
     if (!Array.isArray(projects)) return [];
     return projects.map((proj: any) => {
-      const highlights = Array.isArray(proj.highlights) ? proj.highlights
-        : Array.isArray(proj.achievements) ? proj.achievements : [];
+      const highlights = Array.isArray(proj.highlights)
+        ? proj.highlights
+        : Array.isArray(proj.achievements)
+          ? proj.achievements
+          : [];
       return {
         name: proj.name || '',
         description: proj.description || '',
@@ -736,7 +870,13 @@ export class ResumeAIService {
     const A = ResumeAIService.CERT_ALIASES;
     return certifications.map((cert: any) => {
       if (typeof cert === 'string') {
-        return { name: cert, issuer: '', date: '', expiryDate: '', credentialId: '' };
+        return {
+          name: cert,
+          issuer: '',
+          date: '',
+          expiryDate: '',
+          credentialId: '',
+        };
       }
       return {
         name: cert.name || '',

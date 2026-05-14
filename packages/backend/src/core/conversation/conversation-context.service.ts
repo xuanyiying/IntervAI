@@ -44,7 +44,7 @@ export class ConversationContextService {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly promptService: PromptService
-  ) { }
+  ) {}
 
   async buildContext(
     conversationId: string,
@@ -222,10 +222,23 @@ Current context:`;
     } else {
       // Fallback: basic keyword matching for conversations without a resume
       const fallbackKeywords = [
-        'JavaScript', 'Python', 'Java', 'React', 'Node.js',
-        'TypeScript', 'SQL', 'AWS', 'Docker', 'Kubernetes',
-        'Git', 'MongoDB', 'PostgreSQL', 'GraphQL', 'REST',
-        'Agile', 'Scrum',
+        'JavaScript',
+        'Python',
+        'Java',
+        'React',
+        'Node.js',
+        'TypeScript',
+        'SQL',
+        'AWS',
+        'Docker',
+        'Kubernetes',
+        'Git',
+        'MongoDB',
+        'PostgreSQL',
+        'GraphQL',
+        'REST',
+        'Agile',
+        'Scrum',
       ];
       fallbackKeywords.forEach((skill) => {
         if (userMessages.toLowerCase().includes(skill.toLowerCase())) {
@@ -238,17 +251,19 @@ Current context:`;
     if (resumeData?.experience && resumeData.experience.length > 0) {
       resumeData.experience.forEach((exp) => {
         const expSummary = `${exp.position} @ ${exp.company}`;
-        if (userMessages.toLowerCase().includes(exp.company.toLowerCase()) ||
-            userMessages.toLowerCase().includes(exp.position.toLowerCase())) {
+        if (
+          userMessages.toLowerCase().includes(exp.company.toLowerCase()) ||
+          userMessages.toLowerCase().includes(exp.position.toLowerCase())
+        ) {
           entities.experiences.push(expSummary);
         }
       });
       // Seed with top experiences if none mentioned
       if (entities.experiences.length === 0) {
         entities.experiences.push(
-          ...resumeData.experience.slice(0, 3).map(
-            (exp) => `${exp.position} @ ${exp.company}`
-          )
+          ...resumeData.experience
+            .slice(0, 3)
+            .map((exp) => `${exp.position} @ ${exp.company}`)
         );
       }
     }
@@ -503,8 +518,8 @@ Current context:`;
 
     const baseMetadata =
       latestMessage.metadata &&
-        typeof latestMessage.metadata === 'object' &&
-        !Array.isArray(latestMessage.metadata)
+      typeof latestMessage.metadata === 'object' &&
+      !Array.isArray(latestMessage.metadata)
         ? (latestMessage.metadata as Record<string, unknown>)
         : {};
 

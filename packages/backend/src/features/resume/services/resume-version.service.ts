@@ -5,7 +5,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 export class ResumeVersionService {
   private readonly logger = new Logger(ResumeVersionService.name);
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async createVersion(
     resumeId: string,
@@ -37,7 +37,9 @@ export class ResumeVersionService {
       data: { currentVersionId: version.id },
     });
 
-    this.logger.log(`Created resume version ${newVersion} for resume ${resumeId}`);
+    this.logger.log(
+      `Created resume version ${newVersion} for resume ${resumeId}`
+    );
     return version;
   }
 
@@ -110,7 +112,9 @@ export class ResumeVersionService {
       },
     });
 
-    this.logger.log(`Restored resume ${resumeId} to version ${version.version}`);
+    this.logger.log(
+      `Restored resume ${resumeId} to version ${version.version}`
+    );
     return version;
   }
 
@@ -128,7 +132,7 @@ export class ResumeVersionService {
       throw new NotFoundException('No current version found');
     }
 
-    let updatedData: any = {
+    const updatedData: any = {
       personalInfo: currentVersion.personalInfo,
       summary: currentVersion.summary,
       education: currentVersion.education
@@ -159,7 +163,10 @@ export class ResumeVersionService {
             exp.description &&
             exp.description.includes(sug.original)
           ) {
-            exp.description = exp.description.replace(sug.original, sug.optimized);
+            exp.description = exp.description.replace(
+              sug.original,
+              sug.optimized
+            );
           }
         }
       } else if (sug.section === 'projects' && sug.itemIndex !== undefined) {
@@ -173,7 +180,10 @@ export class ResumeVersionService {
             proj.description &&
             proj.description.includes(sug.original)
           ) {
-            proj.description = proj.description.replace(sug.original, sug.optimized);
+            proj.description = proj.description.replace(
+              sug.original,
+              sug.optimized
+            );
           }
         }
       } else if (sug.section === 'skills') {

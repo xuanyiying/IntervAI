@@ -23,10 +23,14 @@ export class AIEngine {
   constructor(
     private aiService: AIService,
     private configService: ConfigService
-  ) { }
+  ) {}
 
   private get aiModel(): string {
-    return this.aiService.getModel() || this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+    return (
+      this.aiService.getModel() ||
+      this.configService.get('AI_MODEL') ||
+      'openrouter:deepseek/deepseek-chat'
+    );
   }
 
   /**
@@ -47,17 +51,25 @@ export class AIEngine {
           this.logger.warn(
             `Retry ${attempt}/${this.maxRetries} for skill "${skillName}" after ${delay}ms`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        const result = await this.aiService.executeSkill(skillName, inputs, userId);
+        const result = await this.aiService.executeSkill(
+          skillName,
+          inputs,
+          userId
+        );
 
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
-          const errorMessage = result.error?.message || 'Skill execution failed';
+          const errorMessage =
+            result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
-          if (this.isTransientError(errorCode) && attempt < this.maxRetries - 1) {
+          if (
+            this.isTransientError(errorCode) &&
+            attempt < this.maxRetries - 1
+          ) {
             this.logger.warn(
               `Skill "${skillName}" transient error (attempt ${attempt + 1}/${this.maxRetries}): ${errorMessage}`
             );
@@ -109,7 +121,10 @@ export class AIEngine {
           try {
             return await options.fallback();
           } catch (fallbackError) {
-            this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+            this.logger.error(
+              `Fallback also failed for skill "${skillName}":`,
+              fallbackError
+            );
             throw lastError;
           }
         }
@@ -125,7 +140,10 @@ export class AIEngine {
       try {
         return await options.fallback();
       } catch (fallbackError) {
-        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+        this.logger.error(
+          `Fallback also failed for skill "${skillName}":`,
+          fallbackError
+        );
         throw lastError;
       }
     }
@@ -154,7 +172,7 @@ export class AIEngine {
       /fetch failed/i,
       /socket hang up/i,
     ];
-    return networkPatterns.some(pattern => pattern.test(error.message));
+    return networkPatterns.some((pattern) => pattern.test(error.message));
   }
 
   // ==================== Generic AI ====================

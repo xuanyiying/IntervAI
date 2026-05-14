@@ -1,5 +1,6 @@
 import { FeatureGuideCard } from '@/components/FeatureGuideCard/FeatureGuideCard';
 import StreamingMarkdownBubble from '@/components/StreamingMarkdownBubble';
+import VoiceInterviewCall from '@/components/VoiceInterviewCall';
 import { Badge, Button, GlassCard, Modal, Select, Tabs, Text, TextArea, Title, useToast } from '@/components/ui';
 import { useInterviewSocket } from '@/hooks/useInterviewSocket';
 import '@/styles/agents.css';
@@ -327,13 +328,20 @@ const InterviewPage: React.FC = () => {
         attempts++;
         const updatedSession = await interviewService.getSession(sessionId);
         if (
-          updatedSession.status === 'EVALUATED' ||
-          (updatedSession.status === 'COMPLETED' && updatedSession.feedback)
+          updatedSession.status === 'COMPLETED' &&
+          (updatedSession.feedback || updatedSession.score != null)
         ) {
           clearInterval(pollInterval);
           setFeedbackData({
             score: updatedSession.score || 0,
             content: updatedSession.feedback || '暂无反馈',
+          });
+          setFeedbackModalVisible(true);
+        } else if (updatedSession.status === 'COMPLETED' && !updatedSession.feedback && attempts >= 10) {
+          clearInterval(pollInterval);
+          setFeedbackData({
+            score: updatedSession.score || 0,
+            content: updatedSession.feedback || '反馈生成中，请稍后在历史记录中查看',
           });
           setFeedbackModalVisible(true);
         } else if (attempts >= maxAttempts) {
@@ -342,7 +350,9 @@ const InterviewPage: React.FC = () => {
           navigate('/dashboard');
         }
       } catch (e) {
-        clearInterval(pollInterval);
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+        }
       }
     }, 2000);
   };
@@ -477,7 +487,7 @@ const InterviewPage: React.FC = () => {
                   size="lg"
                   className="w-full"
                   onClick={() => setCurrentStep(1)}
-                  disabled={interviewMode === 'mock' && !selectedPersonaId}
+                  disabled={interviewMode === 'mock' && !optimizationId && !resolvedOptimizationId}
                 >
                   开始面试
                 </Button>
@@ -583,19 +593,21 @@ const InterviewPage: React.FC = () => {
         </div>
       )}
 
-      <Modal
-        open={isVoiceCallActive}
-        onClose={() => setIsVoiceCallActive(false)}
-        title="语音通话设置"
-        width={600}
-      >
-        <p className="text-[var(--text-secondary)]">语音通话功能（待实现）</p>
-        <div className="flex justify-end mt-6">
-          <Button variant="primary" onClick={() => setIsVoiceCallActive(false)}>
-            关闭
-          </Button>
-        </div>
-      </Modal>
+      {isVoiceCallActive && session && (
+        <Modal
+          open={isVoiceCallActive}
+          onClose={() => setIsVoiceCallActive(false)}
+          title="语音通话"
+          width={640}
+          footer={null}
+        >
+          <VoiceInterviewCall
+            sessionId={session.id}
+            voiceId={selectedVoiceId}
+            onClose={() => setIsVoiceCallActive(false)}
+          />
+        </Modal>
+      )}
 
       <Modal
         open={feedbackModalVisible}

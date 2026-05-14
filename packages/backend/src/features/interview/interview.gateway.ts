@@ -164,11 +164,17 @@ export class InterviewGateway
     this.rateLimiters.set(client.id, Date.now());
 
     try {
-      const buffer = Buffer.isBuffer(data.audioBuffer)
-        ? data.audioBuffer
-        : Buffer.from(data.audioBuffer);
-
+      const accumulatedChunks = this.audioBuffers.get(data.sessionId) || [];
       this.audioBuffers.delete(data.sessionId);
+
+      let buffer: Buffer;
+      if (accumulatedChunks.length > 0) {
+        buffer = Buffer.concat(accumulatedChunks);
+      } else {
+        buffer = Buffer.isBuffer(data.audioBuffer)
+          ? data.audioBuffer
+          : Buffer.from(data.audioBuffer);
+      }
 
       const storageFile = await this.storageService.uploadFile({
         userId,

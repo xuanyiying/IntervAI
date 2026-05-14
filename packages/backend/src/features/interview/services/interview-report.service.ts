@@ -67,7 +67,7 @@ export class InterviewReportService {
     private prisma: PrismaService,
     private aiEngine: AIEngine,
     private promptService: PromptService
-  ) { }
+  ) {}
 
   async generateReport(
     sessionId: string,
@@ -117,9 +117,9 @@ export class InterviewReportService {
 
     const questions = session.optimizationId
       ? await this.prisma.interviewQuestion.findMany({
-        where: { optimizationId: session.optimizationId },
-        orderBy: { createdAt: 'asc' },
-      })
+          where: { optimizationId: session.optimizationId },
+          orderBy: { createdAt: 'asc' },
+        })
       : [];
 
     const analysis = await this.analyzeInterview(
@@ -242,11 +242,11 @@ export class InterviewReportService {
 
     const overallScore = Math.round(
       dimensions.accuracy * 0.25 +
-      dimensions.fluency * 0.15 +
-      dimensions.logicalThinking * 0.2 +
-      dimensions.professionalKnowledge * 0.25 +
-      dimensions.communication * 0.1 +
-      dimensions.confidence * 0.05
+        dimensions.fluency * 0.15 +
+        dimensions.logicalThinking * 0.2 +
+        dimensions.professionalKnowledge * 0.25 +
+        dimensions.communication * 0.1 +
+        dimensions.confidence * 0.05
     );
 
     const detailedAnalysis = (parsed.detailedAnalysis || [])
@@ -480,11 +480,11 @@ Please ensure to return pure JSON format, without any other text.`;
 | 维度 | 得分 | 等级 |
 |------|------|------|
 ${Object.entries(analysis.dimensions)
-        .map(
-          ([key, value]) =>
-            `| ${dimensionLabels[key] || key} | ${getScoreEmoji(value)} ${value} 分 | ${getScoreLevel(value)} |`
-        )
-        .join('\n')}
+  .map(
+    ([key, value]) =>
+      `| ${dimensionLabels[key] || key} | ${getScoreEmoji(value)} ${value} 分 | ${getScoreLevel(value)} |`
+  )
+  .join('\n')}
 
 ---
 

@@ -19,7 +19,7 @@ import { InterviewQuestionService } from './services/interview-question.service'
 import { InterviewSessionService } from './services/interview-session.service';
 import { InterviewReportService } from './services/interview-report.service';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
-import { InterviewQuestion, InterviewSession } from '@prisma/client';
+import { InterviewMessage, InterviewQuestion, InterviewSession } from '@prisma/client';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { SendMessageDto } from './dto/send-message.dto';
 import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
@@ -141,6 +141,22 @@ export class InterviewController {
       sendMessageDto.content,
       sendMessageDto.audioUrl
     );
+  }
+
+  /**
+   * Send a message in an interview session (ASSIST mode chat)
+   * POST /api/v1/interview/session/:sessionId/message
+   */
+  @Post('session/:sessionId/message')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  async sendMessage(
+    @Request() req: any,
+    @Param('sessionId') sessionId: string,
+    @Body() sendMessageDto: SendMessageDto
+  ): Promise<{ userMessage: InterviewMessage; aiMessage: InterviewMessage }> {
+    const userId = req.user.id;
+    return this.interviewService.sendMessage(sessionId, userId, sendMessageDto);
   }
 
   /**

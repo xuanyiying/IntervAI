@@ -40,7 +40,7 @@ export class PaymentController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.paymentService.createCheckoutSession(
       userId,
       createCheckoutSessionDto.priceId,

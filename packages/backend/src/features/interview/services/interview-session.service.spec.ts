@@ -313,8 +313,8 @@ describe('InterviewSessionService', () => {
 
       const result = await service.getSessionState(mockUserId, mockSessionId);
 
-      expect(result.progress).toBe(1);
-      expect(result.total).toBe(3);
+      expect(result.currentIndex).toBe(1);
+      expect(result.totalQuestions).toBe(3);
       expect(result.currentQuestion).toEqual(mockQuestions[1]);
     });
   });

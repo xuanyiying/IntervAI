@@ -22,11 +22,21 @@ export class PdfProcessor {
 
   @Process('generate_pdf')
   async handleGeneratePdf(job: Job<GeneratePdfJobData>) {
-    this.logger.log(`Processing PDF generation job ${job.id} for optimization ${job.data.optimizationId}`);
-    
+    this.logger.log(
+      `Processing PDF generation job ${job.id} for optimization ${job.data.optimizationId}`
+    );
+
     try {
-      const { optimizationId, userId, templateId, resumeData, options, isMarkdown, markdownContent } = job.data;
-      
+      const {
+        optimizationId,
+        userId,
+        templateId,
+        resumeData,
+        options,
+        isMarkdown,
+        markdownContent,
+      } = job.data;
+
       let result;
       if (isMarkdown && markdownContent) {
         result = await this.pdfGenerationService.generatePDFFromMarkdown(
@@ -47,7 +57,10 @@ export class PdfProcessor {
       this.logger.log(`Successfully processed PDF generation job ${job.id}`);
       return result;
     } catch (error) {
-      this.logger.error(`Failed to process PDF generation job ${job.id}: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(
+        `Failed to process PDF generation job ${job.id}: ${(error as Error).message}`,
+        (error as Error).stack
+      );
       throw error;
     }
   }

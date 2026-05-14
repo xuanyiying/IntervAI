@@ -31,7 +31,7 @@ export class SceneAnalysisService {
     private readonly aiService: AIService,
     private readonly redisService: RedisService,
     private readonly promptService: PromptService
-  ) { }
+  ) {}
 
   async analyzeScene(
     content: string,

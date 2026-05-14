@@ -35,7 +35,7 @@ export class ConversationController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.conversationService.createConversation(userId, body);
   }
 
@@ -49,7 +49,7 @@ export class ConversationController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.conversationService.listConversations(userId);
   }
 
@@ -104,7 +104,7 @@ export class ConversationController {
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
- 
+
     return this.conversationService.addMessage(conversationId, userId, {
       role: body.role,
       content: body.content,

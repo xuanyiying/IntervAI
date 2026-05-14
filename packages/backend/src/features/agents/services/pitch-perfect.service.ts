@@ -26,7 +26,7 @@ export interface RefinePitchOutput {
 export class PitchPerfectService {
   private readonly logger = new Logger(PitchPerfectService.name);
 
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   async generatePitch(
     dto: GeneratePitchDto,

@@ -15,7 +15,7 @@ export class AIQueueProcessor {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
-  ) { }
+  ) {}
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(
@@ -65,9 +65,7 @@ export class AIQueueProcessor {
       // Step 1: Parse resume (critical — must complete)
       try {
         parsedData = await this.resumeAI.parseResumeContent(content, userId);
-        this.logger.log(
-          `Resume parsing completed for resume ${resumeId}`
-        );
+        this.logger.log(`Resume parsing completed for resume ${resumeId}`);
       } catch (parseError) {
         this.logger.error(`Resume parsing failed for ${resumeId}:`, parseError);
         throw parseError;
@@ -87,9 +85,7 @@ export class AIQueueProcessor {
         },
       });
 
-      this.logger.log(
-        `Resume parsing results saved for resume ${resumeId}`
-      );
+      this.logger.log(`Resume parsing results saved for resume ${resumeId}`);
 
       // Step 3: Optimize resume asynchronously (non-blocking)
       // This runs in the same job but after critical data is already saved
@@ -148,9 +144,7 @@ export class AIQueueProcessor {
       }
 
       // parsedData was already saved in Step 2; optimization update happened in Step 3 if successful
-      this.logger.log(
-        `Resume processing completed for resume ${resumeId}`
-      );
+      this.logger.log(`Resume processing completed for resume ${resumeId}`);
       return {
         ...parsedData,
         optimizedContent,
