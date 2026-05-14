@@ -4,7 +4,6 @@ import { QuotaService } from '@/core/quota/quota.service';
 import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { ParsedJobData, ParsedResumeData } from '@/types';
-import { InterviewAIService } from './interview-ai.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -12,7 +11,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   InterviewMessage,
   InterviewMode,
@@ -27,6 +25,7 @@ import {
 } from '../dto/create-session.dto';
 import { EndSessionDto } from '../dto/end-session.dto';
 import { SendMessageDto } from '../dto/send-message.dto';
+import { InterviewAIService } from './interview-ai.service';
 
 @Injectable()
 export class InterviewSessionService {
@@ -230,6 +229,11 @@ export class InterviewSessionService {
    */
   private async triggerAsyncEvaluation(session: any, content: string, sessionId: string) {
     try {
+      if (!session.optimization) {
+        this.logger.debug(`Skipping evaluation for session ${sessionId}: no optimization context`);
+        return;
+      }
+
       const resumeData = session.optimization.resume?.parsedData as unknown as
         | ParsedResumeData
         | undefined;
@@ -244,7 +248,7 @@ export class InterviewSessionService {
       const answerCount =
         session.messages.filter((m: any) => m.role === MessageRole.USER).length;
       const questionText =
-        questions[answerCount - 1]?.question || 'Unknown question';
+        questions[answerCount]?.question || 'Unknown question';
 
       if (resumeData && jobData && questionText !== 'Unknown question') {
         const evalResult = await this.aiService.executeSkill(
@@ -299,8 +303,10 @@ export class InterviewSessionService {
   ): Promise<{
     session: InterviewSession;
     currentQuestion: InterviewQuestion | null;
-    progress: number;
-    total: number;
+    currentIndex: number;
+    totalQuestions: number;
+    status: string;
+    isCompleted: boolean;
   }> {
     const session = await this.prisma.interviewSession.findUnique({
       where: { id: sessionId },
@@ -330,12 +336,16 @@ export class InterviewSessionService {
       (m) => m.role === MessageRole.USER
     ).length;
 
+    const isCompleted = session.status !== InterviewStatus.IN_PROGRESS || answerCount >= questions.length;
+
     return {
       session,
       currentQuestion:
         answerCount < questions.length ? questions[answerCount] : null,
-      progress: answerCount,
-      total: questions.length,
+      currentIndex: answerCount,
+      totalQuestions: questions.length,
+      status: session.status,
+      isCompleted,
     };
   }
 
@@ -699,32 +709,35 @@ export class InterviewSessionService {
   }
 
   private async generateFeedback(session: any) {
-    const resumeData = session.optimization.resume
-      .parsedData as unknown as ParsedResumeData;
-    const jobData = session.optimization.job
-      .parsedRequirements as unknown as ParsedJobData;
+    if (!session.optimization) {
+      this.logger.warn(`Skipping feedback generation for session ${session.id}: no optimization context`);
+      return;
+    }
 
-    // Use session.optimization.job.title/company
-    const jobTitle = session.optimization.job.title || 'Unknown Role';
-    const company = session.optimization.job.company || 'Unknown Company';
+    const resumeData = session.optimization.resume
+      ?.parsedData as unknown as ParsedResumeData | undefined;
+    const jobData = session.optimization.job
+      ?.parsedRequirements as unknown as ParsedJobData | undefined;
+
+    const jobTitle = session.optimization.job?.title || 'Unknown Role';
+    const company = session.optimization.job?.company || 'Unknown Company';
 
     const requirements = [
-      ...(jobData.requiredSkills || []),
-      ...(jobData.responsibilities || []),
+      ...(jobData?.requiredSkills || []),
+      ...(jobData?.responsibilities || []),
     ].join('; ');
 
     const transcript = session.messages
       .map((m: any) => `${m.role}: ${m.content}`)
       .join('\n');
 
-    // 使用多语言提示词
     const language = session.language || 'EN';
     const prompt = this.promptService.buildFeedbackPrompt(
       {
         jobTitle,
         company,
         requirements: requirements.substring(0, 500),
-        candidateName: resumeData.personalInfo?.name || 'Candidate',
+        candidateName: resumeData?.personalInfo?.name || 'Candidate',
         transcript,
       },
       language
@@ -801,9 +814,9 @@ export class InterviewSessionService {
     }
 
     const resumeData = session.optimization?.resume
-      ?.parsedData as unknown as ParsedResumeData;
+      ?.parsedData as unknown as ParsedResumeData | undefined;
     const jobData = session.optimization?.job
-      ?.parsedRequirements as unknown as ParsedJobData;
+      ?.parsedRequirements as unknown as ParsedJobData | undefined;
 
     const resumeText = JSON.stringify({
       name: resumeData?.personalInfo?.name || 'Candidate',
@@ -824,13 +837,23 @@ export class InterviewSessionService {
     let fullAnswer = '';
 
     const { AI_MODEL } = await import('@/core/ai/models');
+
+    const hasContext = resumeData || jobData;
     const systemPrompt = isZh
-      ? '你是一位经验丰富的面试辅导专家。根据候选人的简历和目标职位，为面试问题提供专业、有深度的参考答案。'
-      : "You are an experienced interview coach. Based on the candidate's resume and target position, provide professional and insightful reference answers to interview questions.";
+      ? hasContext
+        ? '你是一位经验丰富的面试辅导专家。根据候选人的简历和目标职位，为面试问题提供专业、有深度的参考答案。'
+        : '你是一位经验丰富的面试辅导专家。请为面试问题提供专业、有深度的参考答案。'
+      : hasContext
+        ? "You are an experienced interview coach. Based on the candidate's resume and target position, provide professional and insightful reference answers to interview questions."
+        : "You are an experienced interview coach. Provide professional and insightful reference answers to interview questions.";
 
     const userPrompt = isZh
-      ? `简历信息：${resumeText}\n\n目标职位：${jobDescription}\n\n面试官问题：${question}\n\n请提供参考答案：`
-      : `Resume: ${resumeText}\n\nTarget Position: ${jobDescription}\n\nInterviewer Question: ${question}\n\nPlease provide a reference answer:`;
+      ? hasContext
+        ? `简历信息：${resumeText}\n\n目标职位：${jobDescription}\n\n面试官问题：${question}\n\n请提供参考答案：`
+        : `面试官问题：${question}\n\n请提供参考答案：`
+      : hasContext
+        ? `Resume: ${resumeText}\n\nTarget Position: ${jobDescription}\n\nInterviewer Question: ${question}\n\nPlease provide a reference answer:`
+        : `Interviewer Question: ${question}\n\nPlease provide a reference answer:`;
 
     const chatHistory = session.messages.map((m: any) => ({
       role: m.role === MessageRole.USER ? 'user' : 'assistant',

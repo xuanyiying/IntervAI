@@ -16,7 +16,7 @@ export class QuestionGeneratorService {
   constructor(
     private prisma: PrismaService,
     private interviewAI: InterviewAIService
-  ) { }
+  ) {}
 
   /**
    * Generate interview questions based on resume and job
@@ -59,7 +59,11 @@ export class QuestionGeneratorService {
         throw new Error('Resume or job data not found');
       }
 
-      let questions = await this.generateQuestionsWithAI(resumeData, jobData, userId);
+      let questions = await this.generateQuestionsWithAI(
+        resumeData,
+        jobData,
+        userId
+      );
 
       if (!questions || questions.length < questionCount) {
         questions = this.generateQuestionsWithRules(

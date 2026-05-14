@@ -51,7 +51,9 @@ function getEeModule() {
     logger.log('Enterprise Edition detected and loaded');
     return [EeModule];
   } catch (error) {
-    logger.error('CRITICAL: Commercial edition requested but EeModule could not be loaded. Ensure that the "src/ee" directory is present and EeModule is correctly exported.');
+    logger.error(
+      'CRITICAL: Commercial edition requested but EeModule could not be loaded. Ensure that the "src/ee" directory is present and EeModule is correctly exported.'
+    );
     return [];
   }
 }

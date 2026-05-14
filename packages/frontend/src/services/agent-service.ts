@@ -124,10 +124,9 @@ export const rolePlayService = {
     userResponse: string
   ): Promise<any> => {
     const response = await axios.post(
-      `/interview/session:${sessionId}/answer`,
+      `/interview/session/${sessionId}/answer`,
       {
-        sessionId,
-        userResponse,
+        content: userResponse,
       }
     );
     return response.data;
@@ -139,9 +138,7 @@ export const rolePlayService = {
    * @returns Final summary of the interview
    */
   concludeInterview: async (sessionId: string): Promise<any> => {
-    const response = await axios.post(`/interview/session:${sessionId}/end`, {
-      sessionId,
-    });
+    const response = await axios.post(`/interview/session/${sessionId}/end`);
     return response.data;
   },
 

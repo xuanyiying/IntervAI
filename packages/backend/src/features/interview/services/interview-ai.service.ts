@@ -19,7 +19,11 @@ export class InterviewAIService {
   ) {}
 
   private get aiModel(): string {
-    return this.aiService.getModel() || this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+    return (
+      this.aiService.getModel() ||
+      this.configService.get('AI_MODEL') ||
+      'openrouter:deepseek/deepseek-chat'
+    );
   }
 
   /**
@@ -29,7 +33,7 @@ export class InterviewAIService {
     jobDescription: string,
     resumeContent: string,
     count: number = 10,
-    userId: string,
+    userId: string
   ): Promise<InterviewQuestion[]> {
     this.logger.log(
       `Generating interview questions via interview-question-generator skill (count: ${count})`
@@ -49,7 +53,7 @@ export class InterviewAIService {
           fallback: async () => {
             this.logger.warn('Using template-based questions as fallback');
             return this.generateTemplateQuestions(jobDescription, count);
-          }
+          },
         }
       );
 
@@ -62,30 +66,67 @@ export class InterviewAIService {
       return questions.map((q: any) => ({
         questionType: q.category || q.questionType || 'behavioral',
         question: q.question,
-        suggestedAnswer: q.sampleAnswer?.example || q.suggestedAnswer || q.context || '',
+        suggestedAnswer:
+          q.sampleAnswer?.example || q.suggestedAnswer || q.context || '',
         tips: Array.isArray(q.tips) ? q.tips : [q.tips].filter(Boolean),
         difficulty: q.difficulty || 'medium',
       }));
     } catch (error) {
       this.logger.error('Error generating interview questions:', error);
-      throw new Error(`Failed to generate interview questions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to generate interview questions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
-  private generateTemplateQuestions(_jobDescription: string, count: number = 10): InterviewQuestion[] {
+  private generateTemplateQuestions(
+    _jobDescription: string,
+    count: number = 10
+  ): InterviewQuestion[] {
     const templates = [
-      { questionType: InterviewQuestionType.BEHAVIORAL, question: 'Tell me about a challenging project you worked on.', suggestedAnswer: '', tips: ['Use STAR method'], difficulty: InterviewDifficulty.MEDIUM },
-      { questionType: InterviewQuestionType.TECHNICAL, question: 'Describe your experience with relevant technologies.', suggestedAnswer: '', tips: ['Be specific about your role'], difficulty: InterviewDifficulty.MEDIUM },
-      { questionType: InterviewQuestionType.SITUATIONAL, question: 'How do you handle tight deadlines?', suggestedAnswer: '', tips: ['Provide examples'], difficulty: InterviewDifficulty.EASY },
-      { questionType: InterviewQuestionType.BEHAVIORAL, question: 'Describe a time when you had to learn a new technology quickly.', suggestedAnswer: '', tips: ['Focus on learning process'], difficulty: InterviewDifficulty.MEDIUM },
-      { questionType: InterviewQuestionType.TECHNICAL, question: 'What is your approach to debugging complex issues?', suggestedAnswer: '', tips: ['Show systematic approach'], difficulty: InterviewDifficulty.HARD },
+      {
+        questionType: InterviewQuestionType.BEHAVIORAL,
+        question: 'Tell me about a challenging project you worked on.',
+        suggestedAnswer: '',
+        tips: ['Use STAR method'],
+        difficulty: InterviewDifficulty.MEDIUM,
+      },
+      {
+        questionType: InterviewQuestionType.TECHNICAL,
+        question: 'Describe your experience with relevant technologies.',
+        suggestedAnswer: '',
+        tips: ['Be specific about your role'],
+        difficulty: InterviewDifficulty.MEDIUM,
+      },
+      {
+        questionType: InterviewQuestionType.SITUATIONAL,
+        question: 'How do you handle tight deadlines?',
+        suggestedAnswer: '',
+        tips: ['Provide examples'],
+        difficulty: InterviewDifficulty.EASY,
+      },
+      {
+        questionType: InterviewQuestionType.BEHAVIORAL,
+        question:
+          'Describe a time when you had to learn a new technology quickly.',
+        suggestedAnswer: '',
+        tips: ['Focus on learning process'],
+        difficulty: InterviewDifficulty.MEDIUM,
+      },
+      {
+        questionType: InterviewQuestionType.TECHNICAL,
+        question: 'What is your approach to debugging complex issues?',
+        suggestedAnswer: '',
+        tips: ['Show systematic approach'],
+        difficulty: InterviewDifficulty.HARD,
+      },
     ];
 
     return templates.slice(0, count).map((t, i) => ({
       ...t,
       id: `template_q_${i}`,
       createdAt: new Date(),
-      optimizationId: ''
+      optimizationId: '',
     }));
   }
 
@@ -106,13 +147,13 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       role: 'system' | 'user' | 'assistant';
       content: string;
     }> = [
-        { role: 'system', content: systemPrompt },
-        ...history.map((h) => ({
-          role: h.role as 'user' | 'assistant',
-          content: h.content,
-        })),
-        { role: 'user', content: message },
-      ];
+      { role: 'system', content: systemPrompt },
+      ...history.map((h) => ({
+        role: h.role as 'user' | 'assistant',
+        content: h.content,
+      })),
+      { role: 'user', content: message },
+    ];
 
     const result = await this.aiService.chat(this.aiModel, messages, {
       temperature: 0.7,
@@ -159,17 +200,25 @@ Be encouraging but thorough. Keep responses concise and focused.`;
           this.logger.warn(
             `Retry ${attempt}/${this.maxRetries} for skill "${skillName}" after ${delay}ms`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
 
-        const result = await this.aiService.executeSkill(skillName, inputs, userId);
+        const result = await this.aiService.executeSkill(
+          skillName,
+          inputs,
+          userId
+        );
 
         if (!result.success) {
           const errorCode = result.error?.code || 'UNKNOWN_ERROR';
-          const errorMessage = result.error?.message || 'Skill execution failed';
+          const errorMessage =
+            result.error?.message || 'Skill execution failed';
           lastError = new Error(`[${errorCode}] ${errorMessage}`);
 
-          if (this.isTransientError(errorCode) && attempt < this.maxRetries - 1) {
+          if (
+            this.isTransientError(errorCode) &&
+            attempt < this.maxRetries - 1
+          ) {
             this.logger.warn(
               `Skill "${skillName}" transient error (attempt ${attempt + 1}/${this.maxRetries}): ${errorMessage}`
             );
@@ -221,7 +270,10 @@ Be encouraging but thorough. Keep responses concise and focused.`;
           try {
             return await options.fallback();
           } catch (fallbackError) {
-            this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+            this.logger.error(
+              `Fallback also failed for skill "${skillName}":`,
+              fallbackError
+            );
             throw lastError;
           }
         }
@@ -237,7 +289,10 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       try {
         return await options.fallback();
       } catch (fallbackError) {
-        this.logger.error(`Fallback also failed for skill "${skillName}":`, fallbackError);
+        this.logger.error(
+          `Fallback also failed for skill "${skillName}":`,
+          fallbackError
+        );
         throw lastError;
       }
     }
@@ -266,6 +321,6 @@ Be encouraging but thorough. Keep responses concise and focused.`;
       /fetch failed/i,
       /socket hang up/i,
     ];
-    return networkPatterns.some(pattern => pattern.test(error.message));
+    return networkPatterns.some((pattern) => pattern.test(error.message));
   }
 }

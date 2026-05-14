@@ -41,7 +41,9 @@ export class AnswerEvaluationService {
       }
 
       if (!session.optimization) {
-        this.logger.warn(`Session ${sessionId} has no optimization, skipping detailed evaluation`);
+        this.logger.warn(
+          `Session ${sessionId} has no optimization, skipping detailed evaluation`
+        );
         return;
       }
 

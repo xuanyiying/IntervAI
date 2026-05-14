@@ -40,7 +40,6 @@ export interface FeedbackContext {
 
 @Injectable()
 export class PromptService {
-
   getInterviewMockPrompts(language: LanguageInput) {
     const lang = normalizeLanguage(language);
     return INTERVIEW_MOCK_PROMPTS[lang];

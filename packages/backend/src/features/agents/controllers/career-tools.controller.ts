@@ -1,24 +1,16 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import { CareerToolsService } from '../services/career-tools.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api/career-tools')
 export class CareerToolsController {
-  constructor(
-    private readonly careerToolsService: CareerToolsService
-  ) {}
+  constructor(private readonly careerToolsService: CareerToolsService) {}
 
   @Post('skills/analyze')
   async analyzeSkills(
-    @Body() body: {
+    @Body()
+    body: {
       currentSkills: string[];
       targetRole: string;
       experience?: Record<string, any>;
@@ -30,7 +22,8 @@ export class CareerToolsController {
 
   @Post('salary/analyze')
   async analyzeSalary(
-    @Body() body: {
+    @Body()
+    body: {
       jobTitle: string;
       location?: string;
       experience?: Record<string, any>;
@@ -44,7 +37,8 @@ export class CareerToolsController {
 
   @Post('linkedin/optimize')
   async optimizeLinkedIn(
-    @Body() body: {
+    @Body()
+    body: {
       profileData: Record<string, any>;
       targetRole?: string;
       industry?: string;
@@ -56,7 +50,8 @@ export class CareerToolsController {
 
   @Post('cover-letter/generate')
   async writeCoverLetter(
-    @Body() body: {
+    @Body()
+    body: {
       resumeData: Record<string, any>;
       jobDescription: string;
       companyName: string;
@@ -70,7 +65,8 @@ export class CareerToolsController {
 
   @Post('company/research')
   async researchCompany(
-    @Body() body: {
+    @Body()
+    body: {
       companyName: string;
       role?: string;
       researchDepth?: 'quick' | 'standard' | 'comprehensive';
@@ -82,7 +78,8 @@ export class CareerToolsController {
 
   @Post('career/advise')
   async adviseCareer(
-    @Body() body: {
+    @Body()
+    body: {
       userProfile: Record<string, any>;
       careerGoal?: string;
       currentSituation?: string;
@@ -96,12 +93,34 @@ export class CareerToolsController {
   @Get('skills/list')
   listAvailableSkills() {
     return [
-      { name: 'skill-analyzer', description: 'Analyze skills against job requirements and provide learning recommendations' },
-      { name: 'salary-analyzer', description: 'Analyze salary data and provide negotiation guidance' },
-      { name: 'linkedin-optimizer', description: 'Optimize LinkedIn profile for job search and networking' },
-      { name: 'cover-letter-writer', description: 'Generate personalized cover letters tailored to job descriptions' },
-      { name: 'company-researcher', description: 'Research companies and provide comprehensive insights for interview preparation' },
-      { name: 'career-advisor', description: 'Provide personalized career development advice based on user profile and goals' },
+      {
+        name: 'skill-analyzer',
+        description:
+          'Analyze skills against job requirements and provide learning recommendations',
+      },
+      {
+        name: 'salary-analyzer',
+        description: 'Analyze salary data and provide negotiation guidance',
+      },
+      {
+        name: 'linkedin-optimizer',
+        description: 'Optimize LinkedIn profile for job search and networking',
+      },
+      {
+        name: 'cover-letter-writer',
+        description:
+          'Generate personalized cover letters tailored to job descriptions',
+      },
+      {
+        name: 'company-researcher',
+        description:
+          'Research companies and provide comprehensive insights for interview preparation',
+      },
+      {
+        name: 'career-advisor',
+        description:
+          'Provide personalized career development advice based on user profile and goals',
+      },
     ];
   }
 }

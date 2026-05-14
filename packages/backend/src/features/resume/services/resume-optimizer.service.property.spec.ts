@@ -211,8 +211,20 @@ describe('ResumeOptimizerService Property Tests', () => {
             });
 
             const result = await service.generateSuggestions(
-              { summary: resumeContent, skills: [], experience: [], education: [], projects: [] } as any,
-              { title: jobContent, requiredSkills: [], preferredSkills: [], keywords: [], responsibilities: [] } as any,
+              {
+                summary: resumeContent,
+                skills: [],
+                experience: [],
+                education: [],
+                projects: [],
+              } as any,
+              {
+                title: jobContent,
+                requiredSkills: [],
+                preferredSkills: [],
+                keywords: [],
+                responsibilities: [],
+              } as any,
               'test-user-id'
             );
 
