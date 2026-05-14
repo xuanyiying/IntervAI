@@ -1,0 +1,2725 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IntervAI - 项目页面效果图</title>
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-rgb: 99, 102, 241;
+      --primary-hover: #4f46e5;
+      --secondary-color: #a855f7;
+      --accent-color: #2dd4bf;
+      --danger-color: #ef4444;
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --info-color: #3b82f6;
+      --bg-primary: #030712;
+      --bg-secondary: #0f172a;
+      --bg-tertiary: #1e293b;
+      --bg-card: rgba(15, 23, 42, 0.6);
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      --glass-backdrop: blur(16px) saturate(180%);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+      --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+      --shadow-neon: 0 0 20px rgba(99, 102, 241, 0.15), 0 0 40px rgba(168, 85, 247, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 50% 80%, rgba(45, 212, 191, 0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: 220px;
+      z-index: 100;
+      background: rgba(3, 7, 18, 0.97);
+      backdrop-filter: blur(16px);
+      border-right: 1px solid var(--glass-border);
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .page-nav-title {
+      padding: 0 20px 16px;
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.5px;
+    }
+
+    .page-nav-group {
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .page-nav-group-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-tertiary);
+      padding: 12px 8px 6px;
+      font-weight: 600;
+    }
+
+    .page-nav a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.2s;
+      white-space: nowrap;
+      display: block;
+    }
+
+    .page-nav a:hover,
+    .page-nav a.active {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .page-section {
+      position: relative;
+      z-index: 1;
+      padding: 40px 32px 60px;
+      margin-left: 220px;
+      min-height: 100vh;
+      border-bottom: 2px solid rgba(99, 102, 241, 0.15);
+    }
+
+    .section-label {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--primary-gradient);
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 8px 20px;
+      border-radius: 0 0 12px 12px;
+      display: inline-block;
+      margin-bottom: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-backdrop);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--glass-shadow);
+    }
+
+    .glass-card-indigo {
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .glass-card-warm {
+      background: rgba(245, 158, 11, 0.06);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .gradient-button {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      transition: all 0.2s;
+    }
+
+    .gradient-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--glass-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--glass-border);
+      padding: 10px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger-color);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .glass-input {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .glass-input:focus {
+      border-color: var(--primary-color);
+    }
+
+    .glass-input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .badge-primary {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .badge-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .badge-default {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-secondary);
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .tag-blue {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .tag-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .tag-purple {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+    }
+
+    .tag-orange {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .tag-gold {
+      background: rgba(234, 179, 8, 0.15);
+      color: #facc15;
+    }
+
+    .tag-red {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .tag-cyan {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+    }
+
+    .tag-magenta {
+      background: rgba(236, 72, 153, 0.15);
+      color: #f472b6;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary-gradient);
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 13px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      font-size: 14px;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .switch {
+      width: 44px;
+      height: 24px;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      position: relative;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .switch.on {
+      background: var(--primary-color);
+    }
+
+    .switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+
+    .switch.on::after {
+      transform: translateX(20px);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      color: white;
+    }
+
+    .avatar-lg {
+      width: 80px;
+      height: 80px;
+      font-size: 32px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 8px 0 4px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .feature-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(99, 102, 241, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #818cf8;
+    }
+
+    .feature-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .sidebar-mock {
+      width: 260px;
+      min-width: 260px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--glass-border);
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-brand {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .sidebar-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+
+    .sidebar-nav {
+      padding: 12px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .sidebar-item.active {
+      background: rgba(99, 102, 241, 0.12);
+      color: #818cf8;
+    }
+
+    .sidebar-item-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-tertiary);
+      padding: 16px 14px 8px;
+      font-weight: 600;
+    }
+
+    .sidebar-chat-item {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-chat-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+    }
+
+    .main-content {
+      flex: 1;
+      padding: 32px;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 0;
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      padding: 16px 20px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .chat-bubble-user {
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .chat-bubble-ai {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-input-area {
+      padding: 16px 0;
+      border-top: 1px solid var(--glass-border);
+    }
+
+    .chat-input-box {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .chat-input-box textarea {
+      flex: 1;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      resize: none;
+      height: 48px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .chat-input-box textarea:focus {
+      border-color: var(--primary-color);
+    }
+
+    .welcome-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 40px;
+    }
+
+    .welcome-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 24px;
+      background: var(--primary-gradient);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-neon);
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-width: 600px;
+      margin-top: 32px;
+    }
+
+    .quick-action {
+      padding: 16px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-action:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .quick-action-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .quick-action-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .grid-5-3 {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 24px;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .flex-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .flex-gap {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .flex-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .mb-4 {
+      margin-bottom: 16px;
+    }
+
+    .mb-6 {
+      margin-bottom: 24px;
+    }
+
+    .mb-8 {
+      margin-bottom: 32px;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    .mt-6 {
+      margin-top: 24px;
+    }
+
+    .text-sm {
+      font-size: 13px;
+    }
+
+    .text-xs {
+      font-size: 12px;
+    }
+
+    .text-secondary {
+      color: var(--text-secondary);
+    }
+
+    .text-tertiary {
+      color: var(--text-tertiary);
+    }
+
+    .text-primary {
+      color: var(--primary-color);
+    }
+
+    .text-success {
+      color: var(--success-color);
+    }
+
+    .text-warning {
+      color: var(--warning-color);
+    }
+
+    .text-danger {
+      color: var(--danger-color);
+    }
+
+    .font-bold {
+      font-weight: 700;
+    }
+
+    .font-medium {
+      font-weight: 500;
+    }
+
+    .w-full {
+      width: 100%;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--glass-border);
+      margin: 24px 0;
+    }
+
+    .icon-circle {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+
+    .icon-circle-primary {
+      background: rgba(99, 102, 241, 0.15);
+      color: #818cf8;
+    }
+
+    .icon-circle-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+    }
+
+    .icon-circle-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .icon-circle-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    svg {
+      vertical-align: middle;
+    }
+
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+      border-radius: 16px;
+      padding: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .mini-chart {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      display: flex;
+      align-items: flex-end;
+      padding: 10px;
+      gap: 3px;
+    }
+
+    .mini-chart-bar {
+      flex: 1;
+      background: var(--primary-gradient);
+      border-radius: 2px 2px 0 0;
+      opacity: 0.8;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 28px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 4px solid var(--success-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .score-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--success-color);
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .resume-sidebar {
+      width: 280px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+
+    .resume-item {
+      padding: 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 8px;
+      border: 1px solid transparent;
+    }
+
+    .resume-item:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .resume-item.active {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: rgba(99, 102, 241, 0.2);
+    }
+
+    .analysis-dimension {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+
+    .analysis-score {
+      font-size: 24px;
+      font-weight: 700;
+      width: 50px;
+      text-align: center;
+    }
+
+    .builder-layout {
+      display: grid;
+      grid-template-columns: 200px 1fr 1fr;
+      gap: 0;
+      height: calc(100vh - 80px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .builder-sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--glass-border);
+      padding: 16px;
+    }
+
+    .builder-editor {
+      border-right: 1px solid var(--glass-border);
+      padding: 20px;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      overflow-y: auto;
+    }
+
+    .builder-preview {
+      padding: 20px;
+      background: white;
+      color: #1a1a1a;
+      overflow-y: auto;
+    }
+
+    .builder-module-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .builder-module-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .builder-module-item.active {
+      background: rgba(99, 102, 241, 0.12);
+      color: #818cf8;
+    }
+
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .agent-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .agent-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      font-size: 24px;
+    }
+
+    .agent-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .dot-green {
+      background: var(--success-color);
+    }
+
+    .dot-yellow {
+      background: var(--warning-color);
+    }
+
+    .dot-red {
+      background: var(--danger-color);
+    }
+
+    .kb-stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 16px;
+      justify-content: flex-end;
+    }
+
+    .page-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .page-btn.active {
+      background: var(--primary-color);
+      color: white;
+      border-color: var(--primary-color);
+    }
+
+    .cookie-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--glass-border);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    @media (max-width: 768px) {
+
+      .grid-2,
+      .grid-3,
+      .grid-4,
+      .grid-5-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .page-nav {
+        display: none;
+      }
+
+      .page-section {
+        margin-left: 0;
+      }
+
+      .builder-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="page-nav">
+    <div class="page-nav-title">IntervAI 页面预览</div>
+    <div class="page-nav-group">
+      <div class="page-nav-group-label">认证</div>
+      <a href="#login">登录</a>
+      <a href="#register">注册</a>
+    </div>
+    <div class="page-nav-group">
+      <div class="page-nav-group-label">核心功能</div>
+      <a href="#chat">主页/对话</a>
+      <a href="#resumes">我的简历</a>
+      <a href="#resume-builder">简历构建器</a>
+      <a href="#interview">AI面试精灵</a>
+      <a href="#role-play">模拟面试</a>
+      <a href="#pitch-perfect">履历点睛</a>
+      <a href="#strategist">面试预测</a>
+    </div>
+    <div class="page-nav-group">
+      <div class="page-nav-group-label">用户设置</div>
+      <a href="#profile">个人中心</a>
+      <a href="#settings">设置</a>
+      <a href="#usage">使用量</a>
+      <a href="#team">团队</a>
+      <a href="#agent-metrics">Agent指标</a>
+    </div>
+    <div class="page-nav-group">
+      <div class="page-nav-group-label">管理后台</div>
+      <a href="#admin-users">用户管理</a>
+      <a href="#admin-models">模型管理</a>
+      <a href="#admin-prompts">提示词管理</a>
+      <a href="#admin-kb">知识库</a>
+      <a href="#admin-settings">系统设置</a>
+    </div>
+  </nav>
+
+  <!-- ==================== 登录页 ==================== -->
+  <section class="page-section" id="login">
+    <div class="section-label">登录页 /login</div>
+    <div style="display:flex;align-items:center;justify-content:center;min-height:80vh;position:relative;">
+      <div
+        style="position:absolute;top:-10%;right:-10%;width:500px;height:500px;background:rgba(99,102,241,0.1);border-radius:50%;filter:blur(80px);pointer-events:none;">
+      </div>
+      <div
+        style="position:absolute;bottom:-10%;left:-10%;width:500px;height:500px;background:rgba(168,85,247,0.1);border-radius:50%;filter:blur(80px);pointer-events:none;">
+      </div>
+      <div class="glass-card" style="width:100%;max-width:420px;position:relative;z-index:1;">
+        <div class="text-center mb-8">
+          <div style="display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <div
+              style="width:64px;height:64px;border-radius:16px;background:var(--primary-gradient);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:white;box-shadow:var(--shadow-neon);">
+              IA</div>
+          </div>
+          <h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">AI 求职面试助手</h2>
+          <p class="text-secondary">登录您的账号</p>
+        </div>
+        <div class="form-group">
+          <input class="glass-input" type="email" placeholder="邮箱地址"
+            style="padding-left:40px;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22><path d=%22M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2%22/><circle cx=%2212%22 cy=%227%22 r=%224%22/></svg>');background-repeat:no-repeat;background-position:14px center;">
+        </div>
+        <div class="form-group">
+          <input class="glass-input" type="password" placeholder="密码"
+            style="padding-left:40px;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%2394a3b8%22 stroke-width=%222%22><rect x=%223%22 y=%2211%22 width=%2218%22 height=%2211%22 rx=%222%22 ry=%222%22/><path d=%22M7 11V7a5 5 0 0 1 10 0v4%22/></svg>');background-repeat:no-repeat;background-position:14px center;">
+        </div>
+        <div class="flex-between mb-6">
+          <label
+            style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);cursor:pointer;">
+            <div class="switch on" style="width:36px;height:20px;"></div> 记住我
+          </label>
+          <a href="#" style="color:#818cf8;font-size:13px;text-decoration:none;">忘记密码?</a>
+        </div>
+        <button class="gradient-button w-full" style="height:48px;font-size:16px;">登 录</button>
+        <div style="display:flex;align-items:center;gap:16px;margin:24px 0;">
+          <hr style="flex:1;border:none;border-top:1px solid var(--glass-border);">
+          <span class="text-xs text-tertiary">或使用以下方式</span>
+          <hr style="flex:1;border:none;border-top:1px solid var(--glass-border);">
+        </div>
+        <div class="flex-center" style="gap:16px;">
+          <div
+            style="width:48px;height:48px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;color:#ea4335;">
+            G</div>
+          <div
+            style="width:48px;height:48px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;">
+            🐙</div>
+        </div>
+        <div class="text-center mt-6">
+          <span class="text-secondary text-sm">还没有账号? </span>
+          <a href="#register" style="color:#818cf8;font-size:14px;text-decoration:none;font-weight:500;">立即注册</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 注册页 ==================== -->
+  <section class="page-section" id="register">
+    <div class="section-label">注册页 /register</div>
+    <div style="display:flex;align-items:center;justify-content:center;min-height:80vh;position:relative;">
+      <div
+        style="position:absolute;top:-10%;left:-10%;width:500px;height:500px;background:rgba(45,212,191,0.08);border-radius:50%;filter:blur(80px);pointer-events:none;">
+      </div>
+      <div class="glass-card" style="width:100%;max-width:420px;position:relative;z-index:1;">
+        <div class="text-center mb-8">
+          <div
+            style="width:64px;height:64px;border-radius:16px;background:var(--primary-gradient);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:white;margin:0 auto 16px;box-shadow:var(--shadow-neon);">
+            IA</div>
+          <h2 style="font-size:24px;font-weight:700;margin-bottom:8px;">创建账号</h2>
+          <p class="text-secondary">开始您的 AI 求职之旅</p>
+        </div>
+        <div class="form-group">
+          <input class="glass-input" placeholder="用户名">
+        </div>
+        <div class="form-group">
+          <input class="glass-input" type="email" placeholder="邮箱地址">
+        </div>
+        <div class="form-group">
+          <input class="glass-input" type="password" placeholder="密码">
+        </div>
+        <div class="form-group">
+          <input class="glass-input" type="password" placeholder="确认密码">
+        </div>
+        <div
+          style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);border-radius:10px;padding:12px 16px;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;">
+            <span class="text-secondary">密码强度</span>
+            <span class="text-success">强</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width:85%;background:var(--success-color);"></div>
+          </div>
+        </div>
+        <button class="gradient-button w-full" style="height:48px;font-size:16px;">注 册</button>
+        <div class="text-center mt-6">
+          <span class="text-secondary text-sm">已有账号? </span>
+          <a href="#login" style="color:#818cf8;font-size:14px;text-decoration:none;font-weight:500;">立即登录</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 主页/对话页 ==================== -->
+  <section class="page-section" id="chat" style="padding:0;">
+    <div class="section-label" style="margin:12px 24px;">主页 / 对话页 /</div>
+    <div style="display:flex;height:calc(100vh - 80px);overflow:hidden;">
+      <div class="sidebar-mock">
+        <div class="sidebar-brand">
+          <div class="sidebar-logo">IA</div>
+          <div>
+            <div style="font-weight:600;font-size:15px;">IntervAI</div>
+            <div style="font-size:11px;color:var(--text-tertiary);">AI 求职助手</div>
+          </div>
+        </div>
+        <div style="padding:12px;">
+          <button class="gradient-button w-full" style="padding:10px;font-size:13px;">+ 新建对话</button>
+        </div>
+        <div style="padding:0 12px;">
+          <input class="glass-input" placeholder="搜索对话... (⌘K)" style="font-size:12px;padding:8px 12px;">
+        </div>
+        <div class="sidebar-nav">
+          <div class="sidebar-section-title">导航</div>
+          <div class="sidebar-item active">
+            <div class="sidebar-item-icon">🏠</div> 主页
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">📄</div> 我的简历
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">🤖</div> AI 面试精灵
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">👤</div> 模拟面试
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">⭐</div> 履历点睛
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">📊</div> 面试预测
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-item-icon">💬</div> 对话
+          </div>
+          <div class="sidebar-section-title">最近对话</div>
+          <div class="sidebar-chat-item">简历优化 - 前端开发岗位</div>
+          <div class="sidebar-chat-item">面试准备 - Java 后端</div>
+          <div class="sidebar-chat-item">自我介绍润色</div>
+          <div class="sidebar-chat-item">JD 匹配分析</div>
+        </div>
+        <div style="padding:12px;border-top:1px solid var(--glass-border);">
+          <div class="flex-gap">
+            <div class="avatar" style="width:32px;height:32px;font-size:13px;">Y</div>
+            <div>
+              <div style="font-size:13px;font-weight:500;">YiYing</div>
+              <div style="font-size:11px;color:var(--text-tertiary);">免费版</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="main-content" style="padding:0;">
+        <div class="chat-container">
+          <div class="welcome-section">
+            <div class="welcome-logo">IA</div>
+            <h1 style="font-size:28px;font-weight:700;margin-bottom:8px;">AI 求职面试助手</h1>
+            <p class="text-secondary" style="max-width:500px;">上传简历，获取优化建议、面试预测、模拟面试等全方位求职支持</p>
+            <div class="quick-actions">
+              <div class="quick-action">
+                <div class="quick-action-title">📄 简历优化</div>
+                <div class="quick-action-desc">上传简历，AI 帮你针对性优化</div>
+              </div>
+              <div class="quick-action">
+                <div class="quick-action-title">🎯 面试预测</div>
+                <div class="quick-action-desc">基于简历和 JD 预测面试问题</div>
+              </div>
+              <div class="quick-action">
+                <div class="quick-action-title">🤖 模拟面试</div>
+                <div class="quick-action-desc">AI 面试官模拟真实面试场景</div>
+              </div>
+              <div class="quick-action">
+                <div class="quick-action-title">⭐ 自我介绍</div>
+                <div class="quick-action-desc">生成黄金自我介绍</div>
+              </div>
+            </div>
+            <div style="margin-top:32px;width:100%;max-width:600px;">
+              <div class="chat-input-box">
+                <textarea placeholder="输入消息，或上传简历开始优化..." style="height:56px;"></textarea>
+                <button class="gradient-button" style="height:56px;width:56px;padding:0;font-size:20px;">↑</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 我的简历 ==================== -->
+  <section class="page-section" id="resumes">
+    <div class="section-label">我的简历 /resumes</div>
+    <div class="flex-between mb-8">
+      <h2 style="font-size:24px;font-weight:700;display:flex;align-items:center;gap:12px;">
+        <span style="color:var(--primary-color);">📄</span> 我的简历
+      </h2>
+      <button class="gradient-button" style="font-size:13px;">+ 职位输入</button>
+    </div>
+    <div style="display:flex;gap:24px;">
+      <div class="resume-sidebar">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-weight:600;font-size:14px;">简历列表</span>
+          <button class="gradient-button" style="padding:6px 12px;font-size:12px;">上传</button>
+        </div>
+        <div class="resume-item active">
+          <div style="font-weight:500;font-size:14px;margin-bottom:4px;">前端开发_张三.pdf</div>
+          <div class="flex-gap">
+            <span class="badge badge-success" style="font-size:10px;">活跃</span>
+            <span class="text-xs text-tertiary">v2 · 已解析</span>
+          </div>
+        </div>
+        <div class="resume-item">
+          <div style="font-weight:500;font-size:14px;margin-bottom:4px;">Java后端_李四.docx</div>
+          <div class="flex-gap">
+            <span class="text-xs text-tertiary">v1 · 已解析</span>
+          </div>
+        </div>
+        <div class="resume-item">
+          <div style="font-weight:500;font-size:14px;margin-bottom:4px;">产品经理_王五.pdf</div>
+          <div class="flex-gap">
+            <span class="text-xs text-tertiary">v1 · 解析中</span>
+          </div>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="glass-card">
+          <div class="flex-between mb-6">
+            <div>
+              <h3 style="font-size:18px;font-weight:600;">前端开发_张三.pdf</h3>
+              <span class="text-sm text-secondary">版本 2 · 上传于 2024-01-15</span>
+            </div>
+            <div class="flex-gap">
+              <span class="badge badge-primary">分析</span>
+              <span class="badge badge-default">优化</span>
+              <span class="badge badge-default">历史</span>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <h4 style="font-weight:600;margin-bottom:16px;">简历分析</h4>
+          <div class="analysis-dimension">
+            <div class="analysis-score text-success">85</div>
+            <div style="flex:1;">
+              <div class="flex-between mb-4">
+                <span style="font-weight:500;">内容完整性</span>
+                <span class="text-success">85/100</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" style="width:85%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="analysis-dimension">
+            <div class="analysis-score text-warning">72</div>
+            <div style="flex:1;">
+              <div class="flex-between mb-4">
+                <span style="font-weight:500;">关键词匹配</span>
+                <span class="text-warning">72/100</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" style="width:72%;background:var(--warning-color);"></div>
+              </div>
+            </div>
+          </div>
+          <div class="analysis-dimension">
+            <div class="analysis-score text-primary">90</div>
+            <div style="flex:1;">
+              <div class="flex-between mb-4">
+                <span style="font-weight:500;">格式规范</span>
+                <span class="text-primary">90/100</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" style="width:90%;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="analysis-dimension">
+            <div class="analysis-score text-success">78</div>
+            <div style="flex:1;">
+              <div class="flex-between mb-4">
+                <span style="font-weight:500;">STAR 法则</span>
+                <span class="text-success">78/100</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-bar-fill" style="width:78%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 简历构建器 ==================== -->
+  <section class="page-section" id="resume-builder">
+    <div class="section-label">简历构建器 /resume-builder</div>
+    <div
+      style="background:var(--bg-secondary);border:1px solid var(--glass-border);border-radius:12px;padding:12px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <div class="flex-gap">
+        <button class="btn-secondary" style="padding:6px 12px;font-size:13px;">← 返回</button>
+        <span style="font-weight:600;">我的简历 - 编辑中</span>
+      </div>
+      <div class="flex-gap">
+        <select class="glass-input" style="width:160px;padding:6px 12px;font-size:13px;">
+          <option>现代深色</option>
+          <option>极简浅色</option>
+          <option>翡翠专业</option>
+          <option>皇家衬线</option>
+        </select>
+        <button class="gradient-button" style="padding:6px 16px;font-size:13px;">导出 PDF</button>
+      </div>
+    </div>
+    <div class="builder-layout">
+      <div class="builder-sidebar">
+        <div style="font-weight:600;font-size:13px;margin-bottom:12px;color:var(--text-secondary);">模块</div>
+        <div class="builder-module-item active">📋 个人信息</div>
+        <div class="builder-module-item">📝 求职意向</div>
+        <div class="builder-module-item">💼 工作经历</div>
+        <div class="builder-module-item">🎓 教育背景</div>
+        <div class="builder-module-item">🛠 技能特长</div>
+        <div class="builder-module-item">📂 项目经历</div>
+        <div class="builder-module-item">🌐 语言能力</div>
+        <div class="builder-module-item">🏅 证书资质</div>
+        <div class="builder-module-item">📊 自我评价</div>
+      </div>
+      <div class="builder-editor">
+        <div style="color:#818cf8;font-weight:600;margin-bottom:12px;"># 张三</div>
+        <div style="margin-bottom:8px;">**前端开发工程师** | 5年经验</div>
+        <div style="margin-bottom:8px;color:var(--text-tertiary);">---</div>
+        <div style="color:#818cf8;font-weight:600;margin-bottom:8px;">## 工作经历</div>
+        <div style="margin-bottom:8px;">### ABC科技有限公司 - 高级前端工程师</div>
+        <div style="margin-bottom:8px;">*2021.06 - 至今*</div>
+        <div style="margin-bottom:8px;">- 负责公司核心产品的前端架构设计与开发</div>
+        <div style="margin-bottom:8px;">- 主导 React 组件库建设，提升团队开发效率 40%</div>
+        <div style="margin-bottom:8px;">- 优化首屏加载性能，LCP 从 3.2s 降至 1.1s</div>
+        <div style="color:#818cf8;font-weight:600;margin-bottom:8px;margin-top:16px;">## 教育背景</div>
+        <div style="margin-bottom:8px;">### 清华大学 - 计算机科学与技术 (本科)</div>
+        <div>*2014.09 - 2018.06*</div>
+      </div>
+      <div class="builder-preview">
+        <div style="text-align:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #6366f1;">
+          <h1 style="font-size:24px;font-weight:700;color:#1a1a1a;margin-bottom:4px;">张三</h1>
+          <p style="color:#6366f1;font-weight:500;">前端开发工程师 | 5年经验</p>
+          <p style="font-size:12px;color:#666;margin-top:8px;">📧 zhangsan@email.com | 📱 138-0000-0000 | 📍 北京</p>
+        </div>
+        <div style="margin-bottom:20px;">
+          <h2
+            style="font-size:16px;font-weight:700;color:#6366f1;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px;">
+            工作经历</h2>
+          <div style="margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;">
+              <strong>ABC科技有限公司</strong>
+              <span style="font-size:12px;color:#666;">2021.06 - 至今</span>
+            </div>
+            <div style="font-size:13px;color:#4b5563;">高级前端工程师</div>
+            <ul style="font-size:13px;color:#4b5563;padding-left:16px;margin-top:6px;">
+              <li>负责公司核心产品的前端架构设计与开发</li>
+              <li>主导 React 组件库建设，提升团队开发效率 40%</li>
+              <li>优化首屏加载性能，LCP 从 3.2s 降至 1.1s</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <h2
+            style="font-size:16px;font-weight:700;color:#6366f1;border-bottom:1px solid #e5e7eb;padding-bottom:6px;margin-bottom:12px;">
+            教育背景</h2>
+          <div style="display:flex;justify-content:space-between;">
+            <strong>清华大学</strong>
+            <span style="font-size:12px;color:#666;">2014.09 - 2018.06</span>
+          </div>
+          <div style="font-size:13px;color:#4b5563;">计算机科学与技术 (本科)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== AI面试精灵 ==================== -->
+  <section class="page-section" id="interview">
+    <div class="section-label">AI 面试精灵 /interview</div>
+    <div class="tabs">
+      <div class="tab active">面试设置</div>
+      <div class="tab">面试进行中</div>
+    </div>
+    <div class="grid-5-3">
+      <div class="flex-col">
+        <div class="hero-banner">
+          <div class="flex-gap mb-4">
+            <div class="icon-circle icon-circle-primary" style="font-size:24px;">▶</div>
+            <div>
+              <h2 style="font-size:22px;font-weight:700;">AI 面试精灵</h2>
+            </div>
+          </div>
+          <p class="text-secondary">实时获取面试问题的参考答案，让你在面试中更加从容自信。</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚙️</div>
+          <div>
+            <div class="feature-title">选择面试模式</div>
+            <div class="feature-desc">辅助面试模式：实时获取参考答案；模拟面试模式：AI 提问你回答</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💬</div>
+          <div>
+            <div class="feature-title">输入问题</div>
+            <div class="feature-desc">输入面试官的问题或使用语音输入，获取 AI 生成的参考答案</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <div>
+            <div class="feature-title">开始练习</div>
+            <div class="feature-desc">在模拟面试中练习，系统会给出实时反馈和改进建议</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <div>
+            <div class="feature-title">获取反馈</div>
+            <div class="feature-desc">面试结束后获得详细的表现评估报告，明确改进方向</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="glass-card" style="position:sticky;top:24px;">
+          <h3 style="font-size:17px;font-weight:700;margin-bottom:24px;">配置面试</h3>
+          <div class="flex-col">
+            <div>
+              <div class="form-label">面试模式</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div
+                  style="padding:16px;border-radius:12px;border:2px solid var(--primary-color);background:rgba(99,102,241,0.1);text-align:center;cursor:pointer;">
+                  <div style="font-size:20px;margin-bottom:8px;">💬</div>
+                  <div style="font-weight:500;font-size:14px;">辅助面试</div>
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">实时获取参考答案</div>
+                </div>
+                <div
+                  style="padding:16px;border-radius:12px;border:1px solid var(--glass-border);background:var(--glass-bg);text-align:center;cursor:pointer;">
+                  <div style="font-size:20px;margin-bottom:8px;">❓</div>
+                  <div style="font-weight:500;font-size:14px;">模拟面试</div>
+                  <div style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">AI 提问你回答</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="form-label">答案语言</div>
+              <select class="glass-input">
+                <option>中文</option>
+                <option>English</option>
+              </select>
+            </div>
+            <button class="gradient-button w-full" style="height:48px;font-size:15px;">开始面试</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 模拟面试 ==================== -->
+  <section class="page-section" id="role-play">
+    <div class="section-label">模拟面试 /role-play</div>
+    <div class="mb-6">
+      <h1 class="page-title">模拟面试</h1>
+      <p class="page-subtitle">选择面试场景，AI 面试官将根据您的简历和目标岗位进行面试</p>
+    </div>
+    <div class="tabs">
+      <div class="tab active">开始面试</div>
+      <div class="tab">面试记录</div>
+    </div>
+    <div class="grid-5-3">
+      <div class="flex-col">
+        <div class="hero-banner">
+          <div class="flex-gap mb-4">
+            <div class="icon-circle icon-circle-primary" style="font-size:24px;">📹</div>
+            <div>
+              <h2 style="font-size:22px;font-weight:700;">AI 模拟面试</h2>
+              <p class="text-sm text-secondary">真人模拟面试体验</p>
+            </div>
+          </div>
+          <p class="text-secondary">通过 AI 技术模拟真实面试场景，帮助您熟悉面试流程，提升面试技巧。</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚙️</div>
+          <div>
+            <div class="feature-title">面试设置</div>
+            <div class="feature-desc">首先，配置面试相关信息，包括简历、岗位和语言偏好</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📹</div>
+          <div>
+            <div class="feature-title">开始面试</div>
+            <div class="feature-desc">AI 面试官将根据您的简历和目标岗位提出专业的面试问题</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⏱</div>
+          <div>
+            <div class="feature-title">实时反馈</div>
+            <div class="feature-desc">在面试过程中获得实时的回答建议和指导</div>
+          </div>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✅</div>
+          <div>
+            <div class="feature-title">综合评估</div>
+            <div class="feature-desc">面试结束后获得详细的表现评估报告和改进建议</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="glass-card" style="position:sticky;top:24px;">
+          <h3 style="font-size:17px;font-weight:700;margin-bottom:24px;">面试配置</h3>
+          <div class="flex-col">
+            <div>
+              <div class="form-label">个人简历</div>
+              <div
+                style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:12px;display:flex;align-items:center;gap:12px;">
+                <div class="icon-circle icon-circle-success" style="width:40px;height:40px;font-size:16px;">✓</div>
+                <div>
+                  <div style="font-size:13px;font-weight:500;">前端开发_张三.pdf</div>
+                  <div class="text-xs text-tertiary">已上传</div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="form-label">目标岗位</div>
+              <input class="glass-input" placeholder="例如：前端开发工程师">
+            </div>
+            <div>
+              <div class="form-label">面试语言</div>
+              <select class="glass-input">
+                <option>中文</option>
+                <option>English</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div class="flex-between">
+                <div>
+                  <div style="font-size:13px;font-weight:500;">音频采集</div>
+                  <div class="text-xs text-tertiary">启用语音输入功能</div>
+                </div>
+                <div class="switch"></div>
+              </div>
+              <div class="flex-between">
+                <div>
+                  <div style="font-size:13px;font-weight:500;">面试精灵</div>
+                  <div class="text-xs text-tertiary">实时获取参考答案</div>
+                </div>
+                <div class="switch on"></div>
+              </div>
+            </div>
+            <button class="gradient-button w-full" style="height:48px;font-size:15px;">开始模拟面试</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 履历点睛 ==================== -->
+  <section class="page-section" id="pitch-perfect">
+    <div class="section-label">履历点睛 /pitch-perfect</div>
+    <div class="mb-8" style="text-align:center;">
+      <div class="icon-circle icon-circle-primary" style="width:56px;height:56px;font-size:24px;margin:0 auto 16px;">✨
+      </div>
+      <h1 class="page-title">履历点睛</h1>
+      <p class="page-subtitle">生成一段黄金自我介绍，让您在众多候选人中脱颖而出。</p>
+    </div>
+    <div style="max-width:640px;margin:0 auto;">
+      <div class="glass-card">
+        <div class="form-group">
+          <div class="form-label">当前活跃简历:</div>
+          <div
+            style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+            <div class="flex-gap">
+              <span style="color:#818cf8;">📄</span>
+              <div>
+                <div style="font-weight:500;">前端开发_张三.pdf</div>
+                <div class="text-xs text-tertiary">v2 · 已解析</div>
+              </div>
+            </div>
+            <a href="#" style="color:#818cf8;font-size:13px;text-decoration:none;">更换</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">职位描述:</div>
+          <textarea class="glass-input" rows="8" placeholder="粘贴职位描述内容..." style="resize:vertical;"></textarea>
+        </div>
+        <button class="gradient-button w-full" style="height:48px;font-size:15px;">开始优化</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 面试预测 ==================== -->
+  <section class="page-section" id="strategist">
+    <div class="section-label">面试预测 /strategist</div>
+    <div class="mb-8" style="text-align:center;">
+      <div class="icon-circle icon-circle-primary" style="width:56px;height:56px;font-size:24px;margin:0 auto 16px;">🚀
+      </div>
+      <h1 class="page-title">面试预测</h1>
+      <p class="page-subtitle">基于您的背景和目标职位，智能预测面试问题并提供对策</p>
+    </div>
+    <div style="max-width:640px;margin:0 auto;">
+      <div class="glass-card">
+        <div class="form-group">
+          <div class="form-label">当前活跃简历:</div>
+          <div
+            style="background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:10px;padding:14px;display:flex;align-items:center;justify-content:space-between;">
+            <div class="flex-gap">
+              <span style="color:#818cf8;">📄</span>
+              <div>
+                <div style="font-weight:500;">前端开发_张三.pdf</div>
+                <div class="text-xs text-tertiary">v2 · 已解析</div>
+              </div>
+            </div>
+            <a href="#" style="color:#818cf8;font-size:13px;text-decoration:none;">更换</a>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">职位描述 (JD):</div>
+          <textarea class="glass-input" rows="8" placeholder="请粘贴您要申请的职位描述..." style="resize:vertical;"></textarea>
+        </div>
+        <button class="gradient-button w-full" style="height:48px;font-size:15px;">生成面试策略方案</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 个人中心 ==================== -->
+  <section class="page-section" id="profile">
+    <div class="section-label">个人中心 /profile</div>
+    <div class="glass-card">
+      <div class="mb-8">
+        <h2 style="font-size:24px;font-weight:700;margin-bottom:4px;">个人中心</h2>
+        <p class="text-secondary">管理您的个人资料、安全设置和账户通知</p>
+      </div>
+      <div class="tabs">
+        <div class="tab active">👤 个人资料</div>
+        <div class="tab">🔒 安全设置</div>
+        <div class="tab">📊 使用量</div>
+        <div class="tab">🕐 历史记录</div>
+        <div class="tab">🔔 通知</div>
+      </div>
+      <div style="display:flex;gap:40px;">
+        <div style="text-align:center;">
+          <div class="avatar avatar-lg">Y</div>
+          <button class="btn-secondary mt-4" style="font-size:12px;padding:6px 12px;">更换头像</button>
+        </div>
+        <div style="flex:1;">
+          <div class="grid-2">
+            <div class="form-group">
+              <div class="form-label">用户名</div>
+              <input class="glass-input" value="YiYing">
+            </div>
+            <div class="form-group">
+              <div class="form-label">邮箱</div>
+              <input class="glass-input" value="yiying@example.com" disabled style="opacity:0.6;">
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="form-group">
+              <div class="form-label">手机号</div>
+              <input class="glass-input" placeholder="未绑定">
+            </div>
+            <div class="form-group">
+              <div class="form-label">个人简介</div>
+              <textarea class="glass-input" rows="3" placeholder="介绍一下自己..." style="resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div class="flex-gap mt-4">
+            <button class="gradient-button">保存修改</button>
+            <button class="btn-secondary">取消</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 设置 ==================== -->
+  <section class="page-section" id="settings">
+    <div class="section-label">设置 /settings</div>
+    <div class="glass-card">
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">设置</h2>
+      <div class="tabs">
+        <div class="tab active">⚙️ 通用</div>
+        <div class="tab">✏️ 编辑器</div>
+        <div class="tab">🔔 通知</div>
+      </div>
+      <div style="max-width:500px;">
+        <h4 style="font-weight:600;margin-bottom:16px;">🌐 语言</h4>
+        <select class="glass-input mb-6">
+          <option>简体中文</option>
+          <option>English</option>
+        </select>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">🎨 主题</h4>
+        <select class="glass-input mb-6">
+          <option>浅色</option>
+          <option selected>深色</option>
+          <option>跟随系统</option>
+        </select>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">✏️ 编辑器</h4>
+        <div class="flex-between mb-6">
+          <div>
+            <div style="font-weight:500;">自动保存</div>
+            <div class="text-sm text-secondary">编辑内容时自动保存草稿</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">🔔 通知</h4>
+        <div class="flex-between mb-4">
+          <div>
+            <div style="font-weight:500;">启用通知</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <div class="flex-between mb-6">
+          <div>
+            <div style="font-weight:500;">邮件通知</div>
+          </div>
+          <div class="switch"></div>
+        </div>
+        <hr class="divider">
+        <button class="gradient-button">💾 保存设置</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 使用量 ==================== -->
+  <section class="page-section" id="usage">
+    <div class="section-label">使用量 /account/usage</div>
+    <div class="mb-8">
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px;">使用量</h2>
+      <p class="text-secondary">查看当前计费周期内的 AI 使用情况与配额状态</p>
+    </div>
+    <div class="glass-card mb-6">
+      <div class="flex-between mb-4">
+        <span style="font-weight:600;">计费周期</span>
+      </div>
+      <p class="text-secondary">2024-01-01 00:00 → 2024-02-01 00:00</p>
+    </div>
+    <div class="glass-card mb-6">
+      <div class="flex-between mb-4">
+        <span style="font-weight:600;">AI 使用情况</span>
+        <span class="text-primary font-bold">剩余 7 / 10 次</span>
+      </div>
+      <div class="grid-4" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label">调用次数</div>
+          <div class="stat-value">156</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">成功</div>
+          <div class="stat-value">148</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">失败</div>
+          <div class="stat-value">8</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">平均延迟</div>
+          <div class="stat-value">1.2s</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="stat-card">
+          <div class="stat-label">输入 Token</div>
+          <div class="stat-value">245K</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">输出 Token</div>
+          <div class="stat-value">89K</div>
+        </div>
+      </div>
+      <div class="stat-card mt-4">
+        <div class="stat-label">成本 (USD)</div>
+        <div class="stat-value">$3.42</div>
+      </div>
+    </div>
+    <div class="glass-card mb-6">
+      <span style="font-weight:600;display:block;margin-bottom:16px;">配额</span>
+      <div class="grid-2">
+        <div>
+          <div style="font-weight:500;margin-bottom:8px;">简历优化</div>
+          <div class="text-secondary text-sm mb-4">3 / 10</div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width:30%;"></div>
+          </div>
+          <div class="text-xs text-tertiary mt-4">重置时间：2024-02-01 00:00</div>
+        </div>
+        <div>
+          <div style="font-weight:500;margin-bottom:8px;">PDF 导出</div>
+          <div class="text-secondary text-sm mb-4">1 / 5</div>
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width:20%;"></div>
+          </div>
+          <div class="text-xs text-tertiary mt-4">重置时间：2024-02-01 00:00</div>
+        </div>
+      </div>
+    </div>
+    <div class="glass-card">
+      <span style="font-weight:600;display:block;margin-bottom:16px;">趋势</span>
+      <p class="text-secondary text-sm mb-4">近 30 天调用次数趋势</p>
+      <div class="mini-chart">
+        <div class="mini-chart-bar" style="height:30%;"></div>
+        <div class="mini-chart-bar" style="height:45%;"></div>
+        <div class="mini-chart-bar" style="height:35%;"></div>
+        <div class="mini-chart-bar" style="height:60%;"></div>
+        <div class="mini-chart-bar" style="height:55%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:50%;"></div>
+        <div class="mini-chart-bar" style="height:80%;"></div>
+        <div class="mini-chart-bar" style="height:65%;"></div>
+        <div class="mini-chart-bar" style="height:90%;"></div>
+        <div class="mini-chart-bar" style="height:75%;"></div>
+        <div class="mini-chart-bar" style="height:85%;"></div>
+        <div class="mini-chart-bar" style="height:60%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:55%;"></div>
+        <div class="mini-chart-bar" style="height:80%;"></div>
+        <div class="mini-chart-bar" style="height:95%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:60%;"></div>
+        <div class="mini-chart-bar" style="height:75%;"></div>
+        <div class="mini-chart-bar" style="height:85%;"></div>
+        <div class="mini-chart-bar" style="height:65%;"></div>
+        <div class="mini-chart-bar" style="height:50%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:80%;"></div>
+        <div class="mini-chart-bar" style="height:90%;"></div>
+        <div class="mini-chart-bar" style="height:75%;"></div>
+        <div class="mini-chart-bar" style="height:85%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:60%;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 团队 ==================== -->
+  <section class="page-section" id="team">
+    <div class="section-label">团队 /team</div>
+    <div class="mb-8">
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:4px;">团队 Agent 仪表盘</h2>
+      <p class="text-secondary">监控团队 AI Agent 的运行状态和性能指标</p>
+    </div>
+    <div class="grid-4 mb-6">
+      <div class="stat-card">
+        <div class="stat-label">活跃 Agent</div>
+        <div class="stat-value text-primary">6</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">总请求数</div>
+        <div class="stat-value">1,284</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">成功率</div>
+        <div class="stat-value text-success">98.2%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">平均响应</div>
+        <div class="stat-value">1.3s</div>
+      </div>
+    </div>
+    <div class="grid-3">
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-primary">📄</div>
+        <div style="font-weight:600;margin-bottom:4px;">简历解析 Agent</div>
+        <div class="text-sm text-secondary mb-4">解析上传的简历文件</div>
+        <div class="flex-center"><span class="agent-status-dot dot-green"></span><span
+            class="text-sm text-success">运行中</span></div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-success">🎯</div>
+        <div style="font-weight:600;margin-bottom:4px;">JD 匹配 Agent</div>
+        <div class="text-sm text-secondary mb-4">简历与职位描述匹配</div>
+        <div class="flex-center"><span class="agent-status-dot dot-green"></span><span
+            class="text-sm text-success">运行中</span></div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-warning">✨</div>
+        <div style="font-weight:600;margin-bottom:4px;">优化建议 Agent</div>
+        <div class="text-sm text-secondary mb-4">生成简历优化建议</div>
+        <div class="flex-center"><span class="agent-status-dot dot-yellow"></span><span
+            class="text-sm text-warning">高负载</span></div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-primary">🤖</div>
+        <div style="font-weight:600;margin-bottom:4px;">面试生成 Agent</div>
+        <div class="text-sm text-secondary mb-4">生成面试问题和评估</div>
+        <div class="flex-center"><span class="agent-status-dot dot-green"></span><span
+            class="text-sm text-success">运行中</span></div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-danger">⭐</div>
+        <div style="font-weight:600;margin-bottom:4px;">自我介绍 Agent</div>
+        <div class="text-sm text-secondary mb-4">生成黄金自我介绍</div>
+        <div class="flex-center"><span class="agent-status-dot dot-red"></span><span
+            class="text-sm text-danger">已停止</span></div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon icon-circle-success">📊</div>
+        <div style="font-weight:600;margin-bottom:4px;">面试预测 Agent</div>
+        <div class="text-sm text-secondary mb-4">预测面试问题并提供对策</div>
+        <div class="flex-center"><span class="agent-status-dot dot-green"></span><span
+            class="text-sm text-success">运行中</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== Agent 指标 ==================== -->
+  <section class="page-section" id="agent-metrics">
+    <div class="section-label">Agent 指标 /agent-metrics</div>
+    <div class="mb-8">
+      <h1 class="page-title">Agent Metrics & Analytics</h1>
+      <p class="page-subtitle">Monitor token usage, costs, and optimization savings across all agents</p>
+    </div>
+    <div class="grid-4 mb-6">
+      <div class="stat-card">
+        <div class="stat-label">总 Token 用量</div>
+        <div class="stat-value">334K</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">总成本 (USD)</div>
+        <div class="stat-value">$5.28</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">节省 Token</div>
+        <div class="stat-value text-success">89K</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">节省率</div>
+        <div class="stat-value text-success">21%</div>
+      </div>
+    </div>
+    <div class="glass-card mb-6">
+      <h4 style="font-weight:600;margin-bottom:16px;">Token 用量趋势 (近 7 天)</h4>
+      <div class="mini-chart" style="height:160px;">
+        <div class="mini-chart-bar" style="height:40%;"></div>
+        <div class="mini-chart-bar" style="height:55%;"></div>
+        <div class="mini-chart-bar" style="height:70%;"></div>
+        <div class="mini-chart-bar" style="height:60%;"></div>
+        <div class="mini-chart-bar" style="height:85%;"></div>
+        <div class="mini-chart-bar" style="height:75%;"></div>
+        <div class="mini-chart-bar" style="height:90%;"></div>
+      </div>
+    </div>
+    <div class="glass-card">
+      <h4 style="font-weight:600;margin-bottom:16px;">各 Agent 成本分布</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>调用次数</th>
+            <th>Token 用量</th>
+            <th>成本</th>
+            <th>节省</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>简历解析</td>
+            <td>342</td>
+            <td>86K</td>
+            <td>$1.24</td>
+            <td class="text-success">18%</td>
+          </tr>
+          <tr>
+            <td>JD 匹配</td>
+            <td>256</td>
+            <td>64K</td>
+            <td>$0.96</td>
+            <td class="text-success">22%</td>
+          </tr>
+          <tr>
+            <td>优化建议</td>
+            <td>428</td>
+            <td>112K</td>
+            <td>$1.85</td>
+            <td class="text-success">15%</td>
+          </tr>
+          <tr>
+            <td>面试生成</td>
+            <td>180</td>
+            <td>48K</td>
+            <td>$0.72</td>
+            <td class="text-success">25%</td>
+          </tr>
+          <tr>
+            <td>自我介绍</td>
+            <td>78</td>
+            <td>24K</td>
+            <td>$0.51</td>
+            <td class="text-success">20%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== 管理后台 - 用户管理 ==================== -->
+  <section class="page-section" id="admin-users">
+    <div class="section-label">管理后台 - 用户管理 /admin/users</div>
+    <div class="glass-card">
+      <div class="flex-between mb-8">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;">用户管理</h2>
+          <p class="text-secondary">管理系统用户和权限</p>
+        </div>
+        <div class="flex-gap">
+          <input class="glass-input" placeholder="搜索用户..." style="width:250px;">
+          <button class="gradient-button" style="font-size:13px;">搜索</button>
+          <button class="btn-secondary" style="font-size:13px;">🔄 刷新</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>邮箱</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="flex-gap"><span>👤</span> admin</td>
+            <td class="text-secondary">admin@example.com</td>
+            <td><span class="tag tag-gold">ADMIN</span></td>
+            <td><span class="tag tag-green">活跃</span></td>
+            <td class="text-secondary text-sm">2024-01-01</td>
+            <td class="flex-gap"><button class="btn-secondary"
+                style="padding:4px 8px;font-size:12px;">编辑</button><button class="btn-danger"
+                style="padding:4px 8px;font-size:12px;">删除</button></td>
+          </tr>
+          <tr>
+            <td class="flex-gap"><span>👤</span> user1</td>
+            <td class="text-secondary">user1@example.com</td>
+            <td><span class="tag tag-blue">USER</span></td>
+            <td><span class="tag tag-green">活跃</span></td>
+            <td class="text-secondary text-sm">2024-01-05</td>
+            <td class="flex-gap"><button class="btn-secondary"
+                style="padding:4px 8px;font-size:12px;">编辑</button><button class="btn-danger"
+                style="padding:4px 8px;font-size:12px;">禁用</button></td>
+          </tr>
+          <tr>
+            <td class="flex-gap"><span>👤</span> user2</td>
+            <td class="text-secondary">user2@example.com</td>
+            <td><span class="tag tag-blue">USER</span></td>
+            <td><span class="tag tag-red">禁用</span></td>
+            <td class="text-secondary text-sm">2024-01-10</td>
+            <td class="flex-gap"><button class="btn-secondary"
+                style="padding:4px 8px;font-size:12px;">编辑</button><button class="btn-secondary"
+                style="padding:4px 8px;font-size:12px;">启用</button></td>
+          </tr>
+          <tr>
+            <td class="flex-gap"><span>👤</span> zhangsan</td>
+            <td class="text-secondary">zhangsan@email.com</td>
+            <td><span class="tag tag-blue">USER</span></td>
+            <td><span class="tag tag-green">活跃</span></td>
+            <td class="text-secondary text-sm">2024-01-15</td>
+            <td class="flex-gap"><button class="btn-secondary"
+                style="padding:4px 8px;font-size:12px;">编辑</button><button class="btn-danger"
+                style="padding:4px 8px;font-size:12px;">禁用</button></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <button class="page-btn">‹</button>
+        <button class="page-btn active">1</button>
+        <button class="page-btn">2</button>
+        <button class="page-btn">3</button>
+        <button class="page-btn">›</button>
+        <span class="text-sm text-secondary" style="margin-left:12px;">共 24 条</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 管理后台 - 模型管理 ==================== -->
+  <section class="page-section" id="admin-models">
+    <div class="section-label">管理后台 - 模型管理 /admin/models</div>
+    <div class="glass-card">
+      <div class="flex-between mb-8">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;">模型配置管理</h2>
+          <p class="text-secondary">管理和监控您的 AI 模型服务配置</p>
+        </div>
+        <div class="flex-gap">
+          <select class="glass-input" style="width:160px;padding:8px 12px;font-size:13px;">
+            <option>筛选提供商</option>
+            <option>OpenAI</option>
+            <option>Qwen</option>
+            <option>DeepSeek</option>
+            <option>Gemini</option>
+            <option>SiliconCloud</option>
+            <option>Ollama</option>
+          </select>
+          <button class="btn-secondary" style="font-size:13px;">🔄 刷新缓存</button>
+          <button class="gradient-button" style="font-size:13px;">+ 新建模型</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>提供商</th>
+              <th>端点</th>
+              <th>温度</th>
+              <th>最大Token</th>
+              <th>输入成本</th>
+              <th>输出成本</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500;">gpt-4-turbo</td>
+              <td><span class="tag tag-green">OPENAI</span></td>
+              <td class="text-secondary text-sm">https://api.openai.com</td>
+              <td>0.7</td>
+              <td>4096</td>
+              <td>$0.000030</td>
+              <td>$0.000060</td>
+              <td>
+                <div class="switch on" style="width:36px;height:20px;"></div>
+              </td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">测试</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">qwen-max</td>
+              <td><span class="tag tag-blue">QWEN</span></td>
+              <td class="text-secondary text-sm">https://dashscope.aliyuncs.com</td>
+              <td>0.7</td>
+              <td>2000</td>
+              <td>$0.000004</td>
+              <td>$0.000012</td>
+              <td>
+                <div class="switch on" style="width:36px;height:20px;"></div>
+              </td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">测试</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">deepseek-chat</td>
+              <td><span class="tag tag-purple">DEEPSEEK</span></td>
+              <td class="text-secondary text-sm">https://api.deepseek.com</td>
+              <td>0.7</td>
+              <td>4000</td>
+              <td>$0.000001</td>
+              <td>$0.000002</td>
+              <td>
+                <div class="switch" style="width:36px;height:20px;"></div>
+              </td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">测试</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">gemini-pro</td>
+              <td><span class="tag tag-orange">GEMINI</span></td>
+              <td class="text-secondary text-sm">https://generativelanguage.googleapis.com</td>
+              <td>0.7</td>
+              <td>2048</td>
+              <td>$0.000025</td>
+              <td>$0.000050</td>
+              <td>
+                <div class="switch on" style="width:36px;height:20px;"></div>
+              </td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">测试</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 管理后台 - 提示词管理 ==================== -->
+  <section class="page-section" id="admin-prompts">
+    <div class="section-label">管理后台 - 提示词管理 /admin/prompts</div>
+    <div class="glass-card">
+      <div class="flex-between mb-8">
+        <div>
+          <h2 style="font-size:24px;font-weight:700;">提示词管理</h2>
+          <p class="text-secondary">管理和优化您的 AI 提示词模板</p>
+        </div>
+        <div class="flex-gap">
+          <select class="glass-input" style="width:200px;padding:8px 12px;font-size:13px;">
+            <option>筛选场景</option>
+            <option>简历解析</option>
+            <option>JD 解析</option>
+            <option>简历优化</option>
+            <option>面试问题生成</option>
+            <option>匹配度计算</option>
+          </select>
+          <button class="btn-secondary" style="font-size:13px;">🔄 刷新</button>
+          <button class="gradient-button" style="font-size:13px;">+ 新建提示词</button>
+        </div>
+      </div>
+      <div class="tabs" style="margin-bottom:20px;">
+        <div class="tab active">English (EN)</div>
+        <div class="tab">Chinese (CN)</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>场景</th>
+              <th>语言</th>
+              <th>模板预览</th>
+              <th>变量</th>
+              <th>版本</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500;">resume_parsing_default</td>
+              <td><span class="tag tag-blue">简历解析</span></td>
+              <td><span class="tag tag-green">EN</span></td>
+              <td class="text-secondary text-sm">You are a professional resume parser. Extract the following...</td>
+              <td><span class="tag tag-purple" style="margin-right:4px;">resume_text</span><span
+                  class="tag tag-purple">language</span></td>
+              <td>v3</td>
+              <td><span class="tag tag-green">活跃</span></td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">历史</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">jd_parsing_default</td>
+              <td><span class="tag tag-blue">JD 解析</span></td>
+              <td><span class="tag tag-green">EN</span></td>
+              <td class="text-secondary text-sm">Parse the following job description and extract...</td>
+              <td><span class="tag tag-purple" style="margin-right:4px;">jd_text</span></td>
+              <td>v2</td>
+              <td><span class="tag tag-green">活跃</span></td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">历史</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">resume_optimization</td>
+              <td><span class="tag tag-blue">简历优化</span></td>
+              <td><span class="tag tag-orange">CN</span></td>
+              <td class="text-secondary text-sm">你是一位专业的简历优化顾问。请根据以下...</td>
+              <td><span class="tag tag-purple" style="margin-right:4px;">resume</span><span class="tag tag-purple"
+                  style="margin-right:4px;">jd</span><span class="tag tag-purple">suggestions</span></td>
+              <td>v5</td>
+              <td><span class="tag tag-green">活跃</span></td>
+              <td class="flex-gap"><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">编辑</button><button class="btn-secondary"
+                  style="padding:4px 8px;font-size:11px;">历史</button><button class="btn-danger"
+                  style="padding:4px 8px;font-size:11px;">删除</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 管理后台 - 知识库 ==================== -->
+  <section class="page-section" id="admin-kb">
+    <div class="section-label">管理后台 - 知识库 /admin/knowledge-base</div>
+    <div class="mb-8">
+      <h2
+        style="font-size:24px;font-weight:700;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+        知识库管理</h2>
+      <p class="text-secondary">管理 RAG 知识库文档，支持上传、检索和查询测试</p>
+    </div>
+    <div class="grid-4 mb-6">
+      <div class="kb-stat-card">
+        <div class="stat-label">📄 文档总数</div>
+        <div class="stat-value">24</div>
+      </div>
+      <div class="kb-stat-card">
+        <div class="stat-label">🧩 分块总数</div>
+        <div class="stat-value">386</div>
+      </div>
+      <div class="kb-stat-card">
+        <div class="stat-label">📂 分类数</div>
+        <div class="stat-value">5</div>
+      </div>
+      <div class="kb-stat-card">
+        <div class="stat-label">🕐 最近更新</div>
+        <div class="stat-value" style="font-size:16px;">2024-01-15</div>
+      </div>
+    </div>
+    <div class="flex-gap mb-6">
+      <button class="gradient-button" style="font-size:13px;">📤 上传文档</button>
+      <button class="btn-secondary" style="font-size:13px;">🔍 查询测试</button>
+      <button class="btn-secondary" style="font-size:13px;">🔄 刷新</button>
+      <button class="btn-danger" style="font-size:13px;">🗑 清空全部</button>
+    </div>
+    <div class="glass-card">
+      <table>
+        <thead>
+          <tr>
+            <th>文档名称</th>
+            <th>分类</th>
+            <th>标签</th>
+            <th>分块数</th>
+            <th>字数</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="flex-gap"><span style="color:#f87171;">📄</span> 前端面试题集.pdf</td>
+            <td><span class="tag tag-blue">INTERVIEW_QUESTIONS</span></td>
+            <td><span class="tag" style="margin-right:4px;">technical</span><span class="tag">frontend</span></td>
+            <td>48</td>
+            <td>12,500</td>
+            <td class="text-secondary text-sm">2024-01-10</td>
+            <td><button class="btn-danger" style="padding:4px 8px;font-size:11px;">删除</button></td>
+          </tr>
+          <tr>
+            <td class="flex-gap"><span style="color:#60a5fa;">📄</span> 职业发展指南.docx</td>
+            <td><span class="tag tag-green">CAREER_ADVICE</span></td>
+            <td><span class="tag" style="margin-right:4px;">career</span><span class="tag">growth</span></td>
+            <td>32</td>
+            <td>8,200</td>
+            <td class="text-secondary text-sm">2024-01-12</td>
+            <td><button class="btn-danger" style="padding:4px 8px;font-size:11px;">删除</button></td>
+          </tr>
+          <tr>
+            <td class="flex-gap"><span style="color:#34d399;">📄</span> 简历撰写技巧.txt</td>
+            <td><span class="tag tag-orange">RESUME_TIPS</span></td>
+            <td><span class="tag">resume</span></td>
+            <td>16</td>
+            <td>4,800</td>
+            <td class="text-secondary text-sm">2024-01-15</td>
+            <td><button class="btn-danger" style="padding:4px 8px;font-size:11px;">删除</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================== 管理后台 - 系统设置 ==================== -->
+  <section class="page-section" id="admin-settings">
+    <div class="section-label">管理后台 - 系统设置 /admin/system-settings</div>
+    <div class="glass-card">
+      <h2 style="font-size:24px;font-weight:700;margin-bottom:24px;">系统设置</h2>
+      <div class="tabs">
+        <div class="tab active">⚙️ 通用</div>
+        <div class="tab">👤 注册</div>
+        <div class="tab">🔒 安全</div>
+        <div class="tab">📧 邮件</div>
+      </div>
+      <div style="max-width:600px;">
+        <h4 style="font-weight:600;margin-bottom:16px;">通用设置</h4>
+        <div class="form-group">
+          <div class="form-label">站点名称</div>
+          <input class="glass-input" value="AI Resume Assistant">
+        </div>
+        <div class="form-group">
+          <div class="form-label">站点描述</div>
+          <textarea class="glass-input" rows="3"
+            style="resize:vertical;">AI-powered resume optimization platform</textarea>
+        </div>
+        <hr class="divider">
+        <div class="flex-between mb-6">
+          <div>
+            <div style="font-weight:500;">维护模式</div>
+            <div class="text-sm text-secondary">启用后普通用户无法访问系统</div>
+          </div>
+          <div class="switch"></div>
+        </div>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">注册设置</h4>
+        <div class="flex-between mb-4">
+          <div>
+            <div style="font-weight:500;">允许注册</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <div class="flex-between mb-4">
+          <div>
+            <div style="font-weight:500;">邮箱验证</div>
+          </div>
+          <div class="switch on"></div>
+        </div>
+        <div class="flex-between mb-6">
+          <div>
+            <div style="font-weight:500;">邀请码</div>
+          </div>
+          <div class="switch"></div>
+        </div>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">安全设置</h4>
+        <div class="grid-2 mb-6">
+          <div class="form-group">
+            <div class="form-label">会话超时 (分钟)</div>
+            <input class="glass-input" type="number" value="60">
+          </div>
+          <div class="form-group">
+            <div class="form-label">最大登录尝试</div>
+            <input class="glass-input" type="number" value="5">
+          </div>
+        </div>
+        <hr class="divider">
+        <h4 style="font-weight:600;margin-bottom:16px;">邮件设置 (SMTP)</h4>
+        <div class="grid-2">
+          <div class="form-group">
+            <div class="form-label">SMTP 主机</div>
+            <input class="glass-input" placeholder="smtp.example.com">
+          </div>
+          <div class="form-group">
+            <div class="form-label">SMTP 端口</div>
+            <input class="glass-input" type="number" value="587">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group">
+            <div class="form-label">SMTP 用户</div>
+            <input class="glass-input" placeholder="user@example.com">
+          </div>
+          <div class="form-group">
+            <div class="form-label">SMTP 密码</div>
+            <input class="glass-input" type="password" placeholder="留空不更新">
+          </div>
+        </div>
+        <hr class="divider">
+        <button class="gradient-button">💾 保存设置</button>
+      </div>
+    </div>
+  </section>
+
+  <div style="text-align:center;padding:40px;color:var(--text-tertiary);font-size:13px;">
+    IntervAI - AI 求职面试助手 · 所有页面效果图 · 共 19 个页面
+  </div>
+
+  <script>
+    document.querySelectorAll('.page-nav a').forEach(link => {
+      link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        document.querySelectorAll('.page-nav a').forEach(a => a.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('.page-section');
+      const navLinks = document.querySelectorAll('.page-nav a');
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop - 20;
+        if (pageYOffset >= sectionTop) {
+          current = section.getAttribute('id');
+        }
+      });
+      navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

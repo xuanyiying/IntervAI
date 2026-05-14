@@ -256,7 +256,7 @@ export const interviewService = {
     const formData = new FormData();
     formData.append('file', file, 'recording.webm');
 
-    return upload<{ text: string }>('/resumes/audio/transcribe', formData);
+    return upload<{ text: string }>('/interview/audio/transcribe', formData);
   },
 
   /**
@@ -294,7 +294,7 @@ export const interviewService = {
     optimizationId: string
   ): Promise<InterviewQuestion[]> => {
     const response = await axios.post<InterviewQuestion[]>(
-      '/resumes/questions',
+      '/interview/questions',
       {
         optimizationId,
       }
@@ -349,7 +349,7 @@ export const interviewService = {
     question?: string;
   }): Promise<{ content: string }> => {
     const response = await axios.post<{ content: string }>(
-      '/resumes/preparation-guide',
+      '/interview/preparation-guide',
       params
     );
     return response.data;
@@ -373,5 +373,25 @@ export const interviewService = {
     link.click();
     link.parentNode?.removeChild(link);
     window.URL.revokeObjectURL(url);
+  },
+
+  getInterviewHistory: async (): Promise<any[]> => {
+    const response = await axios.get('/interview/sessions');
+    return response.data;
+  },
+
+  startRolePlay: async (params: {
+    resumeId: string;
+    jobPosition: string;
+    language?: string;
+    audioEnabled?: boolean;
+    useAssistant?: boolean;
+  }): Promise<{ sessionId: string }> => {
+    const response = await axios.post<{ sessionId: string }>('/interview/session', {
+      optimizationId: params.resumeId,
+      mode: 'mock',
+      language: params.language || 'zh',
+    });
+    return response.data;
   },
 };

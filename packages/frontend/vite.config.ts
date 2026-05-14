@@ -58,7 +58,6 @@ export default defineConfig({
             'zustand',
           ],
           'vendor-ui': [
-            '@hello-pangea/dnd',
             'lucide-react',
             'react-markdown',
             'remark-gfm',

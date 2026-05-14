@@ -4,9 +4,7 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AppLayout from '../layouts/AppLayout';
 
-// Pages
 import InviteCodeManagementPage from '@/pages/admin/InviteCodeManagementPage';
-import KnowledgeBasePage from '@/pages/admin/KnowledgeBasePage';
 import ModelManagementPage from '@/pages/admin/ModelManagementPage';
 import PromptManagementPage from '@/pages/admin/PromptManagementPage';
 import SystemSettingsPage from '@/pages/admin/SystemSettingsPage';
@@ -21,7 +19,6 @@ import PrivacyPolicyPage from '@/pages/legal/PrivacyPolicyPage';
 import TermsOfServicePage from '@/pages/legal/TermsOfServicePage';
 import AccountSubscriptionPage from '@/pages/user/AccountSubscriptionPage';
 import AccountUsagePage from '@/pages/user/AccountUsagePage';
-import AgentMetricsPage from '@/pages/user/AgentMetricsPage';
 import ChatPage from '@/pages/user/ChatPage';
 import InterviewPage from '@/pages/user/InterviewPage';
 import MyResumesPage from '@/pages/user/MyResumesPage';
@@ -32,13 +29,10 @@ import ProfilePage from '@/pages/user/ProfilePage';
 import ResumeBuilderPage from '@/pages/user/ResumeBuilderPage';
 import RolePlayPage from '@/pages/user/RolePlayPage';
 import SettingsPage from '@/pages/user/SettingsPage';
-import { StrategistPage } from '@/pages/user/StrategistPage';
 import SubscriptionManagementPage from '@/pages/user/SubscriptionManagementPage';
-import TeamPage from '@/pages/user/TeamPage';
 
 const IS_EE = import.meta.env.VITE_APP_EDITION !== 'oss';
 
-// EE-only pages: lazy load to ensure they are separated in the build
 const PricingPage = IS_EE 
   ? lazy(() => import('@/ee/pages/marketing/PricingPage'))
   : () => null;
@@ -135,7 +129,6 @@ const routes: RouteObject[] = [
           </ProtectedRoute>
         ),
       },
-      // Commercial routes (moved to ee/ or only for EE)
       ...(IS_EE ? [
         {
           path: 'pricing',
@@ -205,34 +198,10 @@ const routes: RouteObject[] = [
         ),
       },
       {
-        path: 'strategist',
-        element: (
-          <ProtectedRoute>
-            <StrategistPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: 'role-play',
         element: (
           <ProtectedRoute>
             <RolePlayPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'agent-metrics',
-        element: (
-          <ProtectedRoute>
-            <AgentMetricsPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'team',
-        element: (
-          <ProtectedRoute>
-            <TeamPage />
           </ProtectedRoute>
         ),
       },
@@ -273,14 +242,6 @@ const routes: RouteObject[] = [
               ),
             },
           ] : []),
-          {
-            path: 'knowledge-base',
-            element: (
-              <ProtectedRoute requiredRole="ADMIN">
-                <KnowledgeBasePage />
-              </ProtectedRoute>
-            ),
-          },
           {
             path: 'system-settings',
             element: (

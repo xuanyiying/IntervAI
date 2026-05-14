@@ -229,6 +229,21 @@ export class InterviewController {
     return this.interviewService.transcribeAudio(file);
   }
 
+  @Get('session/:sessionId/feedback')
+  async getFeedback(
+    @Request() req: any,
+    @Param('sessionId') sessionId: string
+  ) {
+    const userId = req.user.id;
+    const session = await this.interviewService.getSession(userId, sessionId);
+    return {
+      sessionId: session.id,
+      score: session.score,
+      feedback: session.feedback,
+      status: session.status,
+    };
+  }
+
   @Get('session/:sessionId/report')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async generateReport(
