@@ -363,15 +363,18 @@ export const interviewService = {
   },
 
   downloadReport: async (sessionId: string): Promise<void> => {
-    const report = await interviewService.getReport(sessionId);
-    const blob = new Blob([report.markdown], { type: 'text/markdown' });
+    const response = await axios.get(
+      `/interview/session/${sessionId}/report/download`,
+      { responseType: 'blob' }
+    );
+    const blob = new Blob([response.data], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `interview-report-${sessionId}.md`);
+    link.download = `interview-report-${sessionId}.pdf`;
     document.body.appendChild(link);
     link.click();
-    link.parentNode?.removeChild(link);
+    document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   },
 

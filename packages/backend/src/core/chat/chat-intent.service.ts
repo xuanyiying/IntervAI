@@ -5,6 +5,7 @@
 
 import { AIService } from '@/core/ai';
 import { LanguageInput, PromptService } from '@/core/prompts';
+import { RedisService } from '@/shared/cache/redis.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ChatResponse } from './chat.gateway';
@@ -40,11 +41,7 @@ interface IntentResult {
   suggestedActions?: string[];
 }
 
-// In-memory cache for user's resume content (should use Redis in production)
-const userResumeCache = new Map<
-  string,
-  { resumeId: string; content: string; timestamp: number }
->();
+// In-memory cache for user's resume content (replaced by Redis for multi-instance safety)
 
 function createTextResponse(
   content: string,
@@ -195,7 +192,8 @@ export class ChatIntentService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly aiService: AIService,
     private readonly sceneAnalysisService: SceneAnalysisService,
-    private readonly promptService: PromptService
+    private readonly promptService: PromptService,
+    private readonly redisService: RedisService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -204,41 +202,42 @@ export class ChatIntentService implements OnModuleInit {
     );
   }
 
-  /**
-   * Store user's resume content for later use
-   */
+  private readonly RESUME_CACHE_TTL = 3600;
+
+  private resumeCacheKey(userId: string): string {
+    return `chat:resume:${userId}`;
+  }
+
   async storeUserResumeContent(
     userId: string,
     resumeId: string,
     content: string
   ): Promise<void> {
-    userResumeCache.set(userId, {
-      resumeId,
-      content,
-      timestamp: Date.now(),
-    });
+    const key = this.resumeCacheKey(userId);
+    const data = JSON.stringify({ resumeId, content, timestamp: Date.now() });
+    await this.redisService.set(key, data, this.RESUME_CACHE_TTL);
     this.logger.debug(
       `Stored resume content for user ${userId}, resumeId: ${resumeId}`
     );
   }
 
-  /**
-   * Get user's latest resume content
-   */
   async getUserResumeContent(
     userId: string
   ): Promise<{ resumeId: string; content: string } | null> {
-    // First check cache
-    const cached = userResumeCache.get(userId);
-    if (cached && Date.now() - cached.timestamp < 3600000) {
-      // 1 hour cache
-      this.logger.debug(
-        `Using cached resume for user ${userId}, content length: ${cached.content.length}`
-      );
-      return { resumeId: cached.resumeId, content: cached.content };
+    const key = this.resumeCacheKey(userId);
+    const cached = await this.redisService.get(key);
+    if (cached) {
+      try {
+        const { resumeId, content } = JSON.parse(cached);
+        this.logger.debug(
+          `Using cached resume for user ${userId}, content length: ${content.length}`
+        );
+        return { resumeId, content };
+      } catch {
+        // Invalid cache data, fall through to DB
+      }
     }
 
-    // Fallback to database - get user's latest parsed resume
     const resume = await this.prisma.resume.findFirst({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
@@ -246,12 +245,11 @@ export class ChatIntentService implements OnModuleInit {
     });
 
     if (resume?.extractedText) {
-      // Update cache
-      userResumeCache.set(userId, {
-        resumeId: resume.id,
-        content: resume.extractedText,
-        timestamp: Date.now(),
-      });
+      await this.storeUserResumeContent(
+        userId,
+        resume.id,
+        resume.extractedText
+      );
       return { resumeId: resume.id, content: resume.extractedText };
     }
 
@@ -375,15 +373,228 @@ export class ChatIntentService implements OnModuleInit {
    * Analyze intent specific to current scene
    */
   private async analyzeSceneSpecificIntent(
-    _message: string,
-    _currentScene: string,
-    _userId: string
+    message: string,
+    currentScene: string,
+    userId: string
   ): Promise<IntentResult> {
-    // Scene-specific logic can be added here
+    const lowerMessage = message.toLowerCase();
+    const sceneKeywords = this.getSceneKeywords(currentScene);
+
+    for (const keyword of sceneKeywords) {
+      if (lowerMessage.includes(keyword.toLowerCase())) {
+        const intent = this.getIntentForSceneAndKeyword(
+          currentScene,
+          keyword,
+          lowerMessage
+        );
+        if (intent) {
+          return intent;
+        }
+      }
+    }
+
+    const implicitIntent = this.getImplicitSceneIntent(
+      currentScene,
+      lowerMessage,
+      userId
+    );
+    if (implicitIntent) {
+      return implicitIntent;
+    }
+
     return {
       intent: ChatIntent.UNKNOWN,
       confidence: 0,
     };
+  }
+
+  private getSceneKeywords(scene: string): string[] {
+    const sceneKeywordMap: Record<string, string[]> = {
+      resume_uploaded: [
+        '优化',
+        '改进',
+        '润色',
+        '完善',
+        '修改',
+        '分析',
+        '评估',
+        '检查',
+        'optimize',
+        'improve',
+        'polish',
+        'refine',
+        'analyze',
+        'assess',
+        'check',
+      ],
+      job_description_parsed: [
+        '面试',
+        '开始',
+        '练习',
+        '模拟',
+        '预测',
+        '分析',
+        '匹配',
+        'interview',
+        'start',
+        'practice',
+        'mock',
+        'predict',
+        'analyze',
+        'match',
+      ],
+      optimization_complete: [
+        '面试',
+        '开始',
+        '下一步',
+        '继续',
+        '查看',
+        'interview',
+        'next',
+        'continue',
+        'proceed',
+        'view',
+      ],
+      interview_preparing: [
+        '问题',
+        '题目',
+        '预测',
+        '预测',
+        '考题',
+        '准备',
+        'questions',
+        'predict',
+        'prepare',
+        'practice',
+      ],
+      in_interview: [
+        '结束',
+        '停止',
+        '完成',
+        '结束面试',
+        '结束对话',
+        'end',
+        'stop',
+        'finish',
+        'done',
+        'complete',
+      ],
+      general: [
+        '优化',
+        '面试',
+        '简历',
+        '职位',
+        '薪资',
+        '技能',
+        'career',
+        'job',
+        'resume',
+        'interview',
+        'salary',
+        'skill',
+      ],
+    };
+    return sceneKeywordMap[scene] || [];
+  }
+
+  private getIntentForSceneAndKeyword(
+    scene: string,
+    keyword: string,
+    message: string
+  ): IntentResult | null {
+    const sceneIntentMap: Record<
+      string,
+      Record<string, { intent: ChatIntent; confidence: number }>
+    > = {
+      resume_uploaded: {
+        优化: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        改进: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        润色: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        完善: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        修改: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.9 },
+        分析: { intent: ChatIntent.SKILL_ANALYSIS, confidence: 0.85 },
+        评估: { intent: ChatIntent.SKILL_ANALYSIS, confidence: 0.85 },
+        optimize: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        improve: { intent: ChatIntent.OPTIMIZE_RESUME, confidence: 0.95 },
+        analyze: { intent: ChatIntent.SKILL_ANALYSIS, confidence: 0.85 },
+        assess: { intent: ChatIntent.SKILL_ANALYSIS, confidence: 0.85 },
+      },
+      job_description_parsed: {
+        面试: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        开始: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+        练习: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+        模拟: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        预测: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.85 },
+        分析: { intent: ChatIntent.COMPETITIVE_ANALYSIS, confidence: 0.8 },
+        匹配: { intent: ChatIntent.PARSE_JOB_DESCRIPTION, confidence: 0.8 },
+        interview: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        start: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+        practice: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+        mock: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        predict: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.85 },
+        analyze: { intent: ChatIntent.COMPETITIVE_ANALYSIS, confidence: 0.8 },
+      },
+      optimization_complete: {
+        面试: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        开始: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+        下一步: { intent: ChatIntent.INTERVIEW_PREPARATION, confidence: 0.9 },
+        继续: { intent: ChatIntent.INTERVIEW_PREPARATION, confidence: 0.85 },
+        查看: { intent: ChatIntent.PARSE_RESUME, confidence: 0.8 },
+        interview: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.95 },
+        next: { intent: ChatIntent.INTERVIEW_PREPARATION, confidence: 0.9 },
+        continue: {
+          intent: ChatIntent.INTERVIEW_PREPARATION,
+          confidence: 0.85,
+        },
+      },
+      interview_preparing: {
+        问题: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.95 },
+        题目: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.95 },
+        预测: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.95 },
+        准备: { intent: ChatIntent.INTERVIEW_PREPARATION, confidence: 0.9 },
+        questions: {
+          intent: ChatIntent.INTERVIEW_PREDICTION,
+          confidence: 0.95,
+        },
+        predict: { intent: ChatIntent.INTERVIEW_PREDICTION, confidence: 0.95 },
+        prepare: { intent: ChatIntent.INTERVIEW_PREPARATION, confidence: 0.9 },
+        practice: { intent: ChatIntent.MOCK_INTERVIEW, confidence: 0.9 },
+      },
+      in_interview: {
+        结束: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+        停止: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+        完成: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+        end: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+        stop: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+        finish: { intent: ChatIntent.UNKNOWN, confidence: 0.5 },
+      },
+    };
+
+    const sceneMap = sceneIntentMap[scene];
+    if (!sceneMap) return null;
+    return sceneMap[keyword] || null;
+  }
+
+  private getImplicitSceneIntent(
+    scene: string,
+    message: string,
+    userId: string
+  ): IntentResult | null {
+    if (scene === 'resume_uploaded' && message.length < 20) {
+      return {
+        intent: ChatIntent.OPTIMIZE_RESUME,
+        confidence: 0.85,
+        reasoning: `Context-aware: User just uploaded a resume in "${scene}" scene`,
+      };
+    }
+    if (scene === 'job_description_parsed' && message.length < 20) {
+      return {
+        intent: ChatIntent.MOCK_INTERVIEW,
+        confidence: 0.85,
+        reasoning: `Context-aware: User just parsed job description in "${scene}" scene`,
+      };
+    }
+    return null;
   }
 
   /**
@@ -603,37 +814,33 @@ export class ChatIntentService implements OnModuleInit {
     try {
       const resume = await this.getUserResumeContent(userId);
 
-      const prompt = resume
-        ? `基于用户简历：${resume.content.substring(0, 1000)}...\n\n用户问题：${message}`
-        : `用户问题：${message}`;
-
-      const systemPrompt = this.promptService.getChatIntentPrompt(
-        'careerAdvice',
-        language
+      const result = await this.aiService.executeSkill(
+        'career-advisor',
+        {
+          resumeData: resume?.content || '',
+          question: message,
+        },
+        userId
       );
 
-      const response = await this.aiService.chat(
-        this.aiService.getModel(),
-        [
+      if (result.success && result.data) {
+        const data = result.data as any;
+        return createTextResponse(
+          typeof data.advice === 'string'
+            ? data.advice
+            : JSON.stringify(data, null, 2),
           {
-            role: 'system',
-            content: systemPrompt,
-          },
-          { role: 'user', content: prompt },
-        ],
-        { temperature: 0.7 }
-      );
+            suggestions: ['技能分析', '薪资谈判', '竞争力分析', '职业转型'],
+          }
+        );
+      }
 
-      return createTextResponse(response.content, {
-        suggestions: ['技能分析', '薪资谈判', '职业转型', '竞争力分析'],
-      });
+      return createTextResponse(
+        '抱歉，无法获取职业建议。请告诉我更多关于您的背景和目标，我会尽力帮助您。'
+      );
     } catch (error) {
       this.logger.error('Error handling career advice:', error);
-      return createTextResponse(
-        language === 'ZH'
-          ? '获取职业建议时出现问题。请告诉我更多关于您的背景和目标，我会尽力帮助您。'
-          : 'Error getting career advice. Please tell me more about your background and goals, and I will do my best to help you.'
-      );
+      return createTextResponse('获取职业建议时出现问题，请稍后重试。');
     }
   }
 
@@ -649,28 +856,35 @@ export class ChatIntentService implements OnModuleInit {
         });
       }
 
-      const analysisResult = await this.aiService.executeSkill(
-        'resume-analyzer',
+      const result = await this.aiService.executeSkill(
+        'skill-analyzer',
         { resumeText: resume.content },
         userId
       );
 
-      if (!analysisResult.success || !analysisResult.data) {
-        return createTextResponse('技能分析时出现问题，请稍后重试。');
+      if (result.success && result.data) {
+        const data = result.data as any;
+        const coreSkills = data.technicalSkills || data.coreSkills || [];
+        const gaps = data.skillGaps || data.gaps || [];
+
+        return createTextResponse(
+          `**技能分析结果**\n\n**核心技能：**\n${
+            Array.isArray(coreSkills)
+              ? coreSkills.map((s: string) => `- ${s}`).join('\n')
+              : JSON.stringify(coreSkills, null, 2)
+          }\n\n**技能差距：**\n${
+            Array.isArray(gaps)
+              ? gaps.map((g: string) => `- ${g}`).join('\n')
+              : JSON.stringify(gaps, null, 2)
+          }`,
+          {
+            data: { analysis: data },
+            suggestions: ['优化简历', '学习建议', '职位匹配'],
+          }
+        );
       }
 
-      const analysis = analysisResult.data as any;
-      const skills = analysis.skills || {};
-      const coreSkills = skills.technical || skills.core || [];
-      const gaps = analysis.gaps || analysis.matchAnalysis?.gaps || [];
-
-      return createTextResponse(
-        `**技能分析结果**\n\n**核心技能：**\n${coreSkills.map((s: string) => `- ${s}`).join('\n') || '未识别'}\n\n**技能差距：**\n${gaps.map((g: string) => `- ${g}`).join('\n') || '暂无分析'}`,
-        {
-          data: { analysis },
-          suggestions: ['优化简历', '学习建议', '职位匹配'],
-        }
-      );
+      return createTextResponse('技能分析时出现问题，请稍后重试。');
     } catch (error) {
       this.logger.error('Error handling skill analysis:', error);
       return createTextResponse('技能分析时出现问题，请稍后重试。');
@@ -678,33 +892,235 @@ export class ChatIntentService implements OnModuleInit {
   }
 
   private async handleSalaryNegotiation(
-    _userId: string,
-    _message: string
+    userId: string,
+    message: string
   ): Promise<ChatResponse> {
-    return createTextResponse(
-      '薪资谈判是一个重要话题！我可以帮您：\n\n1. **了解市场行情** - 分析目标职位的薪资范围\n2. **准备谈判策略** - 根据您的背景制定谈判方案\n3. **模拟谈判场景** - 练习常见的薪资谈判对话\n\n请告诉我您想了解哪方面？',
-      { suggestions: ['市场行情', '谈判策略', '模拟谈判', '福利谈判'] }
-    );
+    try {
+      const resume = await this.getUserResumeContent(userId);
+
+      const result = await this.aiService.executeSkill(
+        'salary-analyzer',
+        {
+          jobTitle: this.extractJobTitle(message) || 'Software Engineer',
+          location: this.extractLocation(message),
+        },
+        userId
+      );
+
+      if (result.success && result.data) {
+        const data = result.data as any;
+        const market = data.marketAnalysis?.baseSalary || {};
+        const negotiation = data.negotiation || {};
+
+        let response = `**薪资分析结果**\n\n`;
+        response += `📊 **市场薪资范围 (${market.currency || 'USD'})**\n`;
+        response += `- 最低: ${market.min?.toLocaleString() || 'N/A'}\n`;
+        response += `- 中位数: ${market.median?.toLocaleString() || 'N/A'}\n`;
+        response += `- 最高: ${market.max?.toLocaleString() || 'N/A'}\n\n`;
+
+        if (negotiation.targetRange) {
+          response += `💰 **建议目标薪资**\n`;
+          response += `- 最低: ${negotiation.targetRange.min?.toLocaleString() || 'N/A'}\n`;
+          response += `- 目标: ${negotiation.targetRange.target?.toLocaleString() || 'N/A'}\n`;
+          response += `- 最高: ${negotiation.targetRange.stretch?.toLocaleString() || 'N/A'}\n\n`;
+        }
+
+        if (negotiation.strategy?.talkingPoints?.length) {
+          response += `📝 **谈判要点**\n`;
+          response += negotiation.strategy.talkingPoints
+            .slice(0, 3)
+            .map((t: string) => `- ${t}`)
+            .join('\n');
+          response += '\n';
+        }
+
+        if (data.recommendations?.length) {
+          response += `\n💡 **建议**\n`;
+          response += data.recommendations
+            .slice(0, 3)
+            .map((r: string) => `- ${r}`)
+            .join('\n');
+        }
+
+        return createTextResponse(response, {
+          suggestions: ['模拟谈判', '福利谈判', '了解更多技巧'],
+        });
+      }
+
+      return createTextResponse(
+        '抱歉，无法获取薪资分析。请告诉我您想了解的职位信息。'
+      );
+    } catch (error) {
+      this.logger.error('Error handling salary negotiation:', error);
+      return createTextResponse('获取薪资分析时出现问题，请稍后重试。');
+    }
   }
 
   private async handleFullOptimization(
-    _userId: string,
+    userId: string,
     _message: string
   ): Promise<ChatResponse> {
-    return createTextResponse(
-      '完整优化服务将为您提供：\n\n1. **简历深度分析** - 全面评估简历质量\n2. **针对性优化** - 根据目标职位定制优化方案\n3. **内容重写** - AI辅助生成高质量简历内容\n4. **格式美化** - 专业排版和格式调整\n\n请先上传您的简历和目标职位描述，我将为您进行全面优化。',
-      { suggestions: ['上传简历', '输入职位描述', '开始优化', '查看示例'] }
-    );
+    try {
+      const resume = await this.getUserResumeContent(userId);
+      const jobDesc = await this.getUserJobDescription(userId);
+
+      if (!resume || !jobDesc) {
+        return createTextResponse(
+          '完整优化需要简历和职位描述。请先上传简历并提供职位描述。',
+          { suggestions: ['上传简历', '输入职位描述'] }
+        );
+      }
+
+      const suggestions = await this.aiService.executeSkill(
+        'jd-matcher',
+        {
+          resumeText: resume.content,
+          jobDescription: jobDesc.content,
+        },
+        userId
+      );
+
+      if (suggestions.success && suggestions.data) {
+        const data = suggestions.data as any;
+        return createTextResponse(
+          `**简历与职位匹配分析**\n\n${typeof data.analysis === 'string' ? data.analysis : JSON.stringify(data, null, 2)}`,
+          {
+            suggestions: ['查看优化建议', '生成优化版本', '开始模拟面试'],
+          }
+        );
+      }
+
+      return createTextResponse('抱歉，完整优化时出现问题。请稍后重试。');
+    } catch (error) {
+      this.logger.error('Error handling full optimization:', error);
+      return createTextResponse('完整优化时出现问题，请稍后重试。');
+    }
   }
 
   private async handleInterviewPreparation(
-    _userId: string,
-    _message: string
+    userId: string,
+    message: string
   ): Promise<ChatResponse> {
-    return createTextResponse(
-      '面试准备服务包括：\n\n1. **公司研究** - 了解目标公司背景和文化\n2. **职位分析** - 深入理解职位要求和考察点\n3. **问题预测** - 基于简历和职位预测面试问题\n4. **回答优化** - 准备高质量的回答模板\n5. **模拟面试** - 实战演练和反馈\n\n请提供目标公司和职位信息，我们开始准备吧！',
-      { suggestions: ['公司研究', '问题预测', '模拟面试', '面试技巧'] }
-    );
+    try {
+      const resume = await this.getUserResumeContent(userId);
+      const jobDesc = await this.getUserJobDescription(userId);
+
+      const result = await this.aiService.executeSkill(
+        'interview-prep',
+        {
+          jobDescription: jobDesc?.content || message,
+          resumeText: resume?.content || '',
+          interviewType: 'technical',
+        },
+        userId
+      );
+
+      if (result.success && result.data) {
+        const data = result.data as any;
+        let response = `**面试准备材料**\n\n`;
+
+        if (data.summary?.keyRequirements?.length) {
+          response += `📋 **职位关键要求**\n`;
+          response += data.summary.keyRequirements
+            .slice(0, 5)
+            .map((r: string) => `- ${r}`)
+            .join('\n');
+          response += '\n\n';
+        }
+
+        if (data.technicalQuestions?.length) {
+          response += `💻 **技术问题 (${data.technicalQuestions.length}道)**\n`;
+          response += data.technicalQuestions
+            .slice(0, 3)
+            .map((q: any) => `- ${q.question} (${q.difficulty})`)
+            .join('\n');
+          response += '\n\n';
+        }
+
+        if (data.behavioralQuestions?.length) {
+          response += `🎯 **行为面试问题**\n`;
+          response += data.behavioralQuestions
+            .slice(0, 3)
+            .map((q: any) => `- ${q.question}`)
+            .join('\n');
+          response += '\n\n';
+        }
+
+        if (data.questionsToAsk?.length) {
+          response += `❓ **向面试官提问**\n`;
+          response += data.questionsToAsk
+            .slice(0, 3)
+            .map((q: string) => `- ${q}`)
+            .join('\n');
+        }
+
+        return createTextResponse(response, {
+          suggestions: ['开始模拟面试', '公司研究', '准备自我介绍'],
+        });
+      }
+
+      return createTextResponse(
+        '抱歉，无法生成面试准备材料。请提供简历和职位描述。'
+      );
+    } catch (error) {
+      this.logger.error('Error handling interview preparation:', error);
+      return createTextResponse('生成面试准备材料时出现问题，请稍后重试。');
+    }
+  }
+
+  private extractJobTitle(message: string): string | undefined {
+    const patterns = [
+      /(?:for|职位|岗位|申请)[：:\s]*([^\s，,。.]+)/i,
+      /(?:senior|junior|lead|principal)?\s*(?:工程师|developer|engineer|manager|designer|analyst|scientist)/i,
+    ];
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (match) return match[1] || match[0];
+    }
+    return undefined;
+  }
+
+  private extractLocation(message: string): string | undefined {
+    const patterns = [
+      /(?:在|地点|location)[：:\s]*([^\s，,。.]+)/i,
+      /(北京|上海|深圳|杭州|广州|成都|南京|武汉|西安|硅谷|纽约|伦敦)/,
+    ];
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (match) return match[1] || match[0];
+    }
+    return undefined;
+  }
+
+  private async getUserJobDescription(
+    userId: string
+  ): Promise<{ content: string; parsedData?: any } | null> {
+    const cacheKey = `jobdesc:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        return { content: cached };
+      }
+    }
+
+    const latestJob = await this.prisma.job.findFirst({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (latestJob?.jobDescription) {
+      const data = { content: latestJob.jobDescription };
+      await this.redisService.set(
+        cacheKey,
+        JSON.stringify(data),
+        this.RESUME_CACHE_TTL
+      );
+      return data;
+    }
+
+    return null;
   }
 
   private handleHelp(): ChatResponse {

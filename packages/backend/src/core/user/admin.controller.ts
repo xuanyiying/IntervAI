@@ -33,7 +33,7 @@ export class AdminController {
   constructor(
     private readonly invitationService: InvitationService,
     private readonly prisma: PrismaService
-  ) { }
+  ) {}
 
   // ==================== User Management ====================
 
@@ -554,7 +554,9 @@ export class AdminController {
   }
 
   @Post('prompts/:scenario/rollback')
-  @ApiOperation({ summary: 'Rollback prompt template to a specific version (Admin only)' })
+  @ApiOperation({
+    summary: 'Rollback prompt template to a specific version (Admin only)',
+  })
   async rollbackPrompt(
     @Param('scenario') scenario: string,
     @Body() body: { version: number }

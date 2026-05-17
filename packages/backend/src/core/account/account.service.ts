@@ -70,11 +70,25 @@ export class AccountService {
   async getUsage(userId: string, query: UsageQuery) {
     const { startDate, endDate } = await this.resolveUsagePeriod(userId, query);
 
-    const [ai, quota, dailySeries] = await Promise.all([
+    const periodDays = Math.ceil(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const prevEndDate = new Date(startDate);
+    prevEndDate.setDate(prevEndDate.getDate() - 1);
+    const prevStartDate = new Date(prevEndDate);
+    prevStartDate.setDate(prevStartDate.getDate() - periodDays);
+
+    const [ai, quota, dailySeries, prevAi] = await Promise.all([
       this.aiService.getUsageStats(userId, startDate, endDate),
       this.quotaService.getQuotaInfo(userId),
       this.getDailySeries(userId, startDate, endDate),
+      this.aiService.getUsageStats(userId, prevStartDate, prevEndDate),
     ]);
+
+    const calcChange = (current: number, prev: number) => {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - prev) / prev) * 100);
+    };
 
     return {
       period: {
@@ -89,6 +103,18 @@ export class AccountService {
         totalInputTokens: ai.totalInputTokens,
         totalOutputTokens: ai.totalOutputTokens,
         averageLatency: ai.averageLatency,
+      },
+      comparison: {
+        totalCallsChange: calcChange(ai.totalCalls, prevAi.totalCalls),
+        totalCostChange: calcChange(ai.totalCost, prevAi.totalCost),
+        inputTokensChange: calcChange(
+          ai.totalInputTokens,
+          prevAi.totalInputTokens
+        ),
+        outputTokensChange: calcChange(
+          ai.totalOutputTokens,
+          prevAi.totalOutputTokens
+        ),
       },
       quota: {
         ...quota,

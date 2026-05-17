@@ -371,7 +371,8 @@ export class UserHistoryController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateProfile(
     @Request() req: any,
-    @Body() body: { username?: string; avatar?: string; bio?: string; phone?: string }
+    @Body()
+    body: { username?: string; avatar?: string; bio?: string; phone?: string }
   ) {
     const userId = req.user?.id;
     if (!userId) {

@@ -1,60 +1,24 @@
 import { AIService } from '@/core/ai/ai.service';
+import { PrismaService } from '@/shared/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 import {
   Application,
   JobPosting,
+  MockInterviewQuestion,
+  StudyMilestone,
+  StudyPlan,
+  StudyTopic,
   UserProfile,
 } from '../interfaces/job-search.interface';
-
-export interface StudyTopic {
-  id: string;
-  title: string;
-  description: string;
-  completed: boolean;
-  priority: 'high' | 'medium' | 'low';
-  estimatedHours: number;
-  resources: string[];
-  category?: string;
-}
-
-export interface StudyMilestone {
-  id: string;
-  title: string;
-  description: string;
-  topics: StudyTopic[];
-  deadline?: Date;
-  day?: number;
-  estimatedHours?: number;
-}
-
-export interface MockInterviewQuestion {
-  question: string;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category?: string;
-}
-
-export interface StudyPlan {
-  id: string;
-  userId: string;
-  jobId: string;
-  milestones: StudyMilestone[];
-  progress: number;
-  createdAt: Date;
-  updatedAt: Date;
-  interviewDate?: Date;
-  totalDays: number;
-  estimatedTotalHours: number;
-  prioritySkillGaps: string[];
-  mockInterviewQuestions: MockInterviewQuestion[];
-}
 
 @Injectable()
 export class InterviewPrepService {
   private readonly logger = new Logger(InterviewPrepService.name);
 
-  private studyPlans: Map<string, StudyPlan> = new Map();
-
-  constructor(private readonly aiService: AIService) {}
+  constructor(
+    private readonly aiService: AIService,
+    private readonly prisma: PrismaService
+  ) { }
 
   async onInterviewDetected(
     application: Application,
@@ -95,104 +59,134 @@ export class InterviewPrepService {
       userId
     );
 
-    const planId = `plan-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const totalDays = _daysUntilInterview || 7;
 
-    const plan: StudyPlan = {
-      id: planId,
+    const dbPlan = await this.prisma.studyPlan.create({
+      data: {
+        userId,
+        jobId: job.id,
+        milestones: [],
+        progress: 0,
+        interviewDate: _interviewDate,
+        totalDays,
+        estimatedTotalHours: 0,
+        prioritySkillGaps: [],
+        mockInterviewQuestions: [],
+      },
+    });
+
+    if (result.success && result.data) {
+      const data = result.data as any;
+      const prioritySkillGaps = data.skillGaps
+        ? data.skillGaps.map((gap: any) =>
+          typeof gap === 'string' ? gap : gap.skill
+        )
+        : [];
+
+      const mockInterviewQuestions = data.mockInterviewQuestions
+        ? data.mockInterviewQuestions.map((q: any) => ({
+          question: q.question || q,
+          difficulty: q.difficulty || 'medium',
+          category: q.category,
+        }))
+        : [];
+
+      const milestones: any[] = [];
+      if (data.practiceSchedule) {
+        for (const day of data.practiceSchedule) {
+          const topics: StudyTopic[] = (day.exercises || []).map(
+            (exercise: any, exIndex: number) => ({
+              id: `topic-${day.day || 0}-${exIndex}`,
+              title: typeof exercise === 'string' ? exercise : exercise.title,
+              description:
+                typeof exercise === 'string'
+                  ? exercise
+                  : exercise.description || exercise.title,
+              completed: false,
+              priority: (exercise.priority || 'medium') as
+                | 'high'
+                | 'medium'
+                | 'low',
+              estimatedHours: exercise.estimatedHours || 1,
+              resources: exercise.resources || [],
+              category: exercise.category || 'general',
+            })
+          );
+
+          const milestoneHours = topics.reduce(
+            (sum: number, t: StudyTopic) => sum + t.estimatedHours,
+            0
+          );
+
+          milestones.push({
+            id: `milestone-${day.day || milestones.length}`,
+            title: day.focus || `Day ${day.day || milestones.length + 1}`,
+            description: day.focus || '',
+            topics,
+            day: day.day || milestones.length + 1,
+            estimatedHours: milestoneHours,
+          });
+        }
+      }
+
+      const estimatedTotalHours = milestones.reduce(
+        (sum: number, m: StudyMilestone) => sum + (m.estimatedHours || 0),
+        0
+      );
+
+      await this.prisma.studyPlan.update({
+        where: { id: dbPlan.id },
+        data: {
+          milestones,
+          prioritySkillGaps,
+          mockInterviewQuestions,
+          estimatedTotalHours,
+        },
+      });
+
+      return {
+        id: dbPlan.id,
+        userId,
+        jobId: job.id,
+        milestones,
+        progress: 0,
+        createdAt: dbPlan.createdAt,
+        updatedAt: dbPlan.updatedAt,
+        interviewDate: _interviewDate,
+        totalDays,
+        estimatedTotalHours,
+        prioritySkillGaps,
+        mockInterviewQuestions,
+      };
+    }
+
+    return {
+      id: dbPlan.id,
       userId,
       jobId: job.id,
       milestones: [],
       progress: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: dbPlan.createdAt,
+      updatedAt: dbPlan.updatedAt,
       interviewDate: _interviewDate,
       totalDays,
       estimatedTotalHours: 0,
       prioritySkillGaps: [],
       mockInterviewQuestions: [],
     };
-
-    if (result.success && result.data) {
-      const data = result.data as any;
-
-      // Extract skill gaps
-      if (data.skillGaps) {
-        plan.prioritySkillGaps = data.skillGaps.map((gap: any) =>
-          typeof gap === 'string' ? gap : gap.skill
-        );
-      }
-
-      // Extract mock interview questions
-      if (data.mockInterviewQuestions) {
-        plan.mockInterviewQuestions = data.mockInterviewQuestions.map(
-          (q: any) => ({
-            question: q.question || q,
-            difficulty: q.difficulty || 'medium',
-            category: q.category,
-          })
-        );
-      }
-
-      // Build milestones from practice schedule
-      if (data.practiceSchedule) {
-        plan.milestones = data.practiceSchedule.map(
-          (day: any, index: number) => {
-            const topics = (day.exercises || []).map(
-              (exercise: any, exIndex: number) => ({
-                id: `topic-${index}-${exIndex}`,
-                title: typeof exercise === 'string' ? exercise : exercise.title,
-                description:
-                  typeof exercise === 'string'
-                    ? exercise
-                    : exercise.description || exercise.title,
-                completed: false,
-                priority: (exercise.priority || 'medium') as
-                  | 'high'
-                  | 'medium'
-                  | 'low',
-                estimatedHours: exercise.estimatedHours || 1,
-                resources: exercise.resources || [],
-                category: exercise.category || 'general',
-              })
-            );
-
-            const milestoneHours = topics.reduce(
-              (sum: number, t: StudyTopic) => sum + t.estimatedHours,
-              0
-            );
-
-            return {
-              id: `milestone-${index}`,
-              title: day.focus || `Day ${day.day || index + 1}`,
-              description: day.focus || '',
-              topics,
-              day: day.day || index + 1,
-              estimatedHours: milestoneHours,
-            };
-          }
-        );
-
-        // Calculate total hours
-        plan.estimatedTotalHours = plan.milestones.reduce(
-          (sum: number, m: StudyMilestone) => sum + (m.estimatedHours || 0),
-          0
-        );
-      }
-    }
-
-    this.studyPlans.set(plan.id, plan);
-    return plan;
   }
 
-  completeTopic(planId: string, topicId: string): StudyPlan {
-    const plan = this.studyPlans.get(planId);
-    if (!plan) throw new Error(`Study plan ${planId} not found`);
+  async completeTopic(planId: string, topicId: string): Promise<StudyPlan> {
+    const dbPlan = await this.prisma.studyPlan.findUnique({
+      where: { id: planId },
+    });
+    if (!dbPlan) throw new Error(`Study plan ${planId} not found`);
 
+    const milestones: any[] = (dbPlan.milestones as any[]) || [];
     let totalTopics = 0;
     let completedTopics = 0;
 
-    for (const milestone of plan.milestones) {
+    for (const milestone of milestones) {
       for (const topic of milestone.topics) {
         totalTopics++;
         if (topic.id === topicId) topic.completed = true;
@@ -200,28 +194,77 @@ export class InterviewPrepService {
       }
     }
 
-    plan.progress = totalTopics > 0 ? completedTopics / totalTopics : 0;
-    plan.updatedAt = new Date();
-    return plan;
+    const progress = totalTopics > 0 ? completedTopics / totalTopics : 0;
+
+    await this.prisma.studyPlan.update({
+      where: { id: planId },
+      data: { milestones, progress },
+    });
+
+    return {
+      id: dbPlan.id,
+      userId: dbPlan.userId,
+      jobId: dbPlan.jobId,
+      milestones,
+      progress,
+      createdAt: dbPlan.createdAt,
+      updatedAt: new Date(),
+      interviewDate: dbPlan.interviewDate ?? undefined,
+      totalDays: dbPlan.totalDays,
+      estimatedTotalHours: dbPlan.estimatedTotalHours,
+      prioritySkillGaps: (dbPlan.prioritySkillGaps as string[]) || [],
+      mockInterviewQuestions:
+        (dbPlan.mockInterviewQuestions as unknown as MockInterviewQuestion[]) || [],
+    };
   }
 
-  getPlan(planId: string): StudyPlan | undefined {
-    return this.studyPlans.get(planId);
+  async getPlan(planId: string): Promise<StudyPlan | null> {
+    const dbPlan = await this.prisma.studyPlan.findUnique({
+      where: { id: planId },
+    });
+    if (!dbPlan) return null;
+
+    return {
+      id: dbPlan.id,
+      userId: dbPlan.userId,
+      jobId: dbPlan.jobId,
+      milestones: (dbPlan.milestones as any[]) || [],
+      progress: dbPlan.progress,
+      createdAt: dbPlan.createdAt,
+      updatedAt: dbPlan.updatedAt,
+      interviewDate: dbPlan.interviewDate ?? undefined,
+      totalDays: dbPlan.totalDays,
+      estimatedTotalHours: dbPlan.estimatedTotalHours,
+      prioritySkillGaps: (dbPlan.prioritySkillGaps as string[]) || [],
+      mockInterviewQuestions:
+        (dbPlan.mockInterviewQuestions as unknown as MockInterviewQuestion[]) || [],
+    };
   }
 
-  getUserPlans(userId: string): StudyPlan[] {
-    return Array.from(this.studyPlans.values()).filter(
-      (plan) => plan.userId === userId
-    );
+  async getUserPlans(userId: string): Promise<StudyPlan[]> {
+    const dbPlans = await this.prisma.studyPlan.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return dbPlans.map((p) => ({
+      id: p.id,
+      userId: p.userId,
+      jobId: p.jobId,
+      milestones: (p.milestones as any[]) || [],
+      progress: p.progress,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      interviewDate: p.interviewDate ?? undefined,
+      totalDays: p.totalDays,
+      estimatedTotalHours: p.estimatedTotalHours,
+      prioritySkillGaps: (p.prioritySkillGaps as string[]) || [],
+      mockInterviewQuestions:
+        (p.mockInterviewQuestions as unknown as MockInterviewQuestion[]) || [],
+    }));
   }
 
-  getJobPlans(jobId: string): StudyPlan[] {
-    return Array.from(this.studyPlans.values()).filter(
-      (plan) => plan.jobId === jobId
-    );
-  }
-
-  deletePlan(planId: string): boolean {
-    return this.studyPlans.delete(planId);
+  async deletePlan(planId: string): Promise<void> {
+    await this.prisma.studyPlan.delete({ where: { id: planId } });
   }
 }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AIModule } from '@/core/ai';
+import { PrismaModule } from '@/shared/database/prisma.module';
 import { JOB_SEARCH_CONFIG } from './config/job-search.config';
 import { JobAggregationService } from './services/job-aggregation.service';
 import { JobMatchingService } from './services/job-matching.service';
@@ -8,7 +9,12 @@ import { ApplicationTrackingService } from './services/application-tracking.serv
 import { InterviewPrepService } from './services/interview-prep.service';
 
 @Module({
-  imports: [ConfigModule.forFeature(JOB_SEARCH_CONFIG), ConfigModule, AIModule],
+  imports: [
+    ConfigModule.forFeature(JOB_SEARCH_CONFIG),
+    ConfigModule,
+    AIModule,
+    PrismaModule,
+  ],
   providers: [
     JobAggregationService,
     JobMatchingService,
