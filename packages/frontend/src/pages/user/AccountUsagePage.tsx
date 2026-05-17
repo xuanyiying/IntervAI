@@ -7,13 +7,12 @@ import {
   Row,
   Space,
   Statistic,
+  Tag,
   Typography,
 } from 'antd';
+import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import {
-  accountService,
-  DailyUsagePoint,
-} from '../../services/account-service';
+import { accountService, DailyUsagePoint } from '../../services/account-service';
 import { formatDateTime } from '../../i18n';
 
 const { Title, Text } = Typography;
@@ -21,12 +20,21 @@ const { Title, Text } = Typography;
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
-const MiniLineChart: React.FC<{
+interface TrendChartProps {
   points: DailyUsagePoint[];
   valueKey: 'totalCalls' | 'totalCost';
-}> = ({ points, valueKey }) => {
+  label: string;
+  color: string;
+}
+
+const TrendChart: React.FC<TrendChartProps> = ({
+  points,
+  valueKey,
+  label,
+  color,
+}) => {
   const width = 520;
-  const height = 120;
+  const height = 100;
   const padding = 10;
 
   const values = points.map((p) => p[valueKey]);
@@ -44,30 +52,85 @@ const MiniLineChart: React.FC<{
     })
     .join(' ');
 
+  const gradientId = `gradient-${valueKey}`;
+  const areaPath = path
+    ? `${path} L ${(padding + (width - padding * 2)).toFixed(2)} ${(padding + (height - padding * 2)).toFixed(2)} L ${padding.toFixed(2)} ${(padding + (height - padding * 2)).toFixed(2)} Z`
+    : '';
+
   if (!points.length) return null;
 
   return (
-    <svg
-      width="100%"
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      style={{
-        display: 'block',
-        borderRadius: 12,
-        background:
-          'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
-        border: '1px solid rgba(255,255,255,0.08)',
-      }}
-    >
-      <path
-        d={path}
-        fill="none"
-        stroke="rgba(22, 119, 255, 0.95)"
-        strokeWidth="2.5"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-    </svg>
+    <div>
+      <Text type="secondary" style={{ fontSize: 12 }}>
+        {label}
+      </Text>
+      <svg
+        width="100%"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        style={{
+          display: 'block',
+          borderRadius: 8,
+          background:
+            'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))',
+          border: '1px solid rgba(255,255,255,0.08)',
+          marginTop: 4,
+        }}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+          </linearGradient>
+        </defs>
+        {areaPath && (
+          <path d={areaPath} fill={`url(#${gradientId})`} />
+        )}
+        <path
+          d={path}
+          fill="none"
+          stroke={color}
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
+    </div>
+  );
+};
+
+interface ChangeIndicatorProps {
+  change: number;
+  unit?: string;
+  suffix?: string;
+}
+
+const ChangeIndicator: React.FC<ChangeIndicatorProps> = ({
+  change,
+  unit = '',
+  suffix = '',
+}) => {
+  const isPositive = change > 0;
+  const isNegative = change < 0;
+  const isZero = change === 0;
+
+  const color =
+    isZero ? 'default' : isPositive ? 'error' : 'success';
+  const icon = isPositive ? <ArrowUpOutlined /> : <ArrowDownOutlined />;
+  const prefix = isNegative ? <ArrowDownOutlined /> : null;
+
+  if (isZero) {
+    return (
+      <Tag color="default" style={{ marginLeft: 8 }}>
+        无变化
+      </Tag>
+    );
+  }
+
+  return (
+    <Tag color={color} icon={isPositive ? icon : prefix} style={{ marginLeft: 8 }}>
+      {Math.abs(change)}%{suffix || unit}
+    </Tag>
   );
 };
 
@@ -96,6 +159,7 @@ const AccountUsagePage: React.FC = () => {
 
   const quota = data?.quota;
   const ai = data?.ai;
+  const comparison = data?.comparison;
   const dailySeries: DailyUsagePoint[] = data?.dailySeries || [];
 
   const quotaPercent = useMemo(() => {
@@ -146,7 +210,10 @@ const AccountUsagePage: React.FC = () => {
           />
         )}
 
-        <Card title={t('account.usage.period', '计费周期')} loading={loading}>
+        <Card
+          title={t('account.usage.period', '计费周期')}
+          loading={loading}
+        >
           <Text>
             {data?.period?.start && data?.period?.end
               ? `${formatDateTime(data.period.start)} → ${formatDateTime(
@@ -160,31 +227,14 @@ const AccountUsagePage: React.FC = () => {
           title={t('account.usage.ai_usage', 'AI 使用情况')}
           loading={loading}
           extra={
-            quota && (
-              <Text strong className="text-primary-500">
-                {String(
-                  t('account.usage.remaining_uses', {
-                    count:
-                      quota.optimizationsLimit === -1
-                        ? 0
-                        : Math.max(
-                            0,
-                            quota.optimizationsLimit - quota.optimizationsUsed
-                          ),
-                    remaining:
-                      quota.optimizationsLimit === -1
-                        ? '∞'
-                        : Math.max(
-                            0,
-                            quota.optimizationsLimit - quota.optimizationsUsed
-                          ),
-                    limit:
-                      quota.optimizationsLimit === -1
-                        ? '∞'
-                        : quota.optimizationsLimit,
-                  } as any)
-                )}
-              </Text>
+            comparison && (
+              <Space>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  环比:
+                </Text>
+                <ChangeIndicator change={comparison.totalCallsChange} suffix=" 调用" />
+                <ChangeIndicator change={comparison.totalCostChange} suffix=" 成本" />
+              </Space>
             )
           }
         >
@@ -193,6 +243,11 @@ const AccountUsagePage: React.FC = () => {
               <Statistic
                 title={t('account.usage.metrics.total_calls', '调用次数')}
                 value={ai?.totalCalls ?? 0}
+                suffix={
+                  comparison ? (
+                    <ChangeIndicator change={comparison.totalCallsChange} />
+                  ) : null
+                }
               />
             </Col>
             <Col xs={12} md={6}>
@@ -217,12 +272,22 @@ const AccountUsagePage: React.FC = () => {
               <Statistic
                 title={t('account.usage.metrics.input_tokens', '输入 Token')}
                 value={ai?.totalInputTokens ?? 0}
+                suffix={
+                  comparison ? (
+                    <ChangeIndicator change={comparison.inputTokensChange} />
+                  ) : null
+                }
               />
             </Col>
             <Col xs={24} md={12}>
               <Statistic
                 title={t('account.usage.metrics.output_tokens', '输出 Token')}
                 value={ai?.totalOutputTokens ?? 0}
+                suffix={
+                  comparison ? (
+                    <ChangeIndicator change={comparison.outputTokensChange} />
+                  ) : null
+                }
               />
             </Col>
             <Col xs={24}>
@@ -230,6 +295,11 @@ const AccountUsagePage: React.FC = () => {
                 title={t('account.usage.metrics.total_cost', '成本(USD)')}
                 value={ai?.totalCost ?? 0}
                 precision={4}
+                suffix={
+                  comparison ? (
+                    <ChangeIndicator change={comparison.totalCostChange} />
+                  ) : null
+                }
               />
             </Col>
           </Row>
@@ -292,12 +362,29 @@ const AccountUsagePage: React.FC = () => {
           </Row>
         </Card>
 
-        <Card title={t('account.usage.trend', '趋势')} loading={loading}>
+        <Card
+          title={t('account.usage.trend', '趋势')}
+          loading={loading}
+        >
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Text type="secondary">
-              {t('account.usage.trend_hint', '近 30 天调用次数趋势')}
-            </Text>
-            <MiniLineChart points={dailySeries} valueKey="totalCalls" />
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <TrendChart
+                  points={dailySeries}
+                  valueKey="totalCalls"
+                  label="每日调用次数"
+                  color="rgba(22, 119, 255, 0.95)"
+                />
+              </Col>
+              <Col xs={24} md={12}>
+                <TrendChart
+                  points={dailySeries}
+                  valueKey="totalCost"
+                  label="每日成本 (USD)"
+                  color="rgba(255, 167, 38, 0.95)"
+                />
+              </Col>
+            </Row>
           </Space>
         </Card>
       </Space>

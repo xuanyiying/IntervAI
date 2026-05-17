@@ -3,6 +3,7 @@
  * Unified AI service with simplified API
  */
 
+import { PrismaService } from '@/shared/database/prisma.service';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIProvider } from './providers/provider';
@@ -31,7 +32,8 @@ export class AIService implements OnModuleInit {
   constructor(
     private configService: ConfigService,
     private skillRegistry: SkillRegistry,
-    private usageTracker: UsageTrackerService
+    private usageTracker: UsageTrackerService,
+    private prismaService: PrismaService
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -99,7 +101,7 @@ export class AIService implements OnModuleInit {
         options
       );
 
-      const cost = this.calculateCost(
+      const cost = await this.calculateCost(
         modelName,
         response.usage.prompt_tokens,
         response.usage.completion_tokens
@@ -401,11 +403,32 @@ export class AIService implements OnModuleInit {
     return available[0];
   }
 
-  private calculateCost(
-    _model: string,
+  private async calculateCost(
+    model: string,
     inputTokens: number,
     outputTokens: number
-  ): number {
+  ): Promise<number> {
+    if (inputTokens === 0 && outputTokens === 0) {
+      return 0;
+    }
+
+    try {
+      const modelConfig = await this.prismaService.modelConfig.findFirst({
+        where: { name: model, isActive: true },
+        select: { costPerInputToken: true, costPerOutputToken: true },
+      });
+
+      if (modelConfig) {
+        const inputCost = inputTokens * modelConfig.costPerInputToken;
+        const outputCost = outputTokens * modelConfig.costPerOutputToken;
+        return inputCost + outputCost;
+      }
+    } catch (error) {
+      this.logger.warn(
+        `Failed to query model cost for ${model}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
     return 0;
   }
 

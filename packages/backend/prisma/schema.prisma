@@ -797,6 +797,25 @@ model JobMatch {
   @@map("job_matches")
 }
 
+model StudyPlan {
+  id                     String    @id @default(uuid())
+  userId                 String
+  jobId                  String
+  milestones             Json      @default("[]")
+  progress               Float     @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  interviewDate          DateTime?
+  totalDays              Int       @default(7)
+  estimatedTotalHours    Float     @default(0)
+  prioritySkillGaps      Json      @default("[]")
+  mockInterviewQuestions Json      @default("[]")
+
+  @@index([userId])
+  @@index([jobId])
+  @@map("study_plans")
+}
+
 model Application {
   id              String                     @id @default(uuid())
   userId          String

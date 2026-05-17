@@ -1,28 +1,35 @@
+import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
 import {
+  Body,
   Controller,
-  Post,
   Get,
-  Param,
-  Query,
-  UseGuards,
-  Request,
   HttpCode,
   HttpStatus,
-  Body,
-  UseInterceptors,
+  Param,
+  Post,
+  Query,
+  Request,
+  Res,
   UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
+import {
+  InterviewMessage,
+  InterviewQuestion,
+  InterviewSession,
+} from '@prisma/client';
+import { Response } from 'express';
+import { PdfGenerationService } from '../resume/services/pdf-generation.service';
+import { CreateSessionDto } from './dto/create-session.dto';
+import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
+import { SendMessageDto } from './dto/send-message.dto';
 import { InterviewService } from './interview.service';
 import { InterviewQuestionService } from './services/interview-question.service';
-import { InterviewSessionService } from './services/interview-session.service';
 import { InterviewReportService } from './services/interview-report.service';
-import { JwtAuthGuard } from '@/core/auth/guards/jwt-auth.guard';
-import { InterviewMessage, InterviewQuestion, InterviewSession } from '@prisma/client';
-import { CreateSessionDto } from './dto/create-session.dto';
-import { SendMessageDto } from './dto/send-message.dto';
-import { GetPreparationGuideDto } from './dto/get-preparation-guide.dto';
+import { InterviewSessionService } from './services/interview-session.service';
 
 @Controller('interview')
 @UseGuards(JwtAuthGuard)
@@ -31,8 +38,9 @@ export class InterviewController {
     private interviewService: InterviewService,
     private questionService: InterviewQuestionService,
     private sessionService: InterviewSessionService,
-    private reportService: InterviewReportService
-  ) {}
+    private reportService: InterviewReportService,
+    private pdfService: PdfGenerationService
+  ) { }
 
   /**
    * Get interview preparation guide or strategy
@@ -252,5 +260,21 @@ export class InterviewController {
   ) {
     const userId = req.user.id;
     return this.reportService.generateReport(sessionId, userId);
+  }
+
+  @Get('session/:sessionId/report/download')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  async downloadReport(
+    @Request() req: any,
+    @Param('sessionId') sessionId: string,
+    @Res() res: Response
+  ) {
+    const userId = req.user.id;
+    const report = await this.reportService.generateReport(sessionId, userId);
+    const result = await this.pdfService.generatePDFFromMarkdown(
+      report.markdown,
+      userId
+    );
+    res.redirect(result.downloadUrl);
   }
 }

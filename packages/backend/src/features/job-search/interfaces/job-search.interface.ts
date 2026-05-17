@@ -212,6 +212,46 @@ export interface MatchResult {
   success: boolean;
   matches: JobMatch[];
   totalJobsProcessed: number;
-  matchesFound: number;
-  avgMatchScore: number;
+}
+
+export interface StudyTopic {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  priority: 'high' | 'medium' | 'low';
+  estimatedHours: number;
+  resources: string[];
+  category?: string;
+}
+
+export interface StudyMilestone {
+  id: string;
+  title: string;
+  description: string;
+  topics: StudyTopic[];
+  deadline?: Date;
+  day?: number;
+  estimatedHours?: number;
+}
+
+export interface StudyPlan {
+  id: string;
+  userId: string;
+  jobId: string;
+  milestones: StudyMilestone[];
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
+  interviewDate?: Date;
+  totalDays: number;
+  estimatedTotalHours: number;
+  prioritySkillGaps: string[];
+  mockInterviewQuestions: MockInterviewQuestion[];
+}
+
+export interface MockInterviewQuestion {
+  question: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category?: string;
 }

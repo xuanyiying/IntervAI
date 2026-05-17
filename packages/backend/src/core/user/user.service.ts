@@ -20,7 +20,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService
-  ) { }
+  ) {}
 
   /**
    * Delete user account
@@ -318,7 +318,10 @@ export class UserService {
   ): Promise<User> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     const updated = await this.prisma.user.update({
@@ -341,14 +344,20 @@ export class UserService {
   ): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, 'User not found');
+      throw new ResourceNotFoundException(
+        ErrorCode.USER_NOT_FOUND,
+        'User not found'
+      );
     }
 
     if (!user.passwordHash) {
       throw new BadRequestException('OAuth accounts cannot change password');
     }
 
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash
+    );
     if (!isPasswordValid) {
       throw new BadRequestException('Current password is incorrect');
     }

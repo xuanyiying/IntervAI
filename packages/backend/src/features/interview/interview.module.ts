@@ -11,6 +11,7 @@ import { RedisModule } from '@/shared/cache/redis.module';
 import { QuotaModule } from '@/core/quota/quota.module';
 import { VoiceModule } from '../voice/voice.module';
 import { StorageModule } from '@/core/storage/storage.module';
+import { ResumeModule } from '../resume/resume.module';
 import { InterviewQuestionService } from './services/interview-question.service';
 import { InterviewSessionService } from './services/interview-session.service';
 import { InterviewerPersonaService } from './services/interviewer-persona.service';
@@ -34,6 +35,7 @@ import { AuthModule } from '@/core/auth/auth.module';
     VoiceModule,
     StorageModule,
     AuthModule,
+    ResumeModule,
     BullModule.registerQueue({
       name: 'interview-evaluation',
     }),
