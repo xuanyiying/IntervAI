@@ -9,6 +9,8 @@ interface TabItem {
 interface TabsProps {
   items: TabItem[];
   defaultActiveKey?: string;
+  /** Controlled active key. When provided, the component stays in sync with it. */
+  activeKey?: string;
   onChange?: (key: string) => void;
   className?: string;
 }
@@ -16,13 +18,15 @@ interface TabsProps {
 export const Tabs: React.FC<TabsProps> = ({
   items,
   defaultActiveKey,
+  activeKey,
   onChange,
   className = '',
 }) => {
-  const [activeKey, setActiveKey] = useState(defaultActiveKey || items[0]?.key);
+  const [internalKey, setInternalKey] = useState(defaultActiveKey || items[0]?.key);
+  const currentKey = activeKey ?? internalKey;
 
   const handleTabClick = (key: string) => {
-    setActiveKey(key);
+    setInternalKey(key);
     onChange?.(key);
   };
 
@@ -32,7 +36,7 @@ export const Tabs: React.FC<TabsProps> = ({
         {items.map((item) => (
           <button
             key={item.key}
-            className={`glass-tabs-trigger ${activeKey === item.key ? 'glass-tabs-active' : ''}`}
+            className={`glass-tabs-trigger ${currentKey === item.key ? 'glass-tabs-active' : ''}`}
             onClick={() => handleTabClick(item.key)}
           >
             {item.label}

@@ -40,7 +40,7 @@ export class AIService implements OnModuleInit {
     this.logger.log('Initializing AI Service');
 
     this.aiModel =
-      this.configService.get('AI_MODEL') || 'openrouter:deepseek/deepseek-chat';
+      this.configService.get('AI_MODEL') || 'deepseek:deepseek-chat';
     this.logger.log(`Using AI Model: ${this.aiModel}`);
 
     this.provider = new AIProvider({

@@ -6,6 +6,7 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { RedisIoAdapter } from '@/core/chat/redis-io.adapter';
 import helmet from 'helmet';
+import * as express from 'express';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
@@ -14,7 +15,15 @@ import { MonitoringGuard } from '@/shared/monitoring/monitoring.guard';
 import { initOpenTelemetry } from '@/shared/monitoring/otel';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  // Voiceprint enrollment uploads raw PCM as base64 JSON (~400KB for 9s),
+  // exceeding the default 100kb JSON limit — register parsers explicitly.
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+    bodyParser: false,
+  });
+
+  app.use(express.json({ limit: '4mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '4mb' }));
 
   // Initialize OpenTelemetry (optional, env controlled)
   await initOpenTelemetry();

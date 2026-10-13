@@ -12,6 +12,7 @@ import {
 } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { MatchScore } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface MatchAnalysisCardProps {
   matchScore: MatchScore | null;
@@ -25,6 +26,7 @@ const MatchAnalysisCard: React.FC<MatchAnalysisCardProps> = ({
   onClose,
 }) => {
   const { token } = theme.useToken();
+  const { t } = useTranslation();
 
   // Determine color based on score
   const getScoreColor = (score: number) => {
@@ -35,9 +37,9 @@ const MatchAnalysisCard: React.FC<MatchAnalysisCardProps> = ({
 
   // Determine status text
   const getScoreStatus = (score: number) => {
-    if (score >= 80) return '优秀';
-    if (score >= 60) return '良好';
-    return '需要改进';
+    if (score >= 80) return t('match_analysis.excellent', '优秀');
+    if (score >= 60) return t('match_analysis.good', '良好');
+    return t('match_analysis.needs_improvement_short', '需要改进');
   };
 
   const overallColor = getScoreColor(matchScore?.overall || 0);
@@ -270,7 +272,7 @@ const MatchAnalysisCard: React.FC<MatchAnalysisCardProps> = ({
       {!matchScore?.strengths?.length &&
         !matchScore?.weaknesses?.length &&
         !matchScore?.missingKeywords?.length && (
-          <Empty description="暂无分析数据" />
+          <Empty description={t('match_analysis.no_data', '暂无分析数据')} />
         )}
     </Card>
   );

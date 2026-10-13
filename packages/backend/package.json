@@ -83,11 +83,13 @@
     "puppeteer-core": "^24.3.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "sherpa-onnx-node": "^1.13.6",
     "socket.io": "^4.7.0",
     "stripe": "^17.6.0",
     "turndown": "^7.2.4",
     "uuid": "^9.0.1",
-    "winston": "^3.10.0"
+    "winston": "^3.10.0",
+    "ws": ">=8.18.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -107,6 +109,7 @@
     "@types/pg": "^8.20.0",
     "@types/supertest": "^6.0.3",
     "@types/turndown": "^5.0.6",
+    "@types/ws": "^8.18.1",
     "fast-check": "^3.12.0",
     "jest": "^29.5.0",
     "pg": "^8.20.0",

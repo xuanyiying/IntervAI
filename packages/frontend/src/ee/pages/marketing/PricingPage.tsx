@@ -21,12 +21,12 @@ import {
   WechatOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAuthStore } from '../../stores/authStore';
-import { paymentService } from '../../services/payment-service';
-import { loadPaddle } from '../../utils/paddle-loader';
-import { SubscriptionTier } from '../../types';
+import { useAuthStore } from '../../../stores';
+import { paymentService } from '../../../services/payment-service';
+import { loadPaddle } from '../../../utils/paddle-loader';
+import { SubscriptionTier } from '../../../types';
 import './pricing.css';
-import SubscriptionManagementPage from '../user/SubscriptionManagementPage';
+import SubscriptionManagementPage from '../../../pages/user/SubscriptionManagementPage';
 
 const { Title, Text } = Typography;
 

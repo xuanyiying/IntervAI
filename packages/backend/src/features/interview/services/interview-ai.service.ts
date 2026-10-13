@@ -22,7 +22,7 @@ export class InterviewAIService {
     return (
       this.aiService.getModel() ||
       this.configService.get('AI_MODEL') ||
-      'openrouter:deepseek/deepseek-chat'
+      'deepseek:deepseek-chat'
     );
   }
 

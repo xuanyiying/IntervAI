@@ -89,9 +89,11 @@ const LoginPage: React.FC = () => {
             level={2}
             className="![color:var(--text-primary)] !font-bold !mb-2"
           >
-            AI 求职面试助手
+            {t('common.app_name')}
           </Title>
-          <Text className="![color:var(--text-secondary)]">登录您的账号</Text>
+          <Text className="![color:var(--text-secondary)]">
+            {t('auth.login_subtitle', '登录您的账号')}
+          </Text>
         </div>
 
         <Form
@@ -160,7 +162,9 @@ const LoginPage: React.FC = () => {
               disabled={loading}
               className="gradient-button w-full h-12 text-base font-bold shadow-lg hover:shadow-primary-500/20"
             >
-              {loading ? '登录中...' : '登 录'}
+              {loading
+                ? t('auth.logging_in', '登录中...')
+                : t('auth.login', '登录')}
             </button>
           </Form.Item>
         </Form>

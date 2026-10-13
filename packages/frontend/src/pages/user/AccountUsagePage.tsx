@@ -305,7 +305,7 @@ const AccountUsagePage: React.FC = () => {
           </Row>
         </Card>
 
-        <Card title={t('account.usage.quota', '配额')} loading={loading}>
+        <Card title={t('account.usage.quota.title', '配额')} loading={loading}>
           <Row gutter={[16, 16]}>
             <Col xs={24} md={12}>
               <Space

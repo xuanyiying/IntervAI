@@ -13,6 +13,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AIService } from './ai.service';
+import { AI_EMBEDDING_MODEL } from './models';
 
 @Injectable()
 export class AIEngine {
@@ -23,13 +24,12 @@ export class AIEngine {
   constructor(
     private aiService: AIService,
     private configService: ConfigService
-  ) {}
+  ) { }
 
   private get aiModel(): string {
     return (
       this.aiService.getModel() ||
-      this.configService.get('AI_MODEL') ||
-      'openrouter:deepseek/deepseek-chat'
+      this.configService.get('AI_MODEL') || 'deepseek:deepseek-chat'
     );
   }
 
@@ -178,7 +178,7 @@ export class AIEngine {
   // ==================== Generic AI ====================
 
   async generateEmbedding(text: string): Promise<number[]> {
-    return this.aiService.embed(this.aiModel, text);
+    return this.aiService.embed(AI_EMBEDDING_MODEL, text);
   }
 
   async generateChatCompletion(

@@ -57,8 +57,19 @@ const RegisterPage: React.FC = () => {
       await authService.register(payload);
       message.success(t('auth.register_success', 'Registration successful!'));
       navigate('/login');
-    } catch (error) {
-      message.error(t('auth.register_failed', 'Registration failed.'));
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const code = error?.response?.data?.error?.code;
+      if (status === 409 || code === 'CONFLICT') {
+        message.warning(
+          t(
+            'auth.email_already_exists',
+            '该邮箱已被注册，请直接登录或更换邮箱'
+          )
+        );
+      } else {
+        message.error(t('auth.register_failed', 'Registration failed.'));
+      }
     } finally {
       setLoading(false);
     }

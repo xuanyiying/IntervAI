@@ -32,24 +32,9 @@ const IconRobot: React.FC<{ size?: number }> = ({ size = 20 }) => (
   </svg>
 );
 
-const IconUser: React.FC<{ size?: number }> = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
-
 const IconStar: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-  </svg>
-);
-
-const IconChart: React.FC<{ size?: number }> = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
   </svg>
 );
 
@@ -222,28 +207,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       path: '/interview',
     },
     {
-      key: 'mock-interview',
-      icon: <IconUser />,
-      label: t('menu.mock_interview', '模拟面试'),
-      path: '/role-play',
-    },
-    {
       key: 'pitch-perfect',
       icon: <IconStar />,
       label: t('menu.pitch_perfect', '自我介绍'),
       path: '/pitch-perfect',
-    },
-    {
-      key: 'interview-prediction',
-      icon: <IconChart />,
-      label: t('menu.interview_prediction', '面试押题'),
-      path: '/strategist',
-    },
-    {
-      key: 'chat',
-      icon: <IconMessage />,
-      label: t('menu.chat', '对话'),
-      path: '/chat',
     },
     ...(IS_EE ? [
       {
@@ -336,7 +303,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       key: 'dashboard',
       icon: <IconDashboard />,
       label: t('menu.dashboard', '控制台'),
-      path: '/admin/dashboard',
+      path: '/admin/users',
     },
     {
       key: 'users',
@@ -364,12 +331,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         path: '/admin/invite-codes',
       },
     ] : []),
-    {
-      key: 'knowledge-base',
-      icon: <IconFileText />,
-      label: t('menu.knowledge_base', '知识库'),
-      path: '/admin/knowledge-base',
-    },
     {
       key: 'system-settings',
       icon: <IconTool />,

@@ -1,34 +1,33 @@
+import { Button, Switch, Text, useToast } from '@/components/ui';
+import { useInterviewSocket } from '../hooks/useInterviewSocket';
 import {
-  AudioMutedOutlined,
-  AudioOutlined,
-  LoadingOutlined,
-  PhoneOutlined,
-  ReloadOutlined,
-  RobotOutlined,
-  SoundOutlined,
-  WifiOutlined,
-} from '@ant-design/icons';
+  ASSIST_SAMPLE_RATE,
+  PcmStreamPlayer,
+  floatTo16BitBase64,
+  frameVolume,
+} from '../utils/pcm';
 import {
-  Badge,
-  Button,
-  Card,
-  message,
-  Space,
-  Switch,
-  Tag,
-  Tooltip,
-  Typography,
-} from 'antd';
+  IconBulb,
+  IconCheck,
+  IconMic,
+  IconPhone,
+  IconStop,
+  IconWifi,
+} from '../pages/user/interview/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useInterviewSocket } from '../hooks/useInterviewSocket';
-
-const { Title, Text } = Typography;
 
 interface VoiceInterviewCallProps {
   sessionId: string;
   onClose: () => void;
   voiceId?: string;
+  /** 'mock' joins the /interview namespace (AI asks, answers are submitted);
+   *  'assist' joins /realtime-interview. Defaults to 'mock'. */
+  mode?: 'mock' | 'assist';
+  /** Called when the mock interview completes during the call. */
+  onCompleted?: () => void;
+  /** Current question text, displayed inside the call for mock interviews. */
+  currentQuestionText?: string;
 }
 
 const getSupportedMimeType = (): string => {
@@ -50,11 +49,20 @@ const getSupportedMimeType = (): string => {
 const SILENCE_THRESHOLD = 15;
 const SILENCE_DURATION_MS = 1500;
 const MIN_QUESTION_LENGTH = 3;
+/** Local loudness (0..1) that counts as the user interrupting the AI. */
+const BARGE_IN_VOLUME = 0.45;
+/** How long to wait for the realtime engine before falling back to legacy. */
+const VOICE_FALLBACK_TIMEOUT_MS = 3000;
+
+type VoiceEngine = 'pending' | 'realtime' | 'legacy';
 
 const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   sessionId,
   onClose,
   voiceId,
+  mode = 'mock',
+  onCompleted,
+  currentQuestionText,
 }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
@@ -72,8 +80,15 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   const [audioContextUnlocked, setAudioContextUnlocked] = useState(false);
   const [browserSupported, setBrowserSupported] = useState(true);
   const [browserInfo, setBrowserInfo] = useState<string>('');
-  const [autoDetectMode, setAutoDetectMode] = useState(true);
+  const [autoDetectMode, setAutoDetectMode] = useState(mode !== 'mock');
   const [detectedQuestion, setDetectedQuestion] = useState<string>('');
+  /** Live Q&A transcript shown inside the call. */
+  const [dialog, setDialog] = useState<
+    { role: 'user' | 'ai'; text: string }[]
+  >([]);
+  const [partialText, setPartialText] = useState('');
+  const dialogScrollRef = useRef<HTMLDivElement>(null);
+  const { success, error: showError, info } = useToast();
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -89,6 +104,29 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   const questionBufferRef = useRef<Blob[]>([]);
   const volumeDataRef = useRef<Uint8Array>(new Uint8Array(0));
 
+  // ---- realtime voice call engine state ----
+  const voiceEngineRef = useRef<VoiceEngine>('legacy');
+  const voiceFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pcmPlayerRef = useRef<PcmStreamPlayer | null>(null);
+  const captureContextRef = useRef<AudioContext | null>(null);
+  const captureSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const aiSpeakingRef = useRef(false);
+  const isMutedRef = useRef(false);
+  const [voiceEngine, setVoiceEngine] = useState<VoiceEngine>('legacy');
+
+  const applyVoiceEngine = (engine: VoiceEngine) => {
+    voiceEngineRef.current = engine;
+    setVoiceEngine(engine);
+  };
+
+  const clearVoiceFallbackTimer = () => {
+    if (voiceFallbackTimerRef.current) {
+      clearTimeout(voiceFallbackTimerRef.current);
+      voiceFallbackTimerRef.current = null;
+    }
+  };
+
   const {
     isConnected,
     isReconnecting,
@@ -97,21 +135,37 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     joinSession,
     endAudio,
     sendQuestionDetected,
+    startVoiceStream,
+    sendVoiceAudio,
+    stopVoiceStream,
     reconnect,
   } = useInterviewSocket({
-    mode: 'assist',
+    mode,
     onConnected: () => {
       setStatus('connecting');
       joinSession(sessionId, voiceId);
+    },
+    onCompleted: () => {
+      success('面试完成，正在生成报告...');
+      setIsCalling(false);
+      onCompleted?.();
+      setTimeout(() => onClose(), 1200);
     },
     onAiAudio: (data) => {
       playAiAudio(data.audio);
     },
     onTranscription: (data) => {
-      console.log('User said:', data.text);
+      // Mock: final user utterance from `end_audio`. Show it as a bubble.
+      if (!data.text || data.final === false) return;
+      setPartialText('');
+      setDialog((prev) => [...prev.slice(-49), { role: 'user', text: data.text }]);
+    },
+    onTranscriptionPartial: (data) => {
+      setPartialText(data.text);
     },
     onAiResponse: (data) => {
-      console.log('AI said:', data.text);
+      if (!data.text) return;
+      setDialog((prev) => [...prev.slice(-49), { role: 'ai', text: data.text }]);
     },
     onReconnecting: (_attempt) => {
       setStatus('reconnecting');
@@ -122,19 +176,49 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     },
     onError: (err) => {
       console.error('Socket error:', err.message);
-      message.error(err.message);
+      showError(err.message);
     },
     onQuestionDetected: (data) => {
       setDetectedQuestion(data.text);
       if (data.isQuestion && data.text.trim().length >= MIN_QUESTION_LENGTH) {
-        message.info({
-          content: `检测到问题: ${data.text.substring(0, 50)}${data.text.length > 50 ? '...' : ''}`,
-          duration: 3,
-        });
+        info(
+          `检测到问题: ${data.text.substring(0, 50)}${data.text.length > 50 ? '...' : ''}`
+        );
       }
     },
     onGeneratingAnswer: () => {
       setStatus('thinking');
+    },
+    onVoiceStarted: () => {
+      if (voiceEngineRef.current === 'realtime') return;
+      applyVoiceEngine('realtime');
+      clearVoiceFallbackTimer();
+      startPcmCapture();
+      setStatus('listening');
+    },
+    onVoiceStopped: () => {
+      /* teardown handled in stopCall */
+    },
+    onVoiceError: () => {
+      if (voiceEngineRef.current === 'legacy') return;
+      const wasRealtime = voiceEngineRef.current === 'realtime';
+      applyVoiceEngine('legacy');
+      clearVoiceFallbackTimer();
+      if (wasRealtime) {
+        stopPcmCapture();
+        pcmPlayerRef.current?.dispose();
+        pcmPlayerRef.current = null;
+        aiSpeakingRef.current = false;
+        showError('实时语音连接中断，已切换为标准模式');
+      }
+      startLegacyRecording();
+      setStatus('listening');
+    },
+    onAiAudioChunk: (data) => {
+      playRealtimeChunk(data.audio);
+    },
+    onAiAudioStop: (data) => {
+      stopRealtimePlayback(data.cancelled);
     },
   });
 
@@ -149,7 +233,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         typeof (window as any).webkitAudioContext !== 'undefined';
 
       const ua = navigator.userAgent;
-      let browser = 'Unknown';
+      let browser = '未知';
       if (ua.includes('Safari') && !ua.includes('Chrome')) {
         browser = 'Safari';
       } else if (ua.includes('Chrome')) {
@@ -166,19 +250,19 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       );
 
       if (!hasMediaDevices || !hasMediaRecorder) {
-        message.error(
-          'Your browser does not support audio recording. Please use Chrome, Firefox, or Safari.'
-        );
+        showError('当前浏览器不支持录音，请使用 Chrome、Firefox 或 Safari');
       }
     };
 
     checkBrowserSupport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (isConnected && status === 'connecting') {
       startCall();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, status]);
 
   useEffect(() => {
@@ -193,6 +277,12 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isCalling]);
+
+  // Keep the live Q&A dialog pinned to the newest line.
+  useEffect(() => {
+    const el = dialogScrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [dialog, partialText]);
 
   const checkSilence = useCallback(() => {
     if (!analyserRef.current || !autoDetectMode || status !== 'listening')
@@ -298,16 +388,153 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     }
   }, [audioContextUnlocked]);
 
+  // ------------------------------------------------------------------
+  // Realtime voice engine (mock call): PCM capture + streaming playback
+  // ------------------------------------------------------------------
+
+  /** Extracted legacy MediaRecorder pipeline (assist + mock fallback). */
+  const startLegacyRecording = () => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    try {
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: currentAudioMimeType.current || getSupportedMimeType(),
+      });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+          if (autoDetectMode) {
+            questionBufferRef.current.push(e.data);
+          }
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        if (voiceEngineRef.current === 'realtime') return;
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: currentAudioMimeType.current,
+        });
+        audioChunksRef.current = [];
+        questionBufferRef.current = [];
+        setStatus('thinking');
+
+        if (!autoDetectMode) {
+          endAudio(sessionId, audioBlob);
+        }
+      };
+
+      mediaRecorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event);
+        showError('录音出错');
+      };
+
+      mediaRecorder.start(1000);
+    } catch (e) {
+      console.warn('MediaRecorder unavailable:', e);
+    }
+  };
+
+  /** 16 kHz PCM mic capture for the realtime engine (echo-gated). */
+  const startPcmCapture = () => {
+    const stream = streamRef.current;
+    if (!stream || processorRef.current) return;
+
+    try {
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass({ sampleRate: ASSIST_SAMPLE_RATE });
+      captureContextRef.current = ctx;
+
+      const source = ctx.createMediaStreamSource(stream);
+      captureSourceRef.current = source;
+
+      const processor = ctx.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (event) => {
+        const input = event.inputBuffer.getChannelData(0);
+        setUserVolume(frameVolume(input) * 160);
+        if (voiceEngineRef.current !== 'realtime') return;
+        if (isMutedRef.current) return;
+
+        // Echo gate: while the AI speaks, only loud local audio (the user
+        // interrupting) is forwarded so speaker leak cannot barge in.
+        if (aiSpeakingRef.current) {
+          if (frameVolume(input) < BARGE_IN_VOLUME) return;
+          pcmPlayerRef.current?.stop();
+          aiSpeakingRef.current = false;
+        }
+
+        sendVoiceAudio(sessionId, floatTo16BitBase64(input));
+      };
+
+      source.connect(processor);
+      // Muted destination keeps the processor pulling without playback.
+      const silentGain = ctx.createGain();
+      silentGain.gain.value = 0;
+      processor.connect(silentGain);
+      silentGain.connect(ctx.destination);
+    } catch (e) {
+      console.warn('PCM capture failed, falling back to legacy:', e);
+      applyVoiceEngine('legacy');
+      startLegacyRecording();
+    }
+  };
+
+  const stopPcmCapture = () => {
+    const processor = processorRef.current;
+    if (processor) {
+      processor.onaudioprocess = null;
+      try {
+        processor.disconnect();
+      } catch {
+        /* noop */
+      }
+    }
+    processorRef.current = null;
+    try {
+      captureSourceRef.current?.disconnect();
+    } catch {
+      /* noop */
+    }
+    captureSourceRef.current = null;
+    captureContextRef.current?.close().catch(() => undefined);
+    captureContextRef.current = null;
+  };
+
+  const playRealtimeChunk = (base64: string) => {
+    if (!pcmPlayerRef.current) {
+      pcmPlayerRef.current = new PcmStreamPlayer({
+        onDrained: () => {
+          aiSpeakingRef.current = false;
+          setStatus((prev) => (prev === 'speaking' ? 'listening' : prev));
+        },
+      });
+    }
+    aiSpeakingRef.current = true;
+    setStatus('speaking');
+    pcmPlayerRef.current.playChunk(base64);
+  };
+
+  const stopRealtimePlayback = (cancelled?: boolean) => {
+    if (!cancelled) return; // let the tail play out, onDrained resumes listening
+    pcmPlayerRef.current?.stop();
+    aiSpeakingRef.current = false;
+    setStatus('listening');
+  };
+
   const startCall = async () => {
     if (!browserSupported) {
-      message.error('Browser not supported');
+      showError('当前浏览器不支持语音通话');
       return;
     }
 
     try {
       const unlocked = await unlockAudioContext();
       if (!unlocked) {
-        message.warning('Please click anywhere to enable audio');
+        showError('请先点击页面以启用音频');
         return;
       }
 
@@ -363,54 +590,32 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       currentAudioMimeType.current = getSupportedMimeType();
       console.log('Using audio format:', currentAudioMimeType.current);
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: currentAudioMimeType.current,
-      });
-      mediaRecorderRef.current = mediaRecorder;
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-
-          if (autoDetectMode) {
-            questionBufferRef.current.push(e.data);
+      if (mode === 'mock') {
+        // Prefer the end-to-end realtime engine; fall back to the legacy
+        // MediaRecorder pipeline if the server rejects it or times out.
+        applyVoiceEngine('pending');
+        startVoiceStream(sessionId);
+        voiceFallbackTimerRef.current = setTimeout(() => {
+          if (voiceEngineRef.current === 'pending') {
+            applyVoiceEngine('legacy');
+            startLegacyRecording();
           }
-        }
-      };
+        }, VOICE_FALLBACK_TIMEOUT_MS);
+        return;
+      }
 
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: currentAudioMimeType.current,
-        });
-        audioChunksRef.current = [];
-        questionBufferRef.current = [];
-        setStatus('thinking');
-
-        if (!autoDetectMode) {
-          endAudio(sessionId, audioBlob);
-        }
-      };
-
-      mediaRecorder.onerror = (event) => {
-        console.error('MediaRecorder error:', event);
-        message.error('Recording error occurred');
-      };
-
-      mediaRecorder.start(1000);
+      // Assist mode: legacy MediaRecorder + silence auto-detection.
+      startLegacyRecording();
     } catch (err: any) {
       console.error('Failed to start call:', err);
       setStatus('idle');
 
       if (err.name === 'NotAllowedError') {
-        message.error(
-          'Microphone access denied. Please allow microphone access and try again.'
-        );
+        showError('无法访问麦克风，请在浏览器权限中允许后重试');
       } else if (err.name === 'NotFoundError') {
-        message.error(
-          'No microphone found. Please connect a microphone and try again.'
-        );
+        showError('未检测到麦克风，请连接后重试');
       } else if (err.name === 'NotReadableError') {
-        message.error('Microphone is being used by another application.');
+        showError('麦克风被其他应用占用');
       } else if (err.name === 'OverconstrainedError') {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -419,14 +624,38 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         setIsCalling(true);
         setStatus('listening');
       } else {
-        message.error('Failed to start voice call. Please try again.');
+        showError('启动语音通话失败，请重试');
       }
     }
+  };
+
+  /**
+   * Mock mode: stop the current utterance and submit it as the answer.
+   * The recorder restarts automatically after the AI finishes speaking the
+   * next question (see playAiAudio's onended).
+   */
+  const submitCurrentAnswer = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === 'inactive') return;
+    if (recorder.state === 'paused') {
+      recorder.resume();
+    }
+    recorder.stop();
   };
 
   const stopCall = () => {
     setIsCalling(false);
     setStatus('idle');
+
+    clearVoiceFallbackTimer();
+    if (voiceEngineRef.current !== 'legacy') {
+      stopVoiceStream(sessionId);
+    }
+    stopPcmCapture();
+    pcmPlayerRef.current?.dispose();
+    pcmPlayerRef.current = null;
+    aiSpeakingRef.current = false;
+
     mediaRecorderRef.current?.stop();
     streamRef.current?.getTracks().forEach((track) => track.stop());
     audioContextRef.current?.close();
@@ -533,7 +762,17 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     if (checked && status === 'listening' && analyserRef.current) {
       requestAnimationFrame(checkSilence);
     }
-    message.success(checked ? '已开启自动检测模式' : '已切换为手动模式');
+    success(checked ? '已开启自动检测模式' : '已切换为手动模式');
+  };
+
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    isMutedRef.current = next;
+    // Actually gate the mic so muted audio never reaches the server.
+    streamRef.current
+      ?.getAudioTracks()
+      .forEach((track) => (track.enabled = !next));
   };
 
   const formatDuration = (s: number) => {
@@ -542,123 +781,75 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getLatencyColor = () => {
-    if (latency < 100) return '#52c41a';
-    if (latency < 200) return '#faad14';
-    return '#f5222d';
-  };
+  const latencyClass =
+    latency < 100 ? 'ok' : latency < 200 ? 'warn' : 'live';
 
   const getStatusText = () => {
     switch (status) {
       case 'idle':
-        return 'Ready';
+        return '准备就绪';
       case 'connecting':
-        return 'Connecting...';
+        return '连接中...';
       case 'listening':
-        return autoDetectMode ? 'Listening (Auto)' : 'Listening...';
+        return autoDetectMode || voiceEngine === 'realtime'
+          ? '聆听中（自动）'
+          : '聆听中，说完请点击提交';
       case 'thinking':
-        return 'Processing...';
+        return '思考中...';
       case 'speaking':
-        return 'AI Speaking';
+        return 'AI 面试官正在说话';
       case 'reconnecting':
-        return `Reconnecting (${reconnectAttempt}/5)...`;
+        return `重连中 (${reconnectAttempt}/5)...`;
       default:
-        return 'Unknown';
+        return '';
     }
   };
 
   return (
-    <Card
-      style={{
-        background: '#141414',
-        borderRadius: 24,
-        border: '1px solid #303030',
-        overflow: 'hidden',
-        position: 'relative',
-        height: 580,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-      bodyStyle={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: 40,
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          right: 20,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Space>
-          <Badge
-            status={
-              isReconnecting ? 'warning' : isConnected ? 'success' : 'error'
-            }
-          />
-          <Text style={{ color: '#8c8c8c' }}>{getStatusText()}</Text>
-          {autoDetectMode && status === 'listening' && (
-            <Tag icon={<RobotOutlined />} color="blue">
-              Auto-Detect
-            </Tag>
+    <div className="iv-call">
+      <div className="iv-row-between iv-call-header">
+        <div className="iv-row">
+          <span
+            className={`iv-status-pill${
+              isReconnecting ? ' warn' : isConnected ? ' ok' : ''
+            }`}
+          >
+            {getStatusText()}
+          </span>
+          {mode === 'assist' && autoDetectMode && isCalling && (
+            <span className="iv-status-pill ok">自动检测</span>
           )}
-        </Space>
-        <Space>
+        </div>
+        <div className="iv-row" style={{ gap: '0.5rem' }}>
           {browserInfo && (
-            <Text style={{ color: '#595959', fontSize: 12 }}>
+            <Text type="secondary" style={{ fontSize: '0.72rem' }}>
               {browserInfo}
             </Text>
           )}
-          <Tooltip title={`Latency: ${latency}ms`}>
-            <Space style={{ color: getLatencyColor() }}>
-              <WifiOutlined />
-              <Text style={{ color: 'inherit', fontSize: 12 }}>
-                {latency}ms
-              </Text>
-            </Space>
-          </Tooltip>
-        </Space>
+          {latency > 0 && (
+            <span className={`iv-status-pill ${latencyClass}`}>
+              <IconWifi size={12} /> {latency}ms
+            </span>
+          )}
+        </div>
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 40,
-        }}
-      >
-        <div style={{ position: 'relative' }}>
+      <div className="iv-call-body">
+        <div className="iv-call-orb-wrap">
           <motion.div
             animate={{
-              scale: status === 'speaking' ? [1, 1.2, 1] : 1,
-              opacity: status === 'speaking' ? 1 : 0.5,
+              scale: status === 'speaking' ? [1, 1.15, 1] : 1,
+              opacity: status === 'speaking' ? 1 : 0.75,
             }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
-              boxShadow: `0 0 ${aiVolume}px rgba(24, 144, 255, 0.5)`,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            transition={{ repeat: status === 'speaking' ? Infinity : 0, duration: 1.5 }}
+            className="iv-call-orb"
+            style={{ boxShadow: `0 0 ${Math.max(12, aiVolume)}px rgba(99, 102, 241, 0.55)` }}
           >
-            <PhoneOutlined style={{ fontSize: 40, color: 'white' }} />
+            {status === 'speaking' ? (
+              <IconBulb size={38} />
+            ) : (
+              <IconMic size={38} />
+            )}
           </motion.div>
           <AnimatePresence>
             {status === 'thinking' && (
@@ -666,17 +857,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                style={{
-                  position: 'absolute',
-                  bottom: -30,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                }}
+                className="iv-call-orb-hint"
               >
-                <Space style={{ color: '#1890ff' }}>
-                  <LoadingOutlined />
-                  <Text style={{ color: '#1890ff' }}>Thinking...</Text>
-                </Space>
+                <span className="iv-spinner" /> 思考中...
               </motion.div>
             )}
             {status === 'reconnecting' && (
@@ -684,141 +867,138 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                style={{
-                  position: 'absolute',
-                  bottom: -30,
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                }}
+                className="iv-call-orb-hint"
               >
-                <Button
-                  type="link"
-                  icon={<ReloadOutlined />}
-                  onClick={handleReconnect}
-                  size="small"
-                >
-                  Retry Now
+                <Button variant="ghost" size="sm" onClick={handleReconnect}>
+                  立即重试
                 </Button>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {detectedQuestion && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              maxWidth: 400,
-              padding: '12px 16px',
-              background: 'rgba(24, 144, 255, 0.1)',
-              borderRadius: 12,
-              border: '1px solid rgba(24, 144, 255, 0.3)',
-            }}
-          >
-            <Space>
-              <SoundOutlined style={{ color: '#1890ff' }} />
-              <Text style={{ color: '#d9d9d9', fontSize: 13 }}>
-                {detectedQuestion.length > 80
-                  ? detectedQuestion.substring(0, 80) + '...'
-                  : detectedQuestion}
-              </Text>
-            </Space>
-          </motion.div>
+        {mode === 'mock' && currentQuestionText && (
+          <div className="iv-question-card iv-call-question">
+            <div className="iv-question-meta">
+              <span className="iv-status-pill live">
+                <span className="iv-rec-dot" /> 面试官提问
+              </span>
+            </div>
+            <div className="iv-call-question-text">{currentQuestionText}</div>
+          </div>
         )}
 
-        <div
-          style={{ display: 'flex', gap: 4, alignItems: 'center', height: 40 }}
-        >
-          {[...Array(20)].map((_, i) => (
-            <motion.div
+        {mode === 'assist' && detectedQuestion && (
+          <div className="iv-call-question iv-msg-bubble user" style={{ margin: 0 }}>
+            <div className="iv-msg-role">检测到的问题</div>
+            <div className="iv-call-question-text">
+              {detectedQuestion.length > 90
+                ? detectedQuestion.substring(0, 90) + '...'
+                : detectedQuestion}
+            </div>
+          </div>
+        )}
+
+        {(dialog.length > 0 || partialText) && (
+          <div className="iv-call-dialog" ref={dialogScrollRef}>
+            {dialog.map((m, idx) => (
+              <div key={idx} className="iv-call-dialog-line">
+                <span className={`iv-speaker-chip${m.role === 'user' ? ' self' : ''}`}>
+                  {m.role === 'user' ? '我' : '面试官'}
+                </span>
+                <span className="iv-call-dialog-text">{m.text}</span>
+              </div>
+            ))}
+            {partialText && (
+              <div className="iv-call-dialog-line partial">
+                <span className="iv-speaker-chip self">我</span>
+                <span className="iv-call-dialog-text">{partialText}...</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="iv-viz">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <span
               key={i}
-              animate={{
+              className="iv-viz-bar"
+              style={{
                 height: isMuted
                   ? 4
-                  : Math.max(4, userVolume * Math.random() * 2),
-              }}
-              style={{
-                width: 4,
-                background: isMuted ? '#434343' : '#52c41a',
-                borderRadius: 2,
+                  : Math.max(4, userVolume * (1 + ((i * 7) % 10) / 8) * 3),
+                opacity: isMuted ? 0.3 : undefined,
               }}
             />
           ))}
         </div>
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        <Title level={4} style={{ color: 'white', margin: 0 }}>
-          {formatDuration(callDuration)}
-        </Title>
+      <div className="iv-call-footer">
+        <div className="iv-call-duration">{formatDuration(callDuration)}</div>
 
-        <Space size={8}>
-          <Space size={4} style={{ marginRight: 16 }}>
-            <Text style={{ color: '#8c8c8c', fontSize: 12 }}>Auto</Text>
-            <Switch
-              size="small"
-              checked={autoDetectMode}
-              onChange={toggleAutoDetect}
-              disabled={!isCalling}
-            />
-          </Space>
+        <div className="iv-row" style={{ justifyContent: 'center', gap: '1rem' }}>
+          {mode === 'assist' && (
+            <div className="iv-row" style={{ gap: '0.4rem' }}>
+              <Text type="secondary" style={{ fontSize: '0.75rem' }}>
+                自动
+              </Text>
+              <Switch
+                checked={autoDetectMode}
+                onChange={toggleAutoDetect}
+                disabled={!isCalling}
+              />
+            </div>
+          )}
 
-          <Space size={32}>
+          {mode === 'mock' && (
             <Button
-              shape="circle"
-              size="large"
-              icon={isMuted ? <AudioMutedOutlined /> : <AudioOutlined />}
-              onClick={() => setIsMuted(!isMuted)}
-              disabled={!isCalling}
-              style={{
-                width: 64,
-                height: 64,
-                background: isMuted ? '#ff4d4f' : '#303030',
-                border: 'none',
-                color: 'white',
-              }}
-            />
-            <Button
-              shape="circle"
-              size="large"
-              danger
-              type="primary"
-              icon={<PhoneOutlined style={{ transform: 'rotate(135deg)' }} />}
-              onClick={stopCall}
-              style={{ width: 80, height: 80 }}
-            />
-          </Space>
-        </Space>
+              variant="primary"
+              onClick={submitCurrentAnswer}
+              disabled={
+                !isCalling ||
+                status !== 'listening' ||
+                isMuted ||
+                voiceEngine !== 'legacy'
+              }
+              title={
+                voiceEngine !== 'legacy'
+                  ? '实时模式下自动断句，无需手动提交'
+                  : undefined
+              }
+            >
+              <IconCheck size={15} /> 提交本回答
+            </Button>
+          )}
+
+          <Button
+            variant={isMuted ? 'danger' : 'secondary'}
+            onClick={toggleMute}
+            disabled={!isCalling}
+            className="iv-call-circle"
+            title={isMuted ? '取消静音' : '静音'}
+          >
+            <IconMic size={22} />
+          </Button>
+
+          <Button
+            variant="danger"
+            onClick={stopCall}
+            className="iv-call-circle iv-call-hangup"
+            title="结束通话"
+          >
+            <IconPhone size={26} />
+          </Button>
+        </div>
       </div>
 
       {!browserSupported && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 20,
-            left: 20,
-            right: 20,
-            padding: 12,
-            background: '#ff4d4f',
-            borderRadius: 8,
-            textAlign: 'center',
-          }}
-        >
-          <Text style={{ color: 'white' }}>
-            Your browser may not fully support voice features. Please use
-            Chrome, Firefox, or Safari for the best experience.
-          </Text>
+        <div className="iv-tip" style={{ justifyContent: 'center', marginTop: '0.75rem' }}>
+          <IconBulb size={15} />
+          <span>当前浏览器可能不完全支持语音功能，建议使用 Chrome、Firefox 或 Safari。</span>
         </div>
       )}
-    </Card>
+    </div>
   );
 };
 

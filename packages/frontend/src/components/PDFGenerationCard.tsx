@@ -11,6 +11,7 @@ import type { GeneratedPDF } from '../stores/generateStore';
 
 import { generateService } from '../services/generate-service';
 import PDFGenerationDialog from './PDFGenerationDialog';
+import { useTranslation } from 'react-i18next';
 
 interface PDFGenerationCardProps {
   optimizationId: string;
@@ -24,6 +25,7 @@ const PDFGenerationCard: React.FC<PDFGenerationCardProps> = ({
   const [dialogVisible, setDialogVisible] = useState(false);
   const [generatedPDF, setGeneratedPDF] = useState<GeneratedPDF | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const { t } = useTranslation();
 
   const handleGenerateSuccess = (pdf: GeneratedPDF) => {
     setGeneratedPDF(pdf);
@@ -34,7 +36,7 @@ const PDFGenerationCard: React.FC<PDFGenerationCardProps> = ({
 
   const handleDownload = async () => {
     if (!generatedPDF) {
-      message.warning('请先生成 PDF');
+      message.warning(t('resume.generate_pdf_first', '请先生成 PDF'));
       return;
     }
 
@@ -44,10 +46,10 @@ const PDFGenerationCard: React.FC<PDFGenerationCardProps> = ({
         generatedPDF.fileUrl,
         `resume-${new Date().getTime()}.pdf`
       );
-      message.success('PDF 下载成功！');
+      message.success(t('resume.pdf_downloaded', 'PDF 下载成功！'));
     } catch (error) {
       console.error('Failed to download PDF:', error);
-      message.error('下载 PDF 失败');
+      message.error(t('resume.pdf_download_failed', '下载 PDF 失败'));
     } finally {
       setDownloading(false);
     }
@@ -185,7 +187,9 @@ const PDFGenerationCard: React.FC<PDFGenerationCardProps> = ({
                   border: '1px solid rgba(255,255,255,0.3)',
                 }}
               >
-                {generatedPDF ? '重新生成' : '开始生成'}
+                {generatedPDF
+                  ? t('resume.regenerate')
+                  : t('resume.start_generate')}
               </Button>
               {generatedPDF && (
                 <Button

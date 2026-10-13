@@ -6,6 +6,7 @@ import {
   type Job,
   type ParsedJobData,
 } from '../services/job-service';
+import { useTranslation } from 'react-i18next';
 
 interface JobInfoCardProps {
   job: Job;
@@ -22,6 +23,7 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
   onDelete,
 }) => {
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handleEdit = () => {
     if (onEdit) {
@@ -37,22 +39,22 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
 
   const handleDelete = () => {
     Modal.confirm({
-      title: '删除职位信息',
-      content: '确定要删除这个职位信息吗？',
-      okText: '删除',
-      cancelText: '取消',
+      title: t('job.delete_title'),
+      content: t('job.delete_confirm'),
+      okText: t('job.delete'),
+      cancelText: t('common.cancel'),
       okButtonProps: { danger: true },
       onOk: async () => {
         try {
           setLoading(true);
           await jobService.deleteJob(job.id);
-          message.success('职位信息已删除');
+          message.success(t('job.delete_success'));
           if (onDelete) {
             onDelete(job.id);
           }
         } catch (error) {
           console.error('Failed to delete job:', error);
-          message.error('删除职位信息失败');
+          message.error(t('job.delete_failed'));
         } finally {
           setLoading(false);
         }
@@ -105,14 +107,14 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
               onClick={handleConfirm}
               style={{ borderRadius: '8px' }}
             >
-              确认
+              {t('job.confirm')}
             </Button>
             <Button
               icon={<EditOutlined />}
               onClick={handleEdit}
               style={{ borderRadius: '8px' }}
             >
-              编辑
+              {t('job.edit')}
             </Button>
             <Button
               danger
@@ -121,7 +123,7 @@ const JobInfoCard: React.FC<JobInfoCardProps> = ({
               loading={loading}
               style={{ borderRadius: '8px' }}
             >
-              删除
+              {t('job.delete')}
             </Button>
           </Space>
         </div>

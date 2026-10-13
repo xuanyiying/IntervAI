@@ -96,7 +96,7 @@ export interface AttachmentStatus {
   fileSize: number;
   uploadProgress: number;
   parseProgress: number;
-  status: 'uploading' | 'parsing' | 'completed' | 'error';
+  status: 'uploading' | 'parsing' | 'processing' | 'completed' | 'error';
   error?: string;
   mode?: 'upload' | 'parse'; // New field to distinguish between upload and parse view
   resumeId?: string; // New field to track by resume ID

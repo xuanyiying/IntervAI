@@ -62,6 +62,7 @@ describe('SuggestionsList', () => {
         suggestions={mockSuggestions}
         onAccept={mockOnAccept}
         onReject={mockOnReject}
+        useDiffView={false}
       />
     );
 
@@ -148,6 +149,7 @@ describe('SuggestionsList', () => {
         suggestions={mockSuggestions}
         onAccept={mockOnAccept}
         onReject={mockOnReject}
+        useDiffView={false}
       />
     );
 
