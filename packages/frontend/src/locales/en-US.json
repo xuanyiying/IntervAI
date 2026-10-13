@@ -53,7 +53,8 @@
     "retry": "Retry",
     "processing": "Processing",
     "present": "Present",
-    "completed": "Completed"
+    "completed": "Completed",
+    "login": "Log In"
   },
   "greeting": {
     "morning": "Good morning",
@@ -85,6 +86,7 @@
     "login_failed": "Login failed, please check your email and password",
     "register_success": "Registration successful!",
     "register_failed": "Registration failed, please try again later",
+    "email_already_exists": "This email is already registered. Please log in or use a different email.",
     "google_disabled": "Google sign-in is currently unavailable",
     "github_disabled": "GitHub sign-in is currently unavailable",
     "oauth_checking": "Checking sign-in status...",
@@ -100,8 +102,6 @@
     "password_strength_warning": "⚠️ Password strength is insufficient. It is recommended to meet all requirements to ensure account security.",
     "agree_terms": "I have read and agree to the",
     "and": "and",
-    "have_account": "Already have an account?",
-    "login": "Login",
     "oauth_token_missing": "Authentication failed: No access token received",
     "oauth_failed": "OAuth authentication failed, please try again",
     "oauth_processing": "Processing authentication...",
@@ -126,7 +126,20 @@
     "password_rule_number": "At least one number",
     "password_rule_special": "At least one special character (!@#$%^&*)",
     "password_requirements": "Password Requirements:",
-    "password_requirements_not_met": "Please meet all password requirements"
+    "password_requirements_not_met": "Please meet all password requirements",
+    "email_label": "Email",
+    "password_label": "Password",
+    "username_label": "Username",
+    "logging_in": "Logging in...",
+    "login_subtitle": "Sign in to your account",
+    "reset_code_label": "Verification Code",
+    "reset_code_placeholder": "Enter verification code",
+    "reset_code_required": "Please enter the verification code!",
+    "reset_code_length": "The code must be 6 digits",
+    "reset_confirm_label": "Confirm New Password",
+    "reset_new_password_label": "New Password",
+    "reset_title": "Reset Password",
+    "reset_subtitle": "Enter your new password"
   },
   "menu": {
     "home": "Home",
@@ -262,7 +275,6 @@
       "load_failed": "Failed to load usage data",
       "period": "Billing Period",
       "ai_usage": "AI Usage",
-      "quota": "Quota",
       "trend": "Trend",
       "trend_hint": "Calls trend in the last 30 days",
       "unlimited": "Unlimited",
@@ -281,7 +293,15 @@
         "pdf": "PDF Exports"
       },
       "remaining_uses": "{{count}} uses remaining: {{remaining}}/{{limit}}",
-      "no_remaining_uses": "Uses exhausted, please upgrade plan"
+      "no_remaining_uses": "Uses exhausted, please upgrade plan",
+      "free_tier": "Free Plan",
+      "pro_tier": "Pro Plan",
+      "view_details": "View Details",
+      "quota": {
+        "title": "Quota",
+        "optimizations": "Resume Optimizations",
+        "pdf": "PDF Exports"
+      }
     }
   },
   "invite_codes": {
@@ -419,7 +439,31 @@
     "assist_submit": "Get Reference Answer",
     "assist_hint": "Tip: During phone interviews, quickly input the question when the interviewer asks, and the system will generate a reference answer for you.",
     "setup_title": "Interview Setup",
-    "select_persona": "Select Interviewer"
+    "select_persona": "Select Interviewer",
+    "answer": "Answer",
+    "answer_generation_failed": "Failed to generate answer, please retry",
+    "assistant_title": "AI Interview Assistant",
+    "confidence": "Confidence",
+    "confidence_high": "High",
+    "confidence_medium": "Medium",
+    "confidence_low": "Low",
+    "generate_answer": "Generate Answer",
+    "generating_answer": "Generating answer...",
+    "listening": "Listening...",
+    "no_answer_to_speak": "No answer to read aloud",
+    "no_answer_yet": "No answer yet",
+    "not_listening": "Click to start listening",
+    "opacity": "Opacity",
+    "question": "Question",
+    "question_placeholder": "Type a question, or tap the microphone...",
+    "question_required": "Please enter a question first",
+    "related_skills": "Related Skills",
+    "speech_rate": "Speech Rate",
+    "usage_count": "Usage Count",
+    "voice_recognition_not_supported": "Speech recognition is not supported in this browser",
+    "voice_recognition_started": "Voice recognition started",
+    "volume": "Volume",
+    "persona_selected_hint": "{{name}} selected as your interviewer"
   },
   "chat": {
     "actions": {
@@ -427,10 +471,28 @@
       "interview_prediction": "Interview Prediction",
       "mock_interview": "Mock Interview",
       "job_input": "Job Input",
-      "discover": "Discover"
+      "discover": "Discover",
+      "tips": {
+        "resume_optimization": "Upload your resume for personalized optimization tips",
+        "interview_prediction": "AI analyzes job descriptions and predicts interview questions",
+        "mock_interview": "Realistic mock interviews with real-time feedback",
+        "discover": "Explore more AI capabilities and tips"
+      }
     },
+    "greeting_morning": "Good morning",
+    "greeting_afternoon": "Good afternoon",
+    "greeting_evening": "Good evening",
+    "greeting_hi": "Hi, ",
+    "default_user_label": "there",
     "welcome_subtitle": "What would you like to do today, {username}?",
+    "welcome_subtitle_guest": "What would you like to do today?",
     "placeholder_enhanced": "Ask a question, or drag & drop your resume...",
+    "send": "Send",
+    "free_quota_badge": "Free quota available",
+    "card_upload_resume_title": "Upload Resume",
+    "card_upload_resume_desc": "Start your AI job-hunting journey",
+    "card_mock_interview_title": "AI Mock Interview",
+    "card_mock_interview_desc": "Realistic interview practice",
     "optimize_resume": "Optimize Resume",
     "message_error": "Error processing message",
     "resume_ready": "Resume is ready, you can start optimizing!",
@@ -480,7 +542,9 @@
     "use_upload_button": "Please use the upload button to upload your resume"
   },
   "quota": {
-    "free_available": "Free quota available"
+    "free_available": "Free quota available",
+    "upgrade_button": "Upgrade Now",
+    "upgrade_title": "Upgrade Your Plan"
   },
   "features": {
     "resume_optimization_tip": "Upload your resume for personalized optimization suggestions",
@@ -498,7 +562,17 @@
     "interview_label": "Interview Help",
     "interview_desc": "Mock interview for the position",
     "optimize_label": "Deep Optimize",
-    "optimize_desc": "Deeply optimize resume based on target job"
+    "optimize_desc": "Deeply optimize resume based on target job",
+    "total": "Total Suggestions",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "accept_all": "Accept All",
+    "accept_all_tooltip": "Accept all pending suggestions",
+    "accept_all_success": "All suggestions accepted",
+    "accept_all_failed": "Failed to accept all suggestions",
+    "empty": "No optimization suggestions",
+    "hint": "Tip: after accepting suggestions, your resume will be updated to the new version. You can view history anytime."
   },
   "pricing": {
     "title": "Simple, Transparent Pricing",
@@ -539,7 +613,13 @@
       "api_access": "API Access",
       "dedicated_manager": "Dedicated Account Manager",
       "sso": "SSO Integration"
-    }
+    },
+    "credits_title": "Recharge Credits",
+    "hot": "Hot",
+    "points": "Points",
+    "tab_history": "History",
+    "tab_orders": "Orders",
+    "tab_recharge": "Recharge"
   },
   "settings": {
     "title": "Settings",
@@ -594,7 +674,8 @@
     "demo_notification_welcome_title": "Welcome",
     "demo_notification_welcome_content": "Welcome to AI Resume Assistant!",
     "demo_notification_system_update_title": "System Update",
-    "demo_notification_system_update_content": "Maintenance scheduled."
+    "demo_notification_system_update_content": "Maintenance scheduled.",
+    "subtitle": "Manage your profile, security settings and account notifications"
   },
   "admin": {
     "users": {
@@ -761,7 +842,18 @@
       "empty": "Your polished content will appear here",
       "polish_failed": "Failed to polish experience"
     },
-    "optimization_success": "Resume optimization completed and saved as a new version"
+    "optimization_success": "Resume optimization completed and saved as a new version",
+    "link_expired": "Link expired, please regenerate",
+    "generate_pdf": "Generate PDF",
+    "regenerate": "Regenerate",
+    "start_generate": "Start Generating",
+    "pdf_generating": "Generating PDF...",
+    "pdf_generated": "PDF generated successfully!",
+    "pdf_generate_failed": "Failed to generate PDF",
+    "pdf_downloaded": "PDF downloaded successfully!",
+    "pdf_download_failed": "Failed to download PDF",
+    "generate_pdf_first": "Please generate a PDF first",
+    "download_pdf": "Download PDF"
   },
   "knowledge_base": {
     "title": "Knowledge Base Management",
@@ -812,5 +904,75 @@
     "content_editor": "Content Editor",
     "content_placeholder": "# Start building your story...",
     "markdown_version": "Markdown v4.0"
+  },
+  "match_analysis": {
+    "additional_skills": "Additional Skills",
+    "education_match": "Education Match",
+    "error": "Analysis Failed",
+    "estimated_time": "Estimated Time",
+    "experience_match": "Experience Match",
+    "gaps": "Gaps",
+    "high_priority": "High Priority",
+    "highlights": "Highlights",
+    "learning_path": "Learning Path",
+    "low_priority": "Low Priority",
+    "matched_skills": "Matched Skills",
+    "medium_priority": "Medium Priority",
+    "missing_skills": "Missing Skills",
+    "no_data": "No analysis data",
+    "overall_match": "Overall Match",
+    "recommendations": "Recommendations",
+    "requirement_met": "Meets Requirements",
+    "requirement_not_met": "Partially Meets",
+    "resources": "Recommended Resources",
+    "skill_match": "Skill Match Analysis",
+    "excellent_match": "Excellent match! You have a strong chance of getting an interview",
+    "good_match": "Good match, consider optimizing for the gaps",
+    "needs_improvement": "Needs improvement, consider strengthening relevant skills",
+    "progress_label": "Match Score",
+    "excellent": "Excellent",
+    "good": "Good",
+    "needs_improvement_short": "Needs Improvement"
+  },
+  "error": {
+    "404_title": "Page Not Found",
+    "500_title": "Server Error",
+    "error_details": "Error Details",
+    "go_back": "Go Back",
+    "go_home": "Go Home",
+    "reload": "Reload Page",
+    "unknown_error": "Unknown Error"
+  },
+  "widget": {
+    "free": "Free",
+    "pro": "Pro",
+    "usage": "Usage"
+  },
+  "job": {
+    "delete_title": "Delete Job Info",
+    "delete_confirm": "Are you sure you want to delete this job info?",
+    "delete_success": "Job info deleted",
+    "delete_failed": "Failed to delete job info",
+    "confirm": "Confirm",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "interviewQuestions": {
+    "type_behavioral": "Behavioral",
+    "type_technical": "Technical",
+    "type_situational": "Situational",
+    "type_resume_based": "Resume-based",
+    "diff_easy": "Easy",
+    "diff_medium": "Medium",
+    "diff_hard": "Hard",
+    "export_success": "Interview prep checklist exported",
+    "export_failed": "Export failed, please retry",
+    "title": "Interview Preparation",
+    "empty": "No interview questions"
+  },
+  "pdfDialog": {
+    "load_templates_failed": "Failed to load templates",
+    "select_template_first": "Please select a template first",
+    "preview_failed": "Failed to preview PDF"
   }
 }

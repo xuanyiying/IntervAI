@@ -25,6 +25,7 @@ import type { Template } from '../stores/generateStore';
 import { useGenerateStore } from '@/stores';
 import { generateService } from '@/services';
 import { formatDateTime } from '../i18n';
+import { useTranslation } from 'react-i18next';
 
 interface PDFGenerationDialogProps {
   visible: boolean;
@@ -54,6 +55,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
     setPreviewUrl,
   } = useGenerateStore();
 
+  const { t } = useTranslation();
   const [previewLoading, setPreviewLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -74,7 +76,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
       }
     } catch (error) {
       console.error('Failed to load templates:', error);
-      message.error('加载模板失败');
+      message.error(t('pdfDialog.load_templates_failed'));
     } finally {
       setLoading(false);
     }
@@ -88,7 +90,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
 
   const handlePreview = async () => {
     if (!selectedTemplate) {
-      message.warning('请先选择模板');
+      message.warning(t('pdfDialog.select_template_first'));
       return;
     }
 
@@ -103,7 +105,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
       setShowPreview(true);
     } catch (error) {
       console.error('Failed to preview PDF:', error);
-      message.error('预览 PDF 失败');
+      message.error(t('pdfDialog.preview_failed'));
     } finally {
       setPreviewLoading(false);
     }
@@ -111,7 +113,7 @@ const PDFGenerationDialog: React.FC<PDFGenerationDialogProps> = ({
 
   const handleGeneratePDF = async () => {
     if (!selectedTemplate) {
-      message.warning('请先选择模板');
+      message.warning(t('pdfDialog.select_template_first'));
       return;
     }
 

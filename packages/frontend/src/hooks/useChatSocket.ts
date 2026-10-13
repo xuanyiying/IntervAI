@@ -79,7 +79,7 @@ export const useChatSocket = (
 
     socketRef.current = io(`${serverUrl}/chat`, {
       auth: { token: `Bearer ${token}` },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,

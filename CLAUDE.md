@@ -62,7 +62,7 @@ The backend follows a layered architecture with clear separation:
 
 - **`common/`** - Shared utilities, middleware, guards, decorators, exceptions
 - **`core/`** - Core business logic modules (auth, user, chat, conversation, storage, quota, ai)
-- **`features/`** - Feature-specific modules (resume, job, interview, payment, job-search, invitation)
+- **`features/`** - Feature-specific modules (resume, job, interview, agents, tasks, voice)
 - **`e2e/`** - End-to-end tests
 
 Key architectural patterns:
@@ -120,7 +120,6 @@ PostgreSQL via Prisma. Key models:
 - **Conversation/Message** - Chat history with attachments
 - **InterviewSession/InterviewMessage** - Mock interview sessions
 - **ModelConfig/PromptTemplate** - AI model and prompt management
-- **JobPosting/Application/JobMatch** - Job search automation
 
 ### Path Aliases
 

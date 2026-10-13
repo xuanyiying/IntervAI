@@ -27,7 +27,6 @@ import PaymentSuccessPage from '@/pages/user/PaymentSuccessPage';
 import PitchPerfectPage from '@/pages/user/PitchPerfectPage';
 import ProfilePage from '@/pages/user/ProfilePage';
 import ResumeBuilderPage from '@/pages/user/ResumeBuilderPage';
-import RolePlayPage from '@/pages/user/RolePlayPage';
 import SettingsPage from '@/pages/user/SettingsPage';
 import SubscriptionManagementPage from '@/pages/user/SubscriptionManagementPage';
 
@@ -194,14 +193,6 @@ const routes: RouteObject[] = [
         element: (
           <ProtectedRoute>
             <PitchPerfectPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'role-play',
-        element: (
-          <ProtectedRoute>
-            <RolePlayPage />
           </ProtectedRoute>
         ),
       },

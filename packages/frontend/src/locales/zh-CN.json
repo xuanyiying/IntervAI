@@ -86,6 +86,7 @@
     "login_failed": "登录失败，请检查邮箱和密码",
     "register_success": "注册成功！",
     "register_failed": "注册失败，请稍后重试",
+    "email_already_exists": "该邮箱已被注册，请直接登录或更换邮箱",
     "google_disabled": "Google 登录暂不可用",
     "github_disabled": "GitHub 登录暂不可用",
     "oauth_checking": "正在验证登录状态...",
@@ -129,7 +130,18 @@
     "password_rule_number": "包含至少一个数字",
     "password_rule_special": "包含至少一个特殊字符 (!@#$%^&*)",
     "password_requirements": "密码要求：",
-    "password_requirements_not_met": "请满足所有密码要求"
+    "password_requirements_not_met": "请满足所有密码要求",
+    "email_label": "邮箱",
+    "password_label": "密码",
+    "username_label": "用户名",
+    "logging_in": "登录中...",
+    "login_subtitle": "登录您的账号",
+    "reset_code_label": "验证码",
+    "reset_code_placeholder": "请输入验证码",
+    "reset_code_required": "请输入验证码！",
+    "reset_code_length": "验证码长度为 6 位数字",
+    "reset_confirm_label": "确认新密码",
+    "reset_new_password_label": "新密码"
   },
   "menu": {
     "home": "主页",
@@ -265,7 +277,6 @@
       "load_failed": "使用量加载失败",
       "period": "计费周期",
       "ai_usage": "AI 使用情况",
-      "quota": "配额",
       "trend": "趋势",
       "trend_hint": "近 30 天调用次数趋势",
       "unlimited": "无限制",
@@ -284,7 +295,15 @@
         "pdf": "PDF 导出"
       },
       "remaining_uses": "{{count}} uses remaining: {{remaining}}/{{limit}}",
-      "no_remaining_uses": "次数已用尽，请升级计划"
+      "no_remaining_uses": "次数已用尽，请升级计划",
+      "free_tier": "免费版",
+      "pro_tier": "专业版",
+      "view_details": "查看详情",
+      "quota": {
+        "title": "配额",
+        "optimizations": "简历优化",
+        "pdf": "PDF 导出"
+      }
     }
   },
   "invite_codes": {
@@ -408,7 +427,18 @@
     "location": "所在地",
     "upload": "上传简历",
     "upload_type_error": "只能上传 PDF 或 Word 文档！",
-    "upload_size_error": "文件大小不能超过 10MB！"
+    "upload_size_error": "文件大小不能超过 10MB！",
+    "link_expired": "链接已过期，请重新生成",
+    "generate_pdf": "生成 PDF",
+    "regenerate": "重新生成",
+    "start_generate": "开始生成",
+    "pdf_generating": "正在生成 PDF...",
+    "pdf_generated": "PDF 生成成功！",
+    "pdf_generate_failed": "生成 PDF 失败",
+    "pdf_downloaded": "PDF 下载成功！",
+    "pdf_download_failed": "下载 PDF 失败",
+    "generate_pdf_first": "请先生成 PDF",
+    "download_pdf": "下载 PDF"
   },
   "models": {
     "title": "模型配置管理",
@@ -510,18 +540,60 @@
     "assist_submit": "获取参考答案",
     "assist_hint": "提示：在电话面试中，当面试官提问后，快速将问题输入，系统会生成参考答案供你参考。",
     "setup_title": "面试设置",
-    "select_persona": "选择面试官"
+    "select_persona": "选择面试官",
+    "answer": "参考答案",
+    "answer_generation_failed": "答案生成失败，请重试",
+    "assistant_title": "AI 面试助手",
+    "confidence": "置信度",
+    "confidence_high": "高",
+    "confidence_medium": "中",
+    "confidence_low": "低",
+    "generate_answer": "生成答案",
+    "generating_answer": "正在生成答案...",
+    "listening": "正在聆听...",
+    "no_answer_to_speak": "暂无答案可朗读",
+    "no_answer_yet": "暂无答案",
+    "not_listening": "点击开始聆听",
+    "opacity": "透明度",
+    "question": "问题",
+    "question_placeholder": "输入问题，或点击麦克风提问...",
+    "question_required": "请先输入问题",
+    "related_skills": "相关技能",
+    "speech_rate": "语速",
+    "usage_count": "使用次数",
+    "voice_recognition_not_supported": "当前浏览器不支持语音识别",
+    "voice_recognition_started": "语音识别已开始",
+    "volume": "音量",
+    "persona_selected_hint": "已选择 {{name}} 作为面试官"
   },
   "chat": {
     "actions": {
-      "resume_optimization": "履历点睛",
-      "interview_prediction": "面试预测",
+      "resume_optimization": "简历优化",
+      "interview_prediction": "面试押题",
       "mock_interview": "模拟面试",
       "job_input": "职位输入",
-      "discover": "发现"
+      "discover": "发现",
+      "tips": {
+        "resume_optimization": "上传简历，获取个性化优化建议",
+        "interview_prediction": "AI 分析岗位 JD，预测高频面试题",
+        "mock_interview": "真实场景模拟面试，实时反馈表现",
+        "discover": "探索更多 AI 能力和使用技巧"
+      }
     },
+    "greeting_morning": "早上好",
+    "greeting_afternoon": "下午好",
+    "greeting_evening": "晚上好",
+    "greeting_hi": "Hi，",
+    "default_user_label": "用户",
     "welcome_subtitle": "{username}，今天想做什么？",
+    "welcome_subtitle_guest": "今天想做什么？",
     "placeholder_enhanced": "向助手提问，或拖拽简历上传...",
+    "send": "发送",
+    "free_quota_badge": "免费额度可用",
+    "card_upload_resume_title": "上传简历",
+    "card_upload_resume_desc": "开始 AI 求职之旅",
+    "card_mock_interview_title": "AI 模拟面试",
+    "card_mock_interview_desc": "真人模拟面试体验",
     "optimize_resume": "优化简历",
     "message_error": "处理消息时发生错误",
     "resume_ready": "简历已准备就绪，可以开始优化！",
@@ -571,7 +643,9 @@
     "use_upload_button": "请使用上传按钮上传简历"
   },
   "quota": {
-    "free_available": "免费额度可用"
+    "free_available": "免费额度可用",
+    "upgrade_button": "立即升级",
+    "upgrade_title": "升级您的计划"
   },
   "features": {
     "resume_optimization_tip": "上传简历，获取个性化优化建议",
@@ -589,7 +663,17 @@
     "interview_label": "模拟面试",
     "interview_desc": "针对职位的模拟面试",
     "optimize_label": "履历点睛",
-    "optimize_desc": "生成适配岗位的黄金自我介绍"
+    "optimize_desc": "生成适配岗位的黄金自我介绍",
+    "total": "总建议数",
+    "pending": "待处理",
+    "accepted": "已接受",
+    "rejected": "已拒绝",
+    "accept_all": "接受全部",
+    "accept_all_tooltip": "接受所有待处理的建议",
+    "accept_all_success": "所有建议已接受",
+    "accept_all_failed": "接受所有建议失败",
+    "empty": "暂无优化建议",
+    "hint": "提示：接受建议后，您的简历将自动更新为新版本。您可以随时查看历史版本。"
   },
   "pricing": {
     "title": "简单透明的价格方案",
@@ -630,7 +714,13 @@
       "api_access": "API 访问",
       "dedicated_manager": "专属客户经理",
       "sso": "SSO 集成"
-    }
+    },
+    "credits_title": "积分充值",
+    "hot": "热门",
+    "points": "积分",
+    "tab_history": "充值记录",
+    "tab_orders": "订单",
+    "tab_recharge": "充值"
   },
   "settings": {
     "title": "设置",
@@ -685,7 +775,8 @@
     "demo_notification_welcome_title": "欢迎",
     "demo_notification_welcome_content": "欢迎使用 AI 简历助手！",
     "demo_notification_system_update_title": "系统更新",
-    "demo_notification_system_update_content": "系统维护已安排。"
+    "demo_notification_system_update_content": "系统维护已安排。",
+    "subtitle": "管理您的个人资料、安全设置和账户通知"
   },
   "admin": {
     "users": {
@@ -820,5 +911,75 @@
     "content_editor": "内容编辑器",
     "content_placeholder": "# 开始构建您的故事...",
     "markdown_version": "Markdown v4.0"
+  },
+  "match_analysis": {
+    "additional_skills": "额外技能",
+    "education_match": "教育匹配",
+    "error": "分析失败",
+    "estimated_time": "预计时间",
+    "experience_match": "经验匹配",
+    "gaps": "差距",
+    "high_priority": "高优先级",
+    "highlights": "亮点",
+    "learning_path": "学习路径",
+    "low_priority": "低优先级",
+    "matched_skills": "已匹配技能",
+    "medium_priority": "中优先级",
+    "missing_skills": "缺失技能",
+    "no_data": "暂无分析数据",
+    "overall_match": "整体匹配度",
+    "recommendations": "优化建议",
+    "requirement_met": "符合要求",
+    "requirement_not_met": "未完全符合要求",
+    "resources": "推荐资源",
+    "skill_match": "技能匹配分析",
+    "excellent_match": "优秀匹配！你有很大机会获得面试机会",
+    "good_match": "良好匹配，建议针对差距进行优化",
+    "needs_improvement": "需要改进，建议加强相关技能",
+    "progress_label": "匹配度",
+    "excellent": "优秀",
+    "good": "良好",
+    "needs_improvement_short": "需要改进"
+  },
+  "error": {
+    "404_title": "页面未找到",
+    "500_title": "服务器错误",
+    "error_details": "错误详情",
+    "go_back": "返回",
+    "go_home": "返回首页",
+    "reload": "刷新页面",
+    "unknown_error": "未知错误"
+  },
+  "widget": {
+    "free": "免费版",
+    "pro": "专业版",
+    "usage": "使用量"
+  },
+  "job": {
+    "delete_title": "删除职位信息",
+    "delete_confirm": "确定要删除这个职位信息吗？",
+    "delete_success": "职位信息已删除",
+    "delete_failed": "删除职位信息失败",
+    "confirm": "确认",
+    "edit": "编辑",
+    "delete": "删除"
+  },
+  "interviewQuestions": {
+    "type_behavioral": "行为面试",
+    "type_technical": "技术面试",
+    "type_situational": "情景面试",
+    "type_resume_based": "简历相关",
+    "diff_easy": "简单",
+    "diff_medium": "中等",
+    "diff_hard": "困难",
+    "export_success": "面试准备清单已导出",
+    "export_failed": "导出失败，请重试",
+    "title": "面试准备",
+    "empty": "暂无面试问题"
+  },
+  "pdfDialog": {
+    "load_templates_failed": "加载模板失败",
+    "select_template_first": "请先选择模板",
+    "preview_failed": "预览 PDF 失败"
   }
 }

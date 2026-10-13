@@ -60,7 +60,7 @@ const PaymentSuccessPage: React.FC = () => {
             <Button
               type="primary"
               key="dashboard"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
             >
               Go to Dashboard
             </Button>,

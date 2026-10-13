@@ -5,6 +5,7 @@ import { AlibabaVoiceService } from '@/features/voice/voice.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { InterviewMode, InterviewStatus, MessageRole } from '@prisma/client';
+import { InterviewAIService } from './interview-ai.service';
 import { InterviewSessionService } from './interview-session.service';
 
 describe('InterviewSessionService', () => {
@@ -112,6 +113,7 @@ describe('InterviewSessionService', () => {
         { provide: QuotaService, useValue: mockQuotaService },
         { provide: AlibabaVoiceService, useValue: mockVoiceService },
         { provide: PromptService, useValue: mockPromptService },
+        { provide: InterviewAIService, useValue: {} },
       ],
     }).compile();
 

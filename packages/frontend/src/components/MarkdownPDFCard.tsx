@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { generateService } from '@/services';
+import { useTranslation } from 'react-i18next';
 
 interface MarkdownPDFCardProps {
   markdown: string;
@@ -24,6 +25,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
 }) => {
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const { t } = useTranslation();
   const [generatedPDF, setGeneratedPDF] = useState<{
     fileId: string;
     filePath: string;
@@ -34,7 +36,10 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
   const handleGenerate = async () => {
     try {
       setGenerating(true);
-      message.loading({ content: '正在生成 PDF...', key: 'pdf-gen' });
+      message.loading({
+        content: t('resume.pdf_generating', '正在生成 PDF...'),
+        key: 'pdf-gen',
+      });
 
       const result = await generateService.generatePDFFromMarkdown(markdown, {
         fontSize: 12,
@@ -42,14 +47,20 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
       });
 
       setGeneratedPDF(result);
-      message.success({ content: 'PDF 生成成功！', key: 'pdf-gen' });
+      message.success({
+        content: t('resume.pdf_generated', 'PDF 生成成功！'),
+        key: 'pdf-gen',
+      });
 
       if (onGenerateSuccess) {
         onGenerateSuccess();
       }
     } catch (error) {
       console.error('Failed to generate PDF:', error);
-      message.error({ content: '生成 PDF 失败', key: 'pdf-gen' });
+      message.error({
+        content: t('resume.pdf_generate_failed', '生成 PDF 失败'),
+        key: 'pdf-gen',
+      });
     } finally {
       setGenerating(false);
     }
@@ -64,10 +75,10 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
         generatedPDF.downloadUrl,
         `resume-optimized-${Date.now()}.pdf`
       );
-      message.success('PDF 下载成功！');
+      message.success(t('resume.pdf_downloaded', 'PDF 下载成功！'));
     } catch (error) {
       console.error('Failed to download PDF:', error);
-      message.error('下载 PDF 失败');
+      message.error(t('resume.pdf_download_failed', '下载 PDF 失败'));
     } finally {
       setDownloading(false);
     }
@@ -145,7 +156,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
                     border: '1px solid rgba(255, 77, 79, 0.35)',
                   }}
                 >
-                  链接已过期，请重新生成
+                  {t('resume.link_expired')}
                 </div>
               )}
             </Space>
@@ -164,7 +175,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
                 border: 'none',
               }}
             >
-              生成 PDF
+              {t('resume.generate_pdf')}
             </Button>
           )}
 
@@ -180,7 +191,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
                   border: '1px solid rgba(255,255,255,0.3)',
                 }}
               >
-                重新生成
+                {t('resume.regenerate')}
               </Button>
               <Button
                 type="primary"
@@ -194,7 +205,7 @@ const MarkdownPDFCard: React.FC<MarkdownPDFCardProps> = ({
                   border: 'none',
                 }}
               >
-                下载 PDF
+                {t('resume.download_pdf', '下载 PDF')}
               </Button>
             </>
           )}

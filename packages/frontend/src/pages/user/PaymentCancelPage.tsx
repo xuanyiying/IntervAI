@@ -20,7 +20,7 @@ const PaymentCancelPage: React.FC = () => {
             >
               Return to Pricing
             </Button>,
-            <Button key="dashboard" onClick={() => navigate('/dashboard')}>
+            <Button key="dashboard" onClick={() => navigate('/')}>
               Go to Dashboard
             </Button>,
           ]}

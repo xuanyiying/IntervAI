@@ -54,16 +54,23 @@ export interface InterviewReport {
   markdown: string;
 }
 
+export interface InterviewSessionHistoryItem {
+  id: string;
+  optimizationId: string | null;
+  mode: string;
+  jobPosition: string;
+  status: string;
+  score: number | null;
+  recordingUrl?: string | null;
+  recordingDuration?: number | null;
+  createdAt: string;
+}
+
 export interface InterviewerPersona {
   id: string;
   name: string;
   style:
-    | 'STRICT'
-    | 'FRIENDLY'
-    | 'TECHNICAL'
-    | 'HR'
-    | 'SUPPORTIVE'
-    | 'CHALLENGING';
+    'STRICT' | 'FRIENDLY' | 'TECHNICAL' | 'HR' | 'SUPPORTIVE' | 'CHALLENGING';
   company: string | null;
   position: string | null;
   avatarUrl: string | null;
@@ -131,20 +138,20 @@ export const interviewService = {
    * @returns The created interview session and the first question
    */
   startSession: async (
-    optimizationId: string,
+    optimizationId?: string,
     voiceId?: string,
     personaId?: string,
     mode?: 'mock' | 'assist',
     language?: 'en' | 'zh'
   ): Promise<{
     session: InterviewSession;
-    firstQuestion: InterviewQuestion;
+    firstQuestion: InterviewQuestion | null;
   }> => {
     const response = await axios.post<{
       session: InterviewSession;
-      firstQuestion: InterviewQuestion;
+      firstQuestion: InterviewQuestion | null;
     }>('/interview/session', {
-      optimizationId,
+      ...(optimizationId ? { optimizationId } : {}),
       voiceId,
       personaId,
       mode,
@@ -295,8 +302,9 @@ export const interviewService = {
   ): Promise<InterviewQuestion[]> => {
     const response = await axios.post<InterviewQuestion[]>(
       '/interview/questions',
+      null,
       {
-        optimizationId,
+        params: { optimizationId },
       }
     );
     return response.data;
@@ -317,18 +325,18 @@ export const interviewService = {
   },
 
   /**
-   * Export interview preparation materials as a PDF
+   * Export interview preparation materials as an HTML document
    * @param optimizationId - The ID of the optimization
-   * @returns The URL of the generated PDF
    */
   exportInterviewPrep: async (optimizationId: string): Promise<string> => {
-    const response = await axios.get(`/interview/export/${optimizationId}`, {
-      responseType: 'blob',
-    });
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const response = await axios.get<{ html: string }>(
+      `/interview/export/${optimizationId}`
+    );
+    const blob = new Blob([response.data.html], { type: 'text/html' });
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `interview-prep-${optimizationId}.pdf`);
+    link.setAttribute('download', `interview-prep-${optimizationId}.html`);
     document.body.appendChild(link);
     link.click();
     link.parentNode?.removeChild(link);
@@ -378,23 +386,44 @@ export const interviewService = {
     window.URL.revokeObjectURL(url);
   },
 
-  getInterviewHistory: async (): Promise<any[]> => {
-    const response = await axios.get('/interview/sessions');
+  getInterviewHistory: async (): Promise<InterviewSessionHistoryItem[]> => {
+    const response = await axios.get<InterviewSessionHistoryItem[]>(
+      '/interview/sessions'
+    );
     return response.data;
   },
 
-  startRolePlay: async (params: {
-    resumeId: string;
-    jobPosition: string;
-    language?: string;
-    audioEnabled?: boolean;
-    useAssistant?: boolean;
-  }): Promise<{ sessionId: string }> => {
-    const response = await axios.post<{ sessionId: string }>('/interview/session', {
-      optimizationId: params.resumeId,
-      mode: 'mock',
-      language: params.language || 'zh',
+  /**
+   * Voiceprint (speaker verification) for realtime assist interviews.
+   */
+  getVoiceprintStatus: async (): Promise<{
+    available: boolean;
+    enrolled: boolean;
+    sampleCount: number;
+    updatedAt: string | null;
+    threshold: number;
+  }> => {
+    const response = await axios.get('/interview/voiceprint/status');
+    return response.data;
+  },
+
+  /**
+   * Enroll the user's voiceprint from base64-encoded mono PCM16 audio
+   * (8-10 seconds recommended).
+   */
+  enrollVoiceprint: async (
+    audioBase64: string,
+    sampleRate = 16000
+  ): Promise<{ success: boolean; message?: string; sampleCount?: number }> => {
+    const response = await axios.post('/interview/voiceprint/enroll', {
+      audio: audioBase64,
+      sampleRate,
     });
+    return response.data;
+  },
+
+  deleteVoiceprint: async (): Promise<{ success: boolean }> => {
+    const response = await axios.delete('/interview/voiceprint');
     return response.data;
   },
 };

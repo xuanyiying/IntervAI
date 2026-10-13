@@ -1,4 +1,5 @@
 import { AIService } from '@/core/ai/ai.service';
+import { AI_EMBEDDING_MODEL } from '@/core/ai/models';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -39,7 +40,7 @@ export class MatchAnalysisService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AIService
-  ) {}
+  ) { }
 
   async analyzeMatch(
     resumeId: string,
@@ -83,11 +84,11 @@ export class MatchAnalysisService {
 
     try {
       const resumeEmbedding = await this.aiService.embed(
-        this.aiService.getModel(),
+        AI_EMBEDDING_MODEL,
         resumeText
       );
       const jobEmbedding = await this.aiService.embed(
-        this.aiService.getModel(),
+        AI_EMBEDDING_MODEL,
         jobDescription
       );
       const similarity = this.cosineSimilarity(resumeEmbedding, jobEmbedding);

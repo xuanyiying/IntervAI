@@ -286,14 +286,14 @@ export const ResumeOptimizationDialog: React.FC<
                       <Tag className="tag-section">{suggestion.section}</Tag>
                       {suggestion.status === SuggestionStatus.ACCEPTED ? (
                         <Tag icon={<CheckCircleOutlined />} color="success">
-                          已接受
+                          {t('suggestions.accepted')}
                         </Tag>
                       ) : suggestion.status === SuggestionStatus.REJECTED ? (
                         <Tag icon={<CloseCircleOutlined />} color="error">
-                          已拒绝
+                          {t('suggestions.rejected')}
                         </Tag>
                       ) : (
-                        <Tag color="warning">待处理</Tag>
+                        <Tag color="warning">{t('suggestions.pending')}</Tag>
                       )}
                     </Space>
                     <Space>

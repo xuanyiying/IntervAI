@@ -10,6 +10,12 @@ build/
 *.tsbuildinfo
 *.d.ts
 
+# Generated code
+packages/backend/src/generated/
+
+# pnpm local store
+.pnpm-store/
+
 # Environment variables
 .env
 .env.local

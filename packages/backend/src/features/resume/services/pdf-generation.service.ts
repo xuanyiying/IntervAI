@@ -1165,7 +1165,7 @@ export class PdfGenerationService implements OnModuleInit, OnModuleDestroy {
       await page.setViewport({ width: 1200, height: 1600 });
 
       // Set content
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'networkidle0' as never });
 
       // Generate PDF with ATS-friendly settings (Requirement 7.5)
       const pdfUint8Array = await page.pdf({

@@ -113,6 +113,16 @@ export class InterviewController {
   }
 
   /**
+   * List interview sessions (history) for the current user
+   * GET /api/v1/interview/sessions
+   */
+  @Get('sessions')
+  async listSessions(@Request() req: any) {
+    const userId = req.user.id;
+    return this.sessionService.listUserSessions(userId);
+  }
+
+  /**
    * Start a new interview session
    * POST /api/v1/interview/session
    */

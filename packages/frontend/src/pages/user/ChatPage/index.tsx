@@ -389,9 +389,13 @@ const ChatPage: React.FC = () => {
         targetId
       );
     } else if (key === 'interview_prediction') {
-      navigate('/agents/interview-prediction');
+      navigate('/interview');
     } else if (key === 'mock_interview') {
-      navigate('/agents/mock-interview');
+      navigate('/interview');
+    } else if (key === 'resume_upload') {
+      navigate('/resumes');
+    } else if (key === 'discover') {
+      navigate('/resume-builder');
     } else {
       handleSubmit(label);
     }

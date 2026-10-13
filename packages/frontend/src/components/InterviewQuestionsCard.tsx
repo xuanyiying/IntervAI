@@ -14,6 +14,7 @@ import { DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { theme } from 'antd';
 import { type InterviewQuestion, QuestionType, Difficulty } from '../types';
 import { interviewService } from '../services/interview-service';
+import { useTranslation } from 'react-i18next';
 
 interface InterviewQuestionsCardProps {
   questions: InterviewQuestion[];
@@ -27,14 +28,15 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
   onExportSuccess,
 }) => {
   const { token } = theme.useToken();
+  const { t } = useTranslation();
   const [exporting, setExporting] = useState(false);
 
   const getQuestionTypeLabel = (type: QuestionType) => {
     const typeMap: Record<QuestionType, string> = {
-      [QuestionType.BEHAVIORAL]: '行为面试',
-      [QuestionType.TECHNICAL]: '技术面试',
-      [QuestionType.SITUATIONAL]: '情景面试',
-      [QuestionType.RESUME_BASED]: '简历相关',
+      [QuestionType.BEHAVIORAL]: t('interviewQuestions.type_behavioral'),
+      [QuestionType.TECHNICAL]: t('interviewQuestions.type_technical'),
+      [QuestionType.SITUATIONAL]: t('interviewQuestions.type_situational'),
+      [QuestionType.RESUME_BASED]: t('interviewQuestions.type_resume_based'),
     };
     return typeMap[type] || type;
   };
@@ -52,9 +54,9 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
   const getDifficultyInfo = (difficulty: Difficulty) => {
     const difficultyMap: Record<Difficulty, { label: string; color: string }> =
       {
-        [Difficulty.EASY]: { label: '简单', color: 'green' },
-        [Difficulty.MEDIUM]: { label: '中等', color: 'orange' },
-        [Difficulty.HARD]: { label: '困难', color: 'red' },
+        [Difficulty.EASY]: { label: t('interviewQuestions.diff_easy'), color: 'green' },
+        [Difficulty.MEDIUM]: { label: t('interviewQuestions.diff_medium'), color: 'orange' },
+        [Difficulty.HARD]: { label: t('interviewQuestions.diff_hard'), color: 'red' },
       };
     return difficultyMap[difficulty] || { label: difficulty, color: 'default' };
   };
@@ -67,11 +69,11 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
     try {
       setExporting(true);
       await interviewService.exportInterviewPrep(optimizationId);
-      antMessage.success('面试准备清单已导出');
+      antMessage.success(t('interviewQuestions.export_success'));
       onExportSuccess?.();
     } catch (error) {
       console.error('Failed to export interview prep:', error);
-      antMessage.error('导出失败，请重试');
+      antMessage.error(t('interviewQuestions.export_failed'));
     } finally {
       setExporting(false);
     }
@@ -85,9 +87,9 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
           background: token.colorBgContainer,
           border: `1px solid ${token.colorBorder}`,
         }}
-        title="🎤 面试准备"
+        title={`🎤 ${t('interviewQuestions.title')}`}
       >
-        <Empty description="暂无面试问题" />
+        <Empty description={t('interviewQuestions.empty')} />
       </Card>
     );
   }
@@ -237,7 +239,7 @@ const InterviewQuestionsCard: React.FC<InterviewQuestionsCardProps> = ({
       }}
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span>🎤 面试准备</span>
+          <span>🎤 {t('interviewQuestions.title')}</span>
           <Tag>{questions.length} 题</Tag>
         </div>
       }

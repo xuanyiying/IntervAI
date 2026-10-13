@@ -13,7 +13,6 @@ import { QuotaModule } from '@/core/quota/quota.module';
 import { UserModule } from '@/core/user/user.module';
 import { AgentsModule } from '@/features/agents/agents.module';
 import { InterviewModule } from '@/features/interview/interview.module';
-import { JobSearchModule } from '@/features/job-search';
 import { JobModule } from '@/features/job/job.module';
 import { ResumeModule } from '@/features/resume/resume.module';
 import { TasksModule } from '@/features/tasks/tasks.module';
@@ -91,7 +90,6 @@ const dynamicEeModule = getEeModule();
     EmailModule,
     AIModule,
     ChatModule,
-    JobSearchModule,
     AccountModule,
     VoiceModule,
     AgentsModule,

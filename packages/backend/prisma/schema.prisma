@@ -35,7 +35,6 @@ model User {
   status                String              @default("ACTIVE")
   avatar                String?
   accounts              Account[]
-  agentSessions         AgentSession[]
   conversations         Conversation[]
   generatedPdfs         GeneratedPDF[]
   interviewSessions     InterviewSession[]
@@ -48,7 +47,7 @@ model User {
   storages              Storage[]
   subscriptionEvents    SubscriptionEvent[]
   voices                Voice[]
-  jobPostings           JobPosting[]
+  speakerProfile        SpeakerProfile?
 
   @@index([email])
   @@map("users")
@@ -69,6 +68,20 @@ model Voice {
 
   @@index([userId])
   @@map("voices")
+}
+
+/// Speaker voiceprint for distinguishing the user from the interviewer
+/// in realtime assist interviews. embedding holds a normalized float vector.
+model SpeakerProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  embedding   Json
+  sampleCount Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("speaker_profiles")
 }
 
 model SubscriptionEvent {
@@ -596,6 +609,9 @@ model InterviewSession {
   score          Int?
   feedback       String?
   voiceId        String?
+  transcript     String?
+  recordingUrl   String?
+  recordingDuration Int?
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   messages       InterviewMessage[]
@@ -621,29 +637,6 @@ model InterviewMessage {
 
   @@index([sessionId])
   @@map("interview_messages")
-}
-
-model AgentSession {
-  id          String    @id @default(cuid())
-  userId      String
-  agentType   String
-  status      String
-  input       Json?
-  output      Json?
-  tokenUsage  Json?
-  cost        Float     @default(0)
-  startedAt   DateTime  @default(now())
-  completedAt DateTime?
-  metadata    Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([agentType])
-  @@index([status])
-  @@index([startedAt])
-  @@map("agent_sessions")
 }
 
 enum SubscriptionTier {
@@ -731,133 +724,6 @@ enum InterviewStatus {
   CANCELLED
 }
 
-model JobPosting {
-  id                String        @id @default(uuid())
-  userId            String?
-  externalId        String?
-  platform          String
-  title             String
-  company           String
-  location          String?
-  remotePolicy      String?
-  salary            Json?
-  jobType           String?
-  description       String?
-  requirements      String[]
-  skills            String[]
-  benefits          String[]
-  applicationUrl    String?
-  applicationMethod String?
-  postedAt          DateTime?
-  expiresAt         DateTime?
-  scrapedAt         DateTime
-  lastUpdated       DateTime      @default(now())
-  isActive          Boolean       @default(true)
-  tags              String[]
-  metadata          Json?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  user              User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  applications      Application[]
-  jobMatches        JobMatch[]
-
-  @@unique([platform, externalId])
-  @@index([userId])
-  @@index([platform])
-  @@index([company])
-  @@index([isActive])
-  @@index([postedAt])
-  @@map("job_postings")
-}
-
-model JobMatch {
-  id              String     @id @default(uuid())
-  userId          String
-  jobId           String
-  matchScore      Float
-  semanticScore   Float
-  skillMatchScore Float
-  preferenceScore Float
-  temporalScore   Float
-  matchedSkills   String[]
-  missingSkills   String[]
-  skillGaps       Json?
-  strengths       String[]
-  concerns        String[]
-  recommendations String[]
-  matchReasons    String[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  job             JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, jobId])
-  @@index([userId])
-  @@index([jobId])
-  @@index([matchScore])
-  @@map("job_matches")
-}
-
-model StudyPlan {
-  id                     String    @id @default(uuid())
-  userId                 String
-  jobId                  String
-  milestones             Json      @default("[]")
-  progress               Float     @default(0)
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
-  interviewDate          DateTime?
-  totalDays              Int       @default(7)
-  estimatedTotalHours    Float     @default(0)
-  prioritySkillGaps      Json      @default("[]")
-  mockInterviewQuestions Json      @default("[]")
-
-  @@index([userId])
-  @@index([jobId])
-  @@map("study_plans")
-}
-
-model Application {
-  id              String                     @id @default(uuid())
-  userId          String
-  jobId           String
-  status          ApplicationStatus          @default(SUBMITTED)
-  submittedAt     DateTime                   @default(now())
-  platform        String?
-  applicationUrl  String?
-  resumeVersion   String?
-  coverLetter     String?
-  lastStatusCheck DateTime                   @default(now())
-  viewCount       Int                        @default(0)
-  responseTime    Int?
-  notes           String?
-  metadata        Json?
-  createdAt       DateTime                   @default(now())
-  updatedAt       DateTime                   @updatedAt
-  job             JobPosting                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  statusHistory   ApplicationStatusHistory[]
-
-  @@index([userId])
-  @@index([jobId])
-  @@index([status])
-  @@index([submittedAt])
-  @@map("applications")
-}
-
-model ApplicationStatusHistory {
-  id             String             @id @default(uuid())
-  applicationId  String
-  previousStatus ApplicationStatus?
-  newStatus      ApplicationStatus
-  changedAt      DateTime           @default(now())
-  source         String?
-  notes          String?
-  application    Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-
-  @@index([applicationId])
-  @@index([changedAt])
-  @@map("application_status_history")
-}
-
 model UserProfile {
   id                String   @id @default(uuid())
   userId            String   @unique
@@ -874,33 +740,4 @@ model UserProfile {
 
   @@index([userId])
   @@map("user_profiles")
-}
-
-model KnowledgeBase {
-  id        String   @id @default(uuid())
-  content   String
-  embedding String
-  metadata  Json
-  source    String
-  category  String
-  role      String?
-  keywords  String[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([category])
-  @@index([source])
-  @@index([role])
-  @@map("knowledge_base")
-}
-
-enum ApplicationStatus {
-  SUBMITTED
-  VIEWED
-  UNDER_REVIEW
-  INTERVIEW_REQUESTED
-  INTERVIEW_COMPLETED
-  OFFER
-  REJECTED
-  WITHDRAWN
 }

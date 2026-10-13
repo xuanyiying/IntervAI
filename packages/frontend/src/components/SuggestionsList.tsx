@@ -20,6 +20,7 @@ import { theme } from 'antd';
 import SuggestionCard from './SuggestionCard';
 import SuggestionDiffCard from './SuggestionDiffCard';
 import { Suggestion, SuggestionStatus } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface SuggestionsListProps {
   suggestions: Suggestion[];
@@ -39,6 +40,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
   useDiffView = true,
 }) => {
   const { token } = theme.useToken();
+  const { t } = useTranslation();
   const [acceptAllLoading, setAcceptAllLoading] = useState(false);
 
   const acceptedCount = suggestions.filter(
@@ -56,11 +58,11 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
       setAcceptAllLoading(true);
       if (onAcceptAll) {
         await onAcceptAll();
-        message.success('所有建议已接受');
+        message.success(t('suggestions.accept_all_success'));
       }
     } catch (error) {
       console.error('Failed to accept all suggestions:', error);
-      message.error('接受所有建议失败');
+      message.error(t('suggestions.accept_all_failed'));
     } finally {
       setAcceptAllLoading(false);
     }
@@ -70,7 +72,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
     return (
       <Card style={{ marginBottom: '12px' }}>
         <Empty
-          description="暂无优化建议"
+          description={t('suggestions.empty')}
           style={{ marginTop: '20px', marginBottom: '20px' }}
         />
       </Card>
@@ -88,21 +90,21 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
         <Row gutter={16} style={{ marginBottom: '24px' }}>
           <Col xs={8} sm={6}>
             <Statistic
-              title="总建议数"
+              title={t('suggestions.total')}
               value={suggestions.length}
               valueStyle={{ color: token.colorPrimary }}
             />
           </Col>
           <Col xs={8} sm={6}>
             <Statistic
-              title="待处理"
+              title={t('suggestions.pending')}
               value={pendingCount}
               valueStyle={{ color: token.colorWarning }}
             />
           </Col>
           <Col xs={8} sm={6}>
             <Statistic
-              title="已接受"
+              title={t('suggestions.accepted')}
               value={acceptedCount}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: token.colorSuccess }}
@@ -110,7 +112,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
           </Col>
           <Col xs={8} sm={6}>
             <Statistic
-              title="已拒绝"
+              title={t('suggestions.rejected')}
               value={rejectedCount}
               prefix={<CloseCircleOutlined />}
               valueStyle={{ color: token.colorError }}
@@ -129,7 +131,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
                 marginBottom: '16px',
               }}
             >
-              <Tooltip title="接受所有待处理的建议">
+              <Tooltip title={t('suggestions.accept_all_tooltip')}>
                 <Button
                   type="primary"
                   icon={<CheckOutlined />}
@@ -137,7 +139,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
                   loading={acceptAllLoading}
                   disabled={pendingCount === 0}
                 >
-                  接受全部 ({pendingCount})
+                  {t('suggestions.accept_all')} ({pendingCount})
                 </Button>
               </Tooltip>
             </div>
@@ -175,8 +177,7 @@ const SuggestionsList: React.FC<SuggestionsListProps> = ({
             textAlign: 'center',
           }}
         >
-          💡
-          提示：接受建议后，您的简历将自动更新为新版本。您可以随时查看历史版本。
+          💡 {t('suggestions.hint')}
         </div>
       </Spin>
     </Card>

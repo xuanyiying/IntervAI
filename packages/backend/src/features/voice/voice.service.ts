@@ -164,7 +164,7 @@ export class AlibabaVoiceService {
       const response = await axios.post(
         `${this.baseUrl}/tts/synthesis`,
         {
-          model: 'cosyvoice-v1',
+          model: 'cosyvoice-v2',
           input: { text },
           parameters: {
             voice: voiceCode === 'default' ? 'zh-CN-Xiaoxiao' : voiceCode,

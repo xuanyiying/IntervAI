@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { defineConfig } from 'vitest/config';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -22,13 +22,16 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Listen on all interfaces (IPv4 + IPv6 loopback) so browsers resolving
+    // "localhost" to 127.0.0.1 don't fail WebSocket upgrades (::1-only bind)
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         ws: true,
       },
@@ -104,9 +107,6 @@ export default defineConfig({
     css: true,
     reporters: ['default', 'html'],
     isolate: true,
-    deps: {
-      inline: [/^antd/, /^@ant-design/],
-    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
