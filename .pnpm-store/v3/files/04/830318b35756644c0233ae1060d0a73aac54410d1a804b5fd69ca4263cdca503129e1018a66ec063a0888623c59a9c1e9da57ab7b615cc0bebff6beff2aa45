@@ -1,8 +1,0 @@
-import { type ITaxRatesUsedResponse } from './tax-rates-used-response.js';
-import { type ITransactionTotalsResponse } from './transaction-totals-response.js';
-import { type ITransactionLineItemPreviewResponse } from './transaction-line-item-preview-response.js';
-export interface ITransactionDetailsPreviewResponse {
-    tax_rates_used: ITaxRatesUsedResponse[];
-    totals: ITransactionTotalsResponse;
-    line_items: ITransactionLineItemPreviewResponse[];
-}

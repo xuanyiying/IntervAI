@@ -1,1 +1,0 @@
-{"version":3,"file":"bull.providers.d.ts","sourceRoot":"","sources":["../lib/bull.providers.ts"],"names":[],"mappings":"AAKA,OAAO,EAAkC,QAAQ,EAAE,MAAM,gBAAgB,CAAC;AAI1E,OAAO,EAAE,iBAAiB,EAAE,MAAM,4CAA4C,CAAC;AAyC/E,wBAAgB,0BAA0B,CACxC,OAAO,EAAE,iBAAiB,EAAE,GAC3B,QAAQ,EAAE,CAqBZ;AAED,wBAAgB,oBAAoB,CAAC,OAAO,EAAE,iBAAiB,EAAE,GAAG,QAAQ,EAAE,CAS7E"}

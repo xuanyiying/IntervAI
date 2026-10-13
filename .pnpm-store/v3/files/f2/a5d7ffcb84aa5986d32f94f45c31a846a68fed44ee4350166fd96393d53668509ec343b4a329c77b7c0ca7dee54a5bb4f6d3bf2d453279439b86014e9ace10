@@ -1,1 +1,0 @@
-export type TaxCategory = 'digital-goods' | 'ebooks' | 'implementation-services' | 'professional-services' | 'saas' | 'software-programming-services' | 'standard' | 'training-services' | 'website-hosting';
