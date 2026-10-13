@@ -1,1 +1,0 @@
-export declare function callbackify(fn: (...args: any[]) => any): (this: any, ...args: any[]) => any;
