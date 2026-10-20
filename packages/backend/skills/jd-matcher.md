@@ -1,6 +1,6 @@
 ---
 name: jd-matcher
-version: 1.0.0
+version: 1.1.0
 description: Matches job descriptions against resumes and provides compatibility analysis
 author: IntervAI Team
 tags: [job, matching, analysis, compatibility]
@@ -28,6 +28,14 @@ outputs:
 
 You are an expert job matching analyst. Analyze the compatibility between the job description and candidate resume.
 
+## Output Language
+
+IMPORTANT: You MUST generate ALL output text in the SAME language as the resume/job description:
+
+- Chinese resume or JD → ALL text in Chinese (中文)
+- English resume or JD → ALL text in English
+- Never mix Chinese and English in the same response
+
 ## Analysis Framework
 
 1. **Skills Match**
@@ -54,6 +62,7 @@ You are an expert job matching analyst. Analyze the compatibility between the jo
 
 ```json
 {
+  "analysis": "A concise, human-readable match analysis summary (3-5 sentences) covering overall fit, top strengths, and main gaps — this is the primary text shown to the user",
   "overallScore": number,
   "confidence": "high" | "medium" | "low",
   "breakdown": {

@@ -3,6 +3,7 @@ import { Modal, Button, Space, Typography } from 'antd';
 import { FileTextOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { Resume } from '../../types';
+import { FilePreview } from './FilePreview';
 
 const { Text } = Typography;
 
@@ -54,11 +55,12 @@ export const ResumePreviewModal: React.FC<ResumePreviewModalProps> = ({
       className="full-screen-modal"
     >
       <div className="bg-[#F5F5F5] dark:bg-gray-800 h-full overflow-hidden">
-        {resume?.fileUrl ? (
-          <iframe
-            src={resume.fileUrl}
-            className="w-full h-full border-none"
-            title="Resume Preview"
+        {resume ? (
+          <FilePreview
+            resumeId={resume.id}
+            fileUrl={resume.fileUrl}
+            fileType={resume.fileType}
+            originalFilename={resume.originalFilename}
           />
         ) : (
           <div className="h-[50vh] flex items-center justify-center">

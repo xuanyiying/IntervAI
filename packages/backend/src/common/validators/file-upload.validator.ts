@@ -14,7 +14,7 @@ export const FILE_UPLOAD_CONFIG = {
     'application/x-pdf',
     'application/msword',
   ],
-  ALLOWED_EXTENSIONS: ['.pdf', '.docx', '.txt', '.md', '.markdown'],
+  ALLOWED_EXTENSIONS: ['.pdf', '.doc', '.docx', '.txt', '.md', '.markdown'],
 };
 
 /**
@@ -112,6 +112,19 @@ export class FileUploadValidator {
       const zipSignature = Buffer.from([0x50, 0x4b, 0x03, 0x04]); // PK..
       if (!buffer.subarray(0, 4).equals(zipSignature)) {
         throw new BadRequestException('Invalid DOCX file format');
+      }
+    }
+
+    // DOC signature (OLE2 Compound File)
+    if (
+      baseMimeType === 'application/msword' ||
+      (baseMimeType === 'application/octet-stream' && extension === '.doc')
+    ) {
+      const oleSignature = Buffer.from([
+        0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1,
+      ]);
+      if (!buffer.subarray(0, 8).equals(oleSignature)) {
+        throw new BadRequestException('Invalid DOC file format');
       }
     }
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   MAX_FILE_SIZE_MB,
   RESUME_ACCEPT,
+  RESUME_ALLOWED_EXTENSIONS,
   RESUME_ALLOWED_TYPES,
   validateFile,
 } from '../services/upload-service';
@@ -36,6 +37,7 @@ const ResumeUploadButton: React.FC<ResumeUploadButtonProps> = ({
 
     const validation = validateFile(file, {
       allowedTypes: RESUME_ALLOWED_TYPES,
+      allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
       maxSizeMB: MAX_FILE_SIZE_MB,
     });
     if (!validation.valid) {

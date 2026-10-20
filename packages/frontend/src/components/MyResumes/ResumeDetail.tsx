@@ -15,6 +15,7 @@ import { ResumeCertifications } from './ResumeCertifications';
 import { ResumeAnalysisView } from './ResumeAnalysisView';
 import { ResumeOptimizationView } from './ResumeOptimizationView';
 import { ResumeHistoryView } from './ResumeHistoryView';
+import { FilePreview } from './FilePreview';
 
 const { Paragraph, Text } = Typography;
 
@@ -129,10 +130,11 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
                     {t('common.download', '下载原文')}
                   </Button>
                 </div>
-                <iframe
-                  src={resume.fileUrl}
-                  className="w-full h-full border-none"
-                  title="Resume Preview"
+                <FilePreview
+                  resumeId={resume.id}
+                  fileUrl={resume.fileUrl}
+                  fileType={resume.fileType}
+                  originalFilename={resume.originalFilename}
                 />
               </>
             ) : (

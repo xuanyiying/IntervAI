@@ -1,14 +1,14 @@
 ---
 name: pitch-perfect
-version: 1.0.0
+version: 1.1.0
 description: Generates personalized elevator pitch/self-introduction based on resume and job description
 author: IntervAI Team
 tags: [resume, pitch, introduction, elevator-pitch, self-introduction]
 inputs:
   resumeData:
-    type: object
+    type: string
     required: true
-    description: Parsed resume data containing personal info, experience, skills, projects
+    description: Parsed resume data as JSON string (personal info, experience, skills, projects)
   jobDescription:
     type: string
     required: true

@@ -4,6 +4,7 @@ import {
   Get,
   Put,
   Delete,
+  Res,
   UseGuards,
   UseInterceptors,
   Body,
@@ -15,6 +16,8 @@ import {
   MaxFileSizeValidator,
   FileTypeValidator,
   UnauthorizedException,
+  NotFoundException,
+  StreamableFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -109,6 +112,47 @@ export class ResumeController {
     }
 
     return this.resumeService.getResume(resumeId, userId);
+  }
+
+  /**
+   * Stream the original resume file (for preview/download)
+   * GET /resumes/:id/file
+   */
+  @Get(':id/file')
+  @ApiOperation({ summary: 'Stream the original resume file' })
+  async getResumeFile(
+    @Param('id') resumeId: string,
+    @Request() req: any,
+    @Res({ passthrough: true }) res: any
+  ): Promise<StreamableFile> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new UnauthorizedException('User ID required');
+    }
+
+    const { buffer, fileType, filename } = await this.resumeService.getResumeFile(
+      resumeId,
+      userId
+    );
+
+    const mimeMap: Record<string, string> = {
+      pdf: 'application/pdf',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      doc: 'application/msword',
+      txt: 'text/plain',
+      md: 'text/markdown',
+      markdown: 'text/markdown',
+    };
+    if (!mimeMap[fileType]) {
+      throw new NotFoundException(`Unsupported file type: ${fileType}`);
+    }
+
+    res.setHeader('Content-Type', mimeMap[fileType]);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename*=UTF-8''${encodeURIComponent(filename)}`
+    );
+    return new StreamableFile(buffer);
   }
 
   /**

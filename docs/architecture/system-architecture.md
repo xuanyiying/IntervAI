@@ -113,7 +113,6 @@ graph TB
         ResumeAnalyzer[resume-analyzer]
         JDMatcher[jd-matcher]
         InterviewPrep[interview-prep]
-        JobScraper[job-scraper]
         AnswerEvaluator[answer-evaluator]
     end
 
@@ -385,7 +384,6 @@ skills/
 ├── resume-analyzer.md      # Resume parsing skill
 ├── jd-matcher.md           # Job description matching
 ├── interview-prep.md       # Interview preparation
-├── job-scraper.md          # Job scraping
 ├── answer-evaluator.md     # Answer evaluation
 └── builtin/                # Built-in skills (optional)
 ```
@@ -431,7 +429,6 @@ The skill's prompt template goes here...
 | resume-analyzer | Parse resume and extract info | Resume upload, skill analysis |
 | jd-matcher | Match JD against resume | Job matching, optimization |
 | interview-prep | Generate interview prep materials | Interview preparation |
-| job-scraper | Extract job posting info | Job aggregation |
 | answer-evaluator | Evaluate interview answers | Mock interview feedback |
 
 ## Configuration

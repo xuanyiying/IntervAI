@@ -5,7 +5,7 @@
  */
 
 import { AIService } from '@/core/ai';
-import { ParsedResumeData, OptimizationSuggestion } from '@/types';
+import { OptimizationSuggestion, ParsedResumeData } from '@/types';
 import { SuggestionStatus, SuggestionType } from '@/types/ai';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -90,7 +90,7 @@ export class ResumeAIService {
     maxScore: 100,
   } as const;
 
-  constructor(private readonly aiService: AIService) {}
+  constructor(private readonly aiService: AIService) { }
 
   /**
    * Execute skill with retry logic and error handling
@@ -428,73 +428,120 @@ export class ResumeAIService {
   /**
    * Analyze parsed resume data using local rule-based scoring.
    * No AI call needed — the parsed data already has all structured info.
+   * Output language follows the resume language (Chinese resume → Chinese
+   * diagnosis, English resume → English diagnosis).
    * Scoring rules are defined in SCORING config constant for easy tuning.
    */
   analyzeParsedResume(
     parsedData: ParsedResumeData,
     _userId: string
   ): {
+    overallScore: number;
+    scoreDetail: {
+      projectScore: number;
+      skillMatchScore: number;
+      contentScore: number;
+      structureScore: number;
+      expressionScore: number;
+    };
+    language: 'zh' | 'en';
+    summary: string;
     strengths: string[];
     weaknesses: string[];
-    suggestions: string[];
-    overallScore: number;
+    suggestions: {
+      category: string;
+      priority: string;
+      issue: string;
+      recommendation: string;
+    }[];
   } {
+    const lang = this.detectResumeLanguage(parsedData);
+    const zh = lang === 'zh';
     const S = ResumeAIService.SCORING;
     const strengths: string[] = [];
-    const weaknesses: string[] = [];
-    const suggestions: string[] = [];
-    let score = 0;
+    const weaknesses: { key: string; text: string }[] = [];
+    const suggestions: { key: string; text: string }[] = [];
+
+    const skills = parsedData.skills || [];
+    const experience = parsedData.experience || [];
+    const education = parsedData.education || [];
+    const projects = parsedData.projects || [];
+    const certifications = parsedData.certifications || [];
+    const pi = parsedData.personalInfo || ({} as any);
 
     // ── Summary ──
-    if (
-      parsedData.summary &&
-      parsedData.summary.length >= S.summary.minLength
-    ) {
-      strengths.push('Professional summary is present and substantive');
-      score += S.summary.present;
-    } else {
-      weaknesses.push('Professional summary is missing or too brief');
-      suggestions.push(
-        'Add a compelling professional summary (50-200 characters) that highlights your core value'
+    const summaryOk =
+      !!parsedData.summary &&
+      parsedData.summary.length >= S.summary.minLength;
+    if (summaryOk) {
+      strengths.push(
+        zh ? '专业总结完整且充实' : 'Professional summary is present and substantive'
       );
+    } else {
+      weaknesses.push({
+        key: 'summary',
+        text: zh ? '缺少专业总结或内容过短' : 'Professional summary is missing or too brief',
+      });
+      suggestions.push({
+        key: 'summary',
+        text: zh
+          ? '添加一段 50-200 字的专业总结，突出您的核心价值与优势'
+          : 'Add a compelling professional summary (50-200 characters) that highlights your core value',
+      });
     }
 
     // ── Skills ──
-    const skills = parsedData.skills || [];
     if (skills.length >= S.skills.high.threshold) {
       strengths.push(
-        `Strong technical skill set with ${skills.length} skills listed`
+        zh
+          ? `技能储备扎实，共列出 ${skills.length} 项技能`
+          : `Strong technical skill set with ${skills.length} skills listed`
       );
-      score += S.skills.high.score;
     } else if (skills.length >= S.skills.mid.threshold) {
-      score += S.skills.mid.score;
-      suggestions.push(
-        'Consider adding more relevant skills to strengthen your profile'
-      );
+      suggestions.push({
+        key: 'skills',
+        text: zh
+          ? '可补充更多与目标岗位相关的技能'
+          : 'Consider adding more relevant skills to strengthen your profile',
+      });
     } else {
-      weaknesses.push('Limited skill diversity — few skills listed');
-      suggestions.push(
-        'Add relevant technical and soft skills that match your target roles'
-      );
+      weaknesses.push({
+        key: 'skills',
+        text: zh ? '技能种类较少，覆盖面不足' : 'Limited skill diversity — few skills listed',
+      });
+      suggestions.push({
+        key: 'skills',
+        text: zh
+          ? '补充与目标岗位匹配的技术技能与软技能'
+          : 'Add relevant technical and soft skills that match your target roles',
+      });
     }
 
     // ── Experience ──
-    const experience = parsedData.experience || [];
     if (experience.length >= S.experience.high.threshold) {
       strengths.push(
-        `Substantial work experience with ${experience.length} positions`
+        zh
+          ? `工作经验丰富，共 ${experience.length} 段工作经历`
+          : `Substantial work experience with ${experience.length} positions`
       );
-      score += S.experience.high.score;
     } else if (experience.length >= S.experience.mid.threshold) {
-      score += S.experience.mid.score;
-      suggestions.push(
-        'Consider adding more work experience entries if available'
-      );
+      suggestions.push({
+        key: 'experience',
+        text: zh
+          ? '如有更多工作经历可补充完整'
+          : 'Consider adding more work experience entries if available',
+      });
     } else {
-      weaknesses.push('No work experience listed');
-      suggestions.push(
-        'Add internships, part-time roles, or volunteer experience'
-      );
+      weaknesses.push({
+        key: 'experience',
+        text: zh ? '未填写工作经历' : 'No work experience listed',
+      });
+      suggestions.push({
+        key: 'experience',
+        text: zh
+          ? '补充实习、兼职或项目中的职责经历'
+          : 'Add internships, part-time roles, or volunteer experience',
+      });
     }
 
     // Quantified achievements
@@ -502,78 +549,230 @@ export class ResumeAIService {
       (exp.achievements || []).some((a) => S.achievements.pattern.test(a))
     );
     if (hasQuantifiedAchievements) {
-      strengths.push('Experience includes quantified achievements and metrics');
-      score += S.achievements.quantified;
-    } else {
-      weaknesses.push('Work experience lacks quantified achievements');
-      suggestions.push(
-        'Add specific numbers and metrics to your achievements (e.g., "increased revenue by 30%")'
+      strengths.push(
+        zh
+          ? '工作经历中包含量化成果与数据指标'
+          : 'Experience includes quantified achievements and metrics'
       );
+    } else {
+      weaknesses.push({
+        key: 'quantified',
+        text: zh ? '工作经历缺少量化成果' : 'Work experience lacks quantified achievements',
+      });
+      suggestions.push({
+        key: 'quantified',
+        text: zh
+          ? '为成果补充具体数字与指标（如"效率提升 30%"）'
+          : 'Add specific numbers and metrics to your achievements (e.g., "increased revenue by 30%")',
+      });
     }
 
     // ── Education ──
-    const education = parsedData.education || [];
     if (education.length > 0) {
-      score += S.education.present;
       if (education.some((e) => S.education.advancedPattern.test(e.degree))) {
-        strengths.push('Advanced degree strengthens academic credentials');
-        score += S.education.advanced;
+        strengths.push(
+          zh
+            ? '高学历背景增强了学术竞争力'
+            : 'Advanced degree strengthens academic credentials'
+        );
       }
     } else {
-      weaknesses.push('No education information provided');
-      suggestions.push('Add your educational background');
+      weaknesses.push({
+        key: 'education',
+        text: zh ? '未填写教育背景' : 'No education information provided',
+      });
+      suggestions.push({
+        key: 'education',
+        text: zh ? '补充您的教育经历（学校、专业、学位）' : 'Add your educational background',
+      });
     }
 
     // ── Projects ──
-    const projects = parsedData.projects || [];
     if (projects.length >= S.projects.high.threshold) {
       strengths.push(
-        `${projects.length} project entries demonstrate hands-on experience`
+        zh
+          ? `${projects.length} 个项目展示了丰富的实践经验`
+          : `${projects.length} project entries demonstrate hands-on experience`
       );
-      score += S.projects.high.score;
     } else if (projects.length >= S.projects.mid.threshold) {
-      score += S.projects.mid.score;
-      suggestions.push(
-        'Adding more project examples can showcase a broader skill set'
-      );
+      suggestions.push({
+        key: 'projects',
+        text: zh
+          ? '可增加更多项目案例以展示更全面的技能'
+          : 'Adding more project examples can showcase a broader skill set',
+      });
     } else {
-      weaknesses.push('No project experience listed');
-      suggestions.push(
-        'Add personal or professional projects to demonstrate practical skills'
-      );
+      weaknesses.push({
+        key: 'projects',
+        text: zh ? '未填写项目经历' : 'No project experience listed',
+      });
+      suggestions.push({
+        key: 'projects',
+        text: zh
+          ? '补充个人或工作项目以体现实践能力'
+          : 'Add personal or professional projects to demonstrate practical skills',
+      });
     }
 
     // ── Personal Info completeness ──
-    const pi = parsedData.personalInfo || ({} as any);
     const filledContactFields = S.contact.requiredFields.filter(
       (f) => pi[f]
     ).length;
-    if (filledContactFields >= S.contact.requiredFields.length) {
-      score += S.contact.complete;
-    } else {
-      weaknesses.push('Contact information is incomplete');
-      suggestions.push('Ensure email, phone, and location are all provided');
+    const contactComplete =
+      filledContactFields >= S.contact.requiredFields.length;
+    if (!contactComplete) {
+      weaknesses.push({
+        key: 'contact',
+        text: zh ? '联系方式不完整' : 'Contact information is incomplete',
+      });
+      suggestions.push({
+        key: 'contact',
+        text: zh ? '请补全邮箱、电话与所在地' : 'Ensure email, phone, and location are all provided',
+      });
     }
 
     // ── Certifications ──
-    if (parsedData.certifications && parsedData.certifications.length > 0) {
+    if (certifications.length > 0) {
       strengths.push(
-        `${parsedData.certifications.length} certification(s) add professional credibility`
+        zh
+          ? `${certifications.length} 项认证提升了专业可信度`
+          : `${certifications.length} certification(s) add professional credibility`
       );
-      score += S.certifications.perItem;
     }
 
-    // ── contextSummary ──
-    if (parsedData.contextSummary) {
-      score += S.contextSummary.present;
-    }
+    // ── Dimension scores (sum = overallScore, aligned with frontend contract) ──
+    // Max: project 40 / skillMatch 20 / content 15 / structure 15 / expression 10
+    const scoreDetail = {
+      projectScore: Math.min(40, projects.length * 15),
+      skillMatchScore: Math.min(20, Math.round(skills.length * 2.5)),
+      contentScore: Math.min(
+        15,
+        (summaryOk ? 7 : 0) +
+        (contactComplete ? 5 : 0) +
+        Math.min(3, certifications.length)
+      ),
+      structureScore:
+        (experience.length > 0 ? 8 : 0) + (education.length > 0 ? 7 : 0),
+      expressionScore: hasQuantifiedAchievements
+        ? 10
+        : experience.length > 0
+          ? 5
+          : 0,
+    };
+
+    const overallScore = Object.values(scoreDetail).reduce(
+      (sum, n) => sum + n,
+      0
+    );
+
+    // Structured suggestions: zip paired weaknesses/suggestions entries by key
+    const categoryLabel = (key: string): string => {
+      if (zh) {
+        const zhMap: Record<string, string> = {
+          summary: '个人总结',
+          skills: '技能',
+          experience: '工作经历',
+          quantified: '工作经历',
+          education: '教育背景',
+          projects: '项目经历',
+          contact: '联系方式',
+        };
+        return zhMap[key] || '综合';
+      }
+      const enMap: Record<string, string> = {
+        summary: 'Summary',
+        skills: 'Skills',
+        experience: 'Work Experience',
+        quantified: 'Work Experience',
+        education: 'Education',
+        projects: 'Projects',
+        contact: 'Contact Info',
+      };
+      return enMap[key] || 'General';
+    };
+    const priorityLabel = (key: string): string => {
+      const high = key === 'experience' || key === 'education';
+      if (zh) return high ? '高' : '中';
+      return high ? 'High' : 'Medium';
+    };
+    const structuredSuggestions = weaknesses.map((w) => {
+      const match =
+        suggestions.find((s) => s.key === w.key) || suggestions.shift();
+      return {
+        category: categoryLabel(w.key),
+        priority: priorityLabel(w.key),
+        issue: w.text,
+        recommendation: match?.text || '',
+      };
+    });
+
+    const level = zh
+      ? overallScore >= 90
+        ? '优秀'
+        : overallScore >= 75
+          ? '良好'
+          : overallScore >= 60
+            ? '及格'
+            : '有待提升'
+      : overallScore >= 90
+        ? 'Excellent'
+        : overallScore >= 75
+          ? 'Good'
+          : overallScore >= 60
+            ? 'Pass'
+            : 'Needs Improvement';
+    const summary = zh
+      ? `您的简历综合得分为 ${overallScore} 分（${level}）。` +
+      (structuredSuggestions.length > 0
+        ? `完善以下 ${structuredSuggestions.length} 项内容可显著提升简历竞争力。`
+        : '简历内容完整，保持更新即可。')
+      : `Your resume scored ${overallScore}/100 (${level}).` +
+      (structuredSuggestions.length > 0
+        ? ` Improving the ${structuredSuggestions.length} items below will significantly strengthen it.`
+        : ' The resume is complete — just keep it up to date.');
 
     return {
+      overallScore,
+      scoreDetail,
+      language: lang,
+      summary,
       strengths,
-      weaknesses,
-      suggestions,
-      overallScore: Math.min(S.maxScore, score),
+      weaknesses: weaknesses.map((w) => w.text),
+      suggestions: structuredSuggestions,
     };
+  }
+
+  /**
+   * Detect the resume language from parsed content.
+   * CJK characters vs Latin letters ratio — >15% CJK treated as Chinese.
+   * Defaults to Chinese (the app's primary UI language) when no text at all.
+   */
+  private detectResumeLanguage(parsedData: ParsedResumeData): 'zh' | 'en' {
+    const samples: string[] = [];
+    const pd = parsedData as any;
+    if (pd?.summary) samples.push(String(pd.summary));
+    const pi = pd?.personalInfo || {};
+    samples.push(pi.name || '', pi.location || '');
+    for (const e of pd?.experience || []) {
+      samples.push(e.position || '', e.description || '');
+      for (const a of e.achievements || []) samples.push(a);
+    }
+    for (const e of pd?.education || []) {
+      samples.push(e.school || '', e.field || '', e.degree || '');
+    }
+    for (const p of pd?.projects || []) {
+      samples.push(p.name || '', p.description || '');
+    }
+    for (const s of pd?.skills || []) {
+      samples.push(typeof s === 'string' ? s : s.name || '');
+    }
+
+    const text = samples.join(' ');
+    const cjk = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+    const latin = (text.match(/[a-zA-Z]/g) || []).length;
+
+    if (cjk === 0 && latin === 0) return 'zh';
+    return cjk / (cjk + latin) > 0.15 ? 'zh' : 'en';
   }
 
   /**
@@ -713,6 +912,22 @@ export class ResumeAIService {
         data = JSON.parse(data);
       } catch {
         return this.basicParseResume(data);
+      }
+    }
+
+    // Unwrap skill-executor failure wrapper: when the model output could not
+    // be parsed as JSON, the executor returns { raw: '<original content>' }.
+    // Salvage the content instead of silently producing empty sections.
+    if (
+      data &&
+      typeof data === 'object' &&
+      typeof data.raw === 'string' &&
+      !Array.isArray(data.experience)
+    ) {
+      try {
+        data = JSON.parse(data.raw);
+      } catch {
+        return this.basicParseResume(data.raw);
       }
     }
 

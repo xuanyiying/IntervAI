@@ -99,7 +99,6 @@ skills/
 ├── resume-analyzer.md      # Resume parsing & analysis
 ├── jd-matcher.md           # Job description matching
 ├── interview-prep.md       # Interview preparation
-├── job-scraper.md          # Job posting extraction
 └── answer-evaluator.md     # Interview answer evaluation
 ```
 

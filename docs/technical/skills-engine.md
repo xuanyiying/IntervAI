@@ -24,7 +24,6 @@ graph TB
         ResumeAnalyzer[resume-analyzer]
         JDMatcher[jd-matcher]
         InterviewPrep[interview-prep]
-        JobScraper[job-scraper]
         AnswerEvaluator[answer-evaluator]
     end
 
@@ -209,10 +208,11 @@ inputs:
 | resume-writer | 生成优化的简历内容 | 简历优化、内容重写 |
 | jd-matcher | 匹配职位描述与简历 | 职位匹配、优化建议 |
 | job-parser | 解析原始职位数据 | 职位聚合、数据标准化 |
-| job-scraper | 从网页提取职位信息 | 职位抓取、数据采集 |
 | interview-prep | 生成面试准备材料 | 面试准备、问题预测 |
 | interview-question-generator | 生成针对性面试问题 | 面试练习、问题准备 |
 | answer-evaluator | 评估面试回答 | 模拟面试反馈、回答优化 |
+| interview-assistant | 生成面试参考答案与要点 | 辅助面试模式 |
+| pitch-perfect | 生成个性化自我介绍 | Pitch Perfect 页面 |
 
 ### 扩展 Skills
 
@@ -220,10 +220,7 @@ inputs:
 |-------|------|----------|
 | career-advisor | 提供个性化职业发展建议 | 职业规划、发展路径 |
 | salary-analyzer | 分析薪资数据并提供谈判指导 | 薪资谈判、市场分析 |
-| company-researcher | 研究公司并提供面试洞察 | 公司调研、面试准备 |
 | skill-analyzer | 分析技能差距并提供学习建议 | 技能发展、学习规划 |
-| cover-letter-writer | 生成个性化求职信 | 求职申请、文书撰写 |
-| linkedin-optimizer | 优化 LinkedIn 个人资料 | 职业社交、个人品牌 |
 
 ### Skill 详细说明
 

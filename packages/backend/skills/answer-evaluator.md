@@ -1,6 +1,6 @@
 ---
 name: answer-evaluator
-version: 1.0.0
+version: 1.1.0
 description: Evaluates interview answers and provides feedback and scoring
 author: IntervAI Team
 tags: [interview, evaluation, feedback, scoring]
@@ -13,10 +13,20 @@ inputs:
     type: string
     required: true
     description: The candidate's answer
-  jobContext:
+  resumeData:
     type: string
     required: false
-    description: Job description or role context
+    description: Candidate's resume context as JSON string (skills, experience, projects)
+  jobDescription:
+    type: string
+    required: false
+    description: Target job context as JSON string (title, company, required skills)
+  language:
+    type: string
+    required: false
+    description: Output language for the evaluation (en for English, zh for Chinese)
+    default: en
+    enum: [en, zh]
   evaluationCriteria:
     type: object
     required: false
@@ -29,6 +39,14 @@ outputs:
 # Interview Answer Evaluator
 
 You are an expert interview evaluator. Assess the quality of interview answers and provide constructive feedback.
+
+## Output Language
+
+IMPORTANT: You MUST generate ALL feedback text in the following language:
+
+- If language is "zh" → ALL text in Chinese (中文)
+- If language is "en" → ALL text in English
+- If no language is specified, match the language of the question and answer
 
 ## Evaluation Framework
 
@@ -97,11 +115,35 @@ You are an expert interview evaluator. Assess the quality of interview answers a
 
 {{answer}}
 
-{{#if jobContext}}
+{{#if resumeData}}
 
-## Job Context
+## Candidate's Resume Context
 
-{{jobContext}}
+```json
+{{resumeData}}
+```
 {{/if}}
+
+{{#if jobDescription}}
+
+## Target Job Context
+
+```json
+{{jobDescription}}
+```
+{{/if}}
+
+{{#if evaluationCriteria}}
+
+## Evaluation Criteria
+
+```json
+{{evaluationCriteria}}
+```
+{{/if}}
+
+## Output Language
+
+{{language}} (zh=Chinese, en=English)
 
 Provide your evaluation in the specified JSON format.

@@ -29,11 +29,12 @@ interface AnalysisResult {
     structureScore: number;
     expressionScore: number;
   };
+  language?: 'zh' | 'en';
   summary: string;
   strengths: string[];
   suggestions: {
     category: string;
-    priority: '高' | '中' | '低';
+    priority: string;
     issue: string;
     recommendation: string;
   }[];
@@ -46,18 +47,26 @@ interface ResumeAnalysisResultProps {
 export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
   result,
 }) => {
+  const zh = result.language !== 'en';
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case '高':
+      case 'High':
         return 'red';
       case '中':
+      case 'Medium':
         return 'orange';
       case '低':
+      case 'Low':
         return 'blue';
       default:
         return 'default';
     }
   };
+
+  const priorityLabel = (priority: string) =>
+    zh ? `${priority}优先级` : `${priority} Priority`;
 
   const getScoreStatus = (score: number) => {
     if (score >= 90) return { label: '优秀 (Excellent)', color: '#3f8600' };
@@ -136,7 +145,7 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
                     title={
                       <>
                         <Tag color={getPriorityColor(item.priority)}>
-                          {item.priority}优先级
+                          {priorityLabel(item.priority)}
                         </Tag>{' '}
                         {item.category}
                       </>
@@ -145,13 +154,15 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
                   >
                     <Paragraph>
                       <Text strong>
-                        <WarningOutlined style={{ color: '#faad14' }} /> 问题：
+                        <WarningOutlined style={{ color: '#faad14' }} />{' '}
+                        {zh ? '问题：' : 'Issue: '}
                       </Text>
                       {item.issue}
                     </Paragraph>
                     <Paragraph>
                       <Text strong>
-                        <RocketOutlined style={{ color: '#1890ff' }} /> 建议：
+                        <RocketOutlined style={{ color: '#1890ff' }} />{' '}
+                        {zh ? '建议：' : 'Fix: '}
                       </Text>
                       {item.recommendation}
                     </Paragraph>

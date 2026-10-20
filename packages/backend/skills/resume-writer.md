@@ -1,18 +1,18 @@
 ---
 name: resume-writer
-version: 1.0.1
+version: 1.0.2
 description: Generates optimized resume content based on user profile and target job
 author: IntervAI Team
 tags: [resume, writing, optimization, content]
 inputs:
   resumeData:
-    type: object
+    type: string
     required: true
-    description: Current resume data or user profile
+    description: Current resume data or user profile (JSON string)
   targetJob:
-    type: object
+    type: string
     required: false
-    description: Target job description
+    description: Target job description (JSON string)
   optimizationFocus:
     type: string
     required: false

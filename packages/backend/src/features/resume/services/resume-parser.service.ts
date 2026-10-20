@@ -4,12 +4,14 @@
  *
  * PDF:  pdf-parse (v2.x) — text, tables, hyperlinks extraction
  * DOCX: mammoth → HTML → turndown → Markdown (preserves tables, lists, headings)
+ * DOC:  word-extractor — legacy Word 97-2003 binary format, text extraction
  * TXT/MD: passthrough
  */
 
 import { Injectable, Logger } from '@nestjs/common';
 import * as mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
+import WordExtractor from 'word-extractor';
 import TurndownService from 'turndown';
 
 export interface ResumeParseResult {
@@ -24,8 +26,10 @@ export interface ResumeParseResult {
 export class ResumeParserService {
   private readonly logger = new Logger(ResumeParserService.name);
   private readonly turndown: TurndownService;
+  private readonly wordExtractor: WordExtractor;
 
   constructor() {
+    this.wordExtractor = new WordExtractor();
     this.turndown = new TurndownService({
       headingStyle: 'atx',
       bulletListMarker: '-',
@@ -84,6 +88,9 @@ export class ResumeParserService {
         break;
       case 'docx':
         ({ rawText, markdown } = await this.parseDOCX(fileBuffer));
+        break;
+      case 'doc':
+        ({ rawText, markdown } = await this.parseDOC(fileBuffer));
         break;
       case 'txt':
       case 'md':
@@ -290,6 +297,26 @@ export class ResumeParserService {
     } catch (error) {
       this.logger.error('Error parsing DOCX:', error);
       throw new Error('Failed to parse DOCX file');
+    }
+  }
+
+  // ─── DOC Parsing ──────────────────────────────────────────────
+
+  /**
+   * Parse legacy .doc (Word 97-2003 binary format) using word-extractor.
+   * Only plain text extraction is available for this format.
+   */
+  private async parseDOC(fileBuffer: Buffer): Promise<{
+    rawText: string;
+    markdown: string;
+  }> {
+    try {
+      const doc = await this.wordExtractor.extract(fileBuffer);
+      const rawText = doc.getBody();
+      return { rawText, markdown: rawText };
+    } catch (error) {
+      this.logger.error('Error parsing DOC:', error);
+      throw new Error('Failed to parse DOC file');
     }
   }
 }
