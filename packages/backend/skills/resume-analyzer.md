@@ -16,6 +16,7 @@ inputs:
 outputs:
   type: object
   description: Structured resume data matching ParsedResumeData interface
+maxTokens: 8000
 ---
 
 # Resume Analysis Expert

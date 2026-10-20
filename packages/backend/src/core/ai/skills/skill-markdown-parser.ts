@@ -66,6 +66,7 @@ export class SkillMarkdownParser {
         outputs: frontMatter.outputs,
         prompt: this.extractPrompt(body),
         timeout: frontMatter.timeout,
+        maxTokens: frontMatter.maxTokens,
         retryConfig: frontMatter.retryConfig,
         rateLimit: frontMatter.rateLimit,
       };

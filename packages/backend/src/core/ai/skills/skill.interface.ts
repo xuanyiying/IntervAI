@@ -31,6 +31,7 @@ export interface SkillDefinition {
   promptFile?: string;
   execute?: string | ((ctx: SkillContext) => Promise<any>);
   timeout?: number;
+  maxTokens?: number;
   retryConfig?: {
     maxRetries: number;
     backoffMs: number;

@@ -61,7 +61,6 @@ packages/backend/
     ├── resume-analyzer.md      # 简历解析
     ├── jd-matcher.md           # JD 匹配
     ├── interview-prep.md       # 面试准备
-    ├── job-scraper.md          # 职位抓取
     └── answer-evaluator.md     # 答案评估
 ```
 

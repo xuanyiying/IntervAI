@@ -725,7 +725,7 @@ export class ChatIntentService implements OnModuleInit {
 
       const suggestions = await this.aiService.executeSkill(
         'resume-analyzer',
-        { resumeData: resume.content },
+        { resumeText: resume.content },
         userId
       );
 
@@ -791,8 +791,10 @@ export class ChatIntentService implements OnModuleInit {
       }
 
       const parsedJob = parsedJobResult.data as any;
+      const requiredSkills = parsedJob.requiredSkills || [];
+      const preferredSkills = parsedJob.preferredSkills || [];
       return createTextResponse(
-        `已解析职位信息：\n\n**${parsedJob.title || '未知职位'}** @ ${parsedJob.company || '未知公司'}\n\n**核心要求：**\n${(parsedJob.requirements || []).map((r: string) => `- ${r}`).join('\n')}\n\n**技能需求：**\n${(parsedJob.skills || []).map((s: string) => `- ${s}`).join('\n')}`,
+        `已解析职位信息：\n\n**${parsedJob.title || '未知职位'}** @ ${parsedJob.company || '未知公司'}\n\n**核心要求：**\n${requiredSkills.map((r: string) => `- ${r}`).join('\n')}\n\n**加分技能：**\n${preferredSkills.map((s: string) => `- ${s}`).join('\n')}`,
         {
           data: { parsedJob },
           suggestions: ['匹配简历', '优化简历', '模拟面试', '面试预测'],
@@ -817,7 +819,7 @@ export class ChatIntentService implements OnModuleInit {
       const result = await this.aiService.executeSkill(
         'career-advisor',
         {
-          resumeData: resume?.content || '',
+          userProfile: { resumeText: resume?.content || '' },
           question: message,
         },
         userId

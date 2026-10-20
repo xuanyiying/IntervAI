@@ -7,14 +7,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { SkillMarkdownParser } from './skill-markdown-parser';
+import { SkillRegistry } from './skill-registry';
 import {
   Skill,
   SkillDefinition,
-  SkillSource,
   SkillPackageManifest,
+  SkillSource,
 } from './skill.interface';
-import { SkillRegistry } from './skill-registry';
-import { SkillMarkdownParser } from './skill-markdown-parser';
 
 /**
  * Skill loader configuration
@@ -297,14 +297,15 @@ export class SkillLoader {
   ): Promise<any> {
     const { ai, inputs } = ctx;
 
-    // Build prompt with input substitution
-    let prompt = definition.prompt || '';
+    // Process {{#if key}}...{{/if}} conditional blocks first, so placeholders
+    // inside removed blocks are stripped before value substitution.
+    let prompt = this.processConditionals(definition.prompt || '', inputs);
 
     // Replace input placeholders
     for (const [key, value] of Object.entries(inputs)) {
       prompt = prompt.replace(
         new RegExp(`\\{\\{${key}\\}\\}`, 'g'),
-        String(value)
+        this.formatInputValue(value)
       );
     }
 
@@ -317,7 +318,9 @@ export class SkillLoader {
       ctx.model || ai.getModel(),
       [{ role: 'user', content: prompt }],
       {
-        maxTokens: 2000,
+        // Structured skill outputs (e.g. resume parsing) can be large —
+        // a too-small cap truncates the JSON and makes it unparseable.
+        maxTokens: definition.maxTokens ?? 8000,
         responseFormat: hasJsonOutput ? { type: 'json_object' } : undefined,
         userId: ctx.userId,
       }
@@ -326,13 +329,84 @@ export class SkillLoader {
     // Parse JSON if needed
     if (hasJsonOutput) {
       try {
-        return JSON.parse(result.content);
+        return this.parseJsonLoose(result.content);
       } catch {
         return { raw: result.content };
       }
     }
 
     return result.content;
+  }
+
+  /**
+   * Process {{#if key}}...{{/if}} conditional blocks: keep the inner content
+   * only when the corresponding input is present and non-empty.
+   */
+  private processConditionals(
+    prompt: string,
+    inputs: Record<string, any>
+  ): string {
+    const blockRegex = /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g;
+    let result = prompt;
+    let previous: string;
+
+    // Iterate to resolve nested conditional blocks (innermost first)
+    do {
+      previous = result;
+      result = result.replace(
+        blockRegex,
+        (_match, key: string, body: string) =>
+          this.isTruthyInput(inputs[key]) ? body : ''
+      );
+    } while (result !== previous);
+
+    return result;
+  }
+
+  /**
+   * Check whether an input value is present enough to include its block
+   */
+  private isTruthyInput(value: any): boolean {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'string') return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
+    return Boolean(value);
+  }
+
+  /**
+   * Format an input value for prompt substitution.
+   * Objects/arrays are serialized as JSON instead of "[object Object]".
+   */
+  private formatInputValue(value: any): string {
+    if (value === undefined || value === null) return '';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object') return JSON.stringify(value, null, 2);
+    return String(value);
+  }
+
+  /**
+   * Parse JSON that may be wrapped in markdown fences or surrounded by
+   * extra prose (some models ignore response_format).
+   */
+  private parseJsonLoose(content: string): any {
+    const trimmed = (content || '').trim();
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      // Strip ```json ... ``` fences if present
+      const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenceMatch?.[1]) {
+        return JSON.parse(fenceMatch[1].trim());
+      }
+      // Fallback: parse from first { to last }
+      const start = trimmed.indexOf('{');
+      const end = trimmed.lastIndexOf('}');
+      if (start !== -1 && end > start) {
+        return JSON.parse(trimmed.slice(start, end + 1));
+      }
+      throw new Error('No valid JSON found in response');
+    }
   }
 
   /**

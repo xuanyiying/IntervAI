@@ -1,26 +1,26 @@
+import { Sanitizer } from '@/common/utils/sanitizer';
+import { AIQueueService } from '@/core/ai/queue/ai-queue.service';
+import { FileType } from '@/core/storage/interfaces/storage.interface';
+import { StorageService } from '@/core/storage/storage.service';
+import { PrismaService } from '@/shared/database/prisma.service';
 import {
   BadRequestException,
   ForbiddenException,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
-  Inject,
   forwardRef,
 } from '@nestjs/common';
-import { PrismaService } from '@/shared/database/prisma.service';
-import { Sanitizer } from '@/common/utils/sanitizer';
 import { ParseStatus, Resume } from '@prisma/client';
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
-import { StorageService } from '@/core/storage/storage.service';
-import { FileType } from '@/core/storage/interfaces/storage.interface';
-import { AIQueueService } from '@/core/ai/queue/ai-queue.service';
 
 import { FileUploadValidator } from '@/common/validators/file-upload.validator';
 import { ParsedResumeData } from '@/types';
-import { ResumeParserService } from './resume-parser.service';
 import { ResumeAIService } from './resume-ai.service';
+import { ResumeParserService } from './resume-parser.service';
 
 export interface ResumeUploadResult {
   resume: Resume;
@@ -30,6 +30,8 @@ export interface ResumeUploadResult {
 @Injectable()
 export class ResumeService {
   private readonly logger = new Logger(ResumeService.name);
+  /** Resume IDs currently being re-parsed by the degraded-data self-heal */
+  private readonly healingResumeIds = new Set<string>();
 
   constructor(
     private prisma: PrismaService,
@@ -38,7 +40,7 @@ export class ResumeService {
     private storageService: StorageService,
     @Inject(forwardRef(() => AIQueueService))
     private aiQueueService: AIQueueService
-  ) {}
+  ) { }
 
   /**
    * Calculate MD5 hash of a buffer
@@ -392,6 +394,65 @@ export class ResumeService {
   }
 
   /**
+   * Load the original resume file buffer from storage (OSS) or local filesystem.
+   * Shared by parse flow and the file download endpoint.
+   */
+  private async loadResumeFileBuffer(resume: Resume): Promise<Buffer> {
+    if (!resume.fileUrl) {
+      throw new Error('Resume file URL is missing');
+    }
+
+    // Check if fileUrl is a URL (OSS) or local path
+    if (
+      resume.fileUrl.startsWith('http://') ||
+      resume.fileUrl.startsWith('https://')
+    ) {
+      this.logger.debug(`Loading resume file from OSS: ${resume.fileUrl}`);
+      const storageRecord = await this.prisma.storage.findFirst({
+        where: {
+          userId: resume.userId,
+          fileUrl: resume.fileUrl,
+        },
+      });
+
+      if (!storageRecord) {
+        throw new Error('Storage record not found for resume file');
+      }
+
+      const downloadResult = await this.storageService.downloadFile(
+        storageRecord.id,
+        resume.userId
+      );
+      return downloadResult.buffer;
+    }
+
+    // Legacy: Read from local filesystem
+    const filepath = path.join(process.cwd(), resume.fileUrl);
+    this.logger.debug(`Reading resume from local path: ${filepath}`);
+    if (!fs.existsSync(filepath)) {
+      throw new Error(`Resume file not found at ${filepath}`);
+    }
+    return fs.readFileSync(filepath);
+  }
+
+  /**
+   * Get the original resume file for preview/download.
+   * Returns the raw buffer plus metadata needed to serve it.
+   */
+  async getResumeFile(
+    resumeId: string,
+    userId: string
+  ): Promise<{ buffer: Buffer; fileType: string; filename: string }> {
+    const resume = await this.getResume(resumeId, userId);
+    const buffer = await this.loadResumeFileBuffer(resume);
+    return {
+      buffer,
+      fileType: (resume.fileType || '').toLowerCase(),
+      filename: resume.originalFilename || resume.title || 'resume',
+    };
+  }
+
+  /**
    * Parse resume file content
    * Extracts text from file and uses AI engine to parse structured data
    * Uses Queue for rate limiting and resilience
@@ -400,12 +461,17 @@ export class ResumeService {
   async parseResume(
     resumeId: string,
     userId: string,
-    conversationId?: string
+    conversationId?: string,
+    force: boolean = false
   ): Promise<any> {
     const resume = await this.getResume(resumeId, userId);
 
     // Return cached parsed data if already completed
-    if (resume.parseStatus === ParseStatus.COMPLETED && resume.parsedData) {
+    if (
+      !force &&
+      resume.parseStatus === ParseStatus.COMPLETED &&
+      resume.parsedData
+    ) {
       const parsedData = resume.parsedData as Record<string, any>;
 
       // If conversationId is provided and we have optimized content,
@@ -440,44 +506,7 @@ export class ResumeService {
       });
 
       // Get file buffer from storage service
-      if (!resume.fileUrl) {
-        throw new Error('Resume file URL is missing');
-      }
-
-      let fileBuffer: Buffer;
-
-      // Check if fileUrl is a URL (OSS) or local path
-      if (
-        resume.fileUrl.startsWith('http://') ||
-        resume.fileUrl.startsWith('https://')
-      ) {
-        this.logger.debug(`Downloading resume from OSS: ${resume.fileUrl}`);
-        // Download from OSS using storage service
-        const storageRecord = await this.prisma.storage.findFirst({
-          where: {
-            userId,
-            fileUrl: resume.fileUrl,
-          },
-        });
-
-        if (!storageRecord) {
-          throw new Error('Storage record not found for resume file');
-        }
-
-        const downloadResult = await this.storageService.downloadFile(
-          storageRecord.id,
-          userId
-        );
-        fileBuffer = downloadResult.buffer;
-      } else {
-        // Legacy: Read from local filesystem
-        const filepath = path.join(process.cwd(), resume.fileUrl);
-        this.logger.debug(`Reading resume from local path: ${filepath}`);
-        if (!fs.existsSync(filepath)) {
-          throw new Error(`Resume file not found at ${filepath}`);
-        }
-        fileBuffer = fs.readFileSync(filepath);
-      }
+      const fileBuffer = await this.loadResumeFileBuffer(resume);
 
       const fileType = resume.fileType || 'txt';
 
@@ -616,9 +645,62 @@ export class ResumeService {
 
     // Already parsed — run local analysis (no AI call, instant)
     const parsedData = resume.parsedData as unknown as ParsedResumeData;
+
+    // Self-heal: cached parsedData may be a degraded fallback (e.g. produced
+    // during an earlier AI outage) — all core sections empty. Re-parse once
+    // so diagnosis reflects the actual resume instead of garbage.
+    if (this.isParsedDataDegraded(parsedData)) {
+      if (this.healingResumeIds.has(resumeId)) {
+        return {
+          status: 'processing',
+          message: '正在重新解析简历，请稍候',
+          parseStatus: ParseStatus.PROCESSING,
+        };
+      }
+      this.logger.warn(
+        `Resume ${resumeId} parsed data is degraded, triggering re-parse`
+      );
+      this.healingResumeIds.add(resumeId);
+      await this.prisma.resume.update({
+        where: { id: resumeId },
+        data: { parseStatus: ParseStatus.PROCESSING },
+      });
+      this.parseResume(resumeId, userId, undefined, true)
+        .catch((parseError) => {
+          this.logger.error(
+            `Healing re-parse failed for resume ${resumeId}:`,
+            parseError
+          );
+        })
+        .finally(() => {
+          this.healingResumeIds.delete(resumeId);
+        });
+      return {
+        status: 'processing',
+        message: '检测到简历解析数据不完整，正在重新解析，请稍候',
+        parseStatus: ParseStatus.PROCESSING,
+      };
+    }
+
     return {
       status: 'completed',
       ...this.resumeAI.analyzeParsedResume(parsedData, userId),
     };
+  }
+
+  /**
+   * Detect degraded parsed data: a real resume always has at least one of
+   * experience / skills / education / projects. If all are empty, the parse
+   * almost certainly fell back to basic extraction.
+   */
+  private isParsedDataDegraded(parsedData: ParsedResumeData): boolean {
+    if (!parsedData) return true;
+    const hasItems = (arr: any) => Array.isArray(arr) && arr.length > 0;
+    return (
+      !hasItems(parsedData.experience) &&
+      !hasItems(parsedData.skills) &&
+      !hasItems(parsedData.education) &&
+      !hasItems(parsedData.projects)
+    );
   }
 }

@@ -9,6 +9,8 @@ export const RESUME_ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ];
 
+export const RESUME_ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
+
 export const KB_ALLOWED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -24,11 +26,19 @@ export const validateFile = (
   file: File,
   options: {
     allowedTypes: string[];
+    allowedExtensions?: string[];
     maxSizeMB?: number;
   }
 ): { valid: boolean; error?: FileValidationError } => {
   if (!options.allowedTypes.includes(file.type)) {
-    return { valid: false, error: 'type' };
+    // MIME 回退：部分浏览器/系统对 .doc/.docx 会返回空或错误的 file.type，
+    // 此时按扩展名校验，避免合法 Word 文档被误拒
+    const extension = file.name.includes('.')
+      ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+      : '';
+    if (!options.allowedExtensions?.includes(extension)) {
+      return { valid: false, error: 'type' };
+    }
   }
 
   const maxSizeMB = options.maxSizeMB ?? MAX_FILE_SIZE_MB;
@@ -89,8 +99,8 @@ export const upload = async <T>(
     if (error.response?.data) {
       throw new Error(
         error.response.data.message ||
-          error.response.data.error?.message ||
-          '上传失败'
+        error.response.data.error?.message ||
+        '上传失败'
       );
     }
     throw new Error(error.message || '上传失败');

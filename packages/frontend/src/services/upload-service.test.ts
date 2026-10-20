@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   KB_ALLOWED_TYPES,
   MAX_FILE_SIZE_MB,
+  RESUME_ALLOWED_EXTENSIONS,
   RESUME_ALLOWED_TYPES,
   resolveUploadFile,
   validateFile,
@@ -54,6 +55,40 @@ describe('validateFile', () => {
     });
 
     expect(result).toEqual({ valid: true });
+  });
+
+  it('accepts Word files with empty MIME type via extension fallback', () => {
+    // 部分浏览器对 .doc/.docx 返回空 MIME，需按扩展名放行
+    const docFile = new File(['content'], 'resume.doc', { type: '' });
+    const docxFile = new File(['content'], 'resume.docx', { type: '' });
+
+    expect(
+      validateFile(docFile, {
+        allowedTypes: RESUME_ALLOWED_TYPES,
+        allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
+        maxSizeMB: MAX_FILE_SIZE_MB,
+      })
+    ).toEqual({ valid: true });
+
+    expect(
+      validateFile(docxFile, {
+        allowedTypes: RESUME_ALLOWED_TYPES,
+        allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
+        maxSizeMB: MAX_FILE_SIZE_MB,
+      })
+    ).toEqual({ valid: true });
+  });
+
+  it('rejects disallowed extensions even with extension fallback', () => {
+    const file = new File(['content'], 'malware.exe', { type: '' });
+
+    const result = validateFile(file, {
+      allowedTypes: RESUME_ALLOWED_TYPES,
+      allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
+      maxSizeMB: MAX_FILE_SIZE_MB,
+    });
+
+    expect(result).toEqual({ valid: false, error: 'type' });
   });
 });
 

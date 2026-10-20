@@ -7,6 +7,7 @@ import { resumeService } from '../services/resume-service';
 import { optimizationService } from '../services/optimization-service';
 import {
   MAX_FILE_SIZE_MB,
+  RESUME_ALLOWED_EXTENSIONS,
   RESUME_ALLOWED_TYPES,
   resolveUploadFile,
   validateFile,
@@ -87,6 +88,7 @@ export const useResumePage = () => {
     }
     const validation = validateFile(resolvedFile, {
       allowedTypes: RESUME_ALLOWED_TYPES,
+      allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
       maxSizeMB: MAX_FILE_SIZE_MB,
     });
     if (!validation.valid) {

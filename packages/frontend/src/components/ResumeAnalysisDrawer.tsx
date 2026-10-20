@@ -15,11 +15,12 @@ interface AnalysisResult {
     structureScore: number;
     expressionScore: number;
   };
+  language?: 'zh' | 'en';
   summary: string;
   strengths: string[];
   suggestions: {
     category: string;
-    priority: '高' | '中' | '低';
+    priority: string;
     issue: string;
     recommendation: string;
   }[];

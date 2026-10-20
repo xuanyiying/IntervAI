@@ -4,6 +4,7 @@ import type { UploadFile } from 'antd/es/upload/interface';
 import { resumeService } from '../../../../services/resume-service';
 import {
   MAX_FILE_SIZE_MB,
+  RESUME_ALLOWED_EXTENSIONS,
   RESUME_ALLOWED_TYPES,
   resolveUploadFile,
   validateFile,
@@ -86,6 +87,7 @@ export const useResumeUpload = ({
       }
       const validation = validateFile(resolvedFile, {
         allowedTypes: RESUME_ALLOWED_TYPES,
+        allowedExtensions: RESUME_ALLOWED_EXTENSIONS,
         maxSizeMB: MAX_FILE_SIZE_MB,
       });
       if (!validation.valid) {

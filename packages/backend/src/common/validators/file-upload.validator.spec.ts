@@ -57,6 +57,11 @@ describe('FileUploadValidator', () => {
       expect(() => FileUploadValidator.validateMimeType(file)).not.toThrow();
     });
 
+    it('should accept DOC files', () => {
+      const file = createMockFile({ mimetype: 'application/msword' });
+      expect(() => FileUploadValidator.validateMimeType(file)).not.toThrow();
+    });
+
     it('should accept TXT files', () => {
       const file = createMockFile({ mimetype: 'text/plain' });
       expect(() => FileUploadValidator.validateMimeType(file)).not.toThrow();
@@ -111,6 +116,12 @@ describe('FileUploadValidator', () => {
     it('should accept .docx extension', () => {
       expect(() =>
         FileUploadValidator.validateFileExtension('resume.docx')
+      ).not.toThrow();
+    });
+
+    it('should accept .doc extension', () => {
+      expect(() =>
+        FileUploadValidator.validateFileExtension('resume.doc')
       ).not.toThrow();
     });
 
@@ -170,6 +181,29 @@ describe('FileUploadValidator', () => {
         buffer: zipSignature,
       });
       expect(() => FileUploadValidator.validateFileContent(file)).not.toThrow();
+    });
+
+    it('should accept valid DOC with OLE signature', () => {
+      const oleSignature = Buffer.from([
+        0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1,
+      ]);
+      const file = createMockFile({
+        mimetype: 'application/msword',
+        originalname: 'resume.doc',
+        buffer: oleSignature,
+      });
+      expect(() => FileUploadValidator.validateFileContent(file)).not.toThrow();
+    });
+
+    it('should reject DOC with invalid signature', () => {
+      const file = createMockFile({
+        mimetype: 'application/msword',
+        originalname: 'resume.doc',
+        buffer: Buffer.from('INVALID'),
+      });
+      expect(() => FileUploadValidator.validateFileContent(file)).toThrow(
+        BadRequestException
+      );
     });
 
     it('should accept markdown content', () => {
