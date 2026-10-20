@@ -210,19 +210,23 @@ export class ResumeController {
 
   /**
    * Analyze a resume
-   * GET /resumes/:id/analyze
+   * GET /resumes/:id/analyze?force=true — force re-diagnosis
    */
   @Get(':id/analyze')
   @ApiOperation({
     summary: 'Analyze a resume and provide scoring and suggestions',
   })
-  async analyzeResume(@Param('id') resumeId: string, @Request() req: any) {
+  async analyzeResume(
+    @Param('id') resumeId: string,
+    @Query('force') force?: string,
+    @Request() req?: any
+  ) {
     const userId = req.user?.id;
     if (!userId) {
       throw new UnauthorizedException('User ID required');
     }
 
-    return this.resumeService.analyzeResume(resumeId, userId);
+    return this.resumeService.analyzeResume(resumeId, userId, force === 'true');
   }
 
   /**

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { message } from 'antd';
-import { ThunderboltOutlined } from '@ant-design/icons';
+import { Button, message } from 'antd';
+import { ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { resumeService } from '../../services/resume-service';
+import { formatDateTime } from '../../i18n';
 import { ResumeAnalysisEmptyState } from './ResumeAnalysisEmptyState';
 import { ResumeAnalysisLoading } from './ResumeAnalysisLoading';
 import { ResumeAnalysisResult } from './ResumeAnalysisResult';
@@ -24,6 +25,7 @@ interface AnalysisResult {
     issue: string;
     recommendation: string;
   }[];
+  analyzedAt?: string;
 }
 
 interface ResumeAnalysisViewProps {
@@ -37,43 +39,75 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
+    setResult(null);
+    setAnalyzing(false);
     if (resumeId) {
-      setResult(null);
-      setAnalyzing(false);
-      // Auto-analyze or check if analysis exists could be added here
-      // But for now, we follow the requirement: "Page load automatically show Deep Diagnosis results"
-      // If the requirement means "Show the view", we do that.
-      // If it means "Auto-start analysis", we might need to check if we have cached result or start it.
-      // Assuming we start with empty state or fetch existing analysis.
-      // Let's try to fetch existing analysis if available, or just show empty state to let user click "Start".
-      // Wait, requirement 2 says: "Default display settings: Automatically show 'Deep Diagnosis' results after page load".
-      // This implies we should probably try to fetch/analyze automatically or at least show the view.
+      // Auto-load the persisted diagnosis (if any) on mount
+      fetchAnalysis(resumeId, false, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId]);
 
-  const handleAnalyze = async () => {
-    if (!resumeId) return;
+  const fetchAnalysis = async (
+    id: string,
+    force: boolean,
+    silent: boolean = false
+  ) => {
     try {
       setAnalyzing(true);
-      const data = await resumeService.analyzeResume(resumeId);
+      const data = await resumeService.analyzeResume(id, 12, 5000, force);
       if (data.error) {
-        message.error('Analysis failed: ' + data.error);
+        if (!silent) {
+          message.error('诊断失败: ' + data.error);
+        }
       } else {
         setResult(data);
-        message.success('Analysis completed');
+        if (!silent) {
+          message.success(force ? '重新诊断完成' : '诊断完成');
+        }
       }
     } catch (error) {
-      message.error('Analysis failed. Please try again.');
+      if (!silent) {
+        message.error('诊断失败，请稍后重试');
+      }
     } finally {
       setAnalyzing(false);
     }
   };
 
+  const handleAnalyze = () => {
+    if (resumeId) {
+      fetchAnalysis(resumeId, false);
+    }
+  };
+
+  const handleRediagnose = () => {
+    if (resumeId) {
+      fetchAnalysis(resumeId, true);
+    }
+  };
+
   return (
     <div className="resume-analysis-view p-6 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center gap-2">
-        <ThunderboltOutlined className="text-blue-500 text-xl" />
-        <h2 className="text-xl font-bold m-0">简历深度诊断报告</h2>
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <ThunderboltOutlined className="text-blue-500 text-xl" />
+          <h2 className="text-xl font-bold m-0">简历深度诊断报告</h2>
+          {result?.analyzedAt && (
+            <span className="text-secondary text-sm">
+              （诊断于 {formatDateTime(result.analyzedAt)}）
+            </span>
+          )}
+        </div>
+        {result && (
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleRediagnose}
+            loading={analyzing}
+          >
+            重新诊断
+          </Button>
+        )}
       </div>
 
       <div className="">

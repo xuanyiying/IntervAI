@@ -12,7 +12,7 @@ import {
   NotFoundException,
   forwardRef,
 } from '@nestjs/common';
-import { ParseStatus, Resume } from '@prisma/client';
+import { ParseStatus, Prisma, Resume } from '@prisma/client';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -319,6 +319,9 @@ export class ResumeService {
           parsedData: data.parsedData,
           parseStatus: ParseStatus.COMPLETED,
           version: newVersion,
+          // parsed data changed — invalidate persisted diagnosis
+          analysisResult: Prisma.DbNull,
+          analyzedAt: null,
         },
       });
     }
@@ -590,8 +593,13 @@ export class ResumeService {
    * Analyze a resume and provide scoring and suggestions.
    * If the resume is not yet parsed, triggers async parsing and returns
    * a status response instead of blocking.
+   * The result is persisted; pass force=true to recompute (re-diagnosis).
    */
-  async analyzeResume(resumeId: string, userId: string): Promise<any> {
+  async analyzeResume(
+    resumeId: string,
+    userId: string,
+    force: boolean = false
+  ): Promise<any> {
     const resume = await this.prisma.resume.findUnique({
       where: { id: resumeId },
     });
@@ -663,7 +671,11 @@ export class ResumeService {
       this.healingResumeIds.add(resumeId);
       await this.prisma.resume.update({
         where: { id: resumeId },
-        data: { parseStatus: ParseStatus.PROCESSING },
+        data: {
+          parseStatus: ParseStatus.PROCESSING,
+          analysisResult: Prisma.DbNull,
+          analyzedAt: null,
+        },
       });
       this.parseResume(resumeId, userId, undefined, true)
         .catch((parseError) => {
@@ -682,9 +694,30 @@ export class ResumeService {
       };
     }
 
+    // Return persisted diagnosis when available (skip recompute)
+    if (!force && resume.analysisResult) {
+      return {
+        status: 'completed',
+        ...(resume.analysisResult as Record<string, any>),
+        analyzedAt: resume.analyzedAt,
+        cached: true,
+      };
+    }
+
+    const analysis = this.resumeAI.analyzeParsedResume(parsedData, userId);
+
+    // Persist so the result survives page refreshes
+    const analyzedAt = new Date();
+    await this.prisma.resume.update({
+      where: { id: resumeId },
+      data: { analysisResult: analysis, analyzedAt },
+    });
+
     return {
       status: 'completed',
-      ...this.resumeAI.analyzeParsedResume(parsedData, userId),
+      ...analysis,
+      analyzedAt,
+      cached: false,
     };
   }
 

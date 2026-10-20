@@ -1,10 +1,10 @@
 import { ChatGateway } from '@/core/chat/chat.gateway';
+import { ResumeAIService } from '@/features/resume/services/resume-ai.service';
 import { PrismaService } from '@/shared/database/prisma.service';
 import { Process, Processor } from '@nestjs/bull';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
-import { MessageRole, ParseStatus } from '@prisma/client';
+import { MessageRole, ParseStatus, Prisma } from '@prisma/client';
 import { Job } from 'bull';
-import { ResumeAIService } from '@/features/resume/services/resume-ai.service';
 
 @Processor('ai-processing')
 export class AIQueueProcessor {
@@ -15,7 +15,7 @@ export class AIQueueProcessor {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
-  ) {}
+  ) { }
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(
@@ -82,6 +82,9 @@ export class AIQueueProcessor {
           extractedText: content,
           parseStatus: ParseStatus.COMPLETED,
           version: { increment: 1 },
+          // new parsed data — invalidate persisted diagnosis
+          analysisResult: Prisma.DbNull,
+          analyzedAt: null,
         },
       });
 
