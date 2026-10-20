@@ -156,6 +156,8 @@ model Resume {
   fileType         String?
   fileSize         Int?
   parsedData       Json?
+  analysisResult   Json?
+  analyzedAt       DateTime?
   version          Int             @default(1)
   isPrimary        Boolean         @default(false)
   parseStatus      ParseStatus     @default(PENDING)

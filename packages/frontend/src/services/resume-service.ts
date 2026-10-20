@@ -110,16 +110,19 @@ export const resumeService = {
    * @param resumeId - The ID of the resume to analyze
    * @param maxRetries - Maximum number of polling retries (default 12)
    * @param interval - Polling interval in ms (default 5000)
+   * @param force - Force re-diagnosis, ignoring the persisted result (default false)
    * @returns The analysis result
    */
   analyzeResume: async (
     resumeId: string,
     maxRetries: number = 12,
-    interval: number = 5000
+    interval: number = 5000,
+    force: boolean = false
   ): Promise<any> => {
     const poll = async (retriesLeft: number): Promise<any> => {
       const response = await axios.get<any>(`/resumes/${resumeId}/analyze`, {
         timeout: PARSE_TIMEOUT_MS,
+        params: force ? { force: 'true' } : undefined,
       });
       const data = response.data;
 
