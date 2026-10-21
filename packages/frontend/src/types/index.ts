@@ -280,6 +280,11 @@ export interface Optimization {
   id: string;
   userId: string;
   resumeId: string;
+  resume?: {
+    id: string;
+    title: string;
+    originalFilename?: string;
+  };
   jobId: string;
   job?: Job;
   matchScore?: MatchScore;

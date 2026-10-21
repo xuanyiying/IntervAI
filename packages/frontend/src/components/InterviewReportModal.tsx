@@ -4,14 +4,24 @@ import {
   interviewService,
 } from '@/services/interview-service';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-const DIMENSION_LABELS: { key: string; label: string }[] = [
-  { key: 'accuracy', label: '内容准确性' },
-  { key: 'fluency', label: '表达流畅度' },
-  { key: 'logicalThinking', label: '逻辑思维' },
-  { key: 'professionalKnowledge', label: '专业知识' },
-  { key: 'communication', label: '沟通能力' },
-  { key: 'confidence', label: '自信心' },
+const DIMENSION_LABELS: { key: string; labelKey: string }[] = [
+  { key: 'accuracy', labelKey: 'interview.report.dimensions.accuracy' },
+  { key: 'fluency', labelKey: 'interview.report.dimensions.fluency' },
+  {
+    key: 'logicalThinking',
+    labelKey: 'interview.report.dimensions.logical_thinking',
+  },
+  {
+    key: 'professionalKnowledge',
+    labelKey: 'interview.report.dimensions.professional_knowledge',
+  },
+  {
+    key: 'communication',
+    labelKey: 'interview.report.dimensions.communication',
+  },
+  { key: 'confidence', labelKey: 'interview.report.dimensions.confidence' },
 ];
 
 const scoreColor = (score: number) =>
@@ -36,6 +46,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
   sessionId,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { error: showError } = useToast();
   const [report, setReport] = useState<InterviewReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -67,7 +78,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
         if (attempt < 15) {
           setTimeout(() => loadReport(attempt + 1), 2000);
         } else {
-          showError('报告生成中，请稍后再试');
+          showError(t('interview.report.generating_retry'));
           setLoading(false);
         }
       }
@@ -84,7 +95,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
       setDownloading(true);
       await interviewService.downloadReport(sessionId);
     } catch (err) {
-      showError('下载失败，请重试');
+      showError(t('interview.report.download_failed'));
     } finally {
       setDownloading(false);
     }
@@ -96,12 +107,12 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
     <Modal
       open={open}
       onClose={onClose}
-      title="面试复盘报告"
+      title={t('interview.report.title')}
       width={720}
       footer={
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onClose}>
-            关闭
+            {t('interview.report.close')}
           </Button>
           <Button
             variant="primary"
@@ -109,7 +120,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
             loading={downloading}
             disabled={!analysis}
           >
-            下载 PDF 报告
+            {t('interview.report.download')}
           </Button>
         </div>
       }
@@ -117,7 +128,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
       {loading || !analysis ? (
         <div className="py-12 text-center">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-3" />
-          <Text type="secondary">报告生成中，请稍候...</Text>
+          <Text type="secondary">{t('interview.report.generating')}</Text>
         </div>
       ) : (
         <div className="space-y-6">
@@ -129,22 +140,25 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
               {analysis.overallScore}
             </div>
             <Text type="secondary">
-              综合得分 · 回答 {report.answeredQuestions}/{report.totalQuestions} 题
+              {t('interview.report.overall_summary', {
+                answered: report.answeredQuestions,
+                total: report.totalQuestions,
+              })}
               {report.jobInfo?.title ? ` · ${report.jobInfo.title}` : ''}
             </Text>
           </div>
 
           <div>
             <Text strong className="block mb-3">
-              多维度评分
+              {t('interview.report.dimensions_title')}
             </Text>
             <div className="space-y-2.5">
-              {DIMENSION_LABELS.map(({ key, label }) => {
+              {DIMENSION_LABELS.map(({ key, labelKey }) => {
                 const value = (analysis.dimensions as any)?.[key] ?? 0;
                 return (
                   <div key={key} className="flex items-center gap-3">
                     <span className="text-sm text-[var(--text-secondary)] w-24 shrink-0">
-                      {label}
+                      {t(labelKey)}
                     </span>
                     <div className="flex-1 h-2.5 bg-[var(--glass-bg)] rounded-full overflow-hidden">
                       <div
@@ -163,7 +177,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
             {analysis.strengths?.length > 0 && (
               <GlassCard padding="sm" variant="default">
                 <Text strong className="block mb-2">
-                  表现亮点
+                  {t('interview.report.strengths')}
                 </Text>
                 <ul className="list-disc list-inside text-sm text-[var(--text-secondary)] space-y-1">
                   {analysis.strengths.map((item, idx) => (
@@ -175,7 +189,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
             {analysis.improvements?.length > 0 && (
               <GlassCard padding="sm" variant="warm">
                 <Text strong className="block mb-2">
-                  待改进项
+                  {t('interview.report.improvements')}
                 </Text>
                 <ul className="list-disc list-inside text-sm text-[var(--text-secondary)] space-y-1">
                   {analysis.improvements.map((item, idx) => (
@@ -189,7 +203,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
           {analysis.detailedAnalysis?.length > 0 && (
             <div>
               <Text strong className="block mb-3">
-                逐题分析
+                {t('interview.report.detailed_analysis')}
               </Text>
               <div className="space-y-3" style={{ maxHeight: 320, overflowY: 'auto' }}>
                 {analysis.detailedAnalysis.map((item, idx) => (
@@ -231,7 +245,7 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
           {analysis.recommendations?.length > 0 && (
             <div>
               <Title level={5} style={{ margin: 0 }}>
-                后续建议
+                {t('interview.report.recommendations')}
               </Title>
               <ul className="list-disc list-inside text-sm text-[var(--text-secondary)] mt-2 space-y-1">
                 {analysis.recommendations.map((item, idx) => (

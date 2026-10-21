@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { useResumeBuilder } from './hooks/useResumeBuilder';
-import { ResumeNavbar } from './components/ResumeNavbar';
-import { ResumeSidebar } from './components/ResumeSidebar';
+import React, { useEffect } from 'react';
 import { ResumeEditor } from './components/ResumeEditor';
+import { ResumeNavbar } from './components/ResumeNavbar';
 import { ResumePreview } from './components/ResumePreview';
+import { ResumeSidebar } from './components/ResumeSidebar';
+import { useResumeBuilder } from './hooks/useResumeBuilder';
+import './ResumeBuilder.css';
 
 export const ResumeBuilder: React.FC = () => {
   const {
@@ -15,8 +16,6 @@ export const ResumeBuilder: React.FC = () => {
     setActiveSectionId,
     currentTheme,
     setCurrentTheme,
-    isDarkMode,
-    setIsDarkMode,
     previewMode,
     setPreviewMode,
     isEditView,
@@ -71,79 +70,65 @@ export const ResumeBuilder: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-500 ${isDarkMode ? 'bg-[#050505] text-white' : 'bg-slate-50 text-slate-900'}`}
+      className="rb-container"
       role="main"
       aria-label="Resume Builder Application"
     >
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-30">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-blue-600/20 blur-[150px] rounded-full animate-pulse" />
-        <div className="absolute bottom-[10%] -right-[5%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
-      </div>
-
       <ResumeNavbar
         isEditView={isEditView}
         setIsEditView={setIsEditView}
         currentTheme={currentTheme}
         setCurrentTheme={setCurrentTheme}
-        isDarkMode={isDarkMode}
-        setIsDarkMode={setIsDarkMode}
         onReset={handleResetToDefault}
         onExportJSON={handleExportJSON}
         onExportPDF={handleExportPDF}
       />
 
-      <main className="max-w-[1600px] mx-auto p-6 lg:p-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div
-            className={`lg:col-span-4 ${!isEditView ? 'hidden lg:block opacity-50 pointer-events-none' : ''}`}
-          >
-            <ResumeSidebar
-              sections={sections}
-              setSections={setSections}
-              activeSectionId={activeSectionId}
-              setActiveSectionId={setActiveSectionId}
-              onAddSection={handleAddSection}
-              onDuplicateSection={handleDuplicateSection}
-              onDeleteSection={handleDeleteSection}
-            />
-          </div>
+      <div className={`rb-workspace ${isEditView ? '' : 'is-preview'}`}>
+        <aside
+          className={`rb-sidebar ${isEditView ? '' : 'rb-sidebar-placeholder'}`}
+          aria-hidden={!isEditView}
+        >
+          <ResumeSidebar
+            sections={sections}
+            setSections={setSections}
+            activeSectionId={activeSectionId}
+            setActiveSectionId={setActiveSectionId}
+            onAddSection={handleAddSection}
+            onDuplicateSection={handleDuplicateSection}
+            onDeleteSection={handleDeleteSection}
+          />
+        </aside>
 
-          <div
-            className={`lg:col-span-8 ${isEditView ? '' : 'lg:col-span-12'}`}
-          >
-            <AnimatePresence mode="wait">
-              {isEditView ? (
-                <ResumeEditor
-                  key="editor-view"
-                  activeSection={activeSection}
-                  onUpdateSection={handleUpdateSection}
-                />
-              ) : (
-                <ResumePreview
-                  key="preview-view"
-                  sections={sections}
-                  previewMode={previewMode}
-                  setPreviewMode={setPreviewMode}
-                />
-              )}
-            </AnimatePresence>
-          </div>
+        <div>
+          <AnimatePresence mode="wait">
+            {isEditView ? (
+              <ResumeEditor
+                key="editor-view"
+                activeSection={activeSection}
+                onUpdateSection={handleUpdateSection}
+              />
+            ) : (
+              <ResumePreview
+                key="preview-view"
+                sections={sections}
+                previewMode={previewMode}
+                setPreviewMode={setPreviewMode}
+              />
+            )}
+          </AnimatePresence>
         </div>
-      </main>
+      </div>
 
-      <footer className="fixed bottom-0 left-0 right-0 px-6 py-3 border-t border-white/5 bg-black/40 backdrop-blur-xl flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/20">
-        <div className="flex items-center gap-6">
-          <span>Sections: {sections.length}</span>
-          <span>Last Saved: Just now</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />{' '}
-            System Ready
+      <footer className="rb-meta">
+        <div className="rb-meta-group">
+          <span>{sections.length} 个模块</span>
+          <span className="rb-meta-group">
+            <span className="rb-dot" />
+            已自动保存
           </span>
-          <span>v1.0.0</span>
         </div>
+        <span>v1.0.0</span>
       </footer>
 
       <AnimatePresence>
@@ -152,14 +137,16 @@ export const ResumeBuilder: React.FC = () => {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-12 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-[100]"
+            className="rb-toast"
+            role="alert"
           >
-            <span className="text-sm font-bold">{error}</span>
+            <span>{error}</span>
             <button
               onClick={() => setError(null)}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+              className="rb-toast-close"
+              aria-label="Dismiss error"
             >
-              <Plus size={16} className="rotate-45" />
+              <Plus size={16} style={{ transform: 'rotate(45deg)' }} />
             </button>
           </motion.div>
         )}

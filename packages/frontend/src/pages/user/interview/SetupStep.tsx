@@ -1,5 +1,5 @@
 import { Button, GlassCard, Select, Text, useToast } from '@/components/ui';
-import { Optimization } from '@/types';
+import { Optimization, Resume } from '@/types';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -19,17 +19,18 @@ import {
   IconTarget,
   IconUser,
 } from './icons';
+import { useTranslation } from 'react-i18next';
 
 export type InterviewMode = 'mock' | 'assist';
 export type InterviewLanguage = 'zh' | 'en';
 
 export const PERSONA_STYLE_LABELS: Record<string, string> = {
-  STRICT: '严厉型',
-  FRIENDLY: '友好型',
-  TECHNICAL: '技术型',
-  HR: 'HR型',
-  SUPPORTIVE: '支持型',
-  CHALLENGING: '挑战型',
+  STRICT: 'interview.personaStyles.strict',
+  FRIENDLY: 'interview.personaStyles.friendly',
+  TECHNICAL: 'interview.personaStyles.technical',
+  HR: 'interview.personaStyles.hr',
+  SUPPORTIVE: 'interview.personaStyles.supportive',
+  CHALLENGING: 'interview.personaStyles.challenging',
 };
 
 interface SetupStepProps {
@@ -37,6 +38,9 @@ interface SetupStepProps {
   onModeChange: (mode: InterviewMode) => void;
   language: InterviewLanguage;
   onLanguageChange: (lang: InterviewLanguage) => void;
+  resumes: Resume[];
+  selectedResumeId: string | null;
+  onSelectResume: (id: string | null) => void;
   optimizations: Optimization[];
   optimizationsLoading: boolean;
   selectedOptimizationId: string | null;
@@ -52,32 +56,32 @@ const MODE_META: Record<
   InterviewMode,
   {
     icon: React.ReactNode;
-    name: string;
-    tag: string;
-    desc: string;
-    points: string[];
+    nameKey: string;
+    tagKey: string;
+    descKey: string;
+    pointKeys: string[];
   }
 > = {
   assist: {
     icon: <IconHeadphones size={22} />,
-    name: '辅助面试',
-    tag: '远程视频面试',
-    desc: '真实面试进行时使用：电脑持续监听面试官提问，实时生成参考答案。',
-    points: [
-      '实时语音识别面试官的问题',
-      '自动检测问题并流式生成参考答案',
-      '整场面试自动录音，结束后可回放、查看转写',
+    nameKey: 'interview.mode_assist',
+    tagKey: 'interview.setup.mode_assist_tag',
+    descKey: 'interview.setup.mode_assist_desc',
+    pointKeys: [
+      'interview.setup.mode_assist_point_1',
+      'interview.setup.mode_assist_point_2',
+      'interview.setup.mode_assist_point_3',
     ],
   },
   mock: {
     icon: <IconTarget size={22} />,
-    name: '模拟面试',
-    tag: 'AI 面试官',
-    desc: 'AI 扮演面试官，基于你的简历与目标职位进行完整模拟面试。',
-    points: [
-      '根据简历和目标职位定制提问',
-      '支持语音通话作答，也可文字回答',
-      '结束后生成评分报告，全程录音留档',
+    nameKey: 'interview.mode_mock',
+    tagKey: 'interview.setup.mode_mock_tag',
+    descKey: 'interview.setup.mode_mock_desc',
+    pointKeys: [
+      'interview.setup.mode_mock_point_1',
+      'interview.setup.mode_mock_point_2',
+      'interview.setup.mode_mock_point_3',
     ],
   },
 };
@@ -87,6 +91,9 @@ const SetupStep: React.FC<SetupStepProps> = ({
   onModeChange,
   language,
   onLanguageChange,
+  resumes,
+  selectedResumeId,
+  onSelectResume,
   optimizations,
   optimizationsLoading,
   selectedOptimizationId,
@@ -97,6 +104,7 @@ const SetupStep: React.FC<SetupStepProps> = ({
   onStart,
   starting,
 }) => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { warning, success, error: showError } = useToast();
 
@@ -125,17 +133,17 @@ const SetupStep: React.FC<SetupStepProps> = ({
         sampleRate
       );
       if (result.success) {
-        success('声纹注册成功，辅助面试将自动区分你与面试官');
+        success(t('interview.setup.voiceprint_enrolled'));
         const status = await interviewService.getVoiceprintStatus();
         setVpStatus(status);
       } else {
-        warning(result.message || '声纹注册失败，请重试');
+        warning(result.message || t('interview.setup.voiceprint_failed'));
       }
     } catch (err: any) {
       if (err?.name !== 'NotAllowedError') {
-        showError('声纹注册失败，请重试');
+        showError(t('interview.setup.voiceprint_failed'));
       } else {
-        warning('无法访问麦克风，请检查浏览器权限');
+        warning(t('interview.setup.mic_permission'));
       }
     } finally {
       setVpEnrolling(false);
@@ -149,16 +157,18 @@ const SetupStep: React.FC<SetupStepProps> = ({
       const status = await interviewService.getVoiceprintStatus();
       setVpStatus(status);
     } catch {
-      showError('清除声纹失败');
+      showError(t('interview.setup.voiceprint_clear_failed'));
     }
   };
 
   const mockRequiresOptimization = mode === 'mock' && !selectedOptimizationId;
   const hasOptimizations = optimizations.length > 0;
+  const selectedResume = resumes.find((r) => r.id === selectedResumeId);
+  const noResumeOptimization = !!selectedResumeId && !hasOptimizations;
 
   const handleStart = () => {
     if (mockRequiresOptimization) {
-      warning('模拟面试需要先选择一份简历优化记录');
+      warning(t('interview.mock.optimization_required'));
       return;
     }
     onStart();
@@ -166,11 +176,14 @@ const SetupStep: React.FC<SetupStepProps> = ({
 
   const formatOptDate = (value?: string) => {
     if (!value) return '';
-    return new Date(value).toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
+    return new Date(value).toLocaleDateString(
+      i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US',
+      {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }
+    );
   };
 
   return (
@@ -185,17 +198,14 @@ const SetupStep: React.FC<SetupStepProps> = ({
               <IconSparkles size={28} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <h2 className="iv-hero-title">AI 面试精灵</h2>
-              <p className="iv-hero-sub">
-                远程视频面试实时辅助，或与 AI
-                面试官进行全真模拟，面试结束后自动保存录音与评估报告。
-              </p>
+              <h2 className="iv-hero-title">{t('interview.setup.hero_title')}</h2>
+              <p className="iv-hero-sub">{t('interview.setup.hero_subtitle')}</p>
             </div>
           </div>
         </div>
 
         <div>
-          <span className="iv-field-label">选择面试模式</span>
+          <span className="iv-field-label">{t('interview.setup.select_mode')}</span>
           <div className="iv-mode-grid">
             {(Object.keys(MODE_META) as InterviewMode[]).map((key) => {
               const meta = MODE_META[key];
@@ -212,8 +222,8 @@ const SetupStep: React.FC<SetupStepProps> = ({
                     <div className="iv-row">
                       <div className="iv-mode-icon">{meta.icon}</div>
                       <div>
-                        <span className="iv-mode-name">{meta.name}</span>
-                        <span className="iv-mode-tag">{meta.tag}</span>
+                        <span className="iv-mode-name">{t(meta.nameKey)}</span>
+                        <span className="iv-mode-tag">{t(meta.tagKey)}</span>
                       </div>
                     </div>
                     {active && (
@@ -222,12 +232,12 @@ const SetupStep: React.FC<SetupStepProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="iv-mode-desc">{meta.desc}</div>
+                  <div className="iv-mode-desc">{t(meta.descKey)}</div>
                   <ul className="iv-mode-points">
-                    {meta.points.map((point) => (
-                      <li key={point}>
+                    {meta.pointKeys.map((pointKey) => (
+                      <li key={pointKey}>
                         <IconCheck size={13} />
-                        {point}
+                        {t(pointKey)}
                       </li>
                     ))}
                   </ul>
@@ -240,37 +250,79 @@ const SetupStep: React.FC<SetupStepProps> = ({
 
       <GlassCard padding="lg" className="iv-sticky">
         <Text strong className="iv-setup-title">
-          配置面试
+          {t('interview.setup.configure')}
         </Text>
 
         <div className="iv-stack" style={{ marginTop: '1.25rem' }}>
           <div>
             <span className="iv-field-label">
-              简历上下文
-              {mode === 'assist' && (
+              <IconFileText size={13} className="iv-label-icon" />{' '}
+              {t('interview.setup.my_resumes')}
+              <Text type="secondary" className="iv-field-hint">
+                {t('interview.setup.resume_hint')}
+              </Text>
+            </span>
+
+            {resumes.length === 0 ? (
+              <div className="iv-empty">
+                <IconFileText size={24} />
+                <span>{t('interview.setup.no_resumes')}</span>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate('/resumes')}
+                >
+                  {t('interview.setup.go_upload_resume')}
+                </Button>
+              </div>
+            ) : (
+              <Select
+                value={selectedResumeId ?? ''}
+                onChange={(val) => onSelectResume(val || null)}
+                options={[
+                  { value: '', label: t('interview.setup.all_resumes') },
+                  ...resumes.map((resume) => ({
+                    value: resume.id,
+                    label: resume.title || resume.originalFilename || resume.id,
+                  })),
+                ]}
+              />
+            )}
+          </div>
+
+          <div>
+            <span className="iv-field-label">
+              {t('interview.setup.optimization_records')}
+              {selectedResume && (
                 <Text type="secondary" className="iv-field-hint">
-                  （来自「我的简历」页的优化记录，默认使用最新一份）
+                  {t('interview.setup.current_resume_hint', {
+                    title: selectedResume.title,
+                  })}
                 </Text>
               )}
             </span>
 
             {optimizationsLoading ? (
-              <div className="iv-empty">正在加载简历优化记录...</div>
+              <div className="iv-empty">
+                {t('interview.setup.loading_optimizations')}
+              </div>
             ) : !hasOptimizations ? (
               <div className="iv-empty">
                 <IconFileText size={24} />
                 <span>
-                  {mode === 'mock'
-                    ? '模拟面试需要基于一份简历优化记录进行，请先在「我的简历」页上传简历并完成优化'
-                    : '暂无简历优化记录，将以通用模式开始（答案不基于简历）'}
+                  {noResumeOptimization
+                    ? t('interview.setup.no_optimizations_for_resume')
+                    : mode === 'mock'
+                      ? t('interview.setup.no_optimizations_mock')
+                      : t('interview.setup.no_optimizations_assist')}
                 </span>
-                {mode === 'mock' && (
+                {(mode === 'mock' || noResumeOptimization) && (
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={() => navigate('/resumes')}
                   >
-                    去「我的简历」上传并优化
+                    {t('interview.setup.go_optimize_resume')}
                   </Button>
                 )}
               </div>
@@ -283,13 +335,15 @@ const SetupStep: React.FC<SetupStepProps> = ({
                     onClick={() => onSelectOptimization(null)}
                   >
                     <div className="iv-row-between">
-                      <span className="iv-opt-title">通用模式</span>
+                      <span className="iv-opt-title">
+                        {t('interview.setup.general_mode')}
+                      </span>
                       {selectedOptimizationId === null && (
                         <IconCheck size={16} />
                       )}
                     </div>
                     <div className="iv-opt-meta">
-                      不使用简历，快速获取参考答案
+                      {t('interview.setup.general_mode_desc')}
                     </div>
                   </button>
                 )}
@@ -304,13 +358,17 @@ const SetupStep: React.FC<SetupStepProps> = ({
                     >
                       <div className="iv-row-between">
                         <span className="iv-opt-title">
-                          {opt.job?.title || '未关联职位'}
+                          {opt.job?.title || t('interview.setup.no_job')}
                         </span>
                         {active && <IconCheck size={16} />}
                       </div>
                       <div className="iv-opt-meta">
-                        {opt.job?.company || '未填写公司'} ·{' '}
-                        {formatOptDate(opt.createdAt)}
+                        {(opt.job?.company || t('interview.setup.no_company')) +
+                          ' · ' +
+                          formatOptDate(opt.createdAt)}
+                        {!selectedResumeId &&
+                          opt.resume &&
+                          ` · ${opt.resume.title || opt.resume.originalFilename || ''}`}
                       </div>
                     </button>
                   );
@@ -321,13 +379,14 @@ const SetupStep: React.FC<SetupStepProps> = ({
 
           <div>
             <span className="iv-field-label">
-              <IconGlobe size={13} className="iv-label-icon" /> 答案语言
+              <IconGlobe size={13} className="iv-label-icon" />{' '}
+              {t('interview.language_label')}
             </span>
             <Select
               value={language}
               onChange={(val) => onLanguageChange(val as InterviewLanguage)}
               options={[
-                { value: 'zh', label: '中文' },
+                { value: 'zh', label: t('interview.language_zh') },
                 { value: 'en', label: 'English' },
               ]}
             />
@@ -337,13 +396,11 @@ const SetupStep: React.FC<SetupStepProps> = ({
             <div>
               <span className="iv-field-label">
                 <IconAudio size={13} className="iv-label-icon" />{' '}
-                区分说话人（声纹）
+                {t('interview.setup.voiceprint_label')}
               </span>
               {vpStatus && !vpStatus.available ? (
                 <div className="iv-empty" style={{ padding: '0.875rem 1rem' }}>
-                  <span>
-                    声纹服务未在服务端启用，可改用「共享会议音频」区分说话人
-                  </span>
+                  <span>{t('interview.setup.voiceprint_unavailable')}</span>
                 </div>
               ) : vpStatus?.enrolled ? (
                 <div
@@ -364,7 +421,9 @@ const SetupStep: React.FC<SetupStepProps> = ({
                       >
                         <IconCheck size={14} />
                       </span>
-                      已注册声纹（{vpStatus.sampleCount} 次采样）
+                      {t('interview.setup.voiceprint_enrolled_status', {
+                        count: vpStatus.sampleCount,
+                      })}
                     </span>
                     <span className="iv-row" style={{ gap: '0.375rem' }}>
                       <Button
@@ -373,19 +432,19 @@ const SetupStep: React.FC<SetupStepProps> = ({
                         onClick={handleEnrollVoiceprint}
                         loading={vpEnrolling}
                       >
-                        重新注册
+                        {t('interview.setup.voiceprint_reregister')}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleDeleteVoiceprint}
                       >
-                        清除
+                        {t('interview.setup.voiceprint_clear')}
                       </Button>
                     </span>
                   </div>
                   <div className="iv-opt-meta">
-                    辅助面试将自动区分面试官与你的发言
+                    {t('interview.setup.voiceprint_active_desc')}
                   </div>
                 </div>
               ) : (
@@ -393,8 +452,10 @@ const SetupStep: React.FC<SetupStepProps> = ({
                   <div className="iv-row-between">
                     <span className="iv-opt-title">
                       {vpEnrolling
-                        ? `请对麦克风说话...（${vpCountdown}s）`
-                        : '未注册'}
+                        ? t('interview.setup.voiceprint_speak', {
+                          seconds: vpCountdown,
+                        })
+                        : t('interview.setup.voiceprint_not_enrolled')}
                     </span>
                     <Button
                       variant="primary"
@@ -402,11 +463,13 @@ const SetupStep: React.FC<SetupStepProps> = ({
                       onClick={handleEnrollVoiceprint}
                       loading={vpEnrolling && vpCountdown === 0}
                     >
-                      {vpEnrolling ? '录制中' : '注册（9 秒）'}
+                      {vpEnrolling
+                        ? t('interview.setup.voiceprint_recording')
+                        : t('interview.setup.voiceprint_register')}
                     </Button>
                   </div>
                   <div className="iv-opt-meta">
-                    注册后系统按声纹自动区分你与面试官，字幕分别标注
+                    {t('interview.setup.voiceprint_register_desc')}
                   </div>
                 </div>
               )}
@@ -416,10 +479,11 @@ const SetupStep: React.FC<SetupStepProps> = ({
           {mode === 'mock' && (
             <div>
               <span className="iv-field-label">
-                <IconUser size={13} className="iv-label-icon" /> 选择面试官
+                <IconUser size={13} className="iv-label-icon" />{' '}
+                {t('interview.select_persona')}
               </span>
               {personas.length === 0 ? (
-                <div className="iv-empty">暂无可用面试官，将使用默认面试官</div>
+                <div className="iv-empty">{t('interview.setup.no_personas')}</div>
               ) : (
                 <div className="iv-persona-list">
                   {personas.map((persona) => {
@@ -447,8 +511,9 @@ const SetupStep: React.FC<SetupStepProps> = ({
                               {persona.name}
                             </span>
                             <span className="iv-pill">
-                              {PERSONA_STYLE_LABELS[persona.style] ??
-                                persona.style}
+                              {PERSONA_STYLE_LABELS[persona.style]
+                                ? t(PERSONA_STYLE_LABELS[persona.style])
+                                : persona.style}
                             </span>
                           </span>
                           {(persona.company || persona.position) && (
@@ -480,11 +545,11 @@ const SetupStep: React.FC<SetupStepProps> = ({
           >
             {mode === 'assist' ? (
               <>
-                <IconHeadphones size={16} /> 开始实时辅助
+                <IconHeadphones size={16} /> {t('interview.setup.start_assist')}
               </>
             ) : (
               <>
-                <IconMic size={16} /> 开始模拟面试
+                <IconMic size={16} /> {t('interview.setup.start_mock')}
               </>
             )}
           </Button>
@@ -493,8 +558,8 @@ const SetupStep: React.FC<SetupStepProps> = ({
             <IconClock size={15} />
             <span>
               {mode === 'assist'
-                ? '建议：手机端进行视频通话并开启外放，电脑端点击开始，系统将持续监听并自动录制整场面试。'
-                : '建议选择安静环境，优先使用语音通话作答，回答表现将更接近真实面试。'}
+                ? t('interview.setup.assist_tip')
+                : t('interview.setup.mock_tip')}
             </span>
           </div>
         </div>

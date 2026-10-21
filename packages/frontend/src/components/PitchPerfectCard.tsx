@@ -141,7 +141,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               />
             )}
             <Title level={4} className="!text-white !m-0">
-              履历点睛
+              自我介绍
             </Title>
           </div>
           <Button

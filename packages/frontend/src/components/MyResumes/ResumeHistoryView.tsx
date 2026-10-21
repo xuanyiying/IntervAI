@@ -41,7 +41,7 @@ export const ResumeHistoryView: React.FC<ResumeHistoryViewProps> = ({
                   <div>
                     <div className="font-bold text-primary mb-1 flex items-center gap-2">
                       <RocketOutlined className="text-primary text-xs" />
-                      {opt.job?.title || 'Target Position'}
+                      {opt.job?.title || t('resume.target_position_default')}
                     </div>
                     <div className="text-xs text-secondary">
                       {formatDateTime(opt.createdAt)}
@@ -59,15 +59,16 @@ export const ResumeHistoryView: React.FC<ResumeHistoryViewProps> = ({
                 </div>
                 <div className="flex justify-between items-center mt-3">
                   <div className="text-xs text-tertiary">
-                    {opt.suggestions?.length || 0}{' '}
-                    {t('resume.suggestions_count', '个优化建议')}
+                    {t('resume.suggestions_count', {
+                      count: opt.suggestions?.length || 0,
+                    })}
                   </div>
                   <Button
                     type="link"
                     size="small"
                     onClick={() => onSelectOptimization(opt.id)}
                   >
-                    查看详情
+                    {t('resume.history.view_details')}
                   </Button>
                 </div>
               </div>

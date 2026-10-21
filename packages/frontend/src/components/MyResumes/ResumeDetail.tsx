@@ -83,8 +83,8 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
         </div>
         <Paragraph className="text-secondary max-w-md">
           {resume.parseStatus === ParseStatus.PROCESSING
-            ? '我们正在使用 AI 深度分析您的简历内容，提取关键信息并生成结构化视图。这通常需要几秒钟时间，请稍候。'
-            : '未能成功提取结构化信息。请尝试重新上传清晰的 PDF 或 Word 文档。'}
+            ? t('resume.detail.parsing_desc')
+            : t('resume.detail.no_data_desc')}
         </Paragraph>
       </div>
     );

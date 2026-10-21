@@ -16,6 +16,7 @@ import {
   RocketOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { AnalysisDimensionCard } from './AnalysisDimensionCard';
 
 const { Paragraph, Text } = Typography;
@@ -47,7 +48,7 @@ interface ResumeAnalysisResultProps {
 export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
   result,
 }) => {
-  const zh = result.language !== 'en';
+  const { t } = useTranslation();
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -66,13 +67,16 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
   };
 
   const priorityLabel = (priority: string) =>
-    zh ? `${priority}优先级` : `${priority} Priority`;
+    t('resume.analysis.priority_suffix', { priority });
 
   const getScoreStatus = (score: number) => {
-    if (score >= 90) return { label: '优秀 (Excellent)', color: '#3f8600' };
-    if (score >= 75) return { label: '良好 (Good)', color: '#3f8600' };
-    if (score >= 60) return { label: '及格 (Pass)', color: '#faad14' };
-    return { label: '需改进 (Improve)', color: '#cf1322' };
+    if (score >= 90)
+      return { label: t('resume.analysis.grade_excellent'), color: '#3f8600' };
+    if (score >= 75)
+      return { label: t('resume.analysis.grade_good'), color: '#3f8600' };
+    if (score >= 60)
+      return { label: t('resume.analysis.grade_pass'), color: '#faad14' };
+    return { label: t('resume.analysis.grade_improve'), color: '#cf1322' };
   };
 
   const status = getScoreStatus(result.overallScore);
@@ -86,7 +90,7 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
       <Row gutter={[24, 24]}>
         <Col xs={24} md={8}>
           <Card
-            title="综合评分 (Overall Score)"
+            title={t('resume.analysis.overall_score')}
             hoverable
             style={{ height: '100%', textAlign: 'center' }}
           >
@@ -98,7 +102,7 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
             />
             <div style={{ marginTop: 16 }}>
               <Statistic
-                title="简历评级"
+                title={t('resume.analysis.rating')}
                 value={status.label}
                 valueStyle={{ color: status.color }}
               />
@@ -111,10 +115,14 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
         </Col>
 
         <Col xs={24} md={8}>
-          <Card title="综合点评 (Summary)" hoverable style={{ height: '100%' }}>
+          <Card
+            title={t('resume.analysis.summary_title')}
+            hoverable
+            style={{ height: '100%' }}
+          >
             <Paragraph style={{ fontSize: 16 }}>{result.summary}</Paragraph>
             <Divider orientation={'left' as any} plain>
-              亮点 (Strengths)
+              {t('resume.analysis.strengths')}
             </Divider>
             <List
               size="small"
@@ -134,7 +142,10 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
         </Col>
 
         <Col span={24}>
-          <Card title="优化建议 (Optimization Suggestions)" hoverable>
+          <Card
+            title={t('resume.analysis.suggestions_title')}
+            hoverable
+          >
             <List
               grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
               dataSource={result.suggestions}
@@ -155,14 +166,14 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
                     <Paragraph>
                       <Text strong>
                         <WarningOutlined style={{ color: '#faad14' }} />{' '}
-                        {zh ? '问题：' : 'Issue: '}
+                        {t('resume.analysis.issue')}
                       </Text>
                       {item.issue}
                     </Paragraph>
                     <Paragraph>
                       <Text strong>
                         <RocketOutlined style={{ color: '#1890ff' }} />{' '}
-                        {zh ? '建议：' : 'Fix: '}
+                        {t('resume.analysis.fix')}
                       </Text>
                       {item.recommendation}
                     </Paragraph>
