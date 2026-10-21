@@ -8,6 +8,7 @@ import {
   frameVolume,
 } from '@/utils/pcm';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { interviewService } from '../../../services/interview-service';
 import {
   IconBulb,
@@ -44,6 +45,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
   processing,
   onSendMessage,
 }) => {
+  const { t } = useTranslation();
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingAnswer, setStreamingAnswer] = useState('');
@@ -225,7 +227,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
     onJoinedSession: (data) => {
       if (data.realtimeAsrAvailable === false) {
         setAsrUnavailable(true);
-        warning('实时语音识别暂不可用，可手动输入问题获取参考答案');
+        warning(t('interview.assist.asr_unavailable_toast'));
       } else {
         setAsrUnavailable(false);
       }
@@ -252,7 +254,9 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
     onQuestionDetected: (data) => {
       if (data.isQuestion && data.auto) {
         success(
-          `检测到问题：${data.text.slice(0, 40)}${data.text.length > 40 ? '...' : ''}`
+          t('interview.assist.question_detected', {
+            question: `${data.text.slice(0, 40)}${data.text.length > 40 ? '...' : ''}`,
+          })
         );
       }
     },
@@ -278,16 +282,22 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
         transcript: data.transcript,
       });
       if (data.durationSec !== undefined) {
-        success(`面试录音已保存（${formatDuration(data.durationSec)}）`);
+        success(
+          t('interview.assist.recording_saved', {
+            duration: formatDuration(data.durationSec),
+          })
+        );
       }
     },
     onAsrError: (data) => {
-      showError(`语音识别异常：${data.message}`);
+      showError(
+        t('interview.assist.asr_error', { message: data.message })
+      );
     },
     onError: (err) => {
       if (/not available/i.test(err.message || '')) {
         setAsrUnavailable(true);
-        warning('实时语音识别暂不可用，可手动输入问题获取参考答案');
+        warning(t('interview.assist.asr_unavailable_toast'));
         return;
       }
       showError(err.message);
@@ -374,7 +384,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       }, 100);
     } catch (err) {
       console.error(err);
-      showError('无法访问麦克风，请检查浏览器权限');
+      showError(t('interview.setup.mic_permission'));
       cleanupMic();
     }
   };
@@ -436,9 +446,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       displayStream.getVideoTracks().forEach((t) => t.stop());
       if (displayStream.getAudioTracks().length === 0) {
         displayStream.getTracks().forEach((t) => t.stop());
-        warning(
-          '未捕获到音频。共享时请选择「标签页」并勾选「同时共享标签页音频」'
-        );
+        warning(t('interview.assist.no_audio_captured'));
         return;
       }
       tabStreamRef.current = displayStream;
@@ -456,11 +464,11 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
         startMicStream('self');
         startMicTap('self');
       }
-      success('已共享会议音频，面试官与你的发言将分开显示');
+      success(t('interview.assist.share_success'));
     } catch (err: any) {
       if (err?.name !== 'NotAllowedError') {
         console.error(err);
-        showError('共享会议音频失败');
+        showError(t('interview.assist.share_failed'));
       }
     }
   };
@@ -514,7 +522,9 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
 
   const speakerChip = (speaker: AudioChannel) => (
     <span className={`iv-speaker-chip${speaker === 'self' ? ' self' : ''}`}>
-      {speaker === 'self' ? '我' : '面试官'}
+      {speaker === 'self'
+        ? t('interview.assist.speaker_self')
+        : t('interview.live.interviewer')}
     </span>
   );
 
@@ -526,22 +536,27 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
         >
           {isConnected ? (
             <>
-              <IconWifi size={12} /> 实时连接已建立
+              <IconWifi size={12} /> {t('interview.assist.connected')}
               {latency > 0 && ` · ${latency}ms`}
             </>
           ) : isReconnecting ? (
-            '正在重连...'
+            t('interview.assist.reconnecting')
           ) : (
-            '正在连接...'
+            t('interview.assist.connecting')
           )}
         </span>
         {listening && (
           <span className="iv-status-pill live">
-            <span className="iv-rec-dot" /> 录音中 {formatDuration(elapsedSec)}
+            <span className="iv-rec-dot" />{' '}
+            {t('interview.assist.recording_elapsed', {
+              duration: formatDuration(elapsedSec),
+            })}
           </span>
         )}
         {listening && tabSharing && (
-          <span className="iv-status-pill ok">双通道 · 已分离面试官音频</span>
+          <span className="iv-status-pill ok">
+            {t('interview.assist.dual_channel')}
+          </span>
         )}
         {listening && (
           <Button
@@ -549,7 +564,9 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
             size="sm"
             onClick={toggleAutoAnswer}
           >
-            {autoAnswer ? '自动答题：开' : '自动答题：关'}
+            {autoAnswer
+              ? t('interview.assist.auto_answer_on')
+              : t('interview.assist.auto_answer_off')}
           </Button>
         )}
       </div>
@@ -557,9 +574,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {asrUnavailable && (
         <div className="iv-tip" style={{ marginTop: '0.75rem' }}>
           <IconBulb size={15} />
-          <span>
-            实时语音识别暂不可用（服务未配置识别引擎）。你仍可在下方手动输入面试官的问题获取参考答案。
-          </span>
+          <span>{t('interview.assist.asr_unavailable_hint')}</span>
         </div>
       )}
 
@@ -568,12 +583,12 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
           <div className="iv-row-between">
             <div style={{ minWidth: 0 }}>
               <Text strong className="iv-share-title">
-                <IconRadio size={14} /> 说话人分离
+                <IconRadio size={14} /> {t('interview.assist.speaker_separation')}
               </Text>
               <Text type="secondary" className="iv-share-desc">
                 {tabSharing
-                  ? '已共享会议音频：面试官（标签页声音）与你（麦克风）分开识别'
-                  : '如果视频面试在电脑浏览器中进行，可共享会议标签页声音，面试官与你的发言将分开显示'}
+                  ? t('interview.assist.share_active_desc')
+                  : t('interview.assist.share_idle_desc')}
               </Text>
             </div>
             {!tabSharing ? (
@@ -583,11 +598,11 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
                 onClick={enableTabShare}
                 disabled={!isConnected}
               >
-                共享会议音频
+                {t('interview.assist.share_button')}
               </Button>
             ) : (
               <Button variant="secondary" size="sm" onClick={disableTabShare}>
-                取消共享
+                {t('interview.assist.unshare')}
               </Button>
             )}
           </div>
@@ -597,7 +612,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
               className="iv-share-desc"
               style={{ display: 'block', marginTop: '0.5rem' }}
             >
-              单通道模式提示：完成声纹注册后，系统可自动区分面试官与你的发言。
+              {t('interview.assist.single_channel_hint')}
             </Text>
           )}
         </GlassCard>
@@ -606,12 +621,12 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {(listening || finalSentences.length > 0) && (
         <div className="iv-subtitle-panel" style={{ marginTop: '0.75rem' }}>
           <div className="iv-row-between" style={{ marginBottom: '0.5rem' }}>
-            <Text strong>实时字幕</Text>
+            <Text strong>{t('interview.assist.subtitles')}</Text>
             {listening && (
               <Text type="secondary" style={{ fontSize: '0.75rem' }}>
                 {tabSharing
-                  ? '双通道识别中'
-                  : '单通道识别中 · 请将外放音量调大'}
+                  ? t('interview.assist.dual_mode_active')
+                  : t('interview.assist.single_mode_active')}
               </Text>
             )}
           </div>
@@ -635,7 +650,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
             )}
             {!listening && finalSentences.length === 0 && (
               <Text type="secondary" style={{ fontSize: '0.85rem' }}>
-                暂无识别内容
+                {t('interview.assist.no_transcript')}
               </Text>
             )}
           </div>
@@ -645,17 +660,19 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {savedRecording && (
         <div className="iv-saved-card">
           <div className="iv-saved-headline">
-            <IconCheck size={15} /> 本场面试记录已保存
+            <IconCheck size={15} /> {t('interview.assist.saved_title')}
           </div>
           <Text
             type="secondary"
             style={{ fontSize: '0.82rem', display: 'block' }}
           >
-            时长：
-            {savedRecording.durationSec !== undefined
-              ? formatDuration(savedRecording.durationSec)
-              : '-'}
-            {savedRecording.transcript ? ' · 转写文本已保存至面试记录' : ''}
+            {t('interview.assist.saved_meta', {
+              duration:
+                savedRecording.durationSec !== undefined
+                  ? formatDuration(savedRecording.durationSec)
+                  : '-',
+            })}
+            {savedRecording.transcript ? t('interview.assist.saved_transcript') : ''}
           </Text>
           {savedRecording.recordingUrl && (
             <audio
@@ -682,7 +699,9 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
                 ) : (
                   <IconSparkles size={12} />
                 )}
-                {msg.role === 'user' ? '你 / 面试官' : 'AI 参考答案'}
+                {msg.role === 'user'
+                  ? t('interview.assist.role_you_or_interviewer')
+                  : t('interview.assist.role_ai_answer')}
               </div>
               <StreamingMarkdownBubble
                 content={msg.content}
@@ -696,7 +715,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {streamingAnswer && (
         <div className="iv-stream-card">
           <div className="iv-msg-role">
-            <IconSparkles size={12} /> AI 参考答案（正在生成）
+            <IconSparkles size={12} /> {t('interview.assist.role_ai_generating')}
           </div>
           <StreamingMarkdownBubble
             content={streamingAnswer}
@@ -708,7 +727,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {isGenerating && !streamingAnswer && (
         <div className="iv-loading-block">
           <div className="iv-spinner" />
-          正在生成答案...
+          {t('interview.generating_answer')}
         </div>
       )}
 
@@ -724,8 +743,8 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
               style={
                 listening
                   ? {
-                      height: `${Math.max(15, Math.min(100, volume * 100 + ((idx * 37) % 25)))}%`,
-                    }
+                    height: `${Math.max(15, Math.min(100, volume * 100 + ((idx * 37) % 25)))}%`,
+                  }
                   : undefined
               }
             />
@@ -740,11 +759,13 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
                 onClick={startListening}
                 disabled={processing || !isConnected || asrUnavailable}
                 className="iv-mic-btn"
-                title="开始整场实时辅助（听音 + 自动答题 + 录音）"
+                title={t('interview.assist.mic_start_title')}
               >
                 <IconMic size={26} />
               </Button>
-              <span className="iv-mic-hint">点击开始实时辅助</span>
+              <span className="iv-mic-hint">
+                {t('interview.assist.mic_start_hint')}
+              </span>
             </div>
           ) : (
             <div className="iv-mic-wrap">
@@ -752,11 +773,13 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
                 variant="danger"
                 onClick={stopListening}
                 className="iv-mic-btn live"
-                title="结束并保存本场录音"
+                title={t('interview.assist.mic_stop_title')}
               >
                 <IconStop size={26} />
               </Button>
-              <span className="iv-mic-hint">点击结束并保存录音</span>
+              <span className="iv-mic-hint">
+                {t('interview.assist.mic_stop_hint')}
+              </span>
             </div>
           )}
         </div>
@@ -765,7 +788,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
           rows={2}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="也可以手动输入面试官的问题"
+          placeholder={t('interview.assist.manual_placeholder')}
           disabled={processing || isGenerating}
         />
 
@@ -782,7 +805,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
             disabled={processing || isGenerating || !question.trim()}
             loading={processing || isGenerating}
           >
-            <IconSend size={15} /> 获取参考答案
+            <IconSend size={15} /> {t('interview.assist_submit')}
           </Button>
         </div>
 
@@ -796,21 +819,19 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
           }}
         >
           {listening
-            ? '正在实时识别，检测到面试官提问后自动生成参考答案，整场录音进行中'
+            ? t('interview.assist.hint_listening')
             : asrUnavailable
-              ? '实时识别不可用，请手动输入问题'
+              ? t('interview.assist.hint_asr_unavailable')
               : !isConnected
-                ? '等待连接...'
-                : '点击麦克风开始整场实时辅助：持续监听提问、自动生成参考答案并录制整场面试'}
+                ? t('interview.assist.hint_waiting')
+                : t('interview.assist.hint_idle')}
         </Text>
       </GlassCard>
 
       {!listening && !savedRecording && (
         <div className="iv-tip" style={{ marginTop: '0.75rem' }}>
           <IconRadio size={15} />
-          <span>
-            远程视频面试建议：手机端进行视频通话并开启外放，电脑端点击上方麦克风开始。开启「共享会议音频」或完成声纹注册后，字幕将区分面试官与你的发言。
-          </span>
+          <span>{t('interview.assist.tip')}</span>
         </div>
       )}
 

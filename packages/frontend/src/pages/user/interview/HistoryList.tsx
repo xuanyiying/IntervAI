@@ -1,5 +1,6 @@
 import { Badge, Button, GlassCard, Title } from '@/components/ui';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { InterviewSessionHistoryItem } from '../../../services/interview-service';
 import { IconPlayCircle } from './icons';
@@ -14,27 +15,31 @@ interface HistoryListProps {
 
 type HistoryFilter = 'all' | 'mock' | 'assist';
 
-const FILTER_OPTIONS: { key: HistoryFilter; label: string }[] = [
-  { key: 'all', label: '全部' },
-  { key: 'mock', label: '模拟面试' },
-  { key: 'assist', label: '辅助面试' },
+const FILTER_OPTIONS: { key: HistoryFilter; labelKey: string }[] = [
+  { key: 'all', labelKey: 'interview.history.filter_all' },
+  { key: 'mock', labelKey: 'interview.mode_mock' },
+  { key: 'assist', labelKey: 'interview.mode_assist' },
 ];
 
 const STATUS_META: Record<
   string,
   {
-    label: string;
+    labelKey: string;
     variant: 'default' | 'primary' | 'success' | 'warning' | 'danger';
   }
 > = {
-  COMPLETED: { label: '已完成', variant: 'success' },
-  IN_PROGRESS: { label: '进行中', variant: 'primary' },
-  CANCELLED: { label: '已取消', variant: 'default' },
-};
-
-const formatDuration = (sec?: number | null) => {
-  if (sec == null) return null;
-  return `${Math.floor(sec / 60)}分${sec % 60}秒`;
+  COMPLETED: {
+    labelKey: 'interview.history.status_completed',
+    variant: 'success',
+  },
+  IN_PROGRESS: {
+    labelKey: 'interview.history.status_in_progress',
+    variant: 'primary',
+  },
+  CANCELLED: {
+    labelKey: 'interview.history.status_cancelled',
+    variant: 'default',
+  },
 };
 
 const HistoryList: React.FC<HistoryListProps> = ({
@@ -44,6 +49,7 @@ const HistoryList: React.FC<HistoryListProps> = ({
   onViewReport,
   onResume,
 }) => {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [filter, setFilter] = useState<HistoryFilter>('all');
 
@@ -55,11 +61,17 @@ const HistoryList: React.FC<HistoryListProps> = ({
   const countFor = (f: HistoryFilter) =>
     history.filter((item) => matchFilter(item, f)).length;
 
+  const formatRecordingDuration = (sec: number) =>
+    t('interview.history.recording_duration', {
+      minutes: Math.floor(sec / 60),
+      seconds: sec % 60,
+    });
+
   return (
     <GlassCard padding="lg">
       <div className="iv-row-between" style={{ marginBottom: '1rem' }}>
         <Title level={4} style={{ margin: 0 }}>
-          面试历史记录
+          {t('interview.history.title')}
         </Title>
         <div className="iv-row">
           <div className="iv-filter-chips">
@@ -70,7 +82,7 @@ const HistoryList: React.FC<HistoryListProps> = ({
                 className={`iv-filter-chip${filter === opt.key ? ' active' : ''}`}
                 onClick={() => setFilter(opt.key)}
               >
-                {opt.label}
+                {t(opt.labelKey)}
                 <span className="iv-filter-count">{countFor(opt.key)}</span>
               </button>
             ))}
@@ -81,22 +93,22 @@ const HistoryList: React.FC<HistoryListProps> = ({
             onClick={onRefresh}
             loading={loading}
           >
-            刷新
+            {t('interview.history.refresh')}
           </Button>
         </div>
       </div>
 
       {loading && history.length === 0 ? (
         <div className="iv-loading-block">
-          <div className="iv-spinner" /> 正在加载...
+          <div className="iv-spinner" /> {t('interview.history.loading')}
         </div>
       ) : filtered.length === 0 ? (
         <div className="iv-empty" style={{ padding: '3rem 1rem' }}>
           <IconPlayCircle size={32} />
           <span>
             {history.length === 0
-              ? '暂无面试记录，先完成一次面试吧'
-              : '当前筛选条件下暂无记录'}
+              ? t('interview.history.empty_all')
+              : t('interview.history.empty_filtered')}
           </span>
           {history.length === 0 && (
             <Button
@@ -104,36 +116,44 @@ const HistoryList: React.FC<HistoryListProps> = ({
               size="sm"
               onClick={() => navigate('/interview')}
             >
-              去设置面试
+              {t('interview.history.go_setup')}
             </Button>
           )}
         </div>
       ) : (
         <div className="iv-stack">
           {filtered.map((item) => {
-            const status = STATUS_META[item.status] ?? {
-              label: item.status,
-              variant: 'default' as const,
-            };
+            const statusMeta = STATUS_META[item.status];
+            const statusLabel = statusMeta
+              ? t(statusMeta.labelKey)
+              : item.status;
             return (
               <div key={item.id} className="iv-history-item">
                 <div className="iv-history-main">
                   <div className="iv-history-title">
                     <span className="iv-history-title-text">
                       {item.jobPosition ||
-                        (item.mode === 'ASSIST' ? '辅助面试' : '模拟面试')}
+                        (item.mode === 'ASSIST'
+                          ? t('interview.mode_assist')
+                          : t('interview.mode_mock'))}
                     </span>
                     <Badge
                       variant={item.mode === 'MOCK' ? 'primary' : 'default'}
                     >
-                      {item.mode === 'MOCK' ? '模拟' : '辅助'}
+                      {item.mode === 'MOCK'
+                        ? t('interview.history.badge_mock')
+                        : t('interview.history.badge_assist')}
                     </Badge>
-                    <Badge variant={status.variant}>{status.label}</Badge>
+                    <Badge variant={statusMeta?.variant ?? 'default'}>
+                      {statusLabel}
+                    </Badge>
                   </div>
                   <div className="iv-history-meta">
-                    {new Date(item.createdAt).toLocaleString('zh-CN')}
+                    {new Date(item.createdAt).toLocaleString(
+                      i18n.language.startsWith('zh') ? 'zh-CN' : 'en-US'
+                    )}
                     {item.recordingDuration
-                      ? ` · 录音 ${formatDuration(item.recordingDuration)}`
+                      ? ` · ${formatRecordingDuration(item.recordingDuration)}`
                       : ''}
                   </div>
                   {item.recordingUrl && (
@@ -156,7 +176,9 @@ const HistoryList: React.FC<HistoryListProps> = ({
                           style={
                             { '--score': item.score } as React.CSSProperties
                           }
-                          title={`得分 ${item.score}`}
+                          title={t('interview.history.score_title', {
+                            score: item.score,
+                          })}
                         >
                           <span className="iv-score-ring-fill" />
                           <span className="iv-score-value">{item.score}</span>
@@ -167,7 +189,7 @@ const HistoryList: React.FC<HistoryListProps> = ({
                         size="sm"
                         onClick={() => onViewReport(item.id)}
                       >
-                        查看报告
+                        {t('interview.history.view_report')}
                       </Button>
                     </>
                   ) : item.status === 'IN_PROGRESS' ? (
@@ -177,10 +199,10 @@ const HistoryList: React.FC<HistoryListProps> = ({
                       disabled={!item.optimizationId}
                       onClick={() => onResume(item)}
                     >
-                      继续面试
+                      {t('interview.history.resume')}
                     </Button>
                   ) : (
-                    <Badge variant="default">{status.label}</Badge>
+                    <Badge variant="default">{statusLabel}</Badge>
                   )}
                 </div>
               </div>

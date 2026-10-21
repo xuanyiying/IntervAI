@@ -104,10 +104,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
       <div className="h-full flex flex-col items-center justify-center gap-4">
         <FileWordOutlined style={{ fontSize: 48, color: '#2b579a' }} />
         <Text type="secondary">
-          {t(
-            'resume.doc_preview_unavailable',
-            '旧版 .doc 格式暂不支持在线预览，请下载后查看'
-          )}
+          {t('resume.preview.doc_unavailable')}
         </Text>
         {downloadButton}
       </div>
@@ -121,7 +118,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Spin size="large" />
           <Text type="secondary">
-            {t('resume.docx_loading', '正在加载 Word 文档...')}
+            {t('resume.preview.docx_loading')}
           </Text>
         </div>
       );
@@ -130,7 +127,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
       return (
         <div className="h-full flex flex-col items-center justify-center gap-4">
           <Text type="danger">
-            {t('resume.preview_error', '文档加载失败')}
+            {t('resume.preview.error')}
             {error ? `: ${error}` : ''}
           </Text>
           <Button icon={<ReloadOutlined />} onClick={() => window.location.reload()}>

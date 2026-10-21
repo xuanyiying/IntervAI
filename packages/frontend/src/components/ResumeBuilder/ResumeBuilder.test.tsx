@@ -44,14 +44,14 @@ describe('ResumeBuilder', () => {
     render(<ResumeBuilder />);
 
     // Initially in Build mode
-    expect(screen.getByText('内容编辑')).toBeInTheDocument();
+    expect(screen.getByText(/内容编辑/)).toBeInTheDocument();
 
     // Switch to Preview
-    const previewButton = screen.getByRole('tab', { name: /preview/i });
+    const previewButton = screen.getByRole('tab', { name: '预览' });
     fireEvent.click(previewButton);
 
     // Should see Preview content
-    expect(screen.queryByText('内容编辑')).not.toBeInTheDocument();
+    expect(screen.queryByText(/内容编辑/)).not.toBeInTheDocument();
   });
 
   it('should add a new section', () => {
@@ -64,6 +64,6 @@ describe('ResumeBuilder', () => {
     const addButton = screen.getByLabelText(/Add Section/i);
     fireEvent.click(addButton);
 
-    expect(screen.getByText(/New Section/i)).toBeInTheDocument();
+    expect(screen.getByText('New Section')).toBeInTheDocument();
   });
 });

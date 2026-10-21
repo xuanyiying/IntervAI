@@ -9,9 +9,6 @@ interface ResumeEditorProps {
   onUpdateSection: (id: string, updates: Partial<ResumeSection>) => void;
 }
 
-const GLASS_CARD =
-  'bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 shadow-2xl transition-all duration-500 hover:border-white/20';
-
 export const ResumeEditor: React.FC<ResumeEditorProps> = ({
   activeSection,
   onUpdateSection,
@@ -32,11 +29,11 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className={GLASS_CARD}
+        className="rb-card"
       >
-        <div className="h-[600px] flex flex-col items-center justify-center text-white/20 space-y-4">
-          <Edit3 size={48} strokeWidth={1} />
-          <p className="text-sm font-medium">
+        <div className="rb-empty">
+          <Edit3 size={36} strokeWidth={1.5} />
+          <p>
             {t(
               'resume_builder.select_section_hint',
               'Select a section to start editing'
@@ -53,47 +50,45 @@ export const ResumeEditor: React.FC<ResumeEditorProps> = ({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className={GLASS_CARD}
+      className="rb-card"
     >
-      <div className="space-y-12">
-        <div className="space-y-4">
-          <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-            {t('resume_builder.section_title', 'Section Title')}
-          </label>
-          <input
-            ref={sectionTitleRef}
-            value={activeSection.title}
-            onChange={(e) =>
-              onUpdateSection(activeSection.id, { title: e.target.value })
-            }
-            className="text-6xl font-black tracking-tighter bg-transparent border-none focus:outline-none w-full font-display placeholder-white/5 selection:bg-white/20"
-            placeholder={t('resume_builder.section_title', 'Section Title')}
-            aria-label="Section Title"
-          />
-        </div>
+      <div className="rb-field">
+        <label className="rb-label">
+          {t('resume_builder.section_title', 'Section Title')}
+        </label>
+        <input
+          ref={sectionTitleRef}
+          value={activeSection.title}
+          onChange={(e) =>
+            onUpdateSection(activeSection.id, { title: e.target.value })
+          }
+          className="rb-input-title"
+          placeholder={t('resume_builder.section_title', 'Section Title')}
+          aria-label="Section Title"
+        />
+      </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20">
-              {t('resume_builder.content_editor', 'Content Editor')}
-            </label>
-            <span className="text-[10px] font-bold text-white/10 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">
-              {t('resume_builder.markdown_version', 'Markdown v4.0')}
-            </span>
-          </div>
-          <textarea
-            value={activeSection.content}
-            onChange={(e) =>
-              onUpdateSection(activeSection.id, { content: e.target.value })
-            }
-            className="w-full h-[600px] bg-white/[0.03] border border-white/5 rounded-[2rem] p-10 font-mono text-sm leading-[1.8] focus:border-white/10 focus:bg-white/[0.04] focus:outline-none transition-all resize-none shadow-inner selection:bg-white/20"
-            placeholder={t(
-              'resume_builder.content_placeholder',
-              '# Start building your story...'
-            )}
-            aria-label="Section Content in Markdown"
-          />
+      <div className="rb-field">
+        <div className="rb-field-head">
+          <label className="rb-label">
+            {t('resume_builder.content_editor', 'Content Editor')}
+          </label>
+          <span className="rb-badge">
+            {t('resume_builder.markdown_version', 'Markdown')}
+          </span>
         </div>
+        <textarea
+          value={activeSection.content}
+          onChange={(e) =>
+            onUpdateSection(activeSection.id, { content: e.target.value })
+          }
+          className="rb-textarea"
+          placeholder={t(
+            'resume_builder.content_placeholder',
+            '# Start building your story...'
+          )}
+          aria-label="Section Content in Markdown"
+        />
       </div>
     </motion.div>
   );

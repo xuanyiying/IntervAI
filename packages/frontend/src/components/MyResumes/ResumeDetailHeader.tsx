@@ -1,15 +1,17 @@
-import React from 'react';
-import { Button, Tag, Space, Tooltip } from 'antd';
 import {
   EyeOutlined,
+  FileTextOutlined,
   HistoryOutlined,
   RocketOutlined,
   ThunderboltOutlined,
-  FileTextOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons';
+import { Button, Space, Tag, Tooltip } from 'antd';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { formatDateTime } from '../../i18n';
-import { Resume, ParseStatus } from '../../types';
+import { ParseStatus, Resume } from '../../types';
 
 export type ResumeViewMode =
   | 'detail'
@@ -32,6 +34,7 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
   onSetPrimary,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const getButtonClass = (view: ResumeViewMode) => {
     const isActive = activeView === view;
@@ -128,6 +131,19 @@ export const ResumeDetailHeader: React.FC<ResumeDetailHeaderProps> = ({
                       ? 'bg-gradient-to-r from-primary to-blue-600 !text-white border-none shadow-lg shadow-primary/20 hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
                       : 'bg-gradient-to-r from-primary/80 to-blue-600/80 !text-white/90 border-none hover:from-primary hover:to-blue-600 hover:!text-white hover:scale-105 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0'
                   }
+                  shape="circle"
+                />
+              </Tooltip>
+
+              <Tooltip
+                {...getTooltipProps(
+                  t('resume.start_ai_interview', '开始 AI 面试')
+                )}
+              >
+                <Button
+                  icon={<VideoCameraOutlined />}
+                  onClick={() => navigate(`/interview?resumeId=${resume.id}`)}
+                  className="glass-button !border-emerald-500/30 !text-emerald-600 hover:!text-emerald-700 hover:bg-emerald-500/10 transition-all duration-300 flex items-center justify-center w-10 h-10 !p-0"
                   shape="circle"
                 />
               </Tooltip>

@@ -853,7 +853,8 @@
     "pdf_downloaded": "PDF downloaded successfully!",
     "pdf_download_failed": "Failed to download PDF",
     "generate_pdf_first": "Please generate a PDF first",
-    "download_pdf": "Download PDF"
+    "download_pdf": "Download PDF",
+    "start_ai_interview": "Start AI Interview"
   },
   "knowledge_base": {
     "title": "Knowledge Base Management",

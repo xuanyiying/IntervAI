@@ -159,7 +159,7 @@
     "agents": "AI 助手",
     "my_resumes": "我的简历",
     "interview_spirit": "AI 面试精灵",
-    "pitch_perfect": "履历点睛",
+    "pitch_perfect": "自我介绍",
     "interview_prediction": "面试预测",
     "mock_interview": "模拟面试",
     "chat": "对话",
@@ -178,7 +178,7 @@
     "resume_optimization": "简历优化"
   },
   "pitchPerfect": {
-    "title": "履历点睛",
+    "title": "自我介绍",
     "description": "生成一段黄金自我介绍，让您在众多候选人中脱颖而出。",
     "current_resume": "当前活跃简历",
     "change": "更换",
@@ -438,7 +438,8 @@
     "pdf_downloaded": "PDF 下载成功！",
     "pdf_download_failed": "下载 PDF 失败",
     "generate_pdf_first": "请先生成 PDF",
-    "download_pdf": "下载 PDF"
+    "download_pdf": "下载 PDF",
+    "start_ai_interview": "开始 AI 面试"
   },
   "models": {
     "title": "模型配置管理",
@@ -494,7 +495,7 @@
   "scenario": {
     "resume_parsing": "简历解析",
     "job_description_parsing": "职位描述解析",
-    "resume_optimization": "履历点睛",
+    "resume_optimization": "自我介绍",
     "interview_question_generation": "面试问题生成",
     "match_score_calculation": "匹配度计算"
   },
@@ -662,7 +663,7 @@
     "pdf_desc": "将优化后的内容导出为 PDF",
     "interview_label": "模拟面试",
     "interview_desc": "针对职位的模拟面试",
-    "optimize_label": "履历点睛",
+    "optimize_label": "自我介绍",
     "optimize_desc": "生成适配岗位的黄金自我介绍",
     "total": "总建议数",
     "pending": "待处理",

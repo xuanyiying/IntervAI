@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button, message } from 'antd';
 import { ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { resumeService } from '../../services/resume-service';
 import { formatDateTime } from '../../i18n';
 import { ResumeAnalysisEmptyState } from './ResumeAnalysisEmptyState';
@@ -35,6 +36,7 @@ interface ResumeAnalysisViewProps {
 export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
   resumeId,
 }) => {
+  const { t } = useTranslation();
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
@@ -58,17 +60,21 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
       const data = await resumeService.analyzeResume(id, 12, 5000, force);
       if (data.error) {
         if (!silent) {
-          message.error('诊断失败: ' + data.error);
+          message.error(
+            t('resume.analysis.error_with_reason', { error: data.error })
+          );
         }
       } else {
         setResult(data);
         if (!silent) {
-          message.success(force ? '重新诊断完成' : '诊断完成');
+          message.success(
+            force ? t('resume.analysis.rediagnosed') : t('resume.analysis.diagnosed')
+          );
         }
       }
     } catch (error) {
       if (!silent) {
-        message.error('诊断失败，请稍后重试');
+        message.error(t('resume.analysis.error'));
       }
     } finally {
       setAnalyzing(false);
@@ -92,10 +98,14 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
       <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <ThunderboltOutlined className="text-blue-500 text-xl" />
-          <h2 className="text-xl font-bold m-0">简历深度诊断报告</h2>
+          <h2 className="text-xl font-bold m-0">
+            {t('resume.analysis.title')}
+          </h2>
           {result?.analyzedAt && (
             <span className="text-secondary text-sm">
-              （诊断于 {formatDateTime(result.analyzedAt)}）
+              {t('resume.analysis.analyzed_at', {
+                date: formatDateTime(result.analyzedAt),
+              })}
             </span>
           )}
         </div>
@@ -105,7 +115,7 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
             onClick={handleRediagnose}
             loading={analyzing}
           >
-            重新诊断
+            {t('resume.analysis.rediagnose')}
           </Button>
         )}
       </div>

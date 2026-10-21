@@ -61,15 +61,19 @@ docker compose -f deployment/docker-compose.yml down       # Stop services
 The backend follows a layered architecture with clear separation:
 
 - **`common/`** - Shared utilities, middleware, guards, decorators, exceptions
-- **`core/`** - Core business logic modules (auth, user, chat, conversation, storage, quota, ai)
+- **`core/`** - Core business logic modules (ai, auth, user, account, chat, conversation, storage, quota, payment, prompts, health, i18n, invitation, backup)
 - **`features/`** - Feature-specific modules (resume, job, interview, agents, tasks, voice)
 - **`e2e/`** - End-to-end tests
 
 Key architectural patterns:
 - **Skills Engine**: Pluggable AI capabilities system. Engine in `core/ai/skills/`, skills in `skills/` directory
-- **AI Provider Factory**: Multi-provider abstraction supporting OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud
+- **AI Provider Factory**: Multi-provider abstraction supporting OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud, OpenRouter (base URLs hardcoded in `core/ai/models.ts`)
 - **WebSocket Gateway**: Real-time chat via Socket.IO with Redis adapter for scaling
 - **Queue System**: Bull queues for async AI processing (`core/ai/queue/`)
+
+Default models (see `core/ai/models.ts`):
+- Text: `AI_MODEL` env var, default `deepseek:deepseek-chat` (DeepSeek direct connection)
+- Embedding: `AI_EMBEDDING_MODEL` env var, default `siliconcloud:BAAI/bge-m3`
 
 ### Core AI Module (`packages/backend/src/core/ai/`)
 
@@ -96,10 +100,18 @@ Skills are defined in Markdown format with YAML frontmatter:
 
 ```
 skills/
-├── resume-analyzer.md      # Resume parsing & analysis
-├── jd-matcher.md           # Job description matching
-├── interview-prep.md       # Interview preparation
-└── answer-evaluator.md     # Interview answer evaluation
+├── resume-analyzer.md             # Resume parsing & structured extraction
+├── resume-writer.md               # Optimized resume content generation
+├── jd-matcher.md                  # Job description vs resume matching
+├── job-parser.md                  # Raw job posting → structured job data
+├── interview-prep.md              # Interview preparation materials
+├── interview-assistant.md         # Real-time assistant during live interviews
+├── interview-question-generator.md # Targeted interview question generation
+├── answer-evaluator.md            # Interview answer evaluation & scoring
+├── pitch-perfect.md               # Elevator pitch / self-introduction
+├── career-advisor.md              # Personalized career development advice
+├── skill-analyzer.md              # Skill gap analysis & learning recommendations
+└── salary-analyzer.md             # Salary analysis & negotiation guidance
 ```
 
 ### Frontend Structure (`packages/frontend/src/`)
@@ -206,7 +218,14 @@ Your skill's prompt template goes here. Use {{inputName}} for variable substitut
 
 2. The skill will be automatically loaded on server startup
 
-3. Execute the skill:
+3. Template features supported by the loader:
+   - `{{inputName}}` — variable substitution
+   - `{{#if key}}...{{/if}}` — conditional blocks (removed entirely when key is falsy/empty)
+   - Object/array inputs are injected as JSON (JSON.stringify)
+
+4. Input type validation is strict (`typeof` matching): if an input is declared `object`, callers must pass an object, not a JSON string
+
+5. Execute the skill:
 ```typescript
 const result = await aiService.executeSkill('my-skill', {
   inputName: 'value'

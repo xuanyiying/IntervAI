@@ -1,21 +1,21 @@
 import { Button, Switch, Text, useToast } from '@/components/ui';
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useInterviewSocket } from '../hooks/useInterviewSocket';
+import {
+  IconBulb,
+  IconCheck,
+  IconMic,
+  IconPhone,
+  IconWifi
+} from '../pages/user/interview/icons';
 import {
   ASSIST_SAMPLE_RATE,
   PcmStreamPlayer,
   floatTo16BitBase64,
   frameVolume,
 } from '../utils/pcm';
-import {
-  IconBulb,
-  IconCheck,
-  IconMic,
-  IconPhone,
-  IconStop,
-  IconWifi,
-} from '../pages/user/interview/icons';
-import { AnimatePresence, motion } from 'framer-motion';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VoiceInterviewCallProps {
   sessionId: string;
@@ -64,6 +64,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   onCompleted,
   currentQuestionText,
 }) => {
+  const { t } = useTranslation();
   const [isMuted, setIsMuted] = useState(false);
   const [isCalling, setIsCalling] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
@@ -146,7 +147,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       joinSession(sessionId, voiceId);
     },
     onCompleted: () => {
-      success('面试完成，正在生成报告...');
+      success(t('interview.call.completed_generating_report'));
       setIsCalling(false);
       onCompleted?.();
       setTimeout(() => onClose(), 1200);
@@ -182,7 +183,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       setDetectedQuestion(data.text);
       if (data.isQuestion && data.text.trim().length >= MIN_QUESTION_LENGTH) {
         info(
-          `检测到问题: ${data.text.substring(0, 50)}${data.text.length > 50 ? '...' : ''}`
+          t('interview.call.question_detected', {
+            question: `${data.text.substring(0, 50)}${data.text.length > 50 ? '...' : ''}`,
+          })
         );
       }
     },
@@ -209,7 +212,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         pcmPlayerRef.current?.dispose();
         pcmPlayerRef.current = null;
         aiSpeakingRef.current = false;
-        showError('实时语音连接中断，已切换为标准模式');
+        showError(t('interview.call.realtime_interrupted'));
       }
       startLegacyRecording();
       setStatus('listening');
@@ -233,7 +236,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         typeof (window as any).webkitAudioContext !== 'undefined';
 
       const ua = navigator.userAgent;
-      let browser = '未知';
+      let browser = t('interview.call.unknown_browser');
       if (ua.includes('Safari') && !ua.includes('Chrome')) {
         browser = 'Safari';
       } else if (ua.includes('Chrome')) {
@@ -250,7 +253,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       );
 
       if (!hasMediaDevices || !hasMediaRecorder) {
-        showError('当前浏览器不支持录音，请使用 Chrome、Firefox 或 Safari');
+        showError(t('interview.call.browser_no_recording'));
       }
     };
 
@@ -427,7 +430,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
 
       mediaRecorder.onerror = (event) => {
         console.error('MediaRecorder error:', event);
-        showError('录音出错');
+        showError(t('interview.call.recording_error'));
       };
 
       mediaRecorder.start(1000);
@@ -527,14 +530,14 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
 
   const startCall = async () => {
     if (!browserSupported) {
-      showError('当前浏览器不支持语音通话');
+      showError(t('interview.call.browser_no_call'));
       return;
     }
 
     try {
       const unlocked = await unlockAudioContext();
       if (!unlocked) {
-        showError('请先点击页面以启用音频');
+        showError(t('interview.call.enable_audio'));
         return;
       }
 
@@ -611,11 +614,11 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       setStatus('idle');
 
       if (err.name === 'NotAllowedError') {
-        showError('无法访问麦克风，请在浏览器权限中允许后重试');
+        showError(t('interview.call.mic_denied_retry'));
       } else if (err.name === 'NotFoundError') {
-        showError('未检测到麦克风，请连接后重试');
+        showError(t('interview.call.mic_not_found'));
       } else if (err.name === 'NotReadableError') {
-        showError('麦克风被其他应用占用');
+        showError(t('interview.call.mic_busy'));
       } else if (err.name === 'OverconstrainedError') {
         const fallbackStream = await navigator.mediaDevices.getUserMedia({
           audio: true,
@@ -624,7 +627,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         setIsCalling(true);
         setStatus('listening');
       } else {
-        showError('启动语音通话失败，请重试');
+        showError(t('interview.call.start_failed'));
       }
     }
   };
@@ -762,7 +765,11 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     if (checked && status === 'listening' && analyserRef.current) {
       requestAnimationFrame(checkSilence);
     }
-    success(checked ? '已开启自动检测模式' : '已切换为手动模式');
+    success(
+      checked
+        ? t('interview.call.auto_detect_on')
+        : t('interview.call.auto_detect_off')
+    );
   };
 
   const toggleMute = () => {
@@ -787,19 +794,21 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   const getStatusText = () => {
     switch (status) {
       case 'idle':
-        return '准备就绪';
+        return t('interview.call.status_idle');
       case 'connecting':
-        return '连接中...';
+        return t('interview.call.status_connecting');
       case 'listening':
         return autoDetectMode || voiceEngine === 'realtime'
-          ? '聆听中（自动）'
-          : '聆听中，说完请点击提交';
+          ? t('interview.call.status_listening_auto')
+          : t('interview.call.status_listening_manual');
       case 'thinking':
-        return '思考中...';
+        return t('interview.call.status_thinking');
       case 'speaking':
-        return 'AI 面试官正在说话';
+        return t('interview.call.status_speaking');
       case 'reconnecting':
-        return `重连中 (${reconnectAttempt}/5)...`;
+        return t('interview.call.status_reconnecting', {
+          attempt: reconnectAttempt,
+        });
       default:
         return '';
     }
@@ -810,14 +819,15 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       <div className="iv-row-between iv-call-header">
         <div className="iv-row">
           <span
-            className={`iv-status-pill${
-              isReconnecting ? ' warn' : isConnected ? ' ok' : ''
-            }`}
+            className={`iv-status-pill${isReconnecting ? ' warn' : isConnected ? ' ok' : ''
+              }`}
           >
             {getStatusText()}
           </span>
           {mode === 'assist' && autoDetectMode && isCalling && (
-            <span className="iv-status-pill ok">自动检测</span>
+            <span className="iv-status-pill ok">
+              {t('interview.call.auto_detect')}
+            </span>
           )}
         </div>
         <div className="iv-row" style={{ gap: '0.5rem' }}>
@@ -859,7 +869,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
                 exit={{ opacity: 0 }}
                 className="iv-call-orb-hint"
               >
-                <span className="iv-spinner" /> 思考中...
+                <span className="iv-spinner" /> {t('interview.call.status_thinking')}
               </motion.div>
             )}
             {status === 'reconnecting' && (
@@ -870,7 +880,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
                 className="iv-call-orb-hint"
               >
                 <Button variant="ghost" size="sm" onClick={handleReconnect}>
-                  立即重试
+                  {t('interview.call.retry_now')}
                 </Button>
               </motion.div>
             )}
@@ -881,7 +891,8 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
           <div className="iv-question-card iv-call-question">
             <div className="iv-question-meta">
               <span className="iv-status-pill live">
-                <span className="iv-rec-dot" /> 面试官提问
+                <span className="iv-rec-dot" />{' '}
+                {t('interview.call.interviewer_asking')}
               </span>
             </div>
             <div className="iv-call-question-text">{currentQuestionText}</div>
@@ -890,7 +901,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
 
         {mode === 'assist' && detectedQuestion && (
           <div className="iv-call-question iv-msg-bubble user" style={{ margin: 0 }}>
-            <div className="iv-msg-role">检测到的问题</div>
+            <div className="iv-msg-role">
+              {t('interview.call.detected_question')}
+            </div>
             <div className="iv-call-question-text">
               {detectedQuestion.length > 90
                 ? detectedQuestion.substring(0, 90) + '...'
@@ -904,14 +917,18 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
             {dialog.map((m, idx) => (
               <div key={idx} className="iv-call-dialog-line">
                 <span className={`iv-speaker-chip${m.role === 'user' ? ' self' : ''}`}>
-                  {m.role === 'user' ? '我' : '面试官'}
+                  {m.role === 'user'
+                    ? t('interview.assist.speaker_self')
+                    : t('interview.live.interviewer')}
                 </span>
                 <span className="iv-call-dialog-text">{m.text}</span>
               </div>
             ))}
             {partialText && (
               <div className="iv-call-dialog-line partial">
-                <span className="iv-speaker-chip self">我</span>
+                <span className="iv-speaker-chip self">
+                  {t('interview.assist.speaker_self')}
+                </span>
                 <span className="iv-call-dialog-text">{partialText}...</span>
               </div>
             )}
@@ -941,7 +958,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
           {mode === 'assist' && (
             <div className="iv-row" style={{ gap: '0.4rem' }}>
               <Text type="secondary" style={{ fontSize: '0.75rem' }}>
-                自动
+                {t('interview.call.auto')}
               </Text>
               <Switch
                 checked={autoDetectMode}
@@ -963,11 +980,11 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
               }
               title={
                 voiceEngine !== 'legacy'
-                  ? '实时模式下自动断句，无需手动提交'
+                  ? t('interview.call.realtime_auto_submit')
                   : undefined
               }
             >
-              <IconCheck size={15} /> 提交本回答
+              <IconCheck size={15} /> {t('interview.call.submit_answer')}
             </Button>
           )}
 
@@ -976,7 +993,11 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
             onClick={toggleMute}
             disabled={!isCalling}
             className="iv-call-circle"
-            title={isMuted ? '取消静音' : '静音'}
+            title={
+              isMuted
+                ? t('interview.call.unmute')
+                : t('interview.call.mute')
+            }
           >
             <IconMic size={22} />
           </Button>
@@ -985,7 +1006,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
             variant="danger"
             onClick={stopCall}
             className="iv-call-circle iv-call-hangup"
-            title="结束通话"
+            title={t('interview.call.end_call')}
           >
             <IconPhone size={26} />
           </Button>
@@ -995,7 +1016,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       {!browserSupported && (
         <div className="iv-tip" style={{ justifyContent: 'center', marginTop: '0.75rem' }}>
           <IconBulb size={15} />
-          <span>当前浏览器可能不完全支持语音功能，建议使用 Chrome、Firefox 或 Safari。</span>
+          <span>{t('interview.call.browser_tip')}</span>
         </div>
       )}
     </div>

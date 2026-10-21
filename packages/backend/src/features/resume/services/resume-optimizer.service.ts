@@ -106,6 +106,13 @@ export class ResumeOptimizerService {
       where: { userId },
       include: {
         job: true,
+        resume: {
+          select: {
+            id: true,
+            title: true,
+            originalFilename: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

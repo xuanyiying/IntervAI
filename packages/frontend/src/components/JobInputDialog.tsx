@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'antd';
 import { LinkOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { jobService, type JobInput, type Job } from '../services/job-service';
 
 interface JobInputDialogProps {
@@ -28,6 +29,7 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
   onJobUpdated,
   initialData,
 }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
@@ -82,10 +84,10 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
       if (isEditMode && initialData && onJobUpdated) {
         const updatedJob = await jobService.updateJob(initialData.id, jobInput);
         onJobUpdated(updatedJob);
-        message.success('职位信息已更新');
+        message.success(t('resume.jobInput.updated_success'));
       } else {
         onJobCreated(jobInput);
-        message.success('职位信息已提交');
+        message.success(t('resume.jobInput.submitted'));
       }
 
       form.resetFields();
@@ -104,7 +106,7 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
     try {
       const url = form.getFieldValue('jobUrl');
       if (!url) {
-        message.error('请输入职位链接');
+        message.error(t('resume.jobInput.url_required'));
         return;
       }
 
@@ -122,11 +124,13 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
       });
 
       setActiveTab('text');
-      message.success('职位信息已从链接提取，请确认后提交');
+      message.success(t('resume.jobInput.extracted'));
     } catch (error) {
       console.error('Failed to fetch job from URL:', error);
       message.error(
-        error instanceof Error ? error.message : '从链接提取职位信息失败'
+        error instanceof Error
+          ? error.message
+          : t('resume.jobInput.extract_failed')
       );
     } finally {
       setUrlLoading(false);
@@ -141,7 +145,11 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
 
   return (
     <Modal
-      title={isEditMode ? '编辑职位信息' : '输入职位信息'}
+      title={
+        isEditMode
+          ? t('resume.jobInput.edit_title')
+          : t('resume.jobInput.add_title')
+      }
       open={visible}
       onCancel={handleCancel}
       width={700}
@@ -157,67 +165,108 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
                 key: 'text',
                 label: (
                   <span>
-                    <FileTextOutlined /> 粘贴职位描述
+                    <FileTextOutlined /> {t('resume.jobInput.tab_paste')}
                   </span>
                 ),
                 children: (
                   <div style={{ marginTop: '16px' }}>
                     <Form.Item
-                      label="职位名称"
+                      label={t('resume.jobInput.field_title')}
                       name="title"
-                      rules={[{ required: true, message: '请输入职位名称' }]}
+                      rules={[
+                        {
+                          required: true,
+                          message: t('resume.jobInput.title_required'),
+                        },
+                      ]}
                     >
-                      <Input placeholder="例如：Java 后端工程师" />
+                      <Input placeholder={t('resume.jobInput.title_placeholder')} />
                     </Form.Item>
 
                     <Form.Item
-                      label="公司名称"
+                      label={t('resume.jobInput.field_company')}
                       name="company"
-                      rules={[{ required: true, message: '请输入公司名称' }]}
+                      rules={[
+                        {
+                          required: true,
+                          message: t('resume.jobInput.company_required'),
+                        },
+                      ]}
                     >
-                      <Input placeholder="例如：阿里巴巴" />
-                    </Form.Item>
-
-                    <Form.Item label="工作地点" name="location">
-                      <Input placeholder="例如：北京" />
-                    </Form.Item>
-
-                    <Form.Item label="工作类型" name="jobType">
-                      <Input placeholder="例如：全职" />
-                    </Form.Item>
-
-                    <Form.Item label="薪资范围" name="salaryRange">
-                      <Input placeholder="例如：15k-25k" />
-                    </Form.Item>
-
-                    <Form.Item
-                      label="职位描述"
-                      name="jobDescription"
-                      rules={[{ required: true, message: '请输入职位描述' }]}
-                    >
-                      <Input.TextArea
-                        rows={6}
-                        placeholder="粘贴职位描述内容..."
+                      <Input
+                        placeholder={t('resume.jobInput.company_placeholder')}
                       />
                     </Form.Item>
 
-                    <Form.Item label="任职要求" name="requirements">
+                    <Form.Item
+                      label={t('resume.jobInput.field_location')}
+                      name="location"
+                    >
+                      <Input
+                        placeholder={t('resume.jobInput.location_placeholder')}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label={t('resume.jobInput.field_job_type')}
+                      name="jobType"
+                    >
+                      <Input
+                        placeholder={t('resume.jobInput.job_type_placeholder')}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label={t('resume.jobInput.field_salary')}
+                      name="salaryRange"
+                    >
+                      <Input
+                        placeholder={t('resume.jobInput.salary_placeholder')}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label={t('resume.jobInput.field_description')}
+                      name="jobDescription"
+                      rules={[
+                        {
+                          required: true,
+                          message: t('resume.jobInput.description_required'),
+                        },
+                      ]}
+                    >
+                      <Input.TextArea
+                        rows={6}
+                        placeholder={t(
+                          'resume.jobInput.description_placeholder'
+                        )}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label={t('resume.jobInput.field_requirements')}
+                      name="requirements"
+                    >
                       <Input.TextArea
                         rows={4}
-                        placeholder="粘贴任职要求内容..."
+                        placeholder={t(
+                          'resume.jobInput.requirements_placeholder'
+                        )}
                       />
                     </Form.Item>
 
                     <Space
                       style={{ width: '100%', justifyContent: 'flex-end' }}
                     >
-                      <Button onClick={handleCancel}>取消</Button>
+                      <Button onClick={handleCancel}>{t('common.cancel')}</Button>
                       <Button
                         type="primary"
                         onClick={handleTextSubmit}
                         loading={loading}
                       >
-                        {isEditMode ? '更新' : '提交'}
+                        {isEditMode
+                          ? t('resume.jobInput.update')
+                          : t('common.submit')}
                       </Button>
                     </Space>
                   </div>
@@ -227,30 +276,33 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
                 key: 'url',
                 label: (
                   <span>
-                    <LinkOutlined /> 从链接提取
+                    <LinkOutlined /> {t('resume.jobInput.tab_url')}
                   </span>
                 ),
                 children: (
                   <div style={{ marginTop: '16px' }}>
                     <Alert
-                      message="输入职位链接，系统将自动提取职位信息"
+                      message={t('resume.jobInput.url_hint')}
                       type="info"
                       style={{ marginBottom: '16px' }}
                     />
 
                     <Form.Item
-                      label="职位链接"
+                      label={t('resume.jobInput.field_url')}
                       name="jobUrl"
                       rules={[
-                        { required: true, message: '请输入职位链接' },
+                        {
+                          required: true,
+                          message: t('resume.jobInput.url_required'),
+                        },
                         {
                           pattern: /^https?:\/\/.+/,
-                          message: '请输入有效的 URL',
+                          message: t('resume.jobInput.url_invalid'),
                         },
                       ]}
                     >
                       <Input
-                        placeholder="例如：https://www.example.com/jobs/123"
+                        placeholder={t('resume.jobInput.url_placeholder')}
                         type="url"
                       />
                     </Form.Item>
@@ -258,13 +310,13 @@ const JobInputDialog: React.FC<JobInputDialogProps> = ({
                     <Space
                       style={{ width: '100%', justifyContent: 'flex-end' }}
                     >
-                      <Button onClick={handleCancel}>取消</Button>
+                      <Button onClick={handleCancel}>{t('common.cancel')}</Button>
                       <Button
                         type="primary"
                         onClick={handleUrlFetch}
                         loading={urlLoading}
                       >
-                        提取
+                        {t('resume.jobInput.extract')}
                       </Button>
                     </Space>
                   </div>

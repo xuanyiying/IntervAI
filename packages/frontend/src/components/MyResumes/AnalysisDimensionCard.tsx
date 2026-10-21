@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, List, Row, Typography, Progress } from 'antd';
+import { useTranslation } from 'react-i18next';
 
 const { Text } = Typography;
 
@@ -16,33 +17,34 @@ interface AnalysisDimensionCardProps {
 export const AnalysisDimensionCard: React.FC<AnalysisDimensionCardProps> = ({
   scoreDetail,
 }) => {
+  const { t } = useTranslation();
   const items = [
     {
-      label: '项目经历 (Project)',
+      label: t('resume.analysis.dimension.project'),
       score: scoreDetail.projectScore,
       max: 40,
       color: '#1890ff',
     },
     {
-      label: '技能匹配 (Skills)',
+      label: t('resume.analysis.dimension.skills'),
       score: scoreDetail.skillMatchScore,
       max: 20,
       color: '#52c41a',
     },
     {
-      label: '内容完整 (Content)',
+      label: t('resume.analysis.dimension.content'),
       score: scoreDetail.contentScore,
       max: 15,
       color: '#722ed1',
     },
     {
-      label: '结构清晰 (Structure)',
+      label: t('resume.analysis.dimension.structure'),
       score: scoreDetail.structureScore,
       max: 15,
       color: '#fa8c16',
     },
     {
-      label: '表达专业 (Expression)',
+      label: t('resume.analysis.dimension.expression'),
       score: scoreDetail.expressionScore,
       max: 10,
       color: '#eb2f96',
@@ -51,7 +53,7 @@ export const AnalysisDimensionCard: React.FC<AnalysisDimensionCardProps> = ({
 
   return (
     <Card
-      title="维度得分 (Dimension Scores)"
+      title={t('resume.analysis.dimension.title')}
       hoverable
       style={{ height: '100%' }}
     >

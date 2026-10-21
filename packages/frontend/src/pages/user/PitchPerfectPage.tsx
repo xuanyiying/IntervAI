@@ -35,7 +35,7 @@ export const PitchPerfectPage: React.FC = () => {
         <div className="header-icon-wrapper">
           <HighlightOutlined className="header-icon" />
         </div>
-        <h1>{t('pitchPerfect.title', '履历点睛')}</h1>
+        <h1>{t('pitchPerfect.title', '自我介绍')}</h1>
         <p>
           {t(
             'pitchPerfect.description',

@@ -1,0 +1,584 @@
+/* Resume Builder — 跟随应用主题（data-theme）自动切换，所有颜色取自全局设计变量 */
+
+.rb-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-6);
+  color: var(--text-primary);
+  font-family: var(--font-family-body);
+}
+
+/* ===== 顶部工具栏 ===== */
+.rb-navbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+}
+
+.rb-navbar-left,
+.rb-navbar-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-3);
+}
+
+.rb-brand {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.rb-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--glass-border-light);
+}
+
+.rb-tabs,
+.rb-preview-toolbar,
+.rb-theme-list {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--glass-bg-hover);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+}
+
+.rb-tab {
+  padding: 6px 16px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-tab:hover {
+  color: var(--text-primary);
+}
+
+.rb-tab.is-active {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.rb-theme-list {
+  gap: 6px;
+  padding: 4px;
+}
+
+.rb-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--glass-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-swatch:hover {
+  transform: scale(1.08);
+}
+
+.rb-swatch.is-active {
+  border: 2px solid var(--primary-color);
+  transform: scale(1.08);
+}
+
+/* ===== 按钮 ===== */
+.rb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-btn:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-light);
+  color: var(--text-primary);
+}
+
+.rb-btn:active {
+  transform: scale(0.97);
+}
+
+.rb-btn--icon {
+  padding: 7px;
+}
+
+.rb-btn--primary {
+  background: var(--primary-gradient);
+  border: none;
+  color: #ffffff;
+  box-shadow: var(--shadow-neon);
+}
+
+.rb-btn--primary:hover {
+  color: #ffffff;
+  filter: brightness(1.06);
+}
+
+/* ===== 工作区布局 ===== */
+.rb-workspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: var(--spacing-6);
+  align-items: start;
+}
+
+.rb-workspace.is-preview {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 1024px) {
+  .rb-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ===== 侧边栏 ===== */
+.rb-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.rb-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rb-sidebar-title {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rb-sidebar-placeholder {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+@media (max-width: 1024px) {
+  .rb-sidebar-placeholder {
+    display: none;
+  }
+}
+
+.rb-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rb-section-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-section-item:hover {
+  background: var(--glass-bg-hover);
+  border-color: var(--glass-border-light);
+}
+
+.rb-section-item.is-active {
+  background: var(--sidebar-item-active);
+  border-color: var(--primary-color);
+}
+
+.rb-drag {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  transition: opacity var(--duration-normal);
+}
+
+.rb-section-item:hover .rb-drag {
+  opacity: 1;
+}
+
+.rb-section-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--duration-normal);
+}
+
+.rb-section-item:hover .rb-item-actions {
+  opacity: 1;
+}
+
+.rb-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-icon-btn:hover {
+  background: var(--glass-bg-hover);
+  color: var(--text-primary);
+}
+
+.rb-icon-btn--danger:hover {
+  color: var(--danger-color);
+}
+
+/* ===== 卡片 ===== */
+.rb-card {
+  padding: var(--spacing-6);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+}
+
+@media (max-width: 768px) {
+  .rb-card {
+    padding: var(--spacing-4);
+  }
+}
+
+/* ===== 编辑器 ===== */
+.rb-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-6);
+}
+
+.rb-field:last-child {
+  margin-bottom: 0;
+}
+
+.rb-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+}
+
+.rb-label {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.rb-input-title {
+  width: 100%;
+  padding: var(--spacing-2) var(--spacing-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  outline: none;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-input-title:hover {
+  border-color: var(--glass-border);
+}
+
+.rb-input-title:focus {
+  background: var(--bg-tertiary);
+  border-color: var(--primary-color);
+}
+
+.rb-input-title::placeholder {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+.rb-badge {
+  padding: 2px 10px;
+  background: var(--glass-bg-hover);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.rb-textarea {
+  width: 100%;
+  min-height: 560px;
+  padding: var(--spacing-5);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+  outline: none;
+  resize: vertical;
+  transition: border-color var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-textarea:focus {
+  border-color: var(--primary-color);
+}
+
+.rb-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.rb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-3);
+  min-height: 420px;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-sm);
+}
+
+/* ===== 预览 ===== */
+.rb-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-5);
+  width: 100%;
+}
+
+.rb-preview-btn {
+  display: flex;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.rb-preview-btn:hover {
+  color: var(--text-primary);
+}
+
+.rb-preview-btn.is-active {
+  background: var(--primary-color);
+  color: #ffffff;
+}
+
+.rb-paper-frame {
+  width: 100%;
+  margin: 0 auto;
+  transition: max-width var(--duration-slow) var(--ease-in-out);
+}
+
+.rb-paper-frame--desktop {
+  max-width: 820px;
+}
+
+.rb-paper-frame--tablet {
+  max-width: 640px;
+}
+
+.rb-paper-frame--mobile {
+  max-width: 375px;
+}
+
+/* 简历纸张保留自身配色主题（--resume-* 由主题选择器写入），不跟随应用主题 */
+.rb-paper {
+  min-height: 1000px;
+  padding: var(--spacing-12);
+  background: var(--resume-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  color: var(--resume-text);
+  font-family: var(--resume-font);
+}
+
+@media (max-width: 640px) {
+  .rb-paper {
+    padding: var(--spacing-6);
+    min-height: 600px;
+  }
+}
+
+.rb-paper h1 {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 4px solid var(--resume-primary);
+  color: var(--resume-text);
+  font-family: var(--resume-font);
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: -0.04em;
+}
+
+.rb-paper h2 {
+  margin-top: 2.5rem;
+  color: var(--resume-accent);
+  font-family: var(--resume-font);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.rb-paper h3 {
+  color: var(--resume-primary);
+  font-family: var(--resume-font);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rb-paper p {
+  margin-bottom: 1rem;
+  color: var(--resume-text);
+  font-size: var(--font-size-base);
+  line-height: 1.8;
+  opacity: 0.9;
+}
+
+.rb-paper li {
+  margin-bottom: 0.5rem;
+  color: var(--resume-text);
+  font-size: var(--font-size-base);
+  line-height: 1.7;
+  opacity: 0.85;
+}
+
+.rb-paper strong {
+  color: var(--resume-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rb-paper a {
+  color: var(--resume-accent);
+  text-decoration: underline;
+}
+
+.rb-paper section + section,
+.rb-paper .rb-paper-section {
+  margin-bottom: 3rem;
+}
+
+.rb-paper .rb-paper-section:last-child {
+  margin-bottom: 0;
+}
+
+/* ===== 底部信息 ===== */
+.rb-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-4);
+  color: var(--text-tertiary);
+  font-size: var(--font-size-xs);
+}
+
+.rb-meta-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.rb-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success-color);
+}
+
+/* ===== 错误提示 ===== */
+.rb-toast {
+  position: fixed;
+  bottom: var(--spacing-8);
+  left: 50%;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-5);
+  background: var(--danger-color);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  transform: translateX(-50%);
+  font-size: var(--font-size-sm);
+}
+
+.rb-toast-close {
+  display: flex;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.rb-toast-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.2);
+}

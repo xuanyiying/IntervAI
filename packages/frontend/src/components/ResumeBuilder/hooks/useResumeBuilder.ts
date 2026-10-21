@@ -8,7 +8,6 @@ export const useResumeBuilder = () => {
     sections[0]?.id || null
   );
   const [currentTheme, setCurrentTheme] = useState<ResumeTheme>(THEMES[0]);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [previewMode, setPreviewMode] = useState<
     'desktop' | 'tablet' | 'mobile'
   >('desktop');
@@ -119,8 +118,6 @@ export const useResumeBuilder = () => {
     setActiveSectionId,
     currentTheme,
     setCurrentTheme,
-    isDarkMode,
-    setIsDarkMode,
     previewMode,
     setPreviewMode,
     isEditView,

@@ -9,8 +9,15 @@ import {
   useToast,
 } from '@/components/ui';
 import VoiceInterviewCall from '@/components/VoiceInterviewCall';
+import { useResumeStore } from '@/stores';
 import '@/styles/interview.css';
-import { InterviewQuestion, InterviewSession, Optimization } from '@/types';
+import {
+  InterviewQuestion,
+  InterviewSession,
+  Optimization,
+  ParseStatus,
+  Resume,
+} from '@/types';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
@@ -35,11 +42,15 @@ import SetupStep, {
   InterviewLanguage,
   InterviewMode,
 } from './interview/SetupStep';
+import { useTranslation } from 'react-i18next';
 
 const InterviewPage: React.FC = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const urlOptimizationId = searchParams.get('optimizationId');
+  const urlResumeId = searchParams.get('resumeId');
   const { success, error: showError, warning } = useToast();
+  const { resumes, fetchResumes } = useResumeStore();
 
   // setup state
   const [currentStep, setCurrentStep] = useState(0);
@@ -50,6 +61,7 @@ const InterviewPage: React.FC = () => {
   const [selectedOptimizationId, setSelectedOptimizationId] = useState<
     string | null
   >(null);
+  const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [personas, setPersonas] = useState<InterviewerPersona[]>([]);
   const [selectedPersonaId, setSelectedPersonaId] = useState<
     string | undefined
@@ -74,6 +86,7 @@ const InterviewPage: React.FC = () => {
   const startingRef = useRef(false);
 
   useEffect(() => {
+    fetchResumes();
     loadOptimizations();
     loadPersonas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,12 +97,24 @@ const InterviewPage: React.FC = () => {
       setOptimizationsLoading(true);
       const data = await optimizationService.listOptimizations();
       setOptimizations(data);
-      setSelectedOptimizationId((prev) => {
+
+      const urlOptimization = urlOptimizationId
+        ? data.find((o) => o.id === urlOptimizationId)
+        : undefined;
+
+      setSelectedResumeId((prev) => {
         if (prev) return prev;
-        if (urlOptimizationId && data.some((o) => o.id === urlOptimizationId)) {
-          return urlOptimizationId;
-        }
-        return data.length > 0 ? data[0].id : null;
+        if (urlOptimization) return urlOptimization.resumeId;
+        return urlResumeId ?? null;
+      });
+
+      setSelectedOptimizationId((prev) => {
+        if (prev && data.some((o) => o.id === prev)) return prev;
+        if (urlOptimization) return urlOptimization.id;
+        const pool = urlResumeId
+          ? data.filter((o) => o.resumeId === urlResumeId)
+          : data;
+        return pool.length > 0 ? pool[0].id : null;
       });
     } catch (err) {
       console.error('Failed to load optimizations:', err);
@@ -97,6 +122,40 @@ const InterviewPage: React.FC = () => {
       setOptimizationsLoading(false);
     }
   };
+
+  const handleSelectResume = (resumeId: string | null) => {
+    setSelectedResumeId(resumeId);
+    setSelectedOptimizationId((prev) => {
+      const pool = resumeId
+        ? optimizations.filter((o) => o.resumeId === resumeId)
+        : optimizations;
+      if (prev && pool.some((o) => o.id === prev)) return prev;
+      return pool.length > 0 ? pool[0].id : null;
+    });
+  };
+
+  const handleSelectOptimization = (optimizationId: string | null) => {
+    setSelectedOptimizationId(optimizationId);
+    if (optimizationId) {
+      const optimization = optimizations.find((o) => o.id === optimizationId);
+      if (optimization) setSelectedResumeId(optimization.resumeId);
+    }
+  };
+
+  const selectableResumes = resumes.filter(
+    (resume) => resume.parseStatus === ParseStatus.COMPLETED
+  );
+
+  const visibleOptimizations = selectedResumeId
+    ? optimizations.filter((o) => o.resumeId === selectedResumeId)
+    : optimizations;
+
+  const selectedOptimization = optimizations.find(
+    (o) => o.id === selectedOptimizationId
+  );
+  const selectedResume: Resume | undefined = resumes.find(
+    (r) => r.id === (selectedOptimization?.resumeId ?? selectedResumeId)
+  );
 
   const loadPersonas = async () => {
     try {
@@ -132,20 +191,20 @@ const InterviewPage: React.FC = () => {
       const effectiveOptimizationId =
         selectedOptimizationId ||
         (urlOptimizationId &&
-        optimizations.some((o) => o.id === urlOptimizationId)
+          optimizations.some((o) => o.id === urlOptimizationId)
           ? urlOptimizationId
           : null);
 
       if (interviewMode === 'mock' && !effectiveOptimizationId) {
-        warning('模拟面试需要先选择一份简历优化记录');
+        warning(t('interview.mock.optimization_required'));
         setCurrentStep(0);
         return;
       }
 
       const activeSession = effectiveOptimizationId
         ? await interviewService
-            .getActiveSession(effectiveOptimizationId)
-            .catch(() => null)
+          .getActiveSession(effectiveOptimizationId)
+          .catch(() => null)
         : null;
 
       if (activeSession) {
@@ -174,7 +233,7 @@ const InterviewPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to initialize interview session:', err);
-      showError('面试初始化失败，请重试');
+      showError(t('interview.start_failed'));
       setCurrentStep(0);
     } finally {
       setLoading(false);
@@ -199,7 +258,7 @@ const InterviewPage: React.FC = () => {
 
   const handleSubmitAnswer = async (audioBlob?: Blob) => {
     if (!session || (!answerText.trim() && !audioBlob)) {
-      warning('请输入回答内容');
+      warning(t('interview.answer_required'));
       return;
     }
 
@@ -220,7 +279,7 @@ const InterviewPage: React.FC = () => {
 
       const result = await interviewService.submitAnswer(
         session.id,
-        answerText || '语音回答',
+        answerText || t('interview.audio_answer'),
         audioUrl
       );
 
@@ -231,10 +290,10 @@ const InterviewPage: React.FC = () => {
       } else if (result.nextQuestion) {
         setCurrentQuestion(result.nextQuestion);
         setCurrentIndex((prev) => prev + 1);
-        success('回答已提交，进入下一题');
+        success(t('interview.answer_submitted_next'));
       }
     } catch (err) {
-      showError('提交失败，请重试');
+      showError(t('interview.submit_failed'));
     } finally {
       setProcessing(false);
     }
@@ -247,14 +306,14 @@ const InterviewPage: React.FC = () => {
       setProcessing(true);
       await interviewService.sendMessage(session.id, question);
     } catch (err) {
-      showError('发送失败，请重试');
+      showError(t('interview.live.send_failed'));
     } finally {
       setProcessing(false);
     }
   };
 
   const handleCompletion = (sessionId: string) => {
-    success('面试完成，正在生成反馈...');
+    success(t('interview.completed_generating_feedback'));
     pollFeedback(sessionId);
   };
 
@@ -276,7 +335,7 @@ const InterviewPage: React.FC = () => {
           setReportSessionId(sessionId);
         } else if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
-          warning('报告生成较慢，请稍后在历史记录中查看');
+          warning(t('interview.live.report_slow'));
         }
       } catch (e) {
         if (attempts >= maxAttempts) {
@@ -297,20 +356,20 @@ const InterviewPage: React.FC = () => {
 
   const endSessionEarly = async () => {
     if (!session) return;
-    if (!window.confirm('确定要结束本场面试吗？')) return;
+    if (!window.confirm(t('interview.live.end_confirm'))) return;
     try {
       setProcessing(true);
       await interviewService.endSession(session.id);
       if (interviewMode === 'mock') {
         handleCompletion(session.id);
       } else {
-        success('本场面试已结束，录音与记录已保存');
+        success(t('interview.live.session_ended_saved'));
         resetSessionState();
         setCurrentStep(2);
         loadHistory();
       }
     } catch (err) {
-      showError('结束失败，请重试');
+      showError(t('interview.end_failed'));
     } finally {
       setProcessing(false);
     }
@@ -320,6 +379,10 @@ const InterviewPage: React.FC = () => {
     setInterviewMode(item.mode === 'MOCK' ? 'mock' : 'assist');
     if (item.optimizationId) {
       setSelectedOptimizationId(item.optimizationId);
+      const optimization = optimizations.find(
+        (o) => o.id === item.optimizationId
+      );
+      if (optimization) setSelectedResumeId(optimization.resumeId);
     }
     setCurrentStep(1);
   };
@@ -350,17 +413,17 @@ const InterviewPage: React.FC = () => {
   const progressPercent =
     totalQuestions > 0
       ? Math.round(
-          ((currentIndex + (currentQuestion ? 1 : 0)) / totalQuestions) * 100
-        )
+        ((currentIndex + (currentQuestion ? 1 : 0)) / totalQuestions) * 100
+      )
       : 0;
 
   return (
     <div className="iv-page">
       <Tabs
         items={[
-          { key: 'setup', label: '面试设置' },
-          { key: 'interview', label: '面试进行中' },
-          { key: 'history', label: '历史记录' },
+          { key: 'setup', label: t('interview.setup_title') },
+          { key: 'interview', label: t('interview.live.tab_live') },
+          { key: 'history', label: t('interview.history.tab') },
         ]}
         activeKey={
           currentStep === 0
@@ -389,10 +452,13 @@ const InterviewPage: React.FC = () => {
             onModeChange={setInterviewMode}
             language={language}
             onLanguageChange={setLanguage}
-            optimizations={optimizations}
+            resumes={selectableResumes}
+            selectedResumeId={selectedResumeId}
+            onSelectResume={handleSelectResume}
+            optimizations={visibleOptimizations}
             optimizationsLoading={optimizationsLoading}
             selectedOptimizationId={selectedOptimizationId}
-            onSelectOptimization={setSelectedOptimizationId}
+            onSelectOptimization={handleSelectOptimization}
             personas={personas}
             selectedPersonaId={selectedPersonaId}
             onSelectPersona={setSelectedPersonaId}
@@ -423,14 +489,16 @@ const InterviewPage: React.FC = () => {
                   </div>
                   <Title level={4} style={{ margin: 0 }}>
                     {interviewMode === 'assist'
-                      ? '面试助手 · 实时辅助中'
-                      : '模拟面试 · AI 面试官'}
+                      ? t('interview.live.assist_title')
+                      : t('interview.live.mock_title')}
                   </Title>
                 </div>
                 <Badge
                   variant={interviewMode === 'mock' ? 'primary' : 'default'}
                 >
-                  {interviewMode === 'assist' ? '辅助模式' : '模拟模式'}
+                  {interviewMode === 'assist'
+                    ? t('interview.live.badge_assist')
+                    : t('interview.live.badge_mock')}
                 </Badge>
               </div>
 
@@ -445,9 +513,10 @@ const InterviewPage: React.FC = () => {
                     }}
                   >
                     <span>
-                      问题进度：
-                      {Math.min(currentIndex + 1, totalQuestions || 1)} /{' '}
-                      {totalQuestions || '-'}
+                      {t('interview.live.question_progress', {
+                        current: Math.min(currentIndex + 1, totalQuestions || 1),
+                        total: totalQuestions || '-',
+                      })}
                     </span>
                     <span>{progressPercent}%</span>
                   </div>
@@ -466,7 +535,8 @@ const InterviewPage: React.FC = () => {
                     className="iv-loading-block"
                     style={{ padding: '3rem 0' }}
                   >
-                    <div className="iv-spinner" /> 正在准备面试...
+                    <div className="iv-spinner" />{' '}
+                    {t('interview.live.preparing')}
                   </div>
                 ) : interviewMode === 'assist' ? (
                   <AssistModeView
@@ -486,13 +556,13 @@ const InterviewPage: React.FC = () => {
                 ) : (
                   <div className="iv-empty" style={{ padding: '3rem 1rem' }}>
                     <IconSparkles size={28} />
-                    <span>面试已完成，可在历史记录中查看报告与录音</span>
+                    <span>{t('interview.live.completed_hint')}</span>
                     <Button
                       variant="primary"
                       size="sm"
                       onClick={() => setCurrentStep(2)}
                     >
-                      查看历史记录
+                      {t('interview.live.view_history')}
                     </Button>
                   </div>
                 )}
@@ -503,7 +573,7 @@ const InterviewPage: React.FC = () => {
           <GlassCard padding="lg" className="iv-sticky">
             <div className="iv-row-between" style={{ marginBottom: '1rem' }}>
               <Title level={5} style={{ margin: 0 }}>
-                会话信息
+                {t('interview.live.session_info')}
               </Title>
               <Button
                 variant="danger"
@@ -511,7 +581,7 @@ const InterviewPage: React.FC = () => {
                 onClick={endSessionEarly}
                 loading={processing}
               >
-                结束面试
+                {t('interview.live.end_interview')}
               </Button>
             </div>
 
@@ -523,45 +593,54 @@ const InterviewPage: React.FC = () => {
                 className="iv-voice-cta w-full"
                 style={{ marginBottom: '1rem' }}
               >
-                <IconPhone size={15} /> 语音通话作答（推荐）
+                <IconPhone size={15} /> {t('interview.live.voice_cta')}
               </Button>
             )}
 
             <div className="iv-info-list">
               <div className="iv-info-row">
-                <span className="k">模式</span>
+                <span className="k">{t('interview.live.mode')}</span>
                 <span className="v">
                   {interviewMode === 'assist' ? (
                     <IconHeadphones size={13} />
                   ) : (
                     <IconTarget size={13} />
                   )}
-                  {interviewMode === 'assist' ? '辅助面试' : '模拟面试'}
+                  {interviewMode === 'assist'
+                    ? t('interview.mode_assist')
+                    : t('interview.mode_mock')}
                 </span>
               </div>
               <div className="iv-info-row">
-                <span className="k">答案语言</span>
+                <span className="k">{t('interview.language_label')}</span>
                 <span className="v">
                   <IconGlobe size={13} />
-                  {language === 'zh' ? '中文' : 'English'}
+                  {language === 'zh' ? t('interview.language_zh') : 'English'}
                 </span>
               </div>
               <div className="iv-info-row">
-                <span className="k">简历上下文</span>
+                <span className="k">{t('interview.live.resume_context')}</span>
                 <span className="v">
-                  {selectedOptimizationId
-                    ? optimizations.find((o) => o.id === selectedOptimizationId)
-                        ?.job?.title || '已选择'
-                    : '通用模式'}
+                  {selectedOptimization
+                    ? [
+                      selectedResume?.title ||
+                      selectedOptimization.resume?.title,
+                      selectedOptimization.job?.title,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || t('interview.live.selected')
+                    : selectedResume
+                      ? selectedResume.title
+                      : t('interview.setup.general_mode')}
                 </span>
               </div>
               {interviewMode === 'mock' && (
                 <div className="iv-info-row">
-                  <span className="k">面试官</span>
+                  <span className="k">{t('interview.live.interviewer')}</span>
                   <span className="v">
                     <IconMic size={13} />
                     {personas.find((p) => p.id === selectedPersonaId)?.name ||
-                      '默认面试官'}
+                      t('interview.live.default_interviewer')}
                   </span>
                 </div>
               )}
@@ -570,8 +649,8 @@ const InterviewPage: React.FC = () => {
               <IconClock size={15} />
               <span>
                 {interviewMode === 'assist'
-                  ? '结束后系统自动保存整场录音与转写文本，可在历史记录回放。'
-                  : '整场语音通话将自动录音，面试结束后生成评分报告。'}
+                  ? t('interview.live.assist_tip')
+                  : t('interview.live.mock_tip')}
               </span>
             </div>
           </GlassCard>
@@ -594,7 +673,7 @@ const InterviewPage: React.FC = () => {
         <Modal
           open={isVoiceCallActive}
           onClose={() => handleVoiceCallClose()}
-          title="语音通话"
+          title={t('interview.call.modal_title')}
           width={640}
           footer={null}
         >

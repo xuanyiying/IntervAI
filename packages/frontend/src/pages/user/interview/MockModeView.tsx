@@ -3,6 +3,7 @@ import { AudioChannel, useInterviewSocket } from '@/hooks/useInterviewSocket';
 import { InterviewQuestion } from '@/types';
 import { ASSIST_SAMPLE_RATE, floatTo16BitBase64 } from '@/utils/pcm';
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconBulb, IconMic, IconSend, IconStop } from './icons';
 
 interface MockModeViewProps {
@@ -33,6 +34,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
   sessionId,
   onSubmitAnswer,
 }) => {
+  const { t } = useTranslation();
   const [recording, setRecording] = useState(false);
   const [asrUnavailable, setAsrUnavailable] = useState(false);
   const { warning, error: showError } = useToast();
@@ -210,7 +212,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
       setRecording(true);
     } catch (err) {
       console.error(err);
-      showError('无法访问麦克风，请检查浏览器权限');
+      showError(t('interview.setup.mic_permission'));
       cleanupAudioTap(true);
     }
   };
@@ -224,7 +226,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
 
   const handleSubmit = () => {
     if (!answerText.trim()) {
-      warning('请输入回答内容');
+      warning(t('interview.answer_required'));
       return;
     }
     onSubmitAnswer();
@@ -237,7 +239,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
           <Badge variant="primary">{currentQuestion.questionType}</Badge>
           <span className="iv-status-pill live">
             <span className="iv-rec-dot" />
-            AI 面试官提问
+            {t('interview.mock.ai_asking')}
           </span>
         </div>
         <h4 className="iv-question-text">{currentQuestion.question}</h4>
@@ -253,7 +255,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
               >
                 <IconBulb size={13} />
               </span>
-              答题提示
+              {t('interview.mock.tips_label')}
             </span>
             <ul className="iv-tips-list">
               {currentQuestion.tips.map((tip, idx) => (
@@ -267,12 +269,14 @@ const MockModeView: React.FC<MockModeViewProps> = ({
       <div style={{ marginBottom: '1rem' }}>
         <div className="iv-row-between" style={{ marginBottom: '0.35rem' }}>
           <Text strong className="iv-field-label">
-            你的回答
+            {t('interview.your_answer')}
           </Text>
           {recording && (
             <span className="iv-status-pill live">
               <span className="iv-rec-dot" />
-              {asrUnavailable ? '录音中' : '实时转写中'}
+              {asrUnavailable
+                ? t('interview.mock.recording')
+                : t('interview.mock.transcribing')}
             </span>
           )}
         </div>
@@ -280,7 +284,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
           rows={6}
           value={answerText}
           onChange={(e) => setAnswerText(e.target.value)}
-          placeholder="请输入你的回答，或点击下方麦克风语音作答..."
+          placeholder={t('interview.mock.answer_placeholder')}
           disabled={processing || recording}
         />
       </div>
@@ -301,7 +305,7 @@ const MockModeView: React.FC<MockModeViewProps> = ({
           disabled={recording || processing || !answerText.trim()}
           loading={processing}
         >
-          <IconSend size={15} /> 提交回答
+          <IconSend size={15} /> {t('interview.submit_answer')}
         </Button>
       </div>
 
@@ -316,9 +320,9 @@ const MockModeView: React.FC<MockModeViewProps> = ({
       >
         {recording
           ? asrUnavailable
-            ? '正在录音，说完后点击停止，系统转写后提交'
-            : '正在实时转写，边说边出字，说完点击停止即提交'
-          : '点击麦克风语音作答（实时转写），或输入文字后提交'}
+            ? t('interview.mock.hint_recording_no_asr')
+            : t('interview.mock.hint_recording_asr')
+          : t('interview.mock.hint_idle')}
       </Text>
     </>
   );

@@ -42,7 +42,7 @@ Interview AI 是一个全面的 SaaS 平台，旨在帮助求职者利用人工�
 - 可操作的改进建议
 
 ### 多AI提供商支持
-- 支持主流AI提供商：OpenAI、通义千问、DeepSeek、Gemini 和 Ollama
+- 支持主流AI提供商：OpenAI、通义千问、DeepSeek、Gemini、Ollama、SiliconCloud、OpenRouter
 - 基于性能和可用性的自动模型选择
 - 内置故障转移机制以确保高可用性
 - 使用情况跟踪和成本监控
@@ -89,7 +89,7 @@ Interview AI 是一个全面的 SaaS 平台，旨在帮助求职者利用人工�
 - **数据库**: [PostgreSQL](https://www.postgresql.org/) 与 [Prisma ORM](https://www.prisma.io/)
 - **缓存**: [Redis](https://redis.io/) - 内存数据结构存储
 - **认证**: JWT 与 Passport.js
-- **AI 提供商**: OpenAI、通义千问、DeepSeek、Gemini、Ollama
+- **AI 提供商**: OpenAI、通义千问、DeepSeek、Gemini、Ollama、SiliconCloud、OpenRouter
 - **文件存储**: AWS S3、阿里云 OSS、腾讯 COS、MinIO
 - **日志**: Winston 结构化 JSON 日志
 - **API 文档**: Swagger/OpenAPI 与 NestJS Swagger
@@ -165,6 +165,8 @@ flowchart TD
     G --> G3[DeepSeek]
     G --> G4[Gemini]
     G --> G5[Ollama]
+    G --> G6[SiliconCloud]
+    G --> G7[OpenRouter]
     
     D --> H[对象存储]
     H --> H1[AWS S3]
@@ -219,21 +221,12 @@ flowchart TD
 ├── packages
 │   ├── backend                 # NestJS 后端服务
 │   │   ├── prisma              # 数据库模式和迁移
+│   │   ├── skills              # Skills 技能定义 (Markdown)
 │   │   ├── src
-│   │   │   ├── ai              # 核心 AI 引擎
-│   │   │   ├── ai-providers    # 多 AI 提供商支持
-│   │   │   ├── common          # 共享工具和助手
-│   │   │   ├── conversation    # 聊天功能
-│   │   │   ├── generate        # PDF 生成
-│   │   │   ├── interview       # 面试准备
-│   │   │   ├── job             # 职位管理
-│   │   │   ├── optimization    # 简历优化
-│   │   │   ├── payment         # 支付处理
-│   │   │   ├── quota           # 使用配额
-│   │   │   ├── resume          # 简历管理
-│   │   │   ├── storage         # 文件存储抽象
-│   │   │   ├── user            # 用户管理
-│   │   │   └── ...             # 其他模块
+│   │   │   ├── common          # 共享工具、守卫、拦截器等
+│   │   │   ├── core            # 核心业务模块 (ai、auth、user、chat、conversation、storage、quota、payment 等)
+│   │   │   ├── features        # 功能模块 (resume、job、interview、agents、tasks、voice)
+│   │   │   └── e2e             # 端到端测试
 │   │   └── ...
 │   └── frontend                # React + Vite 前端应用
 │       ├── src
@@ -243,8 +236,7 @@ flowchart TD
 │       │   ├── stores          # Zustand 状态管理
 │       │   └── ...             # 其他前端代码
 │       └── ...
-├── deployment                  # 生产部署配置
-├── config                      # 配置文件
+├── deployment                  # 部署配置 (Docker Compose、Nginx、监控)
 └── scripts                     # 工具脚本
 ```
 
@@ -369,13 +361,13 @@ pnpm test:watch
 #### 开发环境
 
 ```bash
-docker-compose up -d
+docker compose -f deployment/docker-compose.yml up -d
 ```
 
 #### 生产环境
 
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker compose -f deployment/docker-compose.prod.yml up -d
 ```
 
 ### 手动部署
