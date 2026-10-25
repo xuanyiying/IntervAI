@@ -1,0 +1,38 @@
+id: en-60s-managerial
+title: 60 秒英文管理风格自我介绍
+description: 校验管理风格输出、亮点与关键词重叠
+
+input:
+  prompt: |
+    Use your elevator-pitch capability to write a 60-second managerial-style self-introduction. Output ONLY the schema JSON object.
+
+    Resume data (JSON):
+    ---
+    {
+      "personalInfo": { "name": "Alex Rivera" },
+      "experience": [
+        { "company": "PayEasy", "position": "Engineering Manager", "description": ["Led a team of 12 engineers across 3 squads", "Delivered a payments platform handling $4B annually"] }
+      ],
+      "skills": ["Leadership", "Budget planning", "Stakeholder management", "Agile delivery"],
+      "education": [{ "degree": "BSc", "institution": "State University", "field": "Computer Science" }]
+    }
+    ---
+
+    Target job description:
+    ---
+    Director of Engineering, requires experience scaling teams, owning platform reliability, and partnering with product leadership.
+    ---
+
+    Style: managerial
+    Duration: 60 seconds
+
+expect:
+  must_contain:
+    - "highlights"
+    - "overlapPercentage"
+    - "team"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

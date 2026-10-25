@@ -1,0 +1,26 @@
+id: zh-strong-answer
+title: 高质量中文回答应获得高分
+description: 校验结构化且量化的回答被评为 A/B 且总分不低
+
+input:
+  prompt: |
+    请使用 `answer-evaluator` 技能，评估下面这个回答，只输出 schema 规定的 JSON 对象。
+
+    问题：请介绍一次你主导的性能优化项目，说明问题、方案与结果。
+
+    候选人回答：
+    ---
+    在上一家公司，订单查询接口在大促期间 P99 达到 1.2 秒，影响下单转化。我负责主导优化：第一步用慢查询日志定位到三张表的联表扫描；第二步把热点订单写入 Redis，并加本地缓存做二级缓存；第三步把非核心字段拆到冷表。上线后 P99 降到 260 毫秒，数据库 CPU 从 85% 降到 40%，大促期间零超时。复盘时我沉淀了缓存失效与降级方案，后来被复用到支付服务。
+    ---
+
+    输出语言：zh
+
+expect:
+  must_contain:
+    - "overallScore"
+    - "grade"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-strong.js
+  timeout_seconds: 30

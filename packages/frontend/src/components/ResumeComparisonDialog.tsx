@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import {
-  Modal,
-  Tabs,
-  Button,
-  Space,
-  Typography,
-  Tag,
-  ConfigProvider,
-} from 'antd';
 import {
   DownloadOutlined,
+  HistoryOutlined,
   SwapOutlined,
   ThunderboltOutlined,
-  HistoryOutlined,
 } from '@ant-design/icons';
+import {
+  Button,
+  ConfigProvider,
+  Modal,
+  Space,
+  Tabs,
+  Tag,
+  Typography,
+} from 'antd';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -34,6 +35,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
   optimizedContent,
   onDownload,
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('comparison');
 
   const items = [
@@ -41,7 +43,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
       key: 'comparison',
       label: (
         <span className="flex items-center gap-2">
-          <SwapOutlined /> 对比视图
+          <SwapOutlined /> {t('resume.comparison.tab_comparison')}
         </span>
       ),
       children: (
@@ -52,7 +54,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
               <Space>
                 <HistoryOutlined className="text-gray-500" />
                 <span className="font-semibold text-gray-500 uppercase tracking-widest text-xs">
-                  原始版本
+                  {t('resume.comparison.original_version')}
                 </span>
               </Space>
               <Tag
@@ -75,7 +77,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
               <Space>
                 <ThunderboltOutlined className="text-primary-400" />
                 <span className="font-semibold text-primary-400 uppercase tracking-widest text-xs">
-                  AI 优化版本
+                  {t('resume.comparison.optimized_version')}
                 </span>
               </Space>
               <Tag
@@ -98,7 +100,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
       key: 'optimized',
       label: (
         <span className="flex items-center gap-2">
-          <ThunderboltOutlined /> 优化后全文
+          <ThunderboltOutlined /> {t('resume.comparison.tab_optimized')}
         </span>
       ),
       children: (
@@ -136,7 +138,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
                 fontWeight: 700,
               }}
             >
-              简历优化对比报告
+              {t('resume.comparison.title')}
             </Title>
             <Text
               style={{
@@ -146,7 +148,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
                 display: 'block',
               }}
             >
-              基于 AI 深度解析与岗位匹配，为您打造的专业版简历
+              {t('resume.comparison.subtitle')}
             </Text>
           </div>
         }
@@ -159,7 +161,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
             className="flex items-center justify-between w-full px-2 py-1"
           >
             <div className="text-[11px] text-gray-500 italic hidden sm:block">
-              * 优化内容已自动保存至您的简历库
+              {t('resume.comparison.auto_saved_hint')}
             </div>
             <Space size="middle">
               <Button
@@ -167,7 +169,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
                 onClick={onClose}
                 className="!bg-white/5 !border-white/10 !text-gray-400 hover:!text-white hover:!bg-white/10 transition-all !rounded-full px-6"
               >
-                关闭
+                {t('resume.comparison.close')}
               </Button>
               <Button
                 key="download"
@@ -176,7 +178,7 @@ const ResumeComparisonDialog: React.FC<ResumeComparisonDialogProps> = ({
                 onClick={onDownload}
                 className="!bg-primary-500 !border-primary-500 shadow-lg shadow-primary-500/20 hover:scale-105 transition-all !rounded-full px-8 font-semibold"
               >
-                下载简历
+                {t('resume.comparison.download')}
               </Button>
             </Space>
           </div>,

@@ -70,7 +70,10 @@ export class ResumeAIService {
     },
     achievements: {
       quantified: 10,
-      pattern: /\d+%|\d+x|\$\d|\d+ (users|customers|projects|team)/i,
+      // Matches common metric forms: percentages, multipliers, currency,
+      // and counts with units (Chinese and English).
+      pattern:
+        /(?:\d+(?:\.\d+)?\s*(?:%|％|倍|万|亿|人|次|条|项|个|家|天|小时|元|美元)|[$¥￥]\s*\d|\d+\s*[xX]\b|\d[\d,]*\s*(?:users?|customers?|clients?|projects?|team members?|cases?|orders?|hours?|days?))/i,
     },
     education: {
       present: 10,
@@ -83,7 +86,10 @@ export class ResumeAIService {
     },
     contact: {
       complete: 10,
-      requiredFields: ['email', 'phone', 'location'] as const,
+      // Location is intentionally optional: many valid resumes omit it and
+      // parsers often fail to extract it, which must not flag the whole
+      // contact block as incomplete.
+      requiredFields: ['email', 'phone'] as const,
     },
     certifications: { perItem: 5 },
     contextSummary: { present: 5 },
@@ -544,9 +550,16 @@ export class ResumeAIService {
       });
     }
 
-    // Quantified achievements
+    // Quantified achievements — check both the dedicated achievements array
+    // and description bullets, since many resumes weave metrics into duties.
     const hasQuantifiedAchievements = experience.some((exp) =>
-      (exp.achievements || []).some((a) => S.achievements.pattern.test(a))
+      [
+        ...(Array.isArray(exp.achievements) ? exp.achievements : []),
+        ...(Array.isArray(exp.description) ? exp.description : []),
+      ].some(
+        (item) =>
+          typeof item === 'string' && S.achievements.pattern.test(item)
+      )
     );
     if (hasQuantifiedAchievements) {
       strengths.push(
@@ -615,19 +628,32 @@ export class ResumeAIService {
     }
 
     // ── Personal Info completeness ──
-    const filledContactFields = S.contact.requiredFields.filter(
-      (f) => pi[f]
-    ).length;
-    const contactComplete =
-      filledContactFields >= S.contact.requiredFields.length;
+    const contactFieldLabels: Record<string, { zh: string; en: string }> = {
+      email: { zh: '邮箱', en: 'email' },
+      phone: { zh: '电话', en: 'phone' },
+    };
+    const missingContactFields = S.contact.requiredFields.filter(
+      (f) => !String(pi[f] ?? '').trim()
+    );
+    const contactComplete = missingContactFields.length === 0;
     if (!contactComplete) {
+      const missingZh = missingContactFields
+        .map((f) => contactFieldLabels[f].zh)
+        .join('、');
+      const missingEn = missingContactFields
+        .map((f) => contactFieldLabels[f].en)
+        .join(' and ');
       weaknesses.push({
         key: 'contact',
-        text: zh ? '联系方式不完整' : 'Contact information is incomplete',
+        text: zh
+          ? `联系方式不完整：缺少${missingZh}`
+          : `Contact information is incomplete: missing ${missingEn}`,
       });
       suggestions.push({
         key: 'contact',
-        text: zh ? '请补全邮箱、电话与所在地' : 'Ensure email, phone, and location are all provided',
+        text: zh
+          ? `请补充${missingZh}，方便招聘方与您联系`
+          : `Add your ${missingEn} so employers can reach you`,
       });
     }
 

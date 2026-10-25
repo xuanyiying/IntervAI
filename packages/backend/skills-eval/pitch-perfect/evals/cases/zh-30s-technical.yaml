@@ -1,0 +1,39 @@
+id: zh-30s-technical
+title: 30 秒中文技术自我介绍
+description: 校验时长约束、亮点数量与关键词重叠分析
+
+input:
+  prompt: |
+    请使用你的电梯演讲能力，为下面的候选人生成 30 秒技术风格自我介绍，只输出 schema 规定的 JSON 对象。
+
+    简历数据（JSON）：
+    ---
+    {
+      "personalInfo": { "name": "王五" },
+      "experience": [
+        { "company": "某电商公司", "position": "高级后端工程师", "description": ["主导订单系统重构，P99 从 800ms 降到 200ms", "支撑日均 50 万订单"] }
+      ],
+      "skills": ["Java", "Spring Boot", "MySQL", "Redis", "Kafka"],
+      "education": [{ "degree": "本科", "institution": "某大学", "field": "计算机科学" }]
+    }
+    ---
+
+    目标岗位 JD：
+    ---
+    云原生后端工程师，要求具备高并发系统设计经验，熟悉 Kubernetes 与可观测性体系。
+    ---
+
+    风格：technical
+    时长：30 秒
+
+expect:
+  must_contain:
+    - "Kubernetes"
+    - "高并发"
+    - "highlights"
+    - "overlapPercentage"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

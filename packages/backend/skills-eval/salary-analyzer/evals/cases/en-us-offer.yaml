@@ -1,0 +1,24 @@
+id: en-us-offer
+title: 美国岗位美元薪资分析
+description: 校验美元币种、薪资区间排序与谈薪锚点
+
+input:
+  prompt: |
+    Use your salary-analysis capability to analyze the role below. Output ONLY the schema JSON object.
+
+    Job title: Senior Backend Engineer
+    Location: San Francisco, CA
+    Experience: 7 years, distributed systems
+    Skills: Go, Kubernetes, PostgreSQL, Kafka
+    Current offer: base salary 180000 USD, equity 0.15%, signing bonus 15000 USD
+
+expect:
+  must_contain:
+    - "USD"
+    - "San Francisco"
+    - "negotiation"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

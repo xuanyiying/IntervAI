@@ -1,0 +1,32 @@
+id: zh-technical-question
+title: 实时技术问题参考回答
+description: 校验中文技术题的类型判定、精简回答与要点
+
+input:
+  prompt: |
+    我正在面试中，请用 `interview-assistant` 技能给我一份速查参考回答，只输出 schema 规定的 JSON 对象。
+
+    简历要点：
+    ---
+    李四，Java 后端工程师，4 年经验。
+    技能：Java, Spring Boot, MySQL, Redis, Kafka。
+    项目：订单系统重构，Redis 缓存热点数据，P99 从 800ms 降到 200ms。
+    ---
+
+    目标岗位：高级 Java 后端工程师，要求高并发与缓存设计经验。
+
+    面试官问题：请说明你在订单系统重构中，如何保证接口性能与数据一致性？
+
+    面试类型：technical
+    输出语言：zh
+
+expect:
+  must_contain:
+    - "Redis"
+    - "technical"
+    - "questionType"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

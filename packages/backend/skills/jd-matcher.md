@@ -1,6 +1,6 @@
 ---
 name: jd-matcher
-version: 1.1.0
+version: 1.1.1
 description: Matches job descriptions against resumes and provides compatibility analysis
 author: IntervAI Team
 tags: [job, matching, analysis, compatibility]
@@ -57,6 +57,12 @@ IMPORTANT: You MUST generate ALL output text in the SAME language as the resume/
    - Work style
    - Team collaboration
    - Leadership potential
+
+## Output Requirements
+
+- Return ONLY one JSON object, no markdown fences or prose.
+- `strengths`, `concerns`, `recommendations`, and `interviewFocus` MUST each contain at least 3 concrete items. `interviewFocus` lists the topics the interviewer should probe, based on the gaps found.
+- `overallScore` MUST be an integer on a 0-100 scale.
 
 ## Output Format
 

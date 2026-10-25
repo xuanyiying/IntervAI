@@ -150,7 +150,9 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
           ? {
               ...prev,
               suggestions: (prev.suggestions || []).map((s) =>
-                s.id === suggestionId ? { ...s, status: SuggestionStatus.ACCEPTED } : s
+                s.id === suggestionId
+                  ? { ...s, status: SuggestionStatus.ACCEPTED }
+                  : s
               ),
             }
           : prev
@@ -170,7 +172,9 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
           ? {
               ...prev,
               suggestions: (prev.suggestions || []).map((s) =>
-                s.id === suggestionId ? { ...s, status: SuggestionStatus.REJECTED } : s
+                s.id === suggestionId
+                  ? { ...s, status: SuggestionStatus.REJECTED }
+                  : s
               ),
             }
           : prev

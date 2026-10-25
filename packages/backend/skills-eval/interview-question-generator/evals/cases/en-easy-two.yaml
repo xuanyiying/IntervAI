@@ -1,0 +1,33 @@
+id: en-easy-two
+title: 英文简单难度题目与数量约束
+description: 校验 questions 数量为 2 且难度全部为 easy
+
+input:
+  prompt: |
+    Use your interview-question generation capability to produce 2 interview questions for the role below. Output ONLY the schema JSON object.
+
+    Job description:
+    ---
+    Junior Data Analyst — retail analytics
+    Requirements: SQL, Excel, basic Python, ability to communicate findings to business stakeholders.
+    ---
+
+    Candidate resume:
+    ---
+    Sam Patel. 1 year of experience as a business analyst intern.
+    Skills: Excel, SQL, Tableau. Built weekly sales dashboards.
+    ---
+
+    Interview type: behavioral
+    Difficulty: easy
+    Number of questions: 2
+
+expect:
+  must_contain:
+    - "behavioral"
+    - "SQL"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-count-2-easy.js
+  timeout_seconds: 30

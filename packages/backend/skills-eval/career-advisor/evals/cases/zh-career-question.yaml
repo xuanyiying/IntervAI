@@ -1,0 +1,33 @@
+id: zh-career-question
+title: 中文职业发展路径咨询
+description: 校验针对具体问题的建议、差距分析与行动项
+
+input:
+  prompt: |
+    请使用你的职业顾问能力，回答下面的职业问题，只输出 schema 规定的 JSON 对象。
+
+    用户画像（JSON）：
+    ---
+    {
+      "name": "李四",
+      "yearsOfExperience": 5,
+      "currentRole": "Java 后端工程师",
+      "skills": ["Java", "Spring Boot", "MySQL", "Redis", "Kafka"],
+      "resumeText": "5 年后端开发经验，负责订单与支付系统，主导过服务拆分。"
+    }
+    ---
+
+    职业目标：成为后端架构师
+    当前情况：一直在做业务开发，担心缺少架构设计经验
+    具体问题：我应该继续深耕业务开发，还是尽快转向架构方向？需要补哪些能力？
+
+expect:
+  must_contain:
+    - "架构"
+    - "gapAnalysis"
+    - "actionItems"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

@@ -1,0 +1,32 @@
+id: zh-count-three
+title: 严格按数量生成中文面试题
+description: 校验 questions 数量与 categories 统计均为 3
+
+input:
+  prompt: |
+    请使用你的面试题生成能力，为下面岗位生成 3 道面试题，只输出 schema 规定的 JSON 对象。
+
+    JD：
+    ---
+    蚂蚁集团 高级 Java 后端工程师
+    要求：3 年以上 Java 经验，精通 Spring Boot、MySQL；熟悉分布式事务、Redis、Kafka；有高并发经验。
+    ---
+
+    简历：
+    ---
+    李四，4 年 Java 后端经验，负责订单与支付服务，使用 Redis 缓存与 Kafka 解耦。
+    ---
+
+    面试类型：technical
+    难度：mixed
+    题目数量：3
+
+expect:
+  must_contain:
+    - "Spring Boot"
+    - "technical"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-count-3.js
+  timeout_seconds: 30

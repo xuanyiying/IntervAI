@@ -1,0 +1,36 @@
+id: quant-truly-missing
+title: 确实没有量化指标时不得编造数字
+description: 反向用例，防止为了消除误报而把量化规则改得过松
+
+input:
+  prompt: |
+    请使用当前 Skill 解析下面这份简历，只输出 Skill schema 规定的 JSON 对象，不要输出诊断或解释。
+    不要编造简历中不存在的数字或指标。
+
+    简历全文：
+    ---
+    王五
+    电话：13700137000
+    邮箱：wangwu@example.com
+
+    工作经历
+    2019.05 - 至今 某软件公司 后端工程师
+    - 负责订单系统的日常维护与需求开发
+    - 参与代码评审与线上问题排查
+    - 配合产品完成需求评审与排期
+
+    教育背景
+    2015.09 - 2019.06 某大学 计算机科学与技术 本科
+
+    技能
+    Java, MySQL, Git
+    ---
+
+expect:
+  must_contain:
+    - "experience"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-quantified-absent.js
+  timeout_seconds: 30

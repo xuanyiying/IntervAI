@@ -1,0 +1,35 @@
+id: quant-in-description
+title: 量化指标写在 description 时必须保留
+description: 回归「工作经历有数字但 achievements 为空导致误判缺少量化成果」的问题
+
+input:
+  prompt: |
+    请使用当前 Skill 解析下面这份简历，只输出 Skill schema 规定的 JSON 对象，不要输出诊断或解释。
+
+    简历全文：
+    ---
+    李四
+    电话：13900139000
+    邮箱：lisi@example.com
+
+    工作经历
+    2020.07 - 至今 某电商公司 后端工程师
+    - 负责订单系统日常维护与需求开发
+    - 主导接口性能优化，平均响应时间降低 40%
+    - 服务 200 家客户，日均处理 10 万条订单
+
+    教育背景
+    2016.09 - 2020.06 某大学 软件工程 本科
+
+    技能
+    Java, Spring Boot, MySQL, Redis
+    ---
+
+expect:
+  must_contain:
+    - "40%"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-quantified-present.js
+  timeout_seconds: 30

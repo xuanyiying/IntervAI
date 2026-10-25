@@ -1,0 +1,32 @@
+id: en-behavioral-question
+title: 英文行为问题实时回答
+description: 校验行为题识别与 STAR 结构化建议
+
+input:
+  prompt: |
+    I am in a live interview. Use the `interview-assistant` skill to give me a quick reference answer. Output ONLY the schema JSON object.
+
+    Resume highlights:
+    ---
+    Alex Chen, Senior Product Manager, 6 years in B2B SaaS.
+    Led pricing revamp with engineering and sales; ARR grew 22%.
+    Strengths: stakeholder alignment, data-driven prioritization.
+    ---
+
+    Target job: Senior Product Manager, platform team.
+
+    Interviewer question: Tell me about a time you disagreed with an engineering lead. How did you handle it?
+
+    Interview type: behavioral
+    Language: en
+
+expect:
+  must_contain:
+    - "behavioral"
+    - "questionType"
+    - "STAR"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

@@ -1,0 +1,32 @@
+schema_version: v1alpha1
+
+environment:
+  type: none
+
+engine:
+  # Any installed engine works: claude_code / codex / opencode / qwen_code / qodercli.
+  # Override from the CLI, e.g. `--engine claude_code`, when a different
+  # engine is already authenticated on the machine.
+  name: opencode
+  model:
+    provider: qwen
+    name: qwen-plus
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+
+cases:
+  files:
+    - evals/cases/contact-complete.yaml
+    - evals/cases/quant-in-description.yaml
+    - evals/cases/quant-truly-missing.yaml
+    - evals/cases/regression-basic-zh.yaml
+  defaults:
+    timeout_seconds: 120
+    max_turns: 3
+
+benchmark:
+  # Runs every case twice (with_skill / without_skill) so the report
+  # contains pass-rate, token and latency deltas.
+  enabled: true
+
+report:
+  formats: [json, html]

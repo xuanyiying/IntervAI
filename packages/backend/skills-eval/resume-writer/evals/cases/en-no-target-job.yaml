@@ -1,0 +1,42 @@
+id: en-no-target-job
+title: 无目标岗位时的内容优化
+description: 校验缺失目标岗位时不虚构关键词，仍输出完整优化结构
+
+input:
+  prompt: |
+    Use your resume-writing capability to improve the resume below. There is no target job. Output ONLY the schema JSON object.
+
+    Resume data (JSON):
+    ---
+    {
+      "personalInfo": { "name": "Jordan Lee", "email": "jordan@example.com" },
+      "summary": "Frontend developer who builds web apps.",
+      "experience": [
+        {
+          "company": "Acme",
+          "position": "Frontend Developer",
+          "startDate": "2022.04",
+          "endDate": null,
+          "description": ["Worked on the design system", "Fixed bugs in the dashboard"],
+          "achievements": ["Reduced bundle size by 28%"]
+        }
+      ],
+      "skills": ["React", "TypeScript", "CSS"],
+      "education": [{ "degree": "BSc", "institution": "State University", "field": "Computer Science", "endDate": "2021.06" }]
+    }
+    ---
+
+    Optimization focus: content
+
+expect:
+  must_contain:
+    - "optimizations"
+    - "atsScore"
+    - "React"
+  must_not_contain:
+    - "not provided"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

@@ -1,0 +1,36 @@
+id: en-behavioral
+title: 英文行为面试准备材料
+description: 校验 STAR 案例结构与英文输出
+
+input:
+  prompt: |
+    Use your interview-preparation capability to build prep material from the JD and resume below. Output ONLY the schema JSON object.
+
+    Job description:
+    ---
+    Product Manager — Fintech Growth
+    Requirements: 4+ years product management, experience with A/B testing, cross-functional leadership, data-driven decisions.
+    ---
+
+    Resume:
+    ---
+    Alex Rivera
+    Product Manager with 5 years of experience in consumer fintech.
+    2020.02 - present: Product Manager at PayEasy
+    - Led checkout redesign that increased conversion by 18%
+    - Managed a cross-functional team of 8 across product, design and engineering
+    Skills: Product discovery, A/B testing, SQL, stakeholder management
+    ---
+
+    Interview type: behavioral
+
+expect:
+  must_contain:
+    - "behavioralQuestions"
+    - "starExample"
+    - "situation"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

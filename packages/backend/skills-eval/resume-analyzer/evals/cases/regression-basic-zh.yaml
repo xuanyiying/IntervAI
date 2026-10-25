@@ -1,0 +1,51 @@
+id: regression-basic-zh
+title: 中文简历基础解析回归
+description: 保证联系方式与量化规则调整后，正常简历仍能完整解析
+
+input:
+  prompt: |
+    请使用当前 Skill 解析下面这份中文简历，只输出解析后的 JSON 对象，不要输出诊断或解释。
+
+    简历全文：
+    ---
+    赵六
+    电话：13600136000
+    邮箱：zhaoliu@example.com
+    所在地：上海
+
+    个人简介
+    5 年后端开发经验，擅长高并发系统设计与性能优化。
+
+    工作经历
+    2018.07 - 2022.06 某互联网公司 后端工程师
+    - 负责交易系统重构，QPS 从 2000 提升到 8000
+    - 主导缓存改造，数据库负载降低 35%
+
+    2022.07 - 至今 某金融科技公司 高级后端工程师
+    - 负责支付网关设计与实现
+    - 带领 4 人小组完成灰度发布平台建设
+
+    教育背景
+    2014.09 - 2018.06 某大学 计算机科学与技术 本科
+
+    技能
+    Java, Go, Spring Boot, MySQL, Redis, Kafka
+
+    项目经历
+    支付网关重构
+    - 技术栈: Java, Spring Boot, Redis
+    - 核心贡献: 将支付成功率提升 12%
+    ---
+
+expect:
+  must_contain:
+    - "personalInfo"
+    - "experience"
+    - "education"
+    - "skills"
+    - "contextSummary"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-schema.js
+  timeout_seconds: 30
