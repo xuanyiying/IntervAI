@@ -1,0 +1,49 @@
+id: zh-keyword-focus
+title: 关键词导向的简历优化
+description: 校验优化项按 type 分类，并补齐 JD 中缺失的关键词
+
+input:
+  prompt: |
+    请使用你的简历写作能力，按关键词导向优化下面这份简历，只输出 schema 规定的 JSON 对象。
+
+    目标岗位（JD）：
+    ---
+    云原生后端工程师
+    要求：熟悉 Kubernetes、Terraform，具备 Go 或 Java 服务开发经验，了解 CI/CD。
+    ---
+
+    简历数据（JSON）：
+    ---
+    {
+      "personalInfo": { "name": "王五", "email": "wangwu@example.com" },
+      "summary": "4 年后端开发经验，负责订单与支付服务。",
+      "experience": [
+        {
+          "company": "某电商公司",
+          "position": "后端工程师",
+          "startDate": "2021.03",
+          "endDate": null,
+          "description": ["负责订单服务开发", "使用 Java 与 Spring Boot 重构支付回调"],
+          "achievements": ["接口错误率从 1.2% 降到 0.3%"]
+        }
+      ],
+      "skills": ["Java", "Spring Boot", "MySQL", "Redis"],
+      "education": [{ "degree": "本科", "institution": "某大学", "field": "软件工程", "endDate": "2020.06" }]
+    }
+    ---
+
+    优化重点：keywords
+
+expect:
+  must_contain:
+    - "Kubernetes"
+    - "Terraform"
+    - "keyword"
+    - "atsScore"
+  must_not_contain:
+    - "not provided"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

@@ -1,4 +1,11 @@
-import { Button, GlassCard, Modal, Text, Title, useToast } from '@/components/ui';
+import {
+  Button,
+  GlassCard,
+  Modal,
+  Text,
+  Title,
+  useToast,
+} from '@/components/ui';
 import {
   InterviewReport,
   interviewService,
@@ -163,10 +170,15 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
                     <div className="flex-1 h-2.5 bg-[var(--glass-bg)] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min(value, 100)}%`, background: scoreColor(value) }}
+                        style={{
+                          width: `${Math.min(value, 100)}%`,
+                          background: scoreColor(value),
+                        }}
                       />
                     </div>
-                    <span className="text-sm font-medium w-10 text-right">{value}</span>
+                    <span className="text-sm font-medium w-10 text-right">
+                      {value}
+                    </span>
                   </div>
                 );
               })}
@@ -205,7 +217,10 @@ const InterviewReportModal: React.FC<InterviewReportModalProps> = ({
               <Text strong className="block mb-3">
                 {t('interview.report.detailed_analysis')}
               </Text>
-              <div className="space-y-3" style={{ maxHeight: 320, overflowY: 'auto' }}>
+              <div
+                className="space-y-3"
+                style={{ maxHeight: 320, overflowY: 'auto' }}
+              >
                 {analysis.detailedAnalysis.map((item, idx) => (
                   <GlassCard key={item.questionId || idx} padding="sm">
                     <div className="flex items-start justify-between gap-3 mb-2">

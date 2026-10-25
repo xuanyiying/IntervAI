@@ -1,0 +1,24 @@
+id: zh-shanghai-offer
+title: 上海后端岗位薪资与谈薪分析
+description: 校验人民币币种、分位区间与谈薪目标区间
+
+input:
+  prompt: |
+    请使用你的薪资分析能力，分析下面岗位的薪资与谈薪策略，只输出 schema 规定的 JSON 对象。
+
+    岗位：高级后端工程师
+    城市：上海
+    经验：5 年，Java 后端，带过 3 人小组
+    关键技能：Java, Spring Boot, MySQL, Redis, 分布式系统
+    当前 Offer：月薪 35k × 15 个月
+
+expect:
+  must_contain:
+    - "上海"
+    - "negotiation"
+    - "35"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-cny.js
+  timeout_seconds: 30

@@ -191,7 +191,7 @@ const InterviewPage: React.FC = () => {
       const effectiveOptimizationId =
         selectedOptimizationId ||
         (urlOptimizationId &&
-          optimizations.some((o) => o.id === urlOptimizationId)
+        optimizations.some((o) => o.id === urlOptimizationId)
           ? urlOptimizationId
           : null);
 
@@ -203,8 +203,8 @@ const InterviewPage: React.FC = () => {
 
       const activeSession = effectiveOptimizationId
         ? await interviewService
-          .getActiveSession(effectiveOptimizationId)
-          .catch(() => null)
+            .getActiveSession(effectiveOptimizationId)
+            .catch(() => null)
         : null;
 
       if (activeSession) {
@@ -413,8 +413,8 @@ const InterviewPage: React.FC = () => {
   const progressPercent =
     totalQuestions > 0
       ? Math.round(
-        ((currentIndex + (currentQuestion ? 1 : 0)) / totalQuestions) * 100
-      )
+          ((currentIndex + (currentQuestion ? 1 : 0)) / totalQuestions) * 100
+        )
       : 0;
 
   return (
@@ -514,7 +514,10 @@ const InterviewPage: React.FC = () => {
                   >
                     <span>
                       {t('interview.live.question_progress', {
-                        current: Math.min(currentIndex + 1, totalQuestions || 1),
+                        current: Math.min(
+                          currentIndex + 1,
+                          totalQuestions || 1
+                        ),
                         total: totalQuestions || '-',
                       })}
                     </span>
@@ -623,12 +626,12 @@ const InterviewPage: React.FC = () => {
                 <span className="v">
                   {selectedOptimization
                     ? [
-                      selectedResume?.title ||
-                      selectedOptimization.resume?.title,
-                      selectedOptimization.job?.title,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ') || t('interview.live.selected')
+                        selectedResume?.title ||
+                          selectedOptimization.resume?.title,
+                        selectedOptimization.job?.title,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ') || t('interview.live.selected')
                     : selectedResume
                       ? selectedResume.title
                       : t('interview.setup.general_mode')}

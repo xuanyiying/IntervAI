@@ -1,0 +1,26 @@
+id: en-weak-answer
+title: 空洞英文回答应获得低分并给出改进项
+description: 校验弱回答被识别为 C/D/F 且 improvements 非空
+
+input:
+  prompt: |
+    Use the `answer-evaluator` skill to assess the answer below. Output ONLY the schema JSON object.
+
+    Question: Tell me about a time you handled a conflict on a team.
+
+    Candidate answer:
+    ---
+    I am a hard worker and I get along with everyone. I never really had conflicts, so I don't have a specific example. I just try to be nice and do my job.
+    ---
+
+    Output language: en
+
+expect:
+  must_contain:
+    - "overallScore"
+    - "improvements"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-weak.js
+  timeout_seconds: 30

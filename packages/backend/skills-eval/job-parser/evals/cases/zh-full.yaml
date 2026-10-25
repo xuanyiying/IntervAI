@@ -1,0 +1,41 @@
+id: zh-full
+title: 中文 JD 的完整结构化解析
+description: 校验标题、公司、地点、薪资、技能与学历等字段能否完整抽取
+
+input:
+  prompt: |
+    请使用你的岗位解析能力解析下面这份招聘信息，只输出 schema 规定的 JSON 对象，不要输出解释。
+
+    招聘信息：
+    ---
+    【急聘】高级 Java 后端工程师 - 字节跳动
+
+    工作地点：北京 朝阳区
+    薪资范围：25k-40k RMB/月
+
+    岗位职责：
+    1. 负责电商交易系统后端服务的设计与开发；
+    2. 主导核心接口性能优化，保障大促期间系统稳定；
+    3. 参与技术方案评审与代码 review。
+
+    任职要求：
+    1. 本科及以上学历，计算机相关专业；
+    2. 3 年以上 Java 后端开发经验，精通 Spring Boot、MySQL；
+    3. 熟悉 Redis、Kafka，有高并发经验者优先；
+    4. 有 Kubernetes 使用经验者优先。
+    ---
+
+expect:
+  must_contain:
+    - "字节跳动"
+    - "北京"
+    - "Java"
+    - "Spring Boot"
+    - "RMB"
+    - "salaryRange"
+    - "bachelor"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

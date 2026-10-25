@@ -290,9 +290,7 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       }
     },
     onAsrError: (data) => {
-      showError(
-        t('interview.assist.asr_error', { message: data.message })
-      );
+      showError(t('interview.assist.asr_error', { message: data.message }));
     },
     onError: (err) => {
       if (/not available/i.test(err.message || '')) {
@@ -583,7 +581,8 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
           <div className="iv-row-between">
             <div style={{ minWidth: 0 }}>
               <Text strong className="iv-share-title">
-                <IconRadio size={14} /> {t('interview.assist.speaker_separation')}
+                <IconRadio size={14} />{' '}
+                {t('interview.assist.speaker_separation')}
               </Text>
               <Text type="secondary" className="iv-share-desc">
                 {tabSharing
@@ -672,7 +671,9 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
                   ? formatDuration(savedRecording.durationSec)
                   : '-',
             })}
-            {savedRecording.transcript ? t('interview.assist.saved_transcript') : ''}
+            {savedRecording.transcript
+              ? t('interview.assist.saved_transcript')
+              : ''}
           </Text>
           {savedRecording.recordingUrl && (
             <audio
@@ -715,7 +716,8 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
       {streamingAnswer && (
         <div className="iv-stream-card">
           <div className="iv-msg-role">
-            <IconSparkles size={12} /> {t('interview.assist.role_ai_generating')}
+            <IconSparkles size={12} />{' '}
+            {t('interview.assist.role_ai_generating')}
           </div>
           <StreamingMarkdownBubble
             content={streamingAnswer}
@@ -743,8 +745,8 @@ const AssistModeView: React.FC<AssistModeViewProps> = ({
               style={
                 listening
                   ? {
-                    height: `${Math.max(15, Math.min(100, volume * 100 + ((idx * 37) % 25)))}%`,
-                  }
+                      height: `${Math.max(15, Math.min(100, volume * 100 + ((idx * 37) % 25)))}%`,
+                    }
                   : undefined
               }
             />

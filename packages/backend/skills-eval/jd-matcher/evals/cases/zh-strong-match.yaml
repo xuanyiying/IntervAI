@@ -1,0 +1,44 @@
+id: zh-strong-match
+title: 中文简历与 JD 高匹配度分析
+description: 校验技能 matched/missing 拆分、分数与中文分析文本
+
+input:
+  prompt: |
+    请使用你的岗位匹配分析能力，分析下面这份简历与该 JD 的匹配度，只输出 schema 规定的 JSON 对象。
+
+    JD：
+    ---
+    高级 Java 后端工程师（某互联网公司）
+    要求：
+    1. 3 年以上 Java 开发经验；
+    2. 精通 Spring Boot、MySQL；
+    3. 熟悉 Redis、Kafka 等中间件；
+    4. 本科及以上学历，计算机相关专业。
+    ---
+
+    简历：
+    ---
+    李四
+    电话：13900139000 | 邮箱：lisi@example.com
+    工作经历：
+    2021.07 - 至今 某电商公司 Java 后端工程师
+    - 使用 Spring Boot 开发订单服务，支撑日均 50 万订单
+    - 使用 MySQL 与 Redis 优化查询性能，响应时间降低 35%
+    教育背景：
+    2017.09 - 2021.06 某大学 计算机科学与技术 本科
+    技能：Java, Spring Boot, MySQL, Redis, Docker
+    ---
+
+expect:
+  must_contain:
+    - "Java"
+    - "Spring Boot"
+    - "Kafka"
+    - "missing"
+  must_not_contain:
+    - "not provided"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

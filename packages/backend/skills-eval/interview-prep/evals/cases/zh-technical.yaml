@@ -1,0 +1,37 @@
+id: zh-technical
+title: 中文技术面试准备材料
+description: 校验技术题、行为题、自我介绍脚本等核心模块是否齐全
+
+input:
+  prompt: |
+    请使用你的面试准备能力，根据下面 JD 与简历生成面试准备材料，只输出 schema 规定的 JSON 对象。
+
+    JD：
+    ---
+    字节跳动 高级 Java 后端工程师
+    要求：3 年以上 Java 经验，精通 Spring Boot、MySQL、Redis，有高并发系统经验。
+    ---
+
+    简历：
+    ---
+    李四，4 年 Java 后端开发经验。
+    2020.07 - 至今 某电商公司 后端工程师
+    - 使用 Spring Boot 重构订单服务，支撑日均 50 万订单
+    - 使用 Redis 缓存热点数据，接口 P99 从 800ms 降到 200ms
+    技能：Java, Spring Boot, MySQL, Redis, Kafka
+    ---
+
+    面试类型：technical
+
+expect:
+  must_contain:
+    - "technicalQuestions"
+    - "behavioralQuestions"
+    - "personalPitch"
+    - "字节跳动"
+    - "Spring Boot"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

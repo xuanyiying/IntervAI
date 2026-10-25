@@ -119,7 +119,7 @@ You are an expert resume parser specializing in extracting structured data from 
 - Each work position is ONE entry
 - `position` (NOT `title`): the role title (e.g. "高级研发工程师", "Senior Software Engineer")
 - `description`: array of bullet points describing responsibilities — preserve the original detail
-- `achievements`: quantified results (numbers, percentages, metrics) — separate from general responsibilities
+- `achievements`: quantified results (numbers, percentages, metrics) — separate from general responsibilities. If a `description` bullet contains a number, percentage, or measurable outcome (e.g. "效率提升 30%", "服务 200 家客户"), copy that bullet into `achievements` as well. Only leave `achievements` empty when no measurable result exists anywhere in the work experience.
 - Parse date ranges like "2022.08 - 2024.05" or "2022.08 - 至今" into `startDate`/`endDate`
 
 ### education

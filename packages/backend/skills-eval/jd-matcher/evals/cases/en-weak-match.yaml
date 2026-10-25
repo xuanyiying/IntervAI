@@ -1,0 +1,41 @@
+id: en-weak-match
+title: 英文低匹配度分析需指出核心缺口
+description: 校验跨栈转岗场景下的缺口识别与英文输出
+
+input:
+  prompt: |
+    Use your job-matching capability to compare the resume with the job description. Output ONLY the schema JSON object.
+
+    Job description:
+    ---
+    Senior Rust Systems Engineer (Core Infrastructure)
+    Requirements:
+    - 8+ years of systems programming experience
+    - Deep expertise in Rust and async runtimes
+    - Experience building distributed storage or consensus systems
+    - Strong Kubernetes and Linux internals knowledge
+    ---
+
+    Resume:
+    ---
+    Alex Chen
+    Frontend Developer with 2 years of experience.
+    2023.01 - present: React Developer at a startup
+    - Built dashboards with React and TypeScript
+    - Improved Lighthouse score from 62 to 90
+    Skills: JavaScript, React, TypeScript, CSS
+    Education: BSc in Information Systems
+    ---
+
+expect:
+  must_contain:
+    - "Rust"
+    - "React"
+    - "missing"
+  must_not_contain:
+    - "not provided"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

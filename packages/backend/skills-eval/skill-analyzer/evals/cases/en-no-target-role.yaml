@@ -1,0 +1,21 @@
+id: en-no-target-role
+title: 未提供目标岗位时自动推断方向
+description: 校验从当前技能推断目标角色并输出完整学习路径
+
+input:
+  prompt: |
+    Use your skill-analysis capability to analyze the candidate below. No target role is provided. Output ONLY the schema JSON object.
+
+    Current skills: Python, SQL, Pandas, basic statistics
+    Experience: 1 year as a reporting analyst building Excel and SQL reports
+
+expect:
+  must_contain:
+    - "coreSkills"
+    - "learningPath"
+    - "Python"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

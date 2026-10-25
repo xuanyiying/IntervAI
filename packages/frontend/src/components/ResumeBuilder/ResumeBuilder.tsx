@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ResumeEditor } from './components/ResumeEditor';
 import { ResumeNavbar } from './components/ResumeNavbar';
 import { ResumePreview } from './components/ResumePreview';
@@ -9,6 +10,7 @@ import { useResumeBuilder } from './hooks/useResumeBuilder';
 import './ResumeBuilder.css';
 
 export const ResumeBuilder: React.FC = () => {
+  const { t } = useTranslation();
   const {
     sections,
     setSections,
@@ -122,10 +124,12 @@ export const ResumeBuilder: React.FC = () => {
 
       <footer className="rb-meta">
         <div className="rb-meta-group">
-          <span>{sections.length} 个模块</span>
+          <span>
+            {t('resume_builder.section_count', { num: sections.length })}
+          </span>
           <span className="rb-meta-group">
             <span className="rb-dot" />
-            已自动保存
+            {t('resume_builder.auto_saved')}
           </span>
         </div>
         <span>v1.0.0</span>

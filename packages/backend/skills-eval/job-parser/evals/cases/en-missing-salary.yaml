@@ -1,0 +1,42 @@
+id: en-missing-salary
+title: 英文 JD 缺失薪资与学历时不得臆造
+description: 校验缺失字段留空或标注未知，且不虚构薪资数字
+
+input:
+  prompt: |
+    Parse the following job posting with your job-parsing capability. Output ONLY the JSON object defined by the schema, no explanation.
+
+    Job posting:
+    ---
+    Staff Backend Engineer — Northwind Labs
+    Location: Remote (US time zones)
+
+    About the role:
+    We are building a real-time collaboration platform and need a backend engineer to own our event pipeline.
+
+    Responsibilities:
+    - Design and operate high-throughput event ingestion services in Go
+    - Own Kubernetes-based deployment and observability
+    - Partner with product teams on API design
+
+    Requirements:
+    - 5+ years of backend engineering experience
+    - Production experience with Go and Kubernetes
+    - Experience with distributed systems and message queues
+    ---
+
+expect:
+  must_contain:
+    - "Staff Backend Engineer"
+    - "Northwind Labs"
+    - "Remote"
+    - "Go"
+    - "Kubernetes"
+  must_not_contain:
+    - "$"
+    - "USD"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

@@ -1,0 +1,36 @@
+id: contact-complete
+title: 邮箱与电话齐全时必须完整解析联系方式
+description: 回归「简历有电话邮件却提示联系方式不完整」的误报
+
+input:
+  prompt: |
+    请使用当前 Skill 解析下面这份简历，只输出 Skill schema 规定的 JSON 对象，不要输出诊断或解释。
+
+    简历全文：
+    ---
+    张三
+    电话：13800138000
+    邮箱：zhangsan@example.com
+    求职意向：后端开发工程师
+
+    工作经历
+    2021.03 - 至今 某科技公司 高级后端工程师
+    - 负责订单系统重构，接口平均响应时间降低 40%
+    - 服务 200 家客户，日均处理 10 万条订单
+
+    教育背景
+    2017.09 - 2021.06 某大学 计算机科学与技术 本科
+
+    技能
+    Java, Spring Boot, MySQL, Redis, Docker
+    ---
+
+expect:
+  must_contain:
+    - "zhangsan@example.com"
+    - "13800138000"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check-contact.js
+  timeout_seconds: 30

@@ -14,11 +14,7 @@ import { formatDateTime } from '../../i18n';
 import { ParseStatus, Resume } from '../../types';
 
 export type ResumeViewMode =
-  | 'detail'
-  | 'preview'
-  | 'history'
-  | 'analysis'
-  | 'optimization';
+  'detail' | 'preview' | 'history' | 'analysis' | 'optimization';
 
 interface ResumeDetailHeaderProps {
   resume: Resume;

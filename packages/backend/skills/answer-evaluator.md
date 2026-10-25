@@ -1,6 +1,6 @@
 ---
 name: answer-evaluator
-version: 1.1.0
+version: 1.1.1
 description: Evaluates interview answers and provides feedback and scoring
 author: IntervAI Team
 tags: [interview, evaluation, feedback, scoring]
@@ -47,6 +47,15 @@ IMPORTANT: You MUST generate ALL feedback text in the following language:
 - If language is "zh" → ALL text in Chinese (中文)
 - If language is "en" → ALL text in English
 - If no language is specified, match the language of the question and answer
+
+## Output Contract (STRICT)
+
+- Output ONLY one JSON object. Do NOT wrap it in XML/HTML tags, code fences, or prose.
+- The JSON MUST contain these exact top-level keys: `overallScore`, `grade`, `breakdown`, `feedback`, `sampleAnswer`, `followUpQuestions`, `recommendations`.
+- Do NOT rename or flatten these keys (e.g. a top-level `score` or `strengths` is invalid).
+- `grade` MUST be one of `A`, `B`, `C`, `D`, `F`.
+- `overallScore` and every `breakdown.*.score` MUST be integers on a 0-100 scale (e.g. 85, not 8.5).
+                                                                                                                              - The JSON MUST be syntactically valid: every object property separated by commas, every string double-quoted, and inner quotes escaped.
 
 ## Evaluation Framework
 

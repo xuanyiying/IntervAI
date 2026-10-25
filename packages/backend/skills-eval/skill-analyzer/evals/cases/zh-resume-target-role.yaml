@@ -1,0 +1,31 @@
+id: zh-resume-target-role
+title: 基于中文简历与目标岗位的技能差距分析
+description: 校验核心技能抽取、关键差距与学习路径
+
+input:
+  prompt: |
+    请使用你的技能分析能力，分析下面候选人相对目标岗位的技能差距，只输出 schema 规定的 JSON 对象。
+
+    候选人简历：
+    ---
+    王五，4 年前端开发经验。
+    2021.03 - 至今 某 SaaS 公司 前端工程师
+    - 使用 Vue 2 与 JavaScript 开发管理后台
+    - 使用 Webpack 优化构建，首屏时间降低 30%
+    技能：Vue, JavaScript, HTML, CSS, Webpack
+    教育：某大学 软件工程 本科
+    ---
+
+    目标岗位：高级前端工程师
+    岗位要求：精通 React 与 TypeScript，具备工程化与性能优化经验，熟悉单元测试。
+
+expect:
+  must_contain:
+    - "TypeScript"
+    - "coreSkills"
+    - "skillGaps"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

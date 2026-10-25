@@ -198,14 +198,20 @@ const SetupStep: React.FC<SetupStepProps> = ({
               <IconSparkles size={28} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <h2 className="iv-hero-title">{t('interview.setup.hero_title')}</h2>
-              <p className="iv-hero-sub">{t('interview.setup.hero_subtitle')}</p>
+              <h2 className="iv-hero-title">
+                {t('interview.setup.hero_title')}
+              </h2>
+              <p className="iv-hero-sub">
+                {t('interview.setup.hero_subtitle')}
+              </p>
             </div>
           </div>
         </div>
 
         <div>
-          <span className="iv-field-label">{t('interview.setup.select_mode')}</span>
+          <span className="iv-field-label">
+            {t('interview.setup.select_mode')}
+          </span>
           <div className="iv-mode-grid">
             {(Object.keys(MODE_META) as InterviewMode[]).map((key) => {
               const meta = MODE_META[key];
@@ -453,8 +459,8 @@ const SetupStep: React.FC<SetupStepProps> = ({
                     <span className="iv-opt-title">
                       {vpEnrolling
                         ? t('interview.setup.voiceprint_speak', {
-                          seconds: vpCountdown,
-                        })
+                            seconds: vpCountdown,
+                          })
                         : t('interview.setup.voiceprint_not_enrolled')}
                     </span>
                     <Button
@@ -483,7 +489,9 @@ const SetupStep: React.FC<SetupStepProps> = ({
                 {t('interview.select_persona')}
               </span>
               {personas.length === 0 ? (
-                <div className="iv-empty">{t('interview.setup.no_personas')}</div>
+                <div className="iv-empty">
+                  {t('interview.setup.no_personas')}
+                </div>
               ) : (
                 <div className="iv-persona-list">
                   {personas.map((persona) => {

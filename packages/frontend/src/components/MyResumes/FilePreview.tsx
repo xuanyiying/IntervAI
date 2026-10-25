@@ -103,9 +103,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     return (
       <div className="h-full flex flex-col items-center justify-center gap-4">
         <FileWordOutlined style={{ fontSize: 48, color: '#2b579a' }} />
-        <Text type="secondary">
-          {t('resume.preview.doc_unavailable')}
-        </Text>
+        <Text type="secondary">{t('resume.preview.doc_unavailable')}</Text>
         {downloadButton}
       </div>
     );
@@ -117,9 +115,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
       return (
         <div className="h-full flex flex-col items-center justify-center gap-3">
           <Spin size="large" />
-          <Text type="secondary">
-            {t('resume.preview.docx_loading')}
-          </Text>
+          <Text type="secondary">{t('resume.preview.docx_loading')}</Text>
         </div>
       );
     }
@@ -130,7 +126,10 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
             {t('resume.preview.error')}
             {error ? `: ${error}` : ''}
           </Text>
-          <Button icon={<ReloadOutlined />} onClick={() => window.location.reload()}>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() => window.location.reload()}
+          >
             {t('common.retry', '重试')}
           </Button>
           {downloadButton}

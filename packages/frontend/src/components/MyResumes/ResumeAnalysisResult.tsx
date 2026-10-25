@@ -142,10 +142,7 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
         </Col>
 
         <Col span={24}>
-          <Card
-            title={t('resume.analysis.suggestions_title')}
-            hoverable
-          >
+          <Card title={t('resume.analysis.suggestions_title')} hoverable>
             <List
               grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
               dataSource={result.suggestions}

@@ -68,7 +68,9 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
         setResult(data);
         if (!silent) {
           message.success(
-            force ? t('resume.analysis.rediagnosed') : t('resume.analysis.diagnosed')
+            force
+              ? t('resume.analysis.rediagnosed')
+              : t('resume.analysis.diagnosed')
           );
         }
       }

@@ -1,0 +1,33 @@
+id: en-transition
+title: 英文跨职能转岗建议
+description: 校验转岗可行性、路径选项与行动建议
+
+input:
+  prompt: |
+    Use your career-advisor capability to answer the question below. Output ONLY the schema JSON object.
+
+    User profile (JSON):
+    ---
+    {
+      "name": "Priya Nair",
+      "yearsOfExperience": 6,
+      "currentRole": "Marketing Manager",
+      "skills": ["Campaign strategy", "Analytics", "Stakeholder communication", "Budget management"],
+      "resumeText": "6 years in B2B marketing, led demand generation and worked closely with product and sales."
+    }
+    ---
+
+    Career goal: transition into product management
+    Current situation: no formal product title, strong cross-functional exposure
+    Question: What is a realistic path into product management within 12 months?
+
+expect:
+  must_contain:
+    - "roduct"
+    - "careerPath"
+    - "actionItems"
+
+judge:
+  type: script
+  script_path: evals/fixtures/scripts/check.js
+  timeout_seconds: 30

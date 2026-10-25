@@ -8,7 +8,7 @@ import {
   IconCheck,
   IconMic,
   IconPhone,
-  IconWifi
+  IconWifi,
 } from '../pages/user/interview/icons';
 import {
   ASSIST_SAMPLE_RATE,
@@ -84,9 +84,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
   const [autoDetectMode, setAutoDetectMode] = useState(mode !== 'mock');
   const [detectedQuestion, setDetectedQuestion] = useState<string>('');
   /** Live Q&A transcript shown inside the call. */
-  const [dialog, setDialog] = useState<
-    { role: 'user' | 'ai'; text: string }[]
-  >([]);
+  const [dialog, setDialog] = useState<{ role: 'user' | 'ai'; text: string }[]>(
+    []
+  );
   const [partialText, setPartialText] = useState('');
   const dialogScrollRef = useRef<HTMLDivElement>(null);
   const { success, error: showError, info } = useToast();
@@ -107,7 +107,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
 
   // ---- realtime voice call engine state ----
   const voiceEngineRef = useRef<VoiceEngine>('legacy');
-  const voiceFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const pcmPlayerRef = useRef<PcmStreamPlayer | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
   const captureSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
@@ -159,14 +161,20 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       // Mock: final user utterance from `end_audio`. Show it as a bubble.
       if (!data.text || data.final === false) return;
       setPartialText('');
-      setDialog((prev) => [...prev.slice(-49), { role: 'user', text: data.text }]);
+      setDialog((prev) => [
+        ...prev.slice(-49),
+        { role: 'user', text: data.text },
+      ]);
     },
     onTranscriptionPartial: (data) => {
       setPartialText(data.text);
     },
     onAiResponse: (data) => {
       if (!data.text) return;
-      setDialog((prev) => [...prev.slice(-49), { role: 'ai', text: data.text }]);
+      setDialog((prev) => [
+        ...prev.slice(-49),
+        { role: 'ai', text: data.text },
+      ]);
     },
     onReconnecting: (_attempt) => {
       setStatus('reconnecting');
@@ -788,8 +796,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const latencyClass =
-    latency < 100 ? 'ok' : latency < 200 ? 'warn' : 'live';
+  const latencyClass = latency < 100 ? 'ok' : latency < 200 ? 'warn' : 'live';
 
   const getStatusText = () => {
     switch (status) {
@@ -819,8 +826,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       <div className="iv-row-between iv-call-header">
         <div className="iv-row">
           <span
-            className={`iv-status-pill${isReconnecting ? ' warn' : isConnected ? ' ok' : ''
-              }`}
+            className={`iv-status-pill${
+              isReconnecting ? ' warn' : isConnected ? ' ok' : ''
+            }`}
           >
             {getStatusText()}
           </span>
@@ -851,9 +859,14 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
               scale: status === 'speaking' ? [1, 1.15, 1] : 1,
               opacity: status === 'speaking' ? 1 : 0.75,
             }}
-            transition={{ repeat: status === 'speaking' ? Infinity : 0, duration: 1.5 }}
+            transition={{
+              repeat: status === 'speaking' ? Infinity : 0,
+              duration: 1.5,
+            }}
             className="iv-call-orb"
-            style={{ boxShadow: `0 0 ${Math.max(12, aiVolume)}px rgba(99, 102, 241, 0.55)` }}
+            style={{
+              boxShadow: `0 0 ${Math.max(12, aiVolume)}px rgba(99, 102, 241, 0.55)`,
+            }}
           >
             {status === 'speaking' ? (
               <IconBulb size={38} />
@@ -869,7 +882,8 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
                 exit={{ opacity: 0 }}
                 className="iv-call-orb-hint"
               >
-                <span className="iv-spinner" /> {t('interview.call.status_thinking')}
+                <span className="iv-spinner" />{' '}
+                {t('interview.call.status_thinking')}
               </motion.div>
             )}
             {status === 'reconnecting' && (
@@ -900,7 +914,10 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
         )}
 
         {mode === 'assist' && detectedQuestion && (
-          <div className="iv-call-question iv-msg-bubble user" style={{ margin: 0 }}>
+          <div
+            className="iv-call-question iv-msg-bubble user"
+            style={{ margin: 0 }}
+          >
             <div className="iv-msg-role">
               {t('interview.call.detected_question')}
             </div>
@@ -916,7 +933,9 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
           <div className="iv-call-dialog" ref={dialogScrollRef}>
             {dialog.map((m, idx) => (
               <div key={idx} className="iv-call-dialog-line">
-                <span className={`iv-speaker-chip${m.role === 'user' ? ' self' : ''}`}>
+                <span
+                  className={`iv-speaker-chip${m.role === 'user' ? ' self' : ''}`}
+                >
                   {m.role === 'user'
                     ? t('interview.assist.speaker_self')
                     : t('interview.live.interviewer')}
@@ -954,7 +973,10 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       <div className="iv-call-footer">
         <div className="iv-call-duration">{formatDuration(callDuration)}</div>
 
-        <div className="iv-row" style={{ justifyContent: 'center', gap: '1rem' }}>
+        <div
+          className="iv-row"
+          style={{ justifyContent: 'center', gap: '1rem' }}
+        >
           {mode === 'assist' && (
             <div className="iv-row" style={{ gap: '0.4rem' }}>
               <Text type="secondary" style={{ fontSize: '0.75rem' }}>
@@ -994,9 +1016,7 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
             disabled={!isCalling}
             className="iv-call-circle"
             title={
-              isMuted
-                ? t('interview.call.unmute')
-                : t('interview.call.mute')
+              isMuted ? t('interview.call.unmute') : t('interview.call.mute')
             }
           >
             <IconMic size={22} />
@@ -1014,7 +1034,10 @@ const VoiceInterviewCall: React.FC<VoiceInterviewCallProps> = ({
       </div>
 
       {!browserSupported && (
-        <div className="iv-tip" style={{ justifyContent: 'center', marginTop: '0.75rem' }}>
+        <div
+          className="iv-tip"
+          style={{ justifyContent: 'center', marginTop: '0.75rem' }}
+        >
           <IconBulb size={15} />
           <span>{t('interview.call.browser_tip')}</span>
         </div>

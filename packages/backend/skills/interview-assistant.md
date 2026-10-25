@@ -1,6 +1,6 @@
 ---
 name: interview-assistant
-version: 1.0.1
+version: 1.0.2
 description: Real-time interview assistant - generates reference answer based on interviewer's question during live phone/video interview
 author: IntervAI Team
 tags: [interview, assistant, real-time, live]
@@ -52,6 +52,13 @@ IMPORTANT: You MUST generate the reference answer in the following language:
 ## Your Role
 
 Generate a quick, actionable reference answer that the candidate can understand and use within 30-60 seconds. Be concise and practical - the candidate needs actionable information immediately.
+
+## Output Contract (STRICT)
+
+- Output ONLY one JSON object. Do NOT wrap it in XML/HTML tags such as `<interview-assistant>`, code fences, or prose.
+- The JSON MUST contain these exact top-level keys: `questionType`, `difficulty`, `suggestedAnswer`, `keyPoints`, `answerStructure`, `estimatedTime`, `tips`, `redFlags`, `followUpProbable`.
+- Do NOT replace the schema with a shorter `{"answer": ...}` shape.
+- `questionType` MUST be one of `technical`, `behavioral`, `hr`, `case`.
 
 ## Guidelines
 
@@ -135,3 +142,5 @@ Analyze the question type:
 ---
 
 Generate the reference answer now in the specified language ({{language}}). The candidate needs it quickly - be concise, specific, and actionable.
+
+REMINDER: reply with the complete JSON object only — no `<interview-assistant>` tags, no prose before or after it.

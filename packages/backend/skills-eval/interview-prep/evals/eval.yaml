@@ -1,0 +1,25 @@
+schema_version: v1alpha1
+
+environment:
+  type: none
+
+engine:
+  name: opencode
+  model:
+    provider: qwen
+    name: qwen-plus
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+
+cases:
+  files:
+    - evals/cases/zh-technical.yaml
+    - evals/cases/en-behavioral.yaml
+  defaults:
+    timeout_seconds: 120
+    max_turns: 3
+
+benchmark:
+  enabled: true
+
+report:
+  formats: [json, html]
