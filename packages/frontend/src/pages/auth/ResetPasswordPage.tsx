@@ -67,7 +67,9 @@ const ResetPasswordPage: React.FC = () => {
       <Card
         className="glass-card"
         style={{
-          width: 400,
+          width: '100%',
+          maxWidth: 400,
+          margin: '0 16px',
           background: 'var(--glass-bg, rgba(255,255,255,0.05))',
           border: '1px solid var(--glass-border, rgba(255,255,255,0.1))',
         }}

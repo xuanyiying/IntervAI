@@ -1,11 +1,33 @@
 .chat-page-container {
   width: 100%;
-  height: 100%;
+  /* Mobile: viewport minus mobile header, content padding and safe area */
+  height: calc(100vh - 96px);
+  height: calc(100dvh - 96px - env(safe-area-inset-top));
   background-color: var(--bg-primary);
   color: var(--text-primary);
   position: relative;
   overflow: hidden;
   transition: var(--theme-transition);
+}
+
+@media (min-width: 768px) {
+  .chat-page-container {
+    /* Content padding is 24px on tablet */
+    height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-page-container {
+    /* Content padding is 32px on desktop */
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+  }
+}
+
+.chat-scroll-area {
+  overscroll-behavior: contain;
 }
 
 .welcome-container {

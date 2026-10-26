@@ -38,7 +38,8 @@ const VerifyEmailPage: React.FC = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          minHeight: '100vh',
+          padding: 16,
         }}
       >
         <Spin size="large" tip="Verifying your email..." />
@@ -53,7 +54,8 @@ const VerifyEmailPage: React.FC = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          minHeight: '100vh',
+          padding: 16,
         }}
       >
         <Result

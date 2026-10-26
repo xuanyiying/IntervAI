@@ -194,9 +194,11 @@ const AppLayout: React.FC = () => {
               aria-label={t('common.language')}
               className="theme-toggle-btn"
             >
-              {currentLanguage === 'zh-CN'
-                ? t('common.lang_cn')
-                : t('common.lang_en')}
+              <span className="mobile-lang-label">
+                {currentLanguage === 'zh-CN'
+                  ? t('common.lang_cn')
+                  : t('common.lang_en')}
+              </span>
             </Button>
           </Dropdown>
           <Dropdown
@@ -283,8 +285,8 @@ const AppLayout: React.FC = () => {
         placement="left"
         onClose={() => setMobileDrawerOpen(false)}
         open={mobileDrawerOpen}
+        width="min(320px, 85vw)"
         styles={{ body: { padding: 0, background: 'transparent' } }}
-        size="default"
         closable={false}
       >
         <Sidebar

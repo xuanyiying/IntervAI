@@ -62,10 +62,7 @@ const RegisterPage: React.FC = () => {
       const code = error?.response?.data?.error?.code;
       if (status === 409 || code === 'CONFLICT') {
         message.warning(
-          t(
-            'auth.email_already_exists',
-            '该邮箱已被注册，请直接登录或更换邮箱'
-          )
+          t('auth.email_already_exists', '该邮箱已被注册，请直接登录或更换邮箱')
         );
       } else {
         message.error(t('auth.register_failed', 'Registration failed.'));
@@ -83,7 +80,7 @@ const RegisterPage: React.FC = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4">
+      <div className="glass-card p-6 md:p-8 w-full max-w-md relative z-10 mx-4">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <Logo width={64} height={64} className="shadow-lg rounded-2xl" />

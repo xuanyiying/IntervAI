@@ -207,6 +207,7 @@ const AccountSubscriptionPage: React.FC = () => {
             columns={recordColumns as any}
             rowKey="id"
             pagination={{ pageSize: 8 }}
+            scroll={{ x: 'max-content' }}
             locale={{
               emptyText: t('account.subscription.records_empty', '暂无记录'),
             }}
@@ -222,6 +223,7 @@ const AccountSubscriptionPage: React.FC = () => {
             columns={billingColumns as any}
             rowKey="id"
             pagination={{ pageSize: 8 }}
+            scroll={{ x: 'max-content' }}
             locale={{
               emptyText: t('account.subscription.billing_empty', '暂无账单'),
             }}

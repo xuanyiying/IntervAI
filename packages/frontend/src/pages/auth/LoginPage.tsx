@@ -80,7 +80,7 @@ const LoginPage: React.FC = () => {
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary-500/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="glass-card p-8 w-full max-w-md relative z-10 mx-4 border border-[var(--glass-border)]">
+      <div className="glass-card p-6 md:p-8 w-full max-w-md relative z-10 mx-4 border border-[var(--glass-border)]">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <Logo width={64} height={64} className="shadow-lg rounded-2xl" />

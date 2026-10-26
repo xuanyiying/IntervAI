@@ -68,7 +68,7 @@ const MyResumesPage: React.FC = () => {
 
   return (
     <div className="my-resumes-container">
-      <div className="max-w-7xl mx-auto mb-10 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto mb-10 flex flex-wrap items-center justify-between gap-4">
         <Title level={2} className="!mb-0 flex items-center gap-3">
           <FileTextOutlined className="text-primary" />
           {t('menu.my_resumes', '我的简历')}

@@ -461,3 +461,55 @@
 .full-screen-modal .ant-modal-close:hover {
   background: rgba(0, 0, 0, 0.1) !important;
 }
+
+/* ------------------------------------------------------------------ */
+/* Responsive                                                          */
+/* ------------------------------------------------------------------ */
+
+@media (max-width: 1024px) {
+  .resumes-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .resume-content {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .my-resumes-container {
+    padding: 1rem;
+    min-height: auto;
+  }
+
+  .resume-detail-header {
+    padding: 1rem;
+  }
+
+  .resume-detail-body {
+    padding: 1rem;
+  }
+
+  .resume-content {
+    border-radius: 16px;
+  }
+
+  .data-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+
+  .experience-timeline {
+    padding-left: 1.25rem;
+  }
+
+  .experience-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

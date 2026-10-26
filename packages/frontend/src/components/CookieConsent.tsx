@@ -34,7 +34,7 @@ const CookieConsent: React.FC = () => {
         right: 0,
         backgroundColor: '#fff',
         borderTop: '1px solid #e8e8e8',
-        padding: '16px 24px',
+        padding: '16px clamp(16px, 5vw, 24px)',
         zIndex: 1000,
         boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
       }}
@@ -50,7 +50,7 @@ const CookieConsent: React.FC = () => {
           gap: '16px',
         }}
       >
-        <div style={{ flex: 1, minWidth: '300px' }}>
+        <div style={{ flex: 1, minWidth: 'min(300px, 100%)' }}>
           <p style={{ margin: 0 }}>
             We use cookies to enhance your experience. By continuing to visit
             this site you agree to our use of cookies.{' '}

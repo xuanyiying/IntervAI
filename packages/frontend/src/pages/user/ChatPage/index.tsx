@@ -408,7 +408,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="chat-page-container flex flex-col h-full w-full relative overflow-hidden">
+    <div className="chat-page-container flex flex-col w-full relative overflow-hidden">
       {/* Guest Header */}
       {!user && (
         <div className="w-full bg-blue-50 dark:bg-blue-900/20 border-b border-blue-100 dark:border-blue-800 px-4 py-2 flex items-center justify-between z-20">
@@ -449,7 +449,7 @@ const ChatPage: React.FC = () => {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col h-full relative z-10 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 relative z-10 overflow-hidden">
         {items.length <= 1 &&
         !loading &&
         !isLoadingMessages &&

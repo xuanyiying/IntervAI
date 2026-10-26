@@ -31,11 +31,12 @@ const ForgotPasswordPage: React.FC = () => {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          minHeight: '100vh',
+          padding: 16,
           background: '#f0f2f5',
         }}
       >
-        <Card style={{ width: 400, textAlign: 'center' }}>
+        <Card style={{ width: '100%', maxWidth: 400, textAlign: 'center' }}>
           <Title level={3}>Check Your Email</Title>
           <Text>
             We have sent a password reset link to your email address. Please
@@ -55,11 +56,12 @@ const ForgotPasswordPage: React.FC = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh',
+        minHeight: '100vh',
+        padding: 16,
         background: '#f0f2f5',
       }}
     >
-      <Card style={{ width: 400 }}>
+      <Card style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <Title level={3}>Forgot Password</Title>
           <Text type="secondary">Enter your email to reset your password</Text>

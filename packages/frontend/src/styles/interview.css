@@ -1188,6 +1188,25 @@
     padding: 0.4rem 0.75rem;
     font-size: 0.8rem;
   }
+
+  .iv-call {
+    min-height: 420px;
+  }
+
+  .iv-call-orb {
+    width: 88px;
+    height: 88px;
+  }
+
+  .iv-call-question,
+  .iv-call-dialog {
+    max-width: 100%;
+  }
+
+  .iv-hero {
+    padding: var(--spacing-5);
+    border-radius: var(--radius-xl);
+  }
 }
 
 .iv-sticky {
