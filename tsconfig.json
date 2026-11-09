@@ -14,7 +14,15 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["packages/backend/src/*", "packages/frontend/src/*"]
+    },
+    "typeRoots": [
+      "./node_modules/@types",
+      "./packages/backend/node_modules/@types"
+    ]
   },
   "exclude": ["node_modules", "dist"]
 }

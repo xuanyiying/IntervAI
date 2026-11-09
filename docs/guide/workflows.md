@@ -1,57 +1,59 @@
-# GitHub Actions CI/CD Workflows
+# CI/CD 工作流
 
-This document describes the automated CI/CD workflows configured for the IntervAI MVP project.
+`.github/workflows/` 中实际只有 3 个 workflow。仓库没有 `security.yml`、`pr-checks.yml`，也没有 CodeQL / Trivy / `npm audit` 任务。
 
-## Workflows Overview
+## `ci.yml` — CI
 
-### 1. CI Workflow (`ci.yml`)
+**触发**：push 到 `main` / `develop`，或针对这两个分支的 PR。
 
-**Trigger**: Push to `main` or `develop` branches, Pull Requests
+| Job        | 主要步骤                                                                                                                                                                          |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint`     | pnpm 9 + Node 20，`pnpm install --frozen-lockfile`，`pnpm run lint`                                                                                                               |
+| `backend`  | services：`postgres:15-alpine`、`redis:7-alpine`；注入 `DATABASE_URL`、`REDIS_*`、`JWT_SECRET`、AI / OSS 相关变量；`prisma:generate` → `prisma migrate deploy` → `test` → `build` |
+| `frontend` | `VITE_API_BASE_URL=http://localhost:3000/api/v1`；`typecheck` → `test` → `build`                                                                                                  |
 
-**Jobs**:
-- **Lint**: Runs ESLint on all code
-- **Test Backend**: Runs Jest tests with PostgreSQL and Redis services
-- **Test Frontend**: Runs Vitest tests
-- **Build Backend**: Builds NestJS application
-- **Build Frontend**: Builds React application with Vite
-- **Build Docker**: Builds and pushes Docker images to GitHub Container Registry
+分支保护中要求的状态检查名即 `lint`、`backend`、`frontend`。CI 不构建或推送 Docker 镜像。注意 CI 的 PostgreSQL 是 15，而本地 `deployment/docker-compose.yml` 是 16；`release.yml` 使用 Node 18，只有 `ci.yml` 使用 Node 20。
 
-### 2. Deploy Workflow (`deploy.yml`)
+## `deploy.yml` — 部署
 
-**Trigger**: Push to `main` branch, Manual workflow dispatch
+**触发**：push 到 `main`、push `v*` tag、`workflow_dispatch`（必填 `environment`，默认 `staging`，可选 staging / production）。
 
-**Jobs**:
-- **Deploy**: Builds Docker images and deploys to staging or production
-- **Notify**: Sends Slack notifications on deployment status
+主要步骤：
 
-### 3. Security Workflow (`security.yml`)
+1. Buildx 登录 `ghcr.io`，`docker/metadata-action` 生成镜像元数据；镜像名由 `Resolve image references` 步骤统一转为小写（GHCR 要求），tag 为版本号（tag 触发）或 `latest`（分支触发），另附 `sha-<short>`。
+2. 用 `packages/backend/Dockerfile`、`packages/frontend/Dockerfile` 构建并推送两个镜像。
+3. 创建 GitHub Deployment。
+4. 部署条件：手动选 `staging` → staging 步骤；手动选 `production`、`push main`、`push v*` tag → production 步骤。
+5. SSH 到目标主机执行 `docker compose --env-file .env.production -f deployment/docker-compose.prod.yml pull backend frontend` 与 `up -d`，远端通过 `BACKEND_IMAGE` / `FRONTEND_IMAGE` 使用刚推送的镜像；compose 中两个服务都定义了 `image`，因此 `pull` 有效。
+6. 更新 Deployment 状态（不再写入 `example.com` 占位 URL），`notify` job 通过 Slack 发送结果。
 
-**Trigger**: Push to `main` or `develop`, Pull Requests, Daily schedule (2 AM UTC)
+需要配置 9 个自定义 Secret：`DEPLOY_KEY_STAGING`、`DEPLOY_HOST_STAGING`、`DEPLOY_USER_STAGING`、`DEPLOY_PATH_STAGING`、`DEPLOY_KEY_PRODUCTION`、`DEPLOY_HOST_PRODUCTION`、`DEPLOY_USER_PRODUCTION`、`DEPLOY_PATH_PRODUCTION`、`SLACK_WEBHOOK_URL`。目标主机必须有 `.env.production`。
 
-**Jobs**:
-- **Dependency Check**: Runs `npm audit`
-- **CodeQL Analysis**: Performs static code analysis
-- **Container Scan**: Scans Docker images using Trivy
-- **Secret Scan**: Scans for exposed secrets using TruffleHog
+## `release.yml` — 发版
 
-### 4. PR Checks Workflow (`pr-checks.yml`)
+**触发**：push `v*` tag。
 
-**Trigger**: Pull Requests to `main` or `develop`
+| Job                 | 内容                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `create-release`    | 创建 GitHub Release（`actions/create-release@v1`）                                                                       |
+| `build-and-push`    | 构建并推送两个镜像                                                                                                       |
+| `publish-artifacts` | pnpm 9 + Node 18，`build:backend` / `build:frontend`，打包 `dist/` 为 tar.gz 并上传（`actions/upload-release-asset@v1`） |
+| `notify-release`    | Slack 通知                                                                                                               |
 
-**Jobs**:
-- **Validate PR**: Validates PR title (semantic commit)
-- **Check Changes**: Detects changed files
-- **Test Backend (PR)**: Runs backend tests if backend files changed
-- **Test Frontend (PR)**: Runs frontend tests if frontend files changed
-- **Lint (PR)**: Runs linter
-- **Docker Build (PR)**: Builds Docker images if Dockerfile changed
+`actions/create-release@v1`、`actions/upload-release-asset@v1` 均为已归档的旧 Action，建议迁移到 `softprops/action-gh-release` 或 `gh release create`。
 
-### 5. Release Workflow (`release.yml`)
+## `dependabot.yml`
 
-**Trigger**: Push of version tags (e.g., `v1.0.0`)
+npm / docker / github-actions 三类依赖每周检查；`reviewers` 目前仍是占位值 `your-github-username`。
 
-**Jobs**:
-- **Create Release**: Creates GitHub release with changelog
-- **Build and Push**: Builds and pushes Docker images with version tags
-- **Publish Artifacts**: Creates and uploads build artifacts to release
-- **Notify Release**: Sends Slack notification
+## 本地等价命令
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build:backend
+pnpm build:frontend
+```
+
+也可不经过 CI，直接用根目录 `deploy.sh` 部署，详见 [部署与运维](../../deployment/README.md)。

@@ -1,89 +1,108 @@
 #!/bin/bash
 # ==============================================================================
-# 数据库管理脚本 - IntervAI
+# 数据库管理 - backup | restore | list | migrate
+# 可从仓库任意目录调用；deploy.sh --backup 会执行 `backup`。
 # ==============================================================================
 
-# 加载工具库
+set -euo pipefail
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+export PROJECT_ROOT
+cd "$PROJECT_ROOT"
+
 source "${SCRIPT_DIR}/utils.sh"
 
-# 配置
-BACKUP_DIR="${BACKUP_DIR:-./backups/postgres}"
-RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+BACKUP_DIR="${BACKUP_DIR:-deployment/backups/postgres}"
+RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-7}"
+ENV_FILE=""
+COMPOSE_FILE=""
+DEPLOY_ENV="${DEPLOY_ENV:-}"
 
-# 帮助信息
 show_help() {
     echo "用法: $0 <command> [options]"
     echo ""
     echo "命令:"
-    echo "  backup              备份数据库"
+    echo "  backup              备份数据库（写入 deployment/backups/postgres/）"
     echo "  restore <file>      从备份文件恢复数据库"
     echo "  list                列出所有备份"
-    echo "  migrate             执行数据库迁移"
+    echo "  migrate             执行 Prisma 迁移"
     echo ""
-    echo "示例:"
-    echo "  $0 backup"
-    echo "  $0 restore interview_ai_20240101.sql.gz"
+    echo "环境判定: DEPLOY_ENV=dev|prod 显式指定；否则按 .env.production / .env 自动判定。"
+    echo "可用环境变量: DEPLOY_ENV、BACKUP_DIR、BACKUP_RETENTION_DAYS、POSTGRES_USER、POSTGRES_DB"
 }
 
-# 确定环境配置
+# 环境配置：两个 compose 文件都在 deployment/ 下
+# DEPLOY_ENV 可由 deploy.sh --env 显式传入；未指定时按 env 文件自动判定
 detect_env_config() {
-    if [ -f ".env.production" ]; then
-        ENV_FILE=".env.production"
-        COMPOSE_FILE="deployment/docker-compose.prod.yml"
-    elif [ -f ".env" ]; then
-        ENV_FILE=".env"
-        COMPOSE_FILE="docker-compose.yml"
-    else
-        log_error "未找到环境配置文件 (.env 或 .env.production)"
-        exit 1
-    fi
+    case "${DEPLOY_ENV:-auto}" in
+        prod)
+            ENV_FILE=".env.production"
+            COMPOSE_FILE="deployment/docker-compose.prod.yml"
+            DEPLOY_ENV="prod"
+            ;;
+        dev)
+            ENV_FILE=".env"
+            COMPOSE_FILE="deployment/docker-compose.yml"
+            DEPLOY_ENV="dev"
+            ;;
+        *)
+            if [ -f .env.production ]; then
+                ENV_FILE=".env.production"
+                COMPOSE_FILE="deployment/docker-compose.prod.yml"
+                DEPLOY_ENV="prod"
+            elif [ -f .env ]; then
+                ENV_FILE=".env"
+                COMPOSE_FILE="deployment/docker-compose.yml"
+                DEPLOY_ENV="dev"
+            else
+                log_error "未找到环境配置文件 (.env 或 .env.production)"
+                exit 1
+            fi
+            ;;
+    esac
 
-    load_env "$ENV_FILE"
+    if [ -f "$ENV_FILE" ]; then
+        load_env "$ENV_FILE"
+    else
+        log_warn "环境变量文件不存在: $ENV_FILE（使用当前进程环境）"
+    fi
 }
 
-# 检查 Docker 状态
 check_docker_status() {
-    if ! docker compose -f $COMPOSE_FILE ps --services --filter "status=running" | grep -q "postgres"; then
+    if ! docker compose -f "$COMPOSE_FILE" ps --services --filter "status=running" | grep -qx "postgres"; then
         log_error "PostgreSQL 服务未运行，无法执行操作"
         exit 1
     fi
 }
 
-# 备份数据库
 backup_db() {
     detect_env_config
     check_docker_status
 
-    local timestamp=$(date +"%Y%m%d_%H%M%S")
+    local timestamp
+    timestamp=$(date +"%Y%m%d_%H%M%S")
     local backup_file="interview_ai_${timestamp}.sql.gz"
     local backup_path="${BACKUP_DIR}/${backup_file}"
 
-    log_info "开始 PostgreSQL 备份..."
-    mkdir -p ${BACKUP_DIR}
+    log_info "开始 PostgreSQL 备份 ($DEPLOY_ENV)..."
+    mkdir -p "$BACKUP_DIR"
 
-    # 执行备份
-    docker compose -f $COMPOSE_FILE exec -T postgres pg_dump \
-        -U ${POSTGRES_USER:-postgres} \
-        -d ${POSTGRES_DB:-interview_ai} \
+    docker compose -f "$COMPOSE_FILE" exec -T postgres pg_dump \
+        -U "${POSTGRES_USER:-postgres}" \
+        -d "${POSTGRES_DB:-interview_ai}" \
         --format=custom \
         --compress=9 \
-        | gzip > "${backup_path}"
+        | gzip > "$backup_path"
 
-    if [ $? -eq 0 ]; then
-        local size=$(du -h "${backup_path}" | cut -f1)
-        log_info "✓ 备份成功: ${backup_file} (大小: ${size})"
+    local size
+    size=$(du -h "$backup_path" | cut -f1)
+    log_info "✓ 备份成功: ${backup_file} (大小: ${size})"
 
-        # 清理旧备份
-        log_info "清理 ${RETENTION_DAYS} 天前的旧备份..."
-        find ${BACKUP_DIR} -name "interview_ai_*.sql.gz" -type f -mtime +${RETENTION_DAYS} -delete
-    else
-        log_error "备份失败"
-        exit 1
-    fi
+    find "$BACKUP_DIR" -name "interview_ai_*.sql.gz" -type f -mtime "+${RETENTION_DAYS}" -delete
+    log_info "已清理 ${RETENTION_DAYS} 天前的旧备份"
 }
 
-# 恢复数据库
 restore_db() {
     local backup_file="$1"
     if [ -z "$backup_file" ]; then
@@ -95,14 +114,12 @@ restore_db() {
     detect_env_config
 
     local backup_path="${BACKUP_DIR}/${backup_file}"
-    if [ ! -f "${backup_path}" ]; then
-        # 尝试直接路径
-        if [ -f "${backup_file}" ]; then
-            backup_path="${backup_file}"
-        else
-            log_error "备份文件不存在: ${backup_path}"
-            exit 1
-        fi
+    if [ ! -f "$backup_path" ] && [ -f "$backup_file" ]; then
+        backup_path="$backup_file"
+    fi
+    if [ ! -f "$backup_path" ]; then
+        log_error "备份文件不存在: ${backup_path}"
+        exit 1
     fi
 
     check_docker_status
@@ -113,66 +130,51 @@ restore_db() {
     sleep 5
 
     log_info "正在恢复数据库..."
-
-    gunzip -c "${backup_path}" | docker compose -f $COMPOSE_FILE exec -T postgres pg_restore \
-        -U ${POSTGRES_USER:-postgres} \
-        -d ${POSTGRES_DB:-interview_ai} \
+    gunzip -c "$backup_path" | docker compose -f "$COMPOSE_FILE" exec -T postgres pg_restore \
+        -U "${POSTGRES_USER:-postgres}" \
+        -d "${POSTGRES_DB:-interview_ai}" \
         --clean \
         --if-exists \
         --no-owner \
         --no-privileges
 
-    if [ $? -eq 0 ]; then
-        log_info "✓ 数据库恢复成功"
+    log_info "✓ 数据库恢复成功"
+    if [ "$DEPLOY_ENV" = "prod" ]; then
         log_info "重启后端服务..."
-        docker compose -f $COMPOSE_FILE restart backend
+        docker compose -f "$COMPOSE_FILE" restart backend
     else
-        log_error "恢复失败"
-        exit 1
+        log_info "开发 compose 不含 backend 容器，跳过重启"
     fi
 }
 
-# 列出备份
 list_backups() {
-    if [ ! -d "${BACKUP_DIR}" ]; then
+    if [ ! -d "$BACKUP_DIR" ]; then
         log_warn "备份目录不存在: ${BACKUP_DIR}"
         return
     fi
 
     echo "现有备份:"
-    ls -lh "${BACKUP_DIR}"/interview_ai_*.sql.gz 2>/dev/null
+    ls -lh "${BACKUP_DIR}"/interview_ai_*.sql.gz 2>/dev/null || echo "（暂无备份）"
 }
 
-# 数据库迁移
 migrate_db() {
     detect_env_config
-    log_info "执行数据库迁移..."
-    docker compose -f $COMPOSE_FILE run --rm backend npx prisma migrate deploy
+    check_docker_status
 
-    if [ $? -eq 0 ]; then
-        log_info "✓ 数据库迁移成功"
+    log_info "执行数据库迁移 ($DEPLOY_ENV)..."
+    if [ "$DEPLOY_ENV" = "prod" ]; then
+        docker compose -f "$COMPOSE_FILE" run --rm backend prisma migrate deploy
     else
-        log_error "数据库迁移失败"
-        exit 1
+        # 开发 compose 只有基础设施，没有 backend 服务，迁移走本地 Prisma
+        pnpm --filter @interview-ai/backend exec prisma migrate deploy
     fi
+    log_info "✓ 数据库迁移成功"
 }
 
-# 主逻辑
-case "$1" in
-    backup)
-        backup_db
-        ;;
-    restore)
-        restore_db "$2"
-        ;;
-    list)
-        list_backups
-        ;;
-    migrate)
-        migrate_db
-        ;;
-    *)
-        show_help
-        exit 1
-        ;;
+case "${1:-}" in
+    backup) backup_db ;;
+    restore) restore_db "${2:-}" ;;
+    list) list_backups ;;
+    migrate) migrate_db ;;
+    *) show_help; exit 1 ;;
 esac

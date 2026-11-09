@@ -41,8 +41,10 @@ RUN cd packages/backend && pnpm run build
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 RUN pnpm deploy --filter=@interview-ai/backend --prod /app/deploy
 
+# 运行时需要 dist（应用）、prisma（迁移）与 skills（AI 技能定义，skill-loader 默认读 cwd/skills）
 RUN cp -r packages/backend/dist /app/deploy/dist && \
     cp -r packages/backend/prisma /app/deploy/prisma && \
+    cp -r packages/backend/skills /app/deploy/skills && \
     cp packages/backend/.env.example /app/deploy/.env.example
 
 # Stage 3: Runtime
@@ -65,9 +67,11 @@ RUN adduser --system --uid 1001 nestjs
 
 COPY --from=builder --chown=nestjs:nodejs /app/deploy /app
 
-RUN npm install -g prisma@5.22.0 && \
-    cd /app && prisma generate && \
-    npm uninstall -g prisma
+# CLI 版本必须与 pnpm-lock.yaml 中的 @prisma/client 7.9.1 一致；
+# 保留 CLI 以便容器内执行 `prisma migrate deploy`。
+RUN npm install -g prisma@7.9.1 && \
+    printf "export default { schema: './prisma/schema.prisma', datasource: { url: process.env.DATABASE_URL } };\n" > /app/prisma.config.ts && \
+    cd /app && prisma generate
 
 RUN mkdir -p /app/backups /app/logs && \
     chown -R nestjs:nodejs /app/backups /app/logs

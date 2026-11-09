@@ -1,0 +1,654 @@
+import { AIEngine } from '@/modules/ai';
+import { PromptService } from '@/modules/prompts';
+import { PrismaService } from '@/infrastructure/database/services/prisma.service';
+import { ParsedJobData, ParsedResumeData } from '@/types';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { InterviewStatus, MessageRole } from '@prisma/client';
+import {
+  aggregateDimensions,
+  AnswerEvaluation,
+  DIMENSION_LABELS_ZH,
+  EVALUATION_DIMENSIONS,
+  EvaluationDimension,
+  extractEvaluations,
+  weightedOverallScore,
+} from '../interfaces/answer-evaluation.types';
+
+export type ReportDimensions = Record<EvaluationDimension, number>;
+
+export interface InterviewReportAnalysis {
+  overallScore: number;
+  dimensions: ReportDimensions;
+  strengths: string[];
+  improvements: string[];
+  detailedAnalysis: {
+    questionId: string;
+    question: string;
+    answer: string;
+    score: number;
+    feedback: string;
+    keywords: string[];
+    suggestions: string[];
+  }[];
+  recommendations: string[];
+  nextSteps: string[];
+}
+
+export interface InterviewReport {
+  sessionId: string;
+  generatedAt: string;
+  candidateInfo: {
+    name: string;
+    email?: string;
+  };
+  jobInfo: {
+    title: string;
+    company: string;
+  };
+  interviewDuration: number;
+  totalQuestions: number;
+  answeredQuestions: number;
+  transcript: {
+    role: string;
+    content: string;
+    timestamp: string;
+  }[];
+  analysis: InterviewReportAnalysis;
+  markdown: string;
+}
+
+@Injectable()
+export class InterviewReportService {
+  private readonly logger = new Logger(InterviewReportService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private aiEngine: AIEngine,
+    private promptService: PromptService
+  ) {}
+
+  async generateReport(
+    sessionId: string,
+    userId: string
+  ): Promise<InterviewReport> {
+    const session = await this.prisma.interviewSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'asc' },
+        },
+        optimization: {
+          include: {
+            resume: true,
+            job: true,
+          },
+        },
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundException(`Session with ID ${sessionId} not found`);
+    }
+
+    if (session.userId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to access this session'
+      );
+    }
+
+    if (session.status !== InterviewStatus.COMPLETED) {
+      throw new ForbiddenException(
+        'Interview session must be completed before generating report'
+      );
+    }
+
+    if (!session.optimization) {
+      throw new BadRequestException(
+        'Cannot generate report for session without optimization context'
+      );
+    }
+
+    const resumeData = session.optimization.resume
+      ?.parsedData as unknown as ParsedResumeData;
+    const jobData = session.optimization.job
+      ?.parsedRequirements as unknown as ParsedJobData;
+
+    const questions = session.optimizationId
+      ? await this.prisma.interviewQuestion.findMany({
+          where: { optimizationId: session.optimizationId },
+          orderBy: { createdAt: 'asc' },
+        })
+      : [];
+
+    // Per-question six-dimension evaluations written during the session
+    const perQuestionEvaluations = extractEvaluations(
+      session.messages
+        .filter((m: any) => m.role === MessageRole.ASSISTANT)
+        .map((m: any) => m.content)
+    );
+
+    const analysis = await this.analyzeInterview(
+      session,
+      questions,
+      resumeData,
+      jobData,
+      perQuestionEvaluations
+    );
+
+    const transcript = session.messages.map((m) => ({
+      role: m.role === MessageRole.USER ? '候选人' : '面试官',
+      content: m.content.replace(/<!--EVAL_JSON:[\s\S]*?-->/g, '').trim(),
+      timestamp: m.createdAt.toISOString(),
+    }));
+
+    const startTime = new Date(session.startTime);
+    const endTime = session.endTime ? new Date(session.endTime) : new Date();
+    const duration = Math.round(
+      (endTime.getTime() - startTime.getTime()) / 1000 / 60
+    );
+
+    const report: InterviewReport = {
+      sessionId: session.id,
+      generatedAt: new Date().toISOString(),
+      candidateInfo: {
+        name: resumeData?.personalInfo?.name || '未知候选人',
+        email: resumeData?.personalInfo?.email,
+      },
+      jobInfo: {
+        title: session.optimization.job?.title || '未知职位',
+        company: session.optimization.job?.company || '未知公司',
+      },
+      interviewDuration: duration,
+      totalQuestions: questions.length,
+      answeredQuestions: session.messages.filter(
+        (m) => m.role === MessageRole.USER
+      ).length,
+      transcript,
+      analysis,
+      markdown: '',
+    };
+
+    report.markdown = this.generateMarkdown(report);
+
+    return report;
+  }
+
+  private async analyzeInterview(
+    session: any,
+    questions: any[],
+    resumeData: ParsedResumeData,
+    jobData: ParsedJobData,
+    perQuestionEvaluations: AnswerEvaluation[]
+  ): Promise<InterviewReportAnalysis> {
+    const jobTitle = session.optimization.job.title || 'Unknown Role';
+    const company = session.optimization.job.company || 'Unknown Company';
+    const requirements = [
+      ...(jobData?.requiredSkills || []),
+      ...(jobData?.responsibilities || []),
+    ].join('; ');
+
+    const messages = session.messages;
+    const userMessages = messages.filter(
+      (m: any) => m.role === MessageRole.USER
+    );
+
+    const transcript = messages
+      .map((m: any) =>
+        `${m.role}: ${m.content.replace(/<!--EVAL_JSON:[\s\S]*?-->/g, '').trim()}`
+      )
+      .join('\n');
+
+    // Get language from session (default to ZH for report)
+    const language = session.language || 'ZH';
+    const evaluationContext =
+      perQuestionEvaluations.length > 0
+        ? `\n\n## 逐题六维评分参考（由逐题评价聚合，请与之保持一致，不要矛盾）\n${JSON.stringify(
+            perQuestionEvaluations.map((e, i) => ({
+              question: `Q${i + 1}`,
+              overallScore: e.overallScore,
+              breakdown: e.breakdown,
+              improvements: e.feedback.improvements,
+            }))
+          )}`
+        : '';
+
+    const analysisPrompt =
+      this.buildAnalysisPrompt(language, {
+        jobTitle,
+        company,
+        candidateName: resumeData?.personalInfo?.name || '候选人',
+        requirements: requirements.substring(0, 800),
+        transcript,
+      }) + evaluationContext;
+
+    try {
+      const result = await this.aiEngine.generate(analysisPrompt, {
+        temperature: 0.7,
+        maxTokens: 4000,
+      });
+
+      const jsonMatch = result.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return this.validateAndNormalizeAnalysis(
+          parsed,
+          questions,
+          userMessages,
+          perQuestionEvaluations
+        );
+      }
+    } catch (error) {
+      this.logger.error('Error analyzing interview:', error);
+    }
+
+    return this.buildAnalysisFromEvaluations(
+      perQuestionEvaluations,
+      questions,
+      userMessages
+    );
+  }
+
+  /**
+   * Deterministic fallback: aggregate per-question six-dimension evaluations.
+   */
+  private buildAnalysisFromEvaluations(
+    evaluations: AnswerEvaluation[],
+    questions: any[],
+    userMessages: any[]
+  ): InterviewReportAnalysis {
+    if (evaluations.length === 0) {
+      return this.getDefaultAnalysis(questions, userMessages);
+    }
+
+    const dimensions = aggregateDimensions(evaluations);
+    const overallScore = weightedOverallScore(dimensions);
+
+    const detailedAnalysis = evaluations.map((evaluation, index) => ({
+      questionId: `Q${index + 1}`,
+      question: questions[index]?.question || '未知问题',
+      answer: userMessages[index]?.content?.substring(0, 200) || '',
+      score: evaluation.overallScore ?? 50,
+      feedback:
+        [...evaluation.feedback.improvements, ...evaluation.feedback.positive]
+          .slice(0, 3)
+          .join('；') || '暂无详细反馈',
+      keywords: [] as string[],
+      suggestions: evaluation.feedback.improvements.slice(0, 3),
+    }));
+
+    return {
+      overallScore,
+      dimensions,
+      strengths: evaluations
+        .flatMap((e) => e.feedback.positive)
+        .slice(0, 5) || ['表现稳定'],
+      improvements: evaluations
+        .flatMap((e) => e.feedback.improvements)
+        .slice(0, 5) || ['需要更多练习'],
+      detailedAnalysis,
+      recommendations: evaluations
+        .flatMap((e) => e.feedback.improvements)
+        .slice(0, 5) || ['继续加强专业知识学习'],
+      nextSteps: [
+        '针对薄弱维度进行专项练习',
+        '建议进行更多模拟面试',
+      ],
+    };
+  }
+
+  private validateAndNormalizeAnalysis(
+    parsed: any,
+    questions: any[],
+    userMessages: any[],
+    perQuestionEvaluations: AnswerEvaluation[] = []
+  ): InterviewReportAnalysis {
+    const normalizeScore = (score: number) =>
+      Math.min(100, Math.max(0, Math.round(score || 50)));
+
+    // Prefer per-question aggregated dimensions when available; otherwise use
+    // the LLM-provided values for missing dimensions.
+    const aggregated = aggregateDimensions(perQuestionEvaluations);
+
+    const dimensions = Object.fromEntries(
+      EVALUATION_DIMENSIONS.map((dimension) => [
+        dimension,
+        perQuestionEvaluations.length > 0
+          ? aggregated[dimension]
+          : normalizeScore(parsed.dimensions?.[dimension]),
+      ])
+    ) as ReportDimensions;
+
+    const overallScore =
+      perQuestionEvaluations.length > 0
+        ? weightedOverallScore(dimensions)
+        : normalizeScore(parsed.overallScore || weightedOverallScore(dimensions));
+
+    const detailedAnalysis = (parsed.detailedAnalysis || [])
+      .slice(0, userMessages.length)
+      .map((item: any, index: number) => ({
+        questionId: `Q${index + 1}`,
+        question: questions[index]?.question || item.question || '未知问题',
+        answer:
+          item.answer || userMessages[index]?.content?.substring(0, 200) || '',
+        score: normalizeScore(
+          item.score ?? perQuestionEvaluations[index]?.overallScore ?? 50
+        ),
+        feedback:
+          item.feedback ||
+          (perQuestionEvaluations[index]?.feedback.improvements ?? []).join('；') ||
+          '暂无详细反馈',
+        keywords: Array.isArray(item.keywords) ? item.keywords : [],
+        suggestions: Array.isArray(item.suggestions) ? item.suggestions : [],
+      }));
+
+    return {
+      overallScore,
+      dimensions,
+      strengths: Array.isArray(parsed.strengths)
+        ? parsed.strengths.slice(0, 5)
+        : ['表现稳定', '态度认真'],
+      improvements: Array.isArray(parsed.improvements)
+        ? parsed.improvements.slice(0, 5)
+        : ['需要更多练习', '可以更深入'],
+      detailedAnalysis,
+      recommendations: Array.isArray(parsed.recommendations)
+        ? parsed.recommendations.slice(0, 5)
+        : ['继续加强专业知识学习'],
+      nextSteps: Array.isArray(parsed.nextSteps)
+        ? parsed.nextSteps.slice(0, 5)
+        : ['建议进行更多模拟面试'],
+    };
+  }
+
+  private getDefaultAnalysis(
+    questions: any[],
+    userMessages: any[]
+  ): InterviewReportAnalysis {
+    return {
+      overallScore: 65,
+      dimensions: Object.fromEntries(
+        EVALUATION_DIMENSIONS.map((d) => [d, 65])
+      ) as ReportDimensions,
+      strengths: ['完成了面试流程', '态度认真'],
+      improvements: ['需要更多练习', '可以更深入回答问题'],
+      detailedAnalysis: userMessages
+        .slice(0, questions.length)
+        .map((msg, index) => ({
+          questionId: `Q${index + 1}`,
+          question: questions[index]?.question || '未知问题',
+          answer: msg.content?.substring(0, 200) || '',
+          score: 65,
+          feedback: '需要更详细的分析',
+          keywords: [],
+          suggestions: ['建议提供更完整的回答'],
+        })),
+      recommendations: ['建议进行更多模拟面试练习'],
+      nextSteps: ['继续加强专业知识学习', '提升表达能力'],
+    };
+  }
+
+  private buildAnalysisPrompt(
+    language: string,
+    context: {
+      jobTitle: string;
+      company: string;
+      candidateName: string;
+      requirements: string;
+      transcript: string;
+    }
+  ): string {
+    if (language === 'ZH') {
+      return `你是一位资深的面试评估专家。请对以下模拟面试进行全面、专业的分析评估。
+
+## 面试背景
+- 职位: ${context.jobTitle}
+- 公司: ${context.company}
+- 候选人: ${context.candidateName}
+- 职位要求: ${context.requirements}
+
+## 面试记录
+${context.transcript}
+
+## 评估要求
+请从以下六个维度进行专业评估（与逐题评分使用的维度一致），并以JSON格式返回结果：
+
+1. **内容质量 (content: 0-100)**: 回答与问题的相关性、知识深度、信息准确性
+2. **表达逻辑 (logicalThinking: 0-100)**: 回答是否有结构、层次分明、前后一致
+3. **内容匹配度 (contentMatch: 0-100)**: 回答是否切中问题要点、覆盖面试官关注的重点
+4. **岗位适配性 (jobFit: 0-100)**: 回答体现的技能与经验是否匹配目标岗位要求
+5. **专业知识 (professionalKnowledge: 0-100)**: 相关领域知识的掌握深度与专业判断
+6. **沟通表达 (communication: 0-100)**: 表达清晰度、语言专业度、篇幅是否得当
+
+请返回以下JSON格式：
+{
+  "overallScore": 0-100,
+  "dimensions": {
+    "content": 0-100,
+    "logicalThinking": 0-100,
+    "contentMatch": 0-100,
+    "jobFit": 0-100,
+    "professionalKnowledge": 0-100,
+    "communication": 0-100
+  },
+  "strengths": ["优势1", "优势2", "优势3"],
+  "improvements": ["改进点1", "改进点2", "改进点3"],
+  "detailedAnalysis": [
+    {
+      "questionId": "问题序号",
+      "question": "问题内容",
+      "answer": "回答内容摘要",
+      "score": 0-100,
+      "feedback": "针对该问题的具体反馈",
+      "keywords": ["关键词1", "关键词2"],
+      "suggestions": ["建议1", "建议2"]
+    }
+  ],
+  "recommendations": ["整体建议1", "整体建议2"],
+  "nextSteps": ["下一步行动1", "下一步行动2"]
+}
+
+请确保返回纯JSON格式，不要包含任何其他文字。`;
+    }
+
+    // English prompt
+    return `You are a senior interview evaluation expert. Please provide a comprehensive and professional analysis of the following mock interview.
+
+## Interview Background
+- Position: ${context.jobTitle}
+- Company: ${context.company}
+- Candidate: ${context.candidateName}
+- Job Requirements: ${context.requirements}
+
+## Interview Transcript
+${context.transcript}
+
+## Evaluation Requirements
+Please evaluate using the following six dimensions (same as per-question scoring) and return JSON:
+
+1. **Content (content: 0-100)**: Relevance to the question, depth of knowledge, accuracy
+2. **Logical Thinking (logicalThinking: 0-100)**: Structure, coherence, consistency
+3. **Content Match (contentMatch: 0-100)**: Whether the answer hits the key points the interviewer probes for
+4. **Job Fit (jobFit: 0-100)**: Alignment between the answer's skills/examples and the target job requirements
+5. **Professional Knowledge (professionalKnowledge: 0-100)**: Depth of domain knowledge and professional judgment
+6. **Communication (communication: 0-100)**: Clarity, professional tone, appropriate length
+
+Please return JSON in the following format:
+{
+  "overallScore": 0-100,
+  "dimensions": {
+    "content": 0-100,
+    "logicalThinking": 0-100,
+    "contentMatch": 0-100,
+    "jobFit": 0-100,
+    "professionalKnowledge": 0-100,
+    "communication": 0-100
+  },
+  "strengths": ["strength1", "strength2", "strength3"],
+  "improvements": ["improvement1", "improvement2", "improvement3"],
+  "detailedAnalysis": [
+    {
+      "questionId": "question number",
+      "question": "question content",
+      "answer": "answer summary",
+      "score": 0-100,
+      "feedback": "specific feedback for this question",
+      "keywords": ["keyword1", "keyword2"],
+      "suggestions": ["suggestion1", "suggestion2"]
+    }
+  ],
+  "recommendations": ["overall recommendation1", "overall recommendation2"],
+  "nextSteps": ["next action1", "next action2"]
+}
+
+Please ensure to return pure JSON format, without any other text.`;
+  }
+
+  private generateMarkdown(report: InterviewReport): string {
+    const { analysis } = report;
+
+    const dimensionLabels: Record<string, string> = {
+      content: '内容质量',
+      logicalThinking: '表达逻辑',
+      contentMatch: '内容匹配度',
+      jobFit: '岗位适配性',
+      professionalKnowledge: '专业知识',
+      communication: '沟通表达',
+    };
+
+    const orderedEntries = Object.entries(analysis.dimensions).sort(
+      ([keyA], [keyB]) =>
+        (DIMENSION_LABELS_ZH[keyA as EvaluationDimension]
+          ? EVALUATION_DIMENSIONS.indexOf(
+              keyA as EvaluationDimension
+            )
+          : 99) -
+        (DIMENSION_LABELS_ZH[keyB as EvaluationDimension]
+          ? EVALUATION_DIMENSIONS.indexOf(
+              keyB as EvaluationDimension
+            )
+          : 99)
+    );
+
+    const getScoreEmoji = (score: number) => {
+      if (score >= 80) return '🟢';
+      if (score >= 60) return '🟡';
+      return '🔴';
+    };
+
+    const getScoreLevel = (score: number) => {
+      if (score >= 90) return '优秀';
+      if (score >= 80) return '良好';
+      if (score >= 70) return '中等';
+      if (score >= 60) return '及格';
+      return '需改进';
+    };
+
+    let md = `# 模拟面试报告
+
+## 基本信息
+
+| 项目 | 内容 |
+|------|------|
+| **候选人** | ${report.candidateInfo.name} |
+| **邮箱** | ${report.candidateInfo.email || '未提供'} |
+| **应聘职位** | ${report.jobInfo.title} |
+| **目标公司** | ${report.jobInfo.company} |
+| **面试时长** | ${report.interviewDuration} 分钟 |
+| **问题数量** | ${report.answeredQuestions}/${report.totalQuestions} |
+| **报告生成时间** | ${new Date(report.generatedAt).toLocaleString('zh-CN')} |
+
+---
+
+## 综合评分
+
+### 总分: ${analysis.overallScore} 分 (${getScoreLevel(analysis.overallScore)})
+
+### 各维度评分
+
+| 维度 | 得分 | 等级 |
+|------|------|------|
+${orderedEntries
+  .map(
+    ([key, value]) =>
+      `| ${dimensionLabels[key] || key} | ${getScoreEmoji(value)} ${value} 分 | ${getScoreLevel(value)} |`
+  )
+  .join('\n')}
+
+---
+
+## 面试记录
+
+### 完整对话
+
+`;
+    report.transcript.forEach((msg) => {
+      const time = new Date(msg.timestamp).toLocaleTimeString('zh-CN');
+      md += `**[${time}] ${msg.role}**:\n\n${msg.content}\n\n---\n\n`;
+    });
+
+    md += `## 问题回答详情
+
+`;
+    analysis.detailedAnalysis.forEach((item, index) => {
+      md += `### 问题 ${index + 1}: ${item.question}
+
+**回答摘要**: ${item.answer || '（未作答）'}
+
+**得分**: ${getScoreEmoji(item.score)} ${item.score} 分
+
+**反馈**: ${item.feedback}
+
+`;
+      if (item.keywords.length > 0) {
+        md += `**关键词**: ${item.keywords.map((k) => `\`${k}\``).join(' ')}\n\n`;
+      }
+      if (item.suggestions.length > 0) {
+        md += `**改进建议**:\n${item.suggestions.map((s) => `- ${s}`).join('\n')}\n\n`;
+      }
+      md += '---\n\n';
+    });
+
+    md += `## 表现分析
+
+### 优势亮点
+
+${analysis.strengths.map((s) => `- ✅ ${s}`).join('\n')}
+
+### 需要改进
+
+${analysis.improvements.map((i) => `- ⚠️ ${i}`).join('\n')}
+
+---
+
+## 改进建议
+
+${analysis.recommendations.map((r) => `- 💡 ${r}`).join('\n')}
+
+---
+
+## 下一步行动
+
+${analysis.nextSteps.map((n) => `- 🎯 ${n}`).join('\n')}
+
+---
+
+## 评分说明
+
+- 🟢 **80-100分**: 优秀/良好 - 表现出色，继续保持
+- 🟡 **60-79分**: 中等/及格 - 有一定基础，需要加强
+- 🔴 **60分以下**: 需改进 - 建议重点练习
+
+---
+
+*本报告由 IntervAI 自动生成，仅供参考。*
+`;
+
+    return md;
+  }
+}

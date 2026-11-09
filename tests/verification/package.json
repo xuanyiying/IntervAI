@@ -6,23 +6,14 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:auth": "jest modules/auth",
-    "test:resume": "jest modules/resume",
-    "test:optimization": "jest modules/optimization",
-    "test:interview": "jest modules/interview",
-    "test:job": "jest modules/job",
-    "test:payment": "jest modules/payment",
-    "test:storage": "jest modules/storage",
-    "test:ai": "jest modules/ai",
-    "report": "ts-node scripts/generate-report.ts"
+    "test:coverage": "jest --coverage"
   },
   "dependencies": {
     "@prisma/client": "^7.1.0",
-    "axios": "^1.5.0",
+    "axios": "^1.13.5",
     "dotenv": "^16.3.1",
     "pg": "^8.20.0",
-    "socket.io-client": "^4.7.0"
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@types/jest": "^29.5.2",

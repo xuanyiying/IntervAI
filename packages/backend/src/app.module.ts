@@ -5,35 +5,39 @@ import {
   RequestSizeLimitMiddleware,
 } from '@/common/middleware/performance.middleware';
 import { RequestLoggingMiddleware } from '@/common/middleware/request-logging.middleware';
-import { AccountModule } from '@/core/account/account.module';
-import { ChatModule } from '@/core/chat/chat.module';
-import { ConversationModule } from '@/core/conversation/conversation.module';
-import { HealthModule } from '@/core/health/health.module';
-import { QuotaModule } from '@/core/quota/quota.module';
-import { UserModule } from '@/core/user/user.module';
-import { AgentsModule } from '@/features/agents/agents.module';
-import { InterviewModule } from '@/features/interview/interview.module';
-import { JobModule } from '@/features/job/job.module';
-import { ResumeModule } from '@/features/resume/resume.module';
-import { TasksModule } from '@/features/tasks/tasks.module';
-import { VoiceModule } from '@/features/voice/voice.module';
-import { RedisModule } from '@/shared/cache/redis.module';
-import { PrismaModule } from '@/shared/database/prisma.module';
-import { loggerConfig } from '@/shared/logger/logger.config';
-import { LoggerModule } from '@/shared/logger/logger.module';
-import { MonitoringModule } from '@/shared/monitoring/monitoring.module';
-import { EmailModule } from '@/shared/notification/email.module';
+import { RedisModule } from '@/infrastructure/cache/redis.module';
+import { PrismaModule } from '@/infrastructure/database/prisma.module';
+import { loggerConfig } from '@/infrastructure/logger/config/logger.config';
+import { LoggerModule } from '@/infrastructure/logger/logger.module';
+import { MonitoringModule } from '@/infrastructure/monitoring/monitoring.module';
+import { EmailModule } from '@/infrastructure/notification/email.module';
+import { AccountModule } from '@/modules/account/account.module';
+import { PitchPerfectModule } from '@/modules/pitch-perfect/pitch-perfect.module';
+import { AIModule } from '@/modules/ai/ai.module';
+import { AuthModule } from '@/modules/auth/auth.module';
+import { ChatModule } from '@/modules/chat/chat.module';
+import { ConversationModule } from '@/modules/conversation/conversation.module';
+import { HealthModule } from '@/modules/health/health.module';
+import { InterviewModule } from '@/modules/interview/interview.module';
+import { JobModule } from '@/modules/job/job.module';
+import { QuotaModule } from '@/modules/quota/quota.module';
+import { ResumeModule } from '@/modules/resume/resume.module';
+import { StorageModule } from '@/modules/storage/storage.module';
+import { UserModule } from '@/modules/user/user.module';
+import { VoiceModule } from '@/modules/voice/voice.module';
 import { BullModule } from '@nestjs/bull';
-import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+  Logger,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AIModule } from './core/ai/ai.module';
-
-import { StorageModule } from '@/core/storage/storage.module';
-import { AuthModule } from './core/auth/auth.module';
 
 const isOSS = process.env.APP_EDITION === 'oss';
 const logger = new Logger('AppModule');
@@ -83,7 +87,6 @@ const dynamicEeModule = getEeModule();
     ResumeModule,
     JobModule,
     StorageModule,
-    TasksModule,
     InterviewModule,
     QuotaModule,
     MonitoringModule,
@@ -92,7 +95,7 @@ const dynamicEeModule = getEeModule();
     ChatModule,
     AccountModule,
     VoiceModule,
-    AgentsModule,
+    PitchPerfectModule,
     ...dynamicEeModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -114,7 +117,14 @@ const dynamicEeModule = getEeModule();
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // 全局限流守卫：所有路由默认 100 次 / 60 秒，个别端点可用 @Throttle 覆盖
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

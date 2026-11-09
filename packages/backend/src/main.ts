@@ -1,18 +1,18 @@
 import 'reflect-metadata';
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { IoAdapter } from '@nestjs/platform-socket.io';
-import { RedisIoAdapter } from '@/core/chat/redis-io.adapter';
-import helmet from 'helmet';
-import * as express from 'express';
-import * as Sentry from '@sentry/node';
-import { AppModule } from './app.module';
 import { HttpExceptionFilter } from '@/common/filters/http-exception.filter';
-import { MonitoringInterceptor } from '@/shared/monitoring/monitoring.interceptor';
-import { MonitoringGuard } from '@/shared/monitoring/monitoring.guard';
-import { initOpenTelemetry } from '@/shared/monitoring/otel';
+import { MonitoringGuard } from '@/infrastructure/monitoring/guards/monitoring.guard';
+import { MonitoringInterceptor } from '@/infrastructure/monitoring/interceptors/monitoring.interceptor';
+import { initOpenTelemetry } from '@/infrastructure/monitoring/utils/otel';
+import { RedisIoAdapter } from '@/modules/chat/gateways/redis-io.adapter';
+import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import * as Sentry from '@sentry/node';
+import * as express from 'express';
+import helmet from 'helmet';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
   // Voiceprint enrollment uploads raw PCM as base64 JSON (~400KB for 9s),

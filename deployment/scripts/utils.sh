@@ -10,8 +10,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# 日志文件
-LOG_FILE="${PROJECT_ROOT:-.}/deployment.log"
+# 日志文件：调用方未设置 PROJECT_ROOT 时，回退到仓库根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="${PROJECT_ROOT:-$(cd "${SCRIPT_DIR}/../.." && pwd)}/deployment.log"
 
 # 日志函数
 log() {

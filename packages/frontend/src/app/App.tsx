@@ -1,0 +1,35 @@
+import React from 'react';
+import { ConfigProvider } from 'antd';
+import { RouterProvider } from 'react-router-dom';
+import zhCN from 'antd/locale/zh_CN';
+import { router } from './router';
+import { lightTheme, darkTheme } from '@/shared/config/theme';
+import { useTranslation } from 'react-i18next';
+import { normalizeLanguage } from '@/shared/lib/i18n';
+import enUS from 'antd/locale/en_US';
+import { useUIStore } from '@/shared/stores';
+
+function App() {
+  const { i18n } = useTranslation();
+  const { theme } = useUIStore();
+  const currentLanguage = normalizeLanguage(
+    i18n.resolvedLanguage || i18n.language
+  );
+  const currentLocale = currentLanguage === 'en-US' ? enUS : zhCN;
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  return (
+    <ConfigProvider
+      key={currentLanguage}
+      locale={currentLocale}
+      theme={theme === 'light' ? lightTheme : darkTheme}
+    >
+      <RouterProvider router={router} />
+    </ConfigProvider>
+  );
+}
+
+export default App;

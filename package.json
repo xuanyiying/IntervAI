@@ -1,12 +1,8 @@
 {
-  "name": "ai powered resume assistant",
+  "name": "intervai",
   "version": "1.0.0",
   "private": true,
-  "description": "AI powered resume optimization SaaS platform",
-  "workspaces": [
-    "packages/frontend",
-    "packages/backend"
-  ],
+  "description": "AI-powered interview assistant platform",
   "scripts": {
     "dev": "NODE_OPTIONS='--max-old-space-size=4096' concurrently -n backend,frontend -c blue,green \"pnpm --filter=@interview-ai/backend start:dev\" \"pnpm --filter=@interview-ai/frontend start:dev\"",
     "dev:backend": "NODE_OPTIONS='--max-old-space-size=2048' pnpm --filter=@interview-ai/backend start:dev",
@@ -14,12 +10,14 @@
     "build:backend": "pnpm --filter=@interview-ai/backend build",
     "build:frontend": "pnpm --filter=@interview-ai/frontend build",
     "test": "turbo run test",
-    "test:parallel": "pnpm run test --recursive --parallel",
+    "test:parallel": "pnpm -r --parallel run test",
     "lint": "turbo run lint",
-    "lint:fix": "pnpm run lint --recursive --fix",
+    "lint:fix": "pnpm -r run lint:fix",
+    "typecheck": "turbo run typecheck",
     "format": "prettier --write \"packages/**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "turbo run clean && rm -rf node_modules .turbo",
-    "deploy": "bash scripts/deploy.sh"
+    "deploy:app": "bash deploy.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
@@ -34,7 +32,7 @@
   },
   "engines": {
     "node": ">=18.0.0",
-    "npm": ">=9.0.0"
+    "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.0.0",
   "pnpm": {

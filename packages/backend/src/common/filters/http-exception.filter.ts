@@ -13,11 +13,11 @@ import { ERROR_CODE_TO_MESSAGE } from '../exceptions/error-codes';
 
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { Logger as WinstonLogger } from 'winston';
-import { MonitoringService } from '@/shared/monitoring/monitoring.service';
+import { MonitoringService } from '@/infrastructure/monitoring/services/monitoring.service';
 import {
   AlertingService,
   AlertSeverity,
-} from '@/shared/monitoring/alerting.service';
+} from '@/infrastructure/monitoring/services/alerting.service';
 
 /**
  * Global exception filter for standardized error responses

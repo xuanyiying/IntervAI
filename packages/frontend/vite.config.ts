@@ -1,6 +1,14 @@
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+// Must match the backend PORT (see packages/backend/.env.example).
+// Override with VITE_PROXY_TARGET (from .env or the shell) when the API runs
+// on another port. loadEnv is required because Vite does not inject .env
+// values into process.env at config evaluation time.
+const env = loadEnv(process.env.NODE_ENV || 'development', __dirname, 'VITE_');
+const backendProxyTarget = env.VITE_PROXY_TARGET || 'http://localhost:3000';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -27,11 +35,11 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: backendProxyTarget,
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:3001',
+        target: backendProxyTarget,
         changeOrigin: true,
         ws: true,
       },
@@ -60,11 +68,7 @@ export default defineConfig({
             'socket.io-client',
             'zustand',
           ],
-          'vendor-ui': [
-            'lucide-react',
-            'react-markdown',
-            'remark-gfm',
-          ],
+          'vendor-ui': ['lucide-react', 'react-markdown', 'remark-gfm'],
         },
         // Asset file naming for CDN caching
         assetFileNames: (assetInfo) => {
@@ -107,6 +111,8 @@ export default defineConfig({
     css: true,
     reporters: ['default', 'html'],
     isolate: true,
+    // antd + react-diff-viewer component renders exceed Vitest's 5s default.
+    testTimeout: 15000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

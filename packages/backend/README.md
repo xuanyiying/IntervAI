@@ -1,250 +1,87 @@
-# Interview AI Backend
+# Backend
 
-NestJS backend service for the Interview AI platform.
+NestJS 10 API，使用 Prisma 7 + PostgreSQL、Redis、Socket.IO，以及基于 Markdown 的 Skills 引擎。包名 `@interview-ai/backend`。
 
-## 📁 项目结构
-
-```
-src/
-├── common/             # 公共模块
-│   ├── decorators/     # 自定义装饰器
-│   ├── exceptions/     # 异常处理
-│   ├── filters/        # 异常过滤器
-│   ├── guards/         # 认证守卫
-│   ├── interceptors/   # 拦截器
-│   ├── middleware/     # 中间件
-│   ├── pipes/          # 管道
-│   └── utils/          # 工具函数
-├── core/               # 核心业务模块
-│   ├── account/        # 账户管理
-│   ├── ai/             # AI 服务 & Skills 引擎
-│   │   ├── providers/  # AI 提供商实现
-│   │   ├── skills/     # Skills 引擎
-│   │   ├── utils/      # 熔断器、限流器、用量追踪
-│   │   ├── memory/     # 对话记忆
-│   │   └── queue/      # 异步队列
-│   ├── auth/           # 认证模块 (JWT/OAuth)
-│   ├── backup/         # 备份服务
-│   ├── chat/           # WebSocket 实时通信
-│   ├── conversation/   # 对话管理
-│   ├── health/         # 健康检查
-│   ├── i18n/           # 国际化
-│   ├── invitation/     # 邀请码管理
-│   ├── payment/        # 支付集成 (Stripe/Paddle)
-│   ├── prompts/        # 提示词模板
-│   ├── quota/          # 配额管理
-│   ├── storage/        # 文件存储 (S3/OSS/MinIO)
-│   └── user/           # 用户管理
-├── features/           # 功能模块
-│   ├── agents/         # AI 智能体 (自我介绍)
-│   ├── interview/      # 面试模拟
-│   ├── job/            # 职位管理
-│   ├── resume/         # 简历优化
-│   ├── tasks/          # 后台任务
-│   └── voice/          # 实时语音
-└── e2e/                # 端到端测试
-```
-
-## 🤖 Skills 引擎
-
-Skills 引擎是一个可插拔的 AI 能力扩展系统。
-
-### 目录结构
+## 目录结构
 
 ```
 packages/backend/
-├── src/core/ai/skills/         # Skills 引擎
-│   ├── skill.interface.ts      # 核心接口
-│   ├── skill-registry.ts       # 注册与执行
-│   ├── skill-loader.ts         # 从目录加载
-│   ├── skill-markdown-parser.ts # Markdown 解析
-│   └── skill-installer.service.ts # 远程安装
-│
-└── skills/                     # 具体 Skills（12 个）
-    ├── resume-analyzer.md      # 简历解析与结构化提取
-    ├── resume-writer.md        # 优化简历内容生成
-    ├── jd-matcher.md           # JD 与简历匹配分析
-    ├── job-parser.md           # 职位描述结构化解析
-    ├── interview-prep.md       # 面试准备
-    ├── interview-assistant.md  # 实时面试辅助
-    ├── interview-question-generator.md # 面试问题生成
-    ├── answer-evaluator.md     # 答案评估
-    ├── pitch-perfect.md        # 自我介绍生成
-    ├── career-advisor.md       # 职业发展建议
-    ├── skill-analyzer.md       # 技能差距分析
-    └── salary-analyzer.md      # 薪资分析与谈判建议
+├── src/
+│   ├── main.ts / app.module.ts   # 启动与模块注册
+│   ├── modules/                  # 业务功能模块（按领域划分）
+│   ├── infrastructure/           # cache、config、database、logger、monitoring、notification
+│   ├── common/                   # guards、decorators、filters、interceptors、middleware、validators
+│   ├── ee/                       # 商业版 payment、quota
+│   └── types/                    # 跨模块共享类型
+├── test/e2e/                     # supertest E2E 用例（jest.e2e.config.js）
+├── prisma/                       # schema.prisma、migrations/、seed.ts
+├── skills/                       # 12 个运行时技能定义（见 docs/technical/skills-engine.md）
+├── skills-eval/                  # 技能评测用例（不参与运行时加载）
+├── prompts/                      # 实时面试提示词模板
+├── generated/                    # Prisma 生成物（不参与编译）
+├── Dockerfile
+└── .env.example
 ```
 
-### Skill 定义格式
+`src/modules/` 下按领域划分：account、agents、ai、auth、backup、chat、conversation、health、interview、invitation、job、payment、prompts、quota、resume、storage、user、voice。每个模块以 `<name>.module.ts` 为入口，实现按职责归入 `controllers/`、`services/`、`dto/`、`interfaces/`、`guards/`、`gateways/`、`constants/`、`utils/`、`adapters/` 等目录，`*.spec.ts` 与被测文件同目录；跨模块引用统一使用 `@/` 别名。
 
-```markdown
----
-name: skill-name
-version: 1.0.0
-description: Skill description
-author: Author Name
-tags: [tag1, tag2]
-inputs:
-  inputName:
-    type: string
-    required: true
-    description: Input description
-outputs:
-  type: object
----
+`APP_EDITION=oss` 时 `app.module.ts` 不加载 `ee/` 模块，`modules/payment`、`modules/quota` 等回退到 OSS 实现。
 
-# System Prompt
-
-Your skill's prompt template goes here...
-```
-
-### 使用方式
-
-```typescript
-// 执行 Skill
-const result = await aiService.executeSkill(
-  'resume-analyzer',
-  {
-    resumeText: '...',
-    targetJob: 'Software Engineer',
-  },
-  userId
-);
-
-// 获取所有 Skills
-const skills = aiService.getSkills();
-```
-
-## 🗄️ 数据库模型
-
-| 模型                                  | 说明       |
-| ------------------------------------- | ---------- |
-| `User`                                | 用户账户   |
-| `Session`/`Account`                   | OAuth 会话 |
-| `Resume`                              | 简历文件   |
-| `Job`                                 | 职位信息   |
-| `Optimization`                        | 优化结果   |
-| `InterviewSession`/`InterviewMessage` | 面试模拟   |
-| `Conversation`/`Message`              | 对话历史   |
-| `ModelConfig`/`PromptTemplate`        | AI 配置    |
-| `UsageRecord`/`PerformanceMetrics`    | 使用统计   |
-
-## 🚀 快速开始
-
-### 环境要求
-
-- Node.js 18+
-- PostgreSQL 15+
-- Redis 7+
-
-### 安装
+## 快速开始
 
 ```bash
-# 安装依赖
+# 在仓库根目录
 pnpm install
-
-# 配置环境变量
-cp .env.example .env
-
-# 初始化数据库
-npx prisma generate
-npx prisma migrate dev
-
-# 启动开发服务
-pnpm dev
+docker compose -f deployment/docker-compose.yml up -d
+cp .env.example .env    # 在 packages/backend 目录内执行，按需修改 DATABASE_URL 等
+pnpm --filter @interview-ai/backend prisma:generate
+pnpm --filter @interview-ai/backend prisma:migrate
+pnpm --filter @interview-ai/backend start:dev
 ```
 
-### API 文档
+也可 `cd packages/backend` 后直接执行 `pnpm dev` / `pnpm prisma:generate` / `pnpm prisma:migrate`。后端端口由 `PORT` 决定（默认 3000）。
 
-启动后访问: <http://localhost:3000/api/docs>
+常用脚本：`build`（`nest build`）、`start:prod`（`node dist/main`）、`lint`、`test`（Jest 单元测试）、`test:e2e`（E2E）、`test:cov`、`prisma:studio`、`prisma:seed`。
 
-## 🔧 核心模块说明
+- `setup`：执行 `scripts/setup.sh`，安装 workspace 依赖、复制 `.env`，可选启动基础设施并执行 Prisma 迁移。
+- `model-config`：执行 `scripts/manage-model-config.ts`，管理 `ModelConfig`（需要 `DATABASE_URL`；用法见文件头注释）。
+- `docker:up` / `docker:down` / `docker:logs`：操作根目录 `deployment/docker-compose.yml`。
 
-### AI Service (`core/ai/`)
+> 旧的 `seed:models` 与一次性播种 / 调试脚本已移除。ModelConfig 的管理入口是 `pnpm model-config` 或管理后台 `/admin/models`；运行时 AI 密钥来自环境变量，见 [安全策略](../../docs/guide/security.md)。
 
-统一 AI 调用入口，支持：
+## API
 
-- **多模型提供商**: OpenAI, DeepSeek, Qwen, Gemini, Ollama, SiliconCloud
-- **Skills 引擎**: 可插拔的 AI 能力扩展
-- **熔断器**: 故障容错
-- **限流器**: 请求速率控制
-- **用量追踪**: 成本和用量监控
+- 全局前缀 `API_PREFIX || '/api/v1'`；`health` 与 `/` 被排除
+- Swagger：`/api/docs`
+- 健康检查：`GET /health`；指标与告警：`/api/v1/metrics`、`/api/v1/alerts`
+- 主要控制器：`auth`、`user`、`user/notifications`、`admin`、`account`、`conversations`、`backup`、`quota`、`payments`、`storage`、`jobs`、`interview`、`interview/voiceprint`、`interviewer-personas`、`voices`、`agents/pitch-perfect`、`resumes`、`optimizations`、`match-analysis`、`generate`、`templates`
+- WebSocket 命名空间：`/chat`、`/interview`、`/realtime-interview`
+- 鉴权：JWT（`JWT_SECRET` / `JWT_EXPIRES_IN`）+ `JwtAuthGuard`，管理员路由叠加 `RolesGuard`；Google / GitHub OAuth
 
-**关键文件**:
+## AI 能力
 
-- `ai.service.ts` - 统一 AI 调用入口
-- `providers/provider.ts` - 提供商抽象
-- `skills/skill-registry.ts` - Skill 注册与执行
-- `utils/circuit-breaker.ts` - 熔断器实现
+`modules/ai/constants/models.ts` 通过 OpenAI 兼容接口支持 7 个 provider：`openai`、`deepseek`、`qwen`、`gemini`、`ollama`、`siliconcloud`、`openrouter`。默认 `AI_MODEL=deepseek:deepseek-chat`、`AI_EMBEDDING_MODEL=siliconcloud:BAAI/bge-m3`。
 
-### Skills Engine (`core/ai/skills/`)
+Skills 引擎位于 `modules/ai/skills/`：`skill-registry`、`skill-loader`、`skill-markdown-parser`、`skill-installer.service` 等，启动时从 `skills/*.md`（或 `SKILLS_DIR`）加载 12 个技能，业务服务用 `aiService.executeSkill(name, inputs, userId)` 调用。完整说明见 [Skills 引擎](../../docs/technical/skills-engine.md)。
 
-可插拔的 AI 能力系统：
+## 数据与存储
 
-- `skill.interface.ts` - 核心接口定义
-- `skill-registry.ts` - Skill 注册与执行
-- `skill-loader.ts` - 从目录加载 Skills
-- `skill-markdown-parser.ts` - 解析 Markdown 格式
-- `skill-installer.service.ts` - 从远程安装 Skills
+- Prisma schema 含 `User`、`Session`/`Account`/`Verification`、`Resume`/`ResumeVersion`、`Job`、`Optimization`、`GeneratedPDF`、`Template`、`InterviewSession`/`InterviewMessage`/`InterviewQuestion`、`Conversation`/`Message`、`ModelConfig`、`PromptTemplate`、`UsageRecord`、`Storage`、`AuditLog` 及 AI 调用日志等模型。
+- Redis 用于缓存、Bull 队列与 Socket.IO adapter。
+- 对象存储由 `OSS_TYPE` 选择 provider（`modules/storage/adapters/` 下 `aws-s3`、`aliyun-oss`、`minio`），分片 / 预签名直传见 `modules/storage/services/direct-upload.service.ts`；模块文档见 [storage/README.md](./src/modules/storage/README.md)。
 
-### Resume (`features/resume/`)
-
-简历处理核心：
-
-- 文件上传与解析 (PDF/DOCX)
-- AI 内容分析 (通过 resume-analyzer skill)
-- 版本控制
-- 去重检测 (MD5)
-
-### Interview (`features/interview/`)
-
-AI 面试模拟：
-
-- 问题生成 (通过 interview-prep skill)
-- 实时对话
-- 评分与反馈 (通过 answer-evaluator skill)
-
-## 🧪 测试
+## 测试
 
 ```bash
-# 单元测试
-pnpm test
-
-# 测试覆盖率
-pnpm test:cov
-
-# E2E 测试
-pnpm test:e2e
+pnpm --filter @interview-ai/backend test        # 仅 src/ 内的单元测试
+pnpm --filter @interview-ai/backend test:cov
+pnpm --filter @interview-ai/backend test:e2e    # E2E，需 PostgreSQL + Redis
 ```
 
-E2E 测试文件位于 `src/e2e/`：
+单元测试用 `jest.config.js`（`rootDir: src`），E2E 用 `jest.e2e.config.js`（`test/e2e/**/*.e2e.spec.ts`），两者互不干扰；测试编译配置为 `tsconfig.spec.json`。详见 [E2E README](./test/e2e/README.md)。
 
-- `complete-flow.e2e.spec.ts` - 完整用户流程
-- `resume-flow.e2e.spec.ts` - 简历模块
-- `interview-flow.e2e.spec.ts` - 面试模块
-- `quota-and-limits.e2e.spec.ts` - 配额与限制
-- `security-and-errors.e2e.spec.ts` - 安全测试
+## 相关文档
 
-## 📊 监控
-
-- **健康检查**: `GET /health`（全局 API 前缀 `/api/v1` 之外）
-- **Prometheus 指标**: `/metrics`
-- **Grafana 面板**: `grafana/` 目录
-
-## 🔌 AI 提供商
-
-| 提供商       | 模型                                 |
-| ------------ | ------------------------------------ |
-| OpenAI       | GPT-4o, GPT-4-turbo, GPT-3.5-turbo   |
-| DeepSeek     | deepseek-chat, deepseek-flash        |
-| Qwen         | qwen-turbo, qwen-plus, qwen-max      |
-| Gemini       | gemini-pro, gemini-1.5-pro           |
-| Ollama       | 本地模型                             |
-| SiliconCloud | 开源模型 (默认 Embedding: BAAI/bge-m3) |
-| OpenRouter   | 聚合多模型路由                       |
-
-## 📖 更多文档
-
-- [系统架构](../../docs/architecture/system-architecture.md)
-- [API 规范](./docs/)
-- [部署指南](../../deployment/README.md)
+- [系统架构](../../docs/architecture/system-architecture.md) · [Skills 引擎](../../docs/technical/skills-engine.md)
+- [部署与运维](../../deployment/README.md) · [环境变量示例](./.env.example)
+- [面试模块](./src/modules/interview/README.md) · [支付模块（EE）](./src/ee/payment/README.md)

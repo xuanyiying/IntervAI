@@ -1,0 +1,54 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import axios, { setUnauthorizedHandler } from '@/shared/lib/axios';
+import { User } from '@/shared/types';
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  setAuth: (user: User, token: string) => void;
+  clearAuth: () => void;
+  updateUser: (user: Partial<User>) => void;
+  refreshProfile: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      setAuth: (user, token) => {
+        localStorage.setItem('auth_token', token);
+        set({ user, token, isAuthenticated: true });
+      },
+      clearAuth: () => {
+        localStorage.removeItem('auth_token');
+        set({ user: null, token: null, isAuthenticated: false });
+      },
+      updateUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        })),
+      refreshProfile: async () => {
+        try {
+          const response = await axios.get('/auth/me');
+          set({
+            user: response.data, // Directly set the user from response
+            isAuthenticated: true, // Ensure authenticated state
+          });
+        } catch (error) {
+          console.error('Failed to refresh profile:', error);
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+    }
+  )
+);
+
+setUnauthorizedHandler(() => {
+  useAuthStore.setState({ user: null, token: null, isAuthenticated: false });
+});

@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -24,8 +25,7 @@
     "resolveJsonModule": true,
     "types": ["node", "jest", "express", "multer"],
     "paths": {
-      "@/*": ["src/*"],
-      "@/ee/*": ["src/ee/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*"],

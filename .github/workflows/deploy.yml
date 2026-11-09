@@ -17,7 +17,6 @@ on:
           - production
 
 env:
-  NODE_VERSION: '18'
   REGISTRY: ghcr.io
 
 jobs:
@@ -51,29 +50,33 @@ jobs:
           else
             VERSION=latest
           fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      # GHCR 镜像名必须小写；统一在这里生成，供推送与远端 compose 共用
+      - name: Resolve image references
+        id: images
+        run: |
+          PREFIX=$(printf '%s/%s' "${{ env.REGISTRY }}" "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "backend=${PREFIX}/backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=${PREFIX}/frontend" >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata for backend
         id: meta-backend
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/backend
+          images: ${{ steps.images.outputs.backend }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=${{ steps.version.outputs.version }}-
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=sha
 
       - name: Extract metadata for frontend
         id: meta-frontend
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/${{ github.repository }}/frontend
+          images: ${{ steps.images.outputs.frontend }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=${{ steps.version.outputs.version }}-
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=sha
 
       - name: Build and push backend image
         uses: docker/build-push-action@v4
@@ -112,15 +115,16 @@ jobs:
             });
             return deployment.id;
 
+      # 手动触发选 staging / production；push 到 main 或 v* tag 一律部署 production
       - name: Deploy to staging
-        if: github.event.inputs.environment == 'staging' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging'
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY_STAGING }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST_STAGING }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER_STAGING }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_STAGING }}
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ steps.version.outputs.version }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.version.outputs.version }}
+          BACKEND_IMAGE: ${{ steps.images.outputs.backend }}:${{ steps.version.outputs.version }}
+          FRONTEND_IMAGE: ${{ steps.images.outputs.frontend }}:${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -129,19 +133,19 @@ jobs:
           ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
             export BACKEND_IMAGE=$BACKEND_IMAGE && \
             export FRONTEND_IMAGE=$FRONTEND_IMAGE && \
-            docker-compose pull && \
-            docker-compose up -d && \
-            docker system prune -f"
+            docker compose --env-file .env.production -f deployment/docker-compose.prod.yml pull backend frontend && \
+            docker compose --env-file .env.production -f deployment/docker-compose.prod.yml up -d && \
+            docker image prune -f"
 
       - name: Deploy to production
-        if: github.event.inputs.environment == 'production' || (github.event_name == 'push' && github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/'))
+        if: (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production') || (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')))
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY_PRODUCTION }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST_PRODUCTION }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER_PRODUCTION }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH_PRODUCTION }}
-          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/backend:${{ steps.version.outputs.version }}
-          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ github.repository }}/frontend:${{ steps.version.outputs.version }}
+          BACKEND_IMAGE: ${{ steps.images.outputs.backend }}:${{ steps.version.outputs.version }}
+          FRONTEND_IMAGE: ${{ steps.images.outputs.frontend }}:${{ steps.version.outputs.version }}
         run: |
           mkdir -p ~/.ssh
           echo "$DEPLOY_KEY" > ~/.ssh/deploy_key
@@ -150,9 +154,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
             export BACKEND_IMAGE=$BACKEND_IMAGE && \
             export FRONTEND_IMAGE=$FRONTEND_IMAGE && \
-            docker-compose pull && \
-            docker-compose up -d && \
-            docker system prune -f"
+            docker compose --env-file .env.production -f deployment/docker-compose.prod.yml pull backend frontend && \
+            docker compose --env-file .env.production -f deployment/docker-compose.prod.yml up -d && \
+            docker image prune -f"
 
       - name: Update Deployment Status
         if: always()
@@ -162,14 +166,13 @@ jobs:
             const deploymentId = ${{ steps.create_deployment.outputs.result }};
             const jobStatus = '${{ job.status }}';
             const state = jobStatus === 'success' ? 'success' : (jobStatus === 'failure' ? 'failure' : 'error');
-            
+
             await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               deployment_id: deploymentId,
               state: state,
               log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              environment_url: '${{ github.event.inputs.environment == 'staging' && 'https://staging.example.com' || 'https://example.com' }}', // 请替换为实际 URL
             });
 
   notify:

@@ -1,161 +1,85 @@
-# Interview AI Frontend
+# Frontend
 
-React + Vite 前端应用，为 Interview AI 平台提供用户界面。
+React 18 SPA，包名 `@interview-ai/frontend`，通过 REST + Socket.IO 与后端通信。
 
-## 🛠️ 技术栈
+## 技术栈
 
-| 技术          | 版本 | 用途        |
-| ------------- | ---- | ----------- |
-| React         | 18.x | UI 框架     |
-| TypeScript    | 5.x  | 类型安全    |
-| Vite          | 7.x  | 构建工具    |
-| Ant Design    | 6.x  | UI 组件库   |
-| Zustand       | 4.x  | 状态管理    |
-| React Router  | 6.x  | 路由        |
-| Axios         | 1.x  | HTTP 客户端 |
-| Socket.io     | 4.x  | 实时通信    |
-| Framer Motion | 12.x | 动画        |
+| 技术                     | 版本        |
+| ------------------------ | ----------- |
+| React / react-dom        | 18.x        |
+| TypeScript               | 5.x         |
+| Vite                     | 7.x         |
+| Ant Design               | 6.x         |
+| React Router             | 6.x         |
+| Zustand                  | 4.x         |
+| axios / socket.io-client | 1.x / 4.x   |
+| i18next / react-i18next  | 25.x / 16.x |
+| framer-motion            | 12.x        |
+| Vitest                   | 4.x         |
 
-## 📁 项目结构
+## 目录结构
 
 ```
 src/
-├── components/           # 可复用组件
-│   ├── MyResumes/        # 简历管理组件
-│   ├── ResumeBuilder/    # 简历编辑器
-│   ├── *Card.tsx         # 功能卡片组件
-│   └── *Dialog.tsx       # 对话框组件
-├── config/               # 配置文件
-│   ├── axios.ts          # HTTP 客户端配置
-│   └── theme.ts          # Ant Design 主题
-├── hooks/                # 自定义 Hooks
-├── layouts/              # 布局组件
-├── locales/              # 国际化资源
-├── pages/                # 页面组件
-│   ├── ChatPage/         # AI 对话页面
-│   ├── InterviewPage     # 面试模拟
-│   ├── ProfilePage       # 个人中心
-│   └── *ManagementPage   # 管理后台
-├── router/               # 路由配置
-├── services/             # API 服务层
-├── stores/               # Zustand 状态
-└── types/                # TypeScript 类型
+├── components/        # 可复用 UI 组件（含 ResumeBuilder、MyResumes、各类卡片）
+├── config/            # axios、主题、应用与 CDN 配置
+├── ee/                # 商业版页面（定价、订阅等）
+├── hooks/             # 自定义 hooks（useChatSocket、useInterviewSocket 等）
+├── layouts/           # AppLayout、Sidebar
+├── locales/           # zh-CN.json、en-US.json
+├── pages/             # admin/、auth/、legal/、user/ 四类页面
+├── router/            # createBrowserRouter 路由与权限控制
+├── services/          # REST API 服务层
+├── stores/            # Zustand stores
+├── styles/、types/、utils/
+└── vite.config.ts     # dev server、代理、Vitest 配置
 ```
 
-## 🗂️ 状态管理
+`config/axios.ts` 使用 `VITE_API_BASE_URL || '/api/v1'` 作为 baseURL，自动注入 `auth_token` 与 `traceparent`，统一处理 401 / 403 / 429。
 
-### Stores 说明
+## 路由（与 `src/router/index.tsx` 一致）
 
-| Store               | 文件                   | 职责         |
-| ------------------- | ---------------------- | ------------ |
-| `authStore`         | `authStore.ts`         | 用户认证状态 |
-| `resumeStore`       | `resumeStore.ts`       | 简历列表管理 |
-| `jobStore`          | `jobStore.ts`          | 职位信息     |
-| `optimizationStore` | `optimizationStore.ts` | 优化结果     |
-| `conversationStore` | `conversationStore.ts` | 对话历史     |
-| `interviewStore`    | `interviewStore.ts`    | 面试会话     |
-| `generateStore`     | `generateStore.ts`     | PDF 生成     |
-| `uiStore`           | `uiStore.ts`           | UI 状态      |
+| 分类                 | 路径                                                                                                                                     |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| 公开                 | `/login`、`/register`、`/oauth/callback`、`/verify-email`、`/forgot-password`、`/reset-password`、`/terms-of-service`、`/privacy-policy` |
+| 主布局               | `/`（我的简历）、`/resumes`、`/resume-builder`、`/profile`、`/settings`、`/account/usage`、`/interview`、`/pitch-perfect`                |
+| 管理员（需 `ADMIN`） | `/admin/prompts`、`/admin/models`、`/admin/users`                                                                                        |
+| EE 条件路由          | `/pricing`、`/subscription`、`/account/subscription`、`/payment/success`、`/payment/cancel`                                              |
 
-## 📄 主要页面
+EE 路由由 `VITE_APP_EDITION !== 'oss'` 决定；后端 `APP_EDITION=oss` 时前端也应设置 `VITE_APP_EDITION=oss` 以隐藏订阅页面。
 
-### 用户端
+## 状态管理
 
-| 页面 | 路径         | 说明          |
-| ---- | ------------ | ------------- |
-| 登录 | `/login`     | 用户登录      |
-| 注册 | `/register`  | 用户注册      |
-| 对话 | `/chat/:id?` | AI 对话主界面 |
-| 简历 | `/resumes`   | 简历管理      |
-| 面试 | `/interview` | 模拟面试      |
-| 定价 | `/pricing`   | 订阅方案      |
-| 设置 | `/settings`  | 用户设置      |
+`src/stores/`：`authStore`、`resumeStore`、`jobStore`、`optimizationStore`、`conversationStore`、`interviewStore`、`generateStore`、`uiStore`。
 
-### 管理后台
-
-| 页面        | 路径                  | 说明        |
-| ----------- | --------------------- | ----------- |
-| 用户管理    | `/admin/users`        | 用户列表    |
-| 模型管理    | `/admin/models`       | AI 模型配置 |
-| Prompt 管理 | `/admin/prompts`      | 提示词模板  |
-| 邀请码      | `/admin/invite-codes` | 邀请码管理  |
-| 系统设置    | `/admin/settings`     | 系统配置    |
-
-## 🚀 快速开始
-
-### 安装依赖
+## 快速开始
 
 ```bash
+# 在仓库根目录安装依赖，并复制环境变量
 pnpm install
+cp packages/frontend/.env.example packages/frontend/.env
+
+# 开发（也可在 packages/frontend 内执行）
+pnpm --filter @interview-ai/frontend start:dev   # 或 pnpm dev:frontend
+pnpm --filter @interview-ai/frontend typecheck
+pnpm --filter @interview-ai/frontend test
+pnpm --filter @interview-ai/frontend test:coverage
+pnpm --filter @interview-ai/frontend build
+pnpm --filter @interview-ai/frontend preview
 ```
 
-### 配置环境
+dev server 端口 5173，`/api` 与 `/socket.io` 代理到 `http://localhost:3001`（见 `vite.config.ts`）；若后端 `PORT` 不是 3001，需同步调整代理目标或设置 `VITE_API_BASE_URL`。
 
-```bash
-cp .env.example .env
-# 编辑 .env 设置 API 地址
-```
+## 环境变量
 
-### 启动开发服务
+`VITE_API_BASE_URL`、`VITE_BACKEND_URL`、`VITE_GOOGLE_OAUTH_ENABLED`、`VITE_GITHUB_OAUTH_ENABLED`、`VITE_APP_EDITION`、`VITE_APP_ID`、`VITE_OSS_PUBLIC_ENDPOINT`、`VITE_STRIPE_*`、`VITE_PADDLE_*`，以及 `VITE_CDN_URL`、`VITE_HTTP_TIMEOUT_MS` / `VITE_UPLOAD_TIMEOUT_MS` / `VITE_PARSE_TIMEOUT_MS`。完整示例见 `.env.example`；`.env.production` 中的支付值目前是占位符。
 
-```bash
-pnpm dev
-# 访问 http://localhost:5173
-```
+## 说明
 
-### 构建生产版本
+- 国际化资源为 `src/locales/zh-CN.json`、`en-US.json`，入口 `src/i18n.ts`。
+- `vite-plugin-pwa` 已安装，但 `vite.config.ts` 中明确为构建性能禁用，当前构建不产出 Service Worker。
+- 项目根目录的 `intervai-mockup.html` 是静态界面效果图，不参与构建。
 
-```bash
-pnpm build
-pnpm preview
-```
+## 相关文档
 
-## 🧪 测试
-
-```bash
-# 运行测试
-pnpm test
-
-# 监视模式
-pnpm test:watch
-
-# 测试覆盖率
-pnpm test:coverage
-```
-
-## 🎨 关键组件
-
-### ChatPage (`pages/ChatPage/`)
-
-AI 对话主界面，使用自定义 Hooks 管理复杂状态：
-
-- `useResumeUpload` - 简历上传
-- `useJobActions` - 职位操作
-- `useOptimization` - 优化流程
-- `useChatItems` - 消息渲染
-
-### 功能卡片组件
-
-- `SuggestionCard` - 优化建议展示
-- `InterviewQuestionsCard` - 面试题卡片
-- `MatchAnalysisCard` - 匹配分析
-- `PDFGenerationCard` - PDF 生成
-
-## 🌐 国际化
-
-支持中英文切换：
-
-- `locales/en.json` - 英文
-- `locales/zh.json` - 中文
-
-使用方式：
-
-```tsx
-import { useTranslation } from 'react-i18next';
-const { t } = useTranslation();
-<span>{t('common.submit')}</span>;
-```
-
-## 📱 PWA 支持
-
-通过 `vite-plugin-pwa` 提供 PWA 功能，支持离线访问。
+- [系统架构](../../docs/architecture/system-architecture.md) · [环境配置指南](../../docs/guide/environment-setup.md) · [后端 README](../backend/README.md)

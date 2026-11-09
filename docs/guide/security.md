@@ -1,43 +1,39 @@
-# Security Policy
+# 安全策略
 
-## Supported Versions
+## 报告漏洞
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+请勿在公开 Issue 中披露漏洞。通过仓库的私有漏洞报告渠道（GitHub Security Advisories）或直接联系维护者，附复现步骤、影响范围与受影响版本，修复发布后再公开披露。
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+## 当前版本
 
-## Reporting a Vulnerability
+各 `package.json` 版本均为 `1.0.0`；以 `main` 分支与最新 Release 为准，旧版本不提供安全更新。
 
-We take the security of our software very seriously. If you have found a security vulnerability in the IntervAI, we encourage you to let us know right away. We will investigate all legitimate reports and do our best to quickly fix the problem.
+## 已入库凭据（最高优先级）
 
-### How to Report
+历史提交 `1ccfbeb54` 曾包含 `.env`、`.env.production`、`.env.docker` 与 `deployment/config/ssl/udefined.cc.key` 等 TLS 私钥 / 证书。当前已取消证书文件的 git 跟踪并把 `**/config/ssl/*.key|pem|crt|csr` 加入 `.gitignore`，项目也保留了本地 `.env`；但**忽略规则不会清除历史记录**，这些凭据必须视为已泄露：
 
-Please do not report security vulnerabilities through public GitHub issues.
+1. 轮换 TLS 证书、数据库 / Redis / MinIO 口令、`JWT_SECRET`、OAuth 与支付凭据、所有 AI Provider Key。
+2. 用 `git filter-repo` / `git filter-branch` 清理历史，并强制更新远端与所有 clone。
+3. 检查 CI Secrets、部署主机 `.env.production` 与备份文件是否也使用了同一批密钥。
 
-Instead, please report them via email to [INSERT SECURITY EMAIL].
+## 代码中的防护措施（按实际生效情况）
 
-You should receive a response within 48 hours. If for some reason you do not, please follow up via email to ensure we received your original message.
+| 层面         | 实现位置与现状                                                                                                                                                                                                                                     |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 传输与请求头 | `main.ts:25-26` 请求体上限 4 MB；`:81-103` Helmet（CSP/HSTS 硬编码）；`:118` CORS **只读 `CORS_ORIGIN`**，`FRONTEND_URL` 不参与                                                                                                                    |
+| 输入校验     | 全局 `ValidationPipe`；`common/validators/file-upload.validator.ts` 10 MB 上限与类型白名单（硬编码，`MAX_FILE_SIZE` / `ALLOWED_FILE_TYPES` 未读取）                                                                                                |
+| 认证         | `passport-jwt`（`JWT_SECRET` / `JWT_EXPIRES_IN`）+ `JwtAuthGuard`；Google / GitHub OAuth。`jwt.strategy.ts:17` 与 `auth.module.ts` 仍有 `'your-secret-key'` 兜底值，生产必须显式设置 `JWT_SECRET`（prod compose 已用 `:?` 强制校验）               |
+| 授权         | `RolesGuard` + `@Roles(Role.ADMIN)` 保护 `/admin/*` 与前端管理页                                                                                                                                                                                   |
+| 限流         | `app.module.ts:63-68` 配置 100 次 / 60 秒，但**未挂载 `APP_GUARD`**，仅 `modules/user/controllers/user.controller.ts:130` 局部生效；`RATE_LIMIT_*` 无读取                                                                                                         |
+| 运维端点     | `metrics` / `alerts` controller 无鉴权（`MonitoringGuard` 恒 `return true`），且 `alerting.controller.ts` 含 `POST` 创建 / 解决告警；`Caddyfile` 已对公网返回 403，但内网 `backend:3000` 仍可直接调用                                              |
+| API 文档     | `main.ts:173` 无条件 `SwaggerModule.setup('api/docs')`；`Caddyfile` 已阻断公网 `/api/docs*`，非生产环境仍应自行限制                                                                                                                                |
+| 日志与审计   | Winston 请求日志中间件（`app.module.ts`）、`AuditLog` 模型                                                                                                                                                                                         |
+| AI 密钥      | 运行时 Provider 密钥来自环境变量（`OPENAI_API_KEY`、`DEEPSEEK_API_KEY` 等，见 `modules/ai/services/ai.service.ts`）；`ModelConfig.apiKey` 只是管理端元数据，按明文存储（`admin.controller.ts` 与 `scripts/manage-model-config.ts` 一致），请勿填入真实生产密钥 |
 
-### Disclosure Policy
+## 部署注意事项
 
-1. **Initial Report**: Please provide a detailed description of the vulnerability, including steps to reproduce it.
-2. **Assessment**: We will assess the vulnerability and determine its impact.
-3. **Fix**: We will work on a fix for the vulnerability.
-4. **Disclosure**: Once the fix is released, we will publicly disclose the vulnerability.
-
-We ask that you please give us a reasonable amount of time to fix the vulnerability before publicly disclosing it.
-
-## Security Best Practices
-
-When deploying this application in production, please ensure you follow these security best practices:
-
-- Change all default passwords and secrets
-- Use strong, unique passwords for all services (DB, Redis, etc.)
-- Enable HTTPS/SSL for all public-facing endpoints
-- Configure proper firewall rules
-- Keep all dependencies up to date
-- Monitor logs for suspicious activity
+- 生产必填变量见 [部署与运维](../../deployment/README.md)；不要依赖示例弱口令：`compose` 中 MinIO 默认 `minioadmin`，必须在 `.env.production` 覆盖；`redis:latest` / `minio/minio:latest` 建议锁定版本。
+- Caddy 负责自动 HTTPS、SPA 反代，并在公网阻断 `/api/v1/metrics*`、`/api/v1/alerts*`、`/api/docs*`；`:80` 返回 426。
+- **未被运行时读取的变量**：`ENCRYPTION_KEY`、`STORAGE_PROVIDER`、`AWS_*`、`CHROMA_DB_URL`、`BETTER_AUTH_URL`、`CSP_ENABLED`、`FORCE_HTTPS`、`HSTS_*`、`JWT_REFRESH_*`、`RATE_LIMIT_*`、`MAX_FILE_SIZE`、`ALLOWED_FILE_TYPES`、`DATABASE_POOL_*` 等。Helmet / Caddy / Throttler / 文件校验的实际值都是硬编码，设置这些变量不会产生加固效果。
+- `deployment/config/ssl/` 下的遗留证书未被 Caddy 使用，可在轮换后删除。
+- 定期执行 `pnpm audit` 并关注 `.github/dependabot.yml` 的依赖更新 PR；当前 CI 没有 CodeQL / Trivy / `npm audit` 步骤。

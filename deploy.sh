@@ -40,13 +40,13 @@ IntervAI 部署脚本
   -s, --services <list> 只构建/启动指定的组件 (例如: "backend frontend")
   --skip-build          跳过 Docker 镜像构建
   --skip-pull           跳过代码拉取 (git pull)
-  --ssl                 配置 SSL 证书 (仅 prod)
+  --ssl                 兼容参数（HTTPS 已由 Caddy 自动配置）
   --backup              部署前备份数据库
   --help                显示此帮助信息
 
 示例:
   $0 --env dev                  # 部署开发环境
-  $0 --env prod --ssl           # 部署生产环境并配置 SSL
+  $0 --env prod               # 部署生产环境（HTTPS 由 Caddy 自动配置）
   $0 --env prod --skip-build    # 快速重启生产环境
 EOF
 }
@@ -62,7 +62,7 @@ while [[ $# -gt 0 ]]; do
         --backup)
             log_info "执行数据库备份..."
             if [ -f "${SCRIPTS_DIR}/manage-db.sh" ]; then
-                bash "${SCRIPTS_DIR}/manage-db.sh" backup
+                DEPLOY_ENV="$ENV" bash "${SCRIPTS_DIR}/manage-db.sh" backup
             else
                 log_error "找不到备份脚本: ${SCRIPTS_DIR}/manage-db.sh"
                 exit 1
@@ -70,6 +70,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help) show_help; exit 0 ;;
+        --) shift ;;
         *) log_error "未知参数: $1"; show_help; exit 1 ;;
     esac
 done
@@ -87,21 +88,11 @@ main() {
         env_file="${PROJECT_ROOT}/.env.production"
         compose_file="${DEPLOY_DIR}/docker-compose.prod.yml"
 
-        # 检查 prod 配置文件
+        # 生产配置：优先 .env.production，否则依赖进程环境变量
+        # compose 中 JWT_SECRET 等使用 :? 强制要求，缺失时 Compose 会直接报错
         if [ ! -f "$env_file" ]; then
-             # 尝试寻找示例文件
-            local example_file="${PROJECT_ROOT}/.env.production.example"
-            if [ -f "$example_file" ]; then
-                log_warn "未找到 $env_file，从示例文件创建..."
-                cp "$example_file" "$env_file"
-                log_info "请编辑 $env_file 配置生产环境参数"
-                exit 1
-            else
-                log_error "找不到 .env.production 或示例文件"
-                # 不强制退出，因为可能已经配置在环境变量中
-                # 但通常需要文件，这里给个警告
-                log_warn "将尝试使用系统环境变量"
-            fi
+            log_warn "未找到 $env_file，将使用进程环境变量"
+            log_warn "必需变量见 deployment/README.md 的「环境变量」章节"
         fi
     fi
 
@@ -110,6 +101,15 @@ main() {
         log_error "找不到 Docker Compose 配置文件: $compose_file"
         exit 1
     fi
+
+    # 统一的 Compose v2 调用：env 文件不存在时不传 --env-file（避免启动失败）
+    dc() {
+        if [ -f "$env_file" ]; then
+            docker compose --env-file "$env_file" -f "$compose_file" "$@"
+        else
+            docker compose -f "$compose_file" "$@"
+        fi
+    }
 
     # 加载环境变量
     if [ -f "$env_file" ]; then
@@ -131,66 +131,86 @@ main() {
         log_info "跳过代码拉取"
     fi
 
-    # 3. 依赖检查
+    # 3. 依赖检查（统一要求 Compose v2）
     check_command docker
-    check_command docker-compose || check_command docker
+    if ! docker compose version >/dev/null 2>&1; then
+        log_error "未检测到 Docker Compose v2（docker compose）"
+        exit 1
+    fi
 
-    # 4. 构建镜像
+    # 4. 构建镜像（dev compose 只有基础设施，build 为空操作）
     if [ "$SKIP_BUILD" = false ]; then
         log_step "构建 Docker 镜像... ${SERVICES}"
-        # 确保使用正确的 compose 文件
-        docker compose --env-file "$env_file" -f "$compose_file" build --no-cache $SERVICES
+        dc build --no-cache $SERVICES
     else
         log_info "跳过镜像构建"
     fi
 
     # 5. 启动服务
     log_step "启动服务... ${SERVICES}"
-    docker compose --env-file "$env_file" -f "$compose_file" up -d $SERVICES
+    dc up -d $SERVICES
 
-    # 6. 数据库迁移
-    log_step "执行数据库迁移..."
-    # 确保 backend 服务存在且运行
-    docker compose --env-file "$env_file" -f "$compose_file" run --rm backend npx prisma migrate deploy
+    # 6. 数据库迁移：仅 prod compose 含 backend 服务
+    if [ "$ENV" == "prod" ]; then
+        log_step "执行数据库迁移..."
+        dc run --rm backend prisma migrate deploy
+    else
+        log_info "开发 compose 不含 backend 服务，跳过容器内迁移"
+        log_info "本地启动前请执行: pnpm --filter @interview-ai/backend prisma:migrate"
+    fi
 
-    # 7. SSL 配置 (仅 prod)
+    # 7. HTTPS：由 Caddy 依据 DOMAIN / LETSENCRYPT_EMAIL 自动申请与续期
     if [ "$ENV" == "prod" ] && [ "$SETUP_SSL" == true ]; then
-        log_step "配置 SSL..."
-        if [ -f "${SCRIPTS_DIR}/setup-ssl.sh" ]; then
-            bash "${SCRIPTS_DIR}/setup-ssl.sh"
-        else
-            log_error "找不到 SSL 配置脚本: ${SCRIPTS_DIR}/setup-ssl.sh"
-        fi
+        log_info "--ssl 已启用：证书由 Caddy 自动管理，无需额外脚本"
     fi
 
     # 8. 健康检查
     log_step "执行健康检查..."
 
-    local check_urls=()
+    if [ "$ENV" != "prod" ]; then
+        # 开发 compose 只含基础设施，检查容器状态而非应用 HTTP 端点
+        local running_services
+        running_services=$(dc ps --services --filter "status=running")
+        for svc in postgres redis; do
+            if ! echo "$running_services" | grep -qx "$svc"; then
+                log_error "基础设施服务未运行: $svc"
+                exit 1
+            fi
+            log_info "✓ 服务运行中: $svc"
+        done
+        log_info "开发部署完成。启动应用: pnpm dev"
+        exit 0
+    fi
 
-    if [ "$ENV" == "prod" ]; then
-        # In prod, check via Load Balancer (handles both frontend and backend routing)
-        local lb_url="http://localhost/health"
-        if [ "$SETUP_SSL" == true ]; then
-             lb_url="https://${DOMAIN:-localhost}/health"
+    # 生产：直接探测后端容器。Caddy 的 :80 恒返回 426，不能作为探活入口
+    local backend_healthy=false
+    for i in {1..12}; do
+        if dc exec -T backend curl -fsS http://localhost:3000/health > /dev/null 2>&1; then
+            backend_healthy=true
+            break
         fi
-        check_urls+=("$lb_url")
-    else
-        # In Dev, check both services directly
-        # Backend health endpoint is excluded from API prefix
-        check_urls+=("http://localhost:3000/health")
+        echo -n "."
+        sleep 5
+    done
+    echo ""
 
-        # Frontend defaults to 80 if not set
-        local fe_port="${FRONTEND_PORT:-80}"
-        check_urls+=("http://localhost:${fe_port}/health")
+    if [ "$backend_healthy" != true ]; then
+        log_error "后端健康检查失败"
+        dc logs --tail=50 backend || true
+        exit 1
+    fi
+    log_info "✓ 后端健康检查通过"
+
+    # 可选：公网 HTTPS 入口检查（Caddy 已把 /health 反代到后端）
+    local check_urls=()
+    if [ -n "${DOMAIN:-}" ] && [ "$DOMAIN" != "localhost" ]; then
+        check_urls+=("https://${DOMAIN}/health")
     fi
 
     for url in "${check_urls[@]}"; do
         log_info "Checking: $url"
-        # Retry loop
         local success=false
         for i in {1..12}; do
-            # Use -k for self-signed certs (if any) and -L to follow redirects
             if curl -s -f -k -L "$url" > /dev/null; then
                 log_info "✓ Health check passed: $url"
                 success=true
@@ -202,13 +222,11 @@ main() {
         echo ""
 
         if [ "$success" = false ]; then
-            log_error "Health check failed for: $url"
-            log_warn "服务启动可能超时，请手动检查: docker compose -f $compose_file logs"
-            exit 1
+            log_warn "公网健康检查未通过: $url（后端容器已健康，请检查 Caddy / DNS / 证书）"
         fi
     done
 
-    log_info "部署成功! 访问地址: ${check_urls[0]}"
+    log_info "部署成功! 访问地址: https://${DOMAIN:-localhost}"
     exit 0
 }
 

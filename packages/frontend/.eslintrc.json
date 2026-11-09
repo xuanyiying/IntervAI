@@ -21,6 +21,110 @@
     "@typescript-eslint/no-unused-vars": [
       "error",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@/components", "@/components/**",
+              "@/pages", "@/pages/**",
+              "@/hooks", "@/hooks/**",
+              "@/services", "@/services/**",
+              "@/stores", "@/stores/**",
+              "@/layouts", "@/layouts/**",
+              "@/config", "@/config/**",
+              "@/utils", "@/utils/**",
+              "@/types", "@/types/**",
+              "@/styles", "@/styles/**",
+              "@/locales", "@/locales/**",
+              "@/i18n", "@/index.css"
+            ],
+            "message": "旧的技术分层路径已废弃，请使用 @/app/*、@/shared/* 或 @/features/<domain>。"
+          },
+          {
+            "group": ["../../*", "../../../*", "../../../../*"],
+            "message": "禁止跨目录的相对导入，请统一使用 @/ 别名。"
+          }
+        ]
+      }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/shared/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components", "@/components/**",
+                  "@/pages", "@/pages/**",
+                  "@/hooks", "@/hooks/**",
+                  "@/services", "@/services/**",
+                  "@/stores", "@/stores/**",
+                  "@/layouts", "@/layouts/**",
+                  "@/config", "@/config/**",
+                  "@/utils", "@/utils/**",
+                  "@/types", "@/types/**",
+                  "@/styles", "@/styles/**",
+                  "@/locales", "@/locales/**",
+                  "@/i18n", "@/index.css"
+                ],
+                "message": "旧的技术分层路径已废弃，请使用 @/app/*、@/shared/* 或 @/features/<domain>。"
+              },
+              {
+                "group": ["../../*", "../../../*", "../../../../*"],
+                "message": "禁止跨目录的相对导入，请统一使用 @/ 别名。"
+              },
+              {
+                "group": ["@/features/**", "@/app/**", "@/ee/**"],
+                "message": "shared 层不得反向依赖 features / app / ee。"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@/components", "@/components/**",
+                  "@/pages", "@/pages/**",
+                  "@/hooks", "@/hooks/**",
+                  "@/services", "@/services/**",
+                  "@/stores", "@/stores/**",
+                  "@/layouts", "@/layouts/**",
+                  "@/config", "@/config/**",
+                  "@/utils", "@/utils/**",
+                  "@/types", "@/types/**",
+                  "@/styles", "@/styles/**",
+                  "@/locales", "@/locales/**",
+                  "@/i18n", "@/index.css"
+                ],
+                "message": "旧的技术分层路径已废弃，请使用 @/app/*、@/shared/* 或 @/features/<domain>。"
+              },
+              {
+                "group": ["../../*", "../../../*", "../../../../*"],
+                "message": "禁止跨目录的相对导入，请统一使用 @/ 别名。"
+              },
+              {
+                "group": ["@/app/**", "@/ee/**"],
+                "message": "features 层不得反向依赖 app / ee。"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

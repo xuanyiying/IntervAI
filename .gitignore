@@ -11,7 +11,7 @@ build/
 *.d.ts
 
 # Generated code
-packages/backend/src/generated/
+packages/backend/generated/
 
 # pnpm local store
 .pnpm-store/
@@ -59,18 +59,20 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
-# Prisma
-prisma/migrations/
-
 # Uploads
 uploads/
 temp/
 
 # Production Configuration
+# 注意：历史提交中曾包含 .env / .env.production / .env.docker 与 ssl 私钥，
+# 忽略规则只对未跟踪文件生效，已入库的凭据仍需自行轮换与清理历史。
+.env.docker
 .env.production.local
-config/ssl/*.pem
-config/ssl/*.key
-config/ssl/*.crt
+packages/backend/tencent.env
+**/config/ssl/*.key
+**/config/ssl/*.pem
+**/config/ssl/*.crt
+**/config/ssl/*.csr
 backups/
 logs/nginx/
 certbot/
@@ -80,6 +82,5 @@ postgres_data/
 redis_data/
 # Turborepo
 .turbo/
-/packages/backend/prisma/migrations
 packages/frontend/html
 packages/frontend/dev-dist

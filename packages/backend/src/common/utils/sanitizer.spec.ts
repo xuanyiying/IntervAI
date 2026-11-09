@@ -112,10 +112,10 @@ describe('Sanitizer', () => {
       expect(result.length).toBeLessThanOrEqual(255);
     });
 
-    it('should replace spaces with underscores', () => {
+    it('should preserve spaces (CJK-friendly sanitization)', () => {
       const filename = 'my resume.pdf';
       const result = Sanitizer.sanitizeFilename(filename);
-      expect(result).toContain('_');
+      expect(result).toBe('my resume.pdf');
     });
   });
 

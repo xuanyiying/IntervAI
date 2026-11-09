@@ -253,14 +253,14 @@ describe('HttpExceptionFilter', () => {
   });
 
   describe('Error response format', () => {
-    it('should always include required fields in error response', () => {
+    it('should always include required fields in error response', async () => {
       const exception = new AppException(
         ErrorCode.INTERNAL_SERVER_ERROR,
         'Internal server error',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
 
-      filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+      await filter.catch(exception, mockArgumentsHost as ArgumentsHost);
 
       const callArgs = mockResponse.json.mock.calls[0][0];
       expect(callArgs.error).toHaveProperty('code');

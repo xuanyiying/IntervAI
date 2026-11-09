@@ -21,7 +21,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./config/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./config/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-      - ../backups/postgres:/backups
+      - ./backups/postgres:/backups
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
@@ -45,7 +45,7 @@ services:
 
   # Redis Cache - Production
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: redis
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     restart: always
@@ -70,12 +70,12 @@ services:
 
   # Object Storage (MinIO)
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-04-08T15-41-24Z
     container_name: minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${OSS_ACCESS_KEY:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
+      MINIO_ROOT_PASSWORD: ${OSS_SECRET_KEY:-minioadmin}
     volumes:
       - minio_data:/data
     networks:
@@ -95,7 +95,9 @@ services:
       dockerfile: packages/backend/Dockerfile
       args:
         NODE_ENV: production
-    container_name: backend # Removed to allow scaling with replicas
+    # CI 推送镜像时由 BACKEND_IMAGE 覆盖；本地构建使用 intervai/backend:local
+    image: ${BACKEND_IMAGE:-intervai/backend:local}
+    container_name: backend
     depends_on:
       postgres:
         condition: service_healthy
@@ -111,25 +113,44 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
-      STORAGE_PROVIDER: ${STORAGE_PROVIDER:-minio}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      APP_EDITION: ${APP_EDITION:-oss}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      FRONTEND_URL: ${FRONTEND_URL:-}
+      AI_MODEL: ${AI_MODEL:-deepseek:deepseek-chat}
+      AI_EMBEDDING_MODEL: ${AI_EMBEDDING_MODEL:-siliconcloud:BAAI/bge-m3}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      QWEN_API_KEY: ${QWEN_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      SILICONCLOUD_API_KEY: ${SILICONCLOUD_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://localhost:11434/v1}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      OSS_TYPE: ${OSS_TYPE:-MINIO}
       OSS_ENDPOINT: ${OSS_ENDPOINT:-minio:9000}
       OSS_PORT: 9000
       OSS_REGION: ${OSS_REGION:-us-east-1}
       OSS_ACCESS_KEY: ${OSS_ACCESS_KEY:-minioadmin}
-      OSS_SECRET_KEY: ${OSS_SECRET_KEY:-secure_minio_admin_2025}
+      OSS_SECRET_KEY: ${OSS_SECRET_KEY:-minioadmin}
       OSS_BUCKET: ${OSS_BUCKET:-resume-files}
-      LOG_LEVEL: info
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL}
-      QWEN_API_KEY: ${QWEN_API_KEY}
+      OSS_APP_ID: ${OSS_APP_ID:-}
+      OSS_PUBLIC_ENDPOINT: ${OSS_PUBLIC_ENDPOINT:-}
+      OSS_PATH_STYLE: ${OSS_PATH_STYLE:-true}
+      OSS_SECURE: ${OSS_SECURE:-false}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      OTEL_ENABLE: ${OTEL_ENABLE:-false}
+      OTEL_OTLP_URL: ${OTEL_OTLP_URL:-http://localhost:4318/v1/traces}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-}
     volumes:
-      - ../logs:/app/logs
+      - ./logs:/app/logs
     networks:
       - app-network
     restart: always
@@ -155,13 +176,11 @@ services:
     build:
       context: ..
       dockerfile: packages/frontend/Dockerfile
-    image: ${FRONTEND_IMAGE:-ghcr.io/interview-ai/frontend:latest}
+    image: ${FRONTEND_IMAGE:-intervai/frontend:local}
     container_name: frontend
     depends_on:
       backend:
         condition: service_healthy
-    environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     volumes:
       - frontend_dist:/app/dist
     networks:
@@ -198,7 +217,7 @@ services:
       - caddy_data:/data
       - caddy_config:/config
       - frontend_dist:/var/www/html:ro
-      - ../logs/caddy:/var/log/caddy
+      - ./logs/caddy:/var/log/caddy
     environment:
       - DOMAIN=${DOMAIN}
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}
@@ -212,146 +231,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-  # Database Backup
-  # postgres-backup:
-  #   image: postgres:16
-  #   container_name: backup
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
-  #   volumes:
-  #     - ../backups/postgres:/backups
-  #     - ../scripts/backup-postgres.sh:/backup.sh:ro
-  #   command: /bin/sh -c "while true; do /backup.sh; sleep 86400; done"
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-
-  # --- Monitoring Infrastructure (Disabled to save memory) ---
-  # Uncomment below services if monitoring is needed
-  #
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   container_name: prometheus
-  #   ports:
-  #     - "9090:9090"
-  #   volumes:
-  #     - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  #     - ./config/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
-  #     - prometheus_data:/prometheus
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   ports:
-  #     - "3001:3000"
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
-  #     - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-  #     - GF_USERS_ALLOW_SIGN_UP=false
-  #   volumes:
-  #     - grafana_data:/var/lib/grafana
-  #     - ./config/grafana/provisioning:/etc/grafana/provisioning
-  #   depends_on:
-  #     - prometheus
-  #     - loki
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # loki:
-  #   image: grafana/loki:2.9.0
-  #   container_name: loki
-  #   user: "0"
-  #   ports:
-  #     - "3100:3100"
-  #   volumes:
-  #     - ./config/loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-  #     - loki_data:/tmp/loki
-  #   command: -config.file=/etc/loki/local-config.yaml
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # promtail:
-  #   image: grafana/promtail:2.9.0
-  #   container_name: promtail
-  #   volumes:
-  #     - ./config/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
-  #     - ../logs:/var/log/app:ro
-  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
-  #   command: -config.file=/etc/promtail/config.yml
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # alertmanager:
-  #   image: prom/alertmanager:latest
-  #   container_name: alertmanager
-  #   ports:
-  #     - "9093:9093"
-  #   volumes:
-  #     - ./config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-  #     - alertmanager_data:/alertmanager
-  #   command:
-  #     - '--config.file=/etc/alertmanager/alertmanager.yml'
-  #     - '--storage.path=/alertmanager'
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # node-exporter:
-  #   image: prom/node-exporter:latest
-  #   container_name: node-exporter
-  #   volumes:
-  #     - /proc:/host/proc:ro
-  #     - /sys:/host/sys:ro
-  #     - /:/rootfs:ro
-  #   command:
-  #     - '--path.procfs=/host/proc'
-  #     - '--path.sysfs=/host/sys'
-  #   ports:
-  #     - "9100:9100"
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #
-  # cadvisor:
-  #   image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/ghcr.io/google/cadvisor:0.54.0
-  #   container_name: cadvisor
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - /:/rootfs:ro
-  #     - /var/run:/var/run:ro
-  #     - /sys:/sys:ro
-  #     - /var/lib/docker/:/var/lib/docker:ro
-  #     - /dev/disk:/dev/disk:ro
-  #   networks:
-  #     - app-network
-  #   restart: always
-  #   logging: *logging
-  #   privileged: true
-  #   devices:
-  #     - /dev/kmsg
-
+  
 volumes:
   postgres_data:
   redis_data:
@@ -359,11 +239,6 @@ volumes:
   caddy_data:
   caddy_config:
   frontend_dist:
-    # Monitoring volumes (disabled to save memory)
-    # prometheus_data:
-    # grafana_data:
-    # loki_data:
-    # alertmanager_data:
 
 networks:
   app-network:

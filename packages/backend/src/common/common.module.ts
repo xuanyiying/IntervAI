@@ -6,8 +6,8 @@ import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { TransformInterceptor } from './interceptors/transform.interceptor';
 import { RolesGuard, AdminGuard } from './guards';
 import { ValidationPipe } from './pipes/validation.pipe';
-import { MonitoringModule } from '@/shared/monitoring/monitoring.module';
-import { loggerConfig } from '@/shared/logger/logger.config';
+import { MonitoringModule } from '@/infrastructure/monitoring/monitoring.module';
+import { loggerConfig } from '@/infrastructure/logger/config/logger.config';
 
 @Global()
 @Module({

@@ -47,6 +47,25 @@
         }
     }
     
+    # 运维端点在应用内无鉴权，公网一律拒绝；内网可通过 backend:3000 访问
+    handle /api/v1/metrics* {
+        respond "Forbidden" 403 {
+            close
+        }
+    }
+
+    handle /api/v1/alerts* {
+        respond "Forbidden" 403 {
+            close
+        }
+    }
+
+    handle /api/docs* {
+        respond "Forbidden" 403 {
+            close
+        }
+    }
+
     handle /api/* {
         reverse_proxy backend:3000 {
             header_up Host {host}
@@ -56,10 +75,9 @@
         }
     }
     
+    # 真实探活：反代到后端 /health，避免静态 200 造成假阳性
     handle /health {
-        respond "healthy" 200 {
-            close
-        }
+        reverse_proxy backend:3000
     }
     
     handle {

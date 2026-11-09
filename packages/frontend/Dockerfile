@@ -46,9 +46,8 @@ WORKDIR /app
 # Copy built files from builder
 COPY --from=builder /app/packages/frontend/dist ./dist
 
-# Create a simple health check script
-RUN echo '#!/bin/sh' > /health.sh && \
-    echo 'exit 0' >> /health.sh && \
+# 真实检查静态产物是否存在，避免恒 exit 0 造成假阳性
+RUN printf '#!/bin/sh\ntest -f /app/dist/index.html\n' > /health.sh && \
     chmod +x /health.sh
 
 # This container doesn't serve files - Caddy will mount and serve them

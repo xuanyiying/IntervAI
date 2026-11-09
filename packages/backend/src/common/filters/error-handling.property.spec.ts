@@ -105,24 +105,27 @@ describe('Error Handling - Property Tests', () => {
    * Property: Error code matches HTTP status
    * For any error code, the HTTP status should match the mapping in ERROR_CODE_TO_STATUS
    */
-  it('should return correct HTTP status for error code', () => {
-    fc.assert(
-      fc.property(fc.constantFrom(...Object.values(ErrorCode)), (errorCode) => {
-        const expectedStatus = ERROR_CODE_TO_STATUS[errorCode as ErrorCode];
-        const exception = new AppException(
-          errorCode as ErrorCode,
-          'Test error',
-          expectedStatus
-        );
+  it('should return correct HTTP status for error code', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.constantFrom(...Object.values(ErrorCode)),
+        async (errorCode) => {
+          const expectedStatus = ERROR_CODE_TO_STATUS[errorCode as ErrorCode];
+          const exception = new AppException(
+            errorCode as ErrorCode,
+            'Test error',
+            expectedStatus
+          );
 
-        filter.catch(exception, mockArgumentsHost as ArgumentsHost);
+          await filter.catch(exception, mockArgumentsHost as ArgumentsHost);
 
-        expect(mockResponse.status).toHaveBeenCalledWith(expectedStatus);
+          expect(mockResponse.status).toHaveBeenCalledWith(expectedStatus);
 
-        // Reset mock for next iteration
-        mockResponse.status.mockClear();
-        mockResponse.json.mockClear();
-      }),
+          // Reset mock for next iteration
+          mockResponse.status.mockClear();
+          mockResponse.json.mockClear();
+        }
+      ),
       { numRuns: 100 }
     );
   });

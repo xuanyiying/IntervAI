@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PaymentService } from './payment.service';
-import { PaymentController } from './payment.controller';
-import { PrismaModule } from '@/shared/database/prisma.module';
+import { PaymentService } from './services/payment.service';
+import { PaymentController } from './controllers/payment.controller';
+import { PrismaModule } from '@/infrastructure/database/prisma.module';
 
-import { StripePaymentProvider } from './providers/stripe-payment.provider';
-import { PaddlePaymentProvider } from './providers/paddle-payment.provider';
+import { StripePaymentProvider } from './adapters/stripe-payment.provider';
+import { PaddlePaymentProvider } from './adapters/paddle-payment.provider';
 
 @Module({
   imports: [ConfigModule, PrismaModule],

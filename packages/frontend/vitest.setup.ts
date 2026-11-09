@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import i18n from './src/i18n';
+import i18n from '@/shared/lib/i18n';
 
 // Cleanup after each test
 afterEach(() => {
