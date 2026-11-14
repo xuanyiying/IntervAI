@@ -26,12 +26,7 @@ import { StorageModule } from '@/modules/storage/storage.module';
 import { UserModule } from '@/modules/user/user.module';
 import { VoiceModule } from '@/modules/voice/voice.module';
 import { BullModule } from '@nestjs/bull';
-import {
-  Logger,
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-} from '@nestjs/common';
+import { Logger, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';

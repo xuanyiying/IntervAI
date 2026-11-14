@@ -6,6 +6,7 @@ import { initOpenTelemetry } from '@/infrastructure/monitoring/utils/otel';
 import { RedisIoAdapter } from '@/modules/chat/gateways/redis-io.adapter';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
@@ -17,10 +18,14 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   // Voiceprint enrollment uploads raw PCM as base64 JSON (~400KB for 9s),
   // exceeding the default 100kb JSON limit — register parsers explicitly.
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
     bodyParser: false,
   });
+
+  // Caddy 是唯一一跳反代，且用 {remote_host} 覆写 X-Forwarded-For。
+  // 不设 trust proxy 时 req.ip 恒为 Caddy 容器 IP，全局限流会退化成全站共享配额。
+  app.set('trust proxy', 1);
 
   app.use(express.json({ limit: '4mb' }));
   app.use(express.urlencoded({ extended: true, limit: '4mb' }));
@@ -153,24 +158,30 @@ async function bootstrap() {
     exclude: ['health', '/'],
   });
 
-  // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Interview AI API')
-    .setDescription(
-      'AI-powered interview preparation and resume optimization platform API'
-    )
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addTag('auth', 'Authentication endpoints')
-    .addTag('resumes', 'Resume management endpoints')
-    .addTag('jobs', 'Job management endpoints')
-    .addTag('optimizations', 'Resume optimization endpoints')
-    .addTag('generate', 'PDF generation endpoints')
-    .addTag('interview', 'Interview preparation endpoints')
-    .addTag('account', 'Account endpoints')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  // Swagger 文档：生产默认关闭，需显式 ENABLE_SWAGGER=true 才暴露
+  const enableSwagger = !isProduction || process.env.ENABLE_SWAGGER === 'true';
+  if (enableSwagger) {
+    const config = new DocumentBuilder()
+      .setTitle('Interview AI API')
+      .setDescription(
+        'AI-powered interview preparation and resume optimization platform API'
+      )
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addTag('auth', 'Authentication endpoints')
+      .addTag('resumes', 'Resume management endpoints')
+      .addTag('jobs', 'Job management endpoints')
+      .addTag('optimizations', 'Resume optimization endpoints')
+      .addTag('generate', 'PDF generation endpoints')
+      .addTag('interview', 'Interview preparation endpoints')
+      .addTag('account', 'Account endpoints')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
+
+  // SIGTERM/SIGINT 时排水 Bull 队列、Prisma 连接与 Socket.IO，避免滚动发布掐断进行中的面试
+  app.enableShutdownHooks();
 
   const port = process.env.PORT || 3000;
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
@@ -181,10 +192,12 @@ async function bootstrap() {
     `Application is running on: http://localhost:${port}`,
     'Bootstrap'
   );
-  logger.log(
-    `Swagger documentation available at: http://localhost:${port}/api/docs`,
-    'Bootstrap'
-  );
+  if (enableSwagger) {
+    logger.log(
+      `Swagger documentation available at: http://localhost:${port}/api/docs`,
+      'Bootstrap'
+    );
+  }
 }
 
 bootstrap();

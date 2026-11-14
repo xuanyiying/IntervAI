@@ -70,7 +70,8 @@ interface SessionRecordingState {
 })
 @Injectable()
 export class RealtimeInterviewGateway
-  implements OnGatewayConnection, OnGatewayDisconnect {
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -100,7 +101,7 @@ export class RealtimeInterviewGateway
     private readonly qwenRealtimeService: QwenRealtimeService,
     private readonly speakerVerify: SpeakerVerifyService,
     private readonly storageService: StorageService
-  ) { }
+  ) {}
 
   async handleConnection(client: Socket) {
     try {
@@ -218,7 +219,8 @@ export class RealtimeInterviewGateway
     if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
       return;
 
-    const channel: AudioChannel = data.channel === 'self' ? 'self' : 'interviewer';
+    const channel: AudioChannel =
+      data.channel === 'self' ? 'self' : 'interviewer';
     const streamKey = this.streamKey(data.sessionId, channel);
 
     const existing = this.liveStreams.get(streamKey);
@@ -304,17 +306,20 @@ export class RealtimeInterviewGateway
   @SubscribeMessage('audio_data')
   handleAudioData(
     @MessageBody()
-    data: { sessionId: string; audio: string | ArrayBuffer; channel?: AudioChannel },
+    data: {
+      sessionId: string;
+      audio: string | ArrayBuffer;
+      channel?: AudioChannel;
+    },
     @ConnectedSocket() client: Socket
   ) {
     const userId = this.authenticatedClients.get(client.id);
     if (!userId || this.activeSessions.get(client.id) !== data.sessionId)
       return;
 
-    const channel: AudioChannel = data.channel === 'self' ? 'self' : 'interviewer';
-    const state = this.liveStreams.get(
-      this.streamKey(data.sessionId, channel)
-    );
+    const channel: AudioChannel =
+      data.channel === 'self' ? 'self' : 'interviewer';
+    const state = this.liveStreams.get(this.streamKey(data.sessionId, channel));
     if (!state) return;
 
     let chunk: Buffer;
@@ -331,7 +336,10 @@ export class RealtimeInterviewGateway
     // Rolling tail for voiceprint verification.
     state.recentPcm.push(chunk);
     state.recentPcmBytes += chunk.length;
-    while (state.recentPcmBytes > this.MAX_RECENT_PCM_BYTES && state.recentPcm.length > 1) {
+    while (
+      state.recentPcmBytes > this.MAX_RECENT_PCM_BYTES &&
+      state.recentPcm.length > 1
+    ) {
       const dropped = state.recentPcm.shift();
       state.recentPcmBytes -= dropped?.length ?? 0;
     }
@@ -339,7 +347,9 @@ export class RealtimeInterviewGateway
     // Whole-session recording: use the user's own mic (room audio) when
     // available; otherwise fall back to the single active stream.
     const recording = this.sessionRecordings.get(data.sessionId);
-    const selfExists = this.liveStreams.has(this.streamKey(data.sessionId, 'self'));
+    const selfExists = this.liveStreams.has(
+      this.streamKey(data.sessionId, 'self')
+    );
     const recordsThisChannel =
       channel === 'self' || (channel === 'interviewer' && !selfExists);
 
@@ -590,7 +600,10 @@ export class RealtimeInterviewGateway
     return `${sessionId}:${channel}`;
   }
 
-  private getChannelStates(sessionId: string, userId?: string): LiveStreamState[] {
+  private getChannelStates(
+    sessionId: string,
+    userId?: string
+  ): LiveStreamState[] {
     const prefix = `${sessionId}:`;
     const states: LiveStreamState[] = [];
     for (const [key, state] of this.liveStreams) {
@@ -791,7 +804,9 @@ export class RealtimeInterviewGateway
     if (!text.trim()) return;
 
     const speaker = await this.resolveSpeaker(state, text);
-    state.transcriptParts.push(`[${speaker === 'self' ? '我' : '面试官'}] ${text.trim()}`);
+    state.transcriptParts.push(
+      `[${speaker === 'self' ? '我' : '面试官'}] ${text.trim()}`
+    );
     this.server.to(state.sessionId).emit('transcription', {
       text: text.trim(),
       final: true,
@@ -801,7 +816,8 @@ export class RealtimeInterviewGateway
 
     // Only interviewer speech drives auto-answering.
     if (speaker !== 'interviewer') return;
-    if (!state.autoAnswer || this.generatingSessions.has(state.sessionId)) return;
+    if (!state.autoAnswer || this.generatingSessions.has(state.sessionId))
+      return;
     if (!this.looksLikeQuestion(text)) return;
 
     this.server.to(state.sessionId).emit('question_detected', {
@@ -810,7 +826,11 @@ export class RealtimeInterviewGateway
       auto: true,
     });
 
-    await this.generateAndEmitAnswer(state.userId, state.sessionId, text.trim());
+    await this.generateAndEmitAnswer(
+      state.userId,
+      state.sessionId,
+      text.trim()
+    );
   }
 
   /**
@@ -835,7 +855,10 @@ export class RealtimeInterviewGateway
       const tail = this.takeRecentTail(state, text);
       if (!tail || tail.length < state.sampleRate) return 'interviewer'; // <1s
 
-      const embedding = this.speakerVerify.extractEmbedding(tail, state.sampleRate);
+      const embedding = this.speakerVerify.extractEmbedding(
+        tail,
+        state.sampleRate
+      );
       if (!embedding) return 'interviewer';
 
       const isSelf = this.speakerVerify.isSelf(
@@ -843,7 +866,9 @@ export class RealtimeInterviewGateway
         profile.embedding as number[]
       );
       if (isSelf) {
-        this.logger.debug(`Voiceprint: user speech on session ${state.sessionId}`);
+        this.logger.debug(
+          `Voiceprint: user speech on session ${state.sessionId}`
+        );
         return 'self';
       }
     } catch (err: any) {

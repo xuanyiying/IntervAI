@@ -9,7 +9,6 @@ type IPaymentService = {
   getBillingHistory: (userId: string) => Promise<any[]>;
 };
 
-
 type UsageQuery = { start?: string; end?: string };
 
 @Injectable()

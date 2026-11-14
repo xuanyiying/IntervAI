@@ -15,7 +15,11 @@ import path from 'path';
 import { Readable } from 'stream';
 import { v4 as uuid } from 'uuid';
 import { OssConfig } from '../config/oss.config';
-import { FileInfo, OssService, UploadResult } from '../interfaces/oss.interface';
+import {
+  FileInfo,
+  OssService,
+  UploadResult,
+} from '../interfaces/oss.interface';
 
 export class MinIOService implements OssService {
   public bucketName: string;

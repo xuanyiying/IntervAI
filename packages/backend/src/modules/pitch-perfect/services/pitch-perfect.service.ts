@@ -121,7 +121,9 @@ export class PitchPerfectService {
   private parsePitchOutput(data: unknown): PitchPerfectOutput {
     try {
       const parsed =
-        typeof data === 'string' ? JSON.parse(data) : (data as Record<string, unknown>);
+        typeof data === 'string'
+          ? JSON.parse(data)
+          : (data as Record<string, unknown>);
       return this.validateOutput(parsed);
     } catch {
       this.logger.warn('Failed to parse pitch output, using fallback');
@@ -135,7 +137,9 @@ export class PitchPerfectService {
       text: String(v.text || ''),
       keyPoints: Array.isArray(v.keyPoints) ? v.keyPoints.map(String) : [],
       wordCount:
-        typeof v.wordCount === 'number' ? v.wordCount : String(v.text || '').length,
+        typeof v.wordCount === 'number'
+          ? v.wordCount
+          : String(v.text || '').length,
       useScenario: String(v.useScenario || ''),
     };
   }
@@ -143,8 +147,7 @@ export class PitchPerfectService {
   private validateOutput(data: Record<string, unknown>): PitchPerfectOutput {
     const versions = (data.versions ?? {}) as Record<string, unknown>;
     const keywordOverlap = data.keywordOverlap as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
 
     return {
       versions: {

@@ -3,7 +3,11 @@
 import OSS from 'ali-oss';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { OssService, UploadResult, FileInfo } from '../interfaces/oss.interface';
+import {
+  OssService,
+  UploadResult,
+  FileInfo,
+} from '../interfaces/oss.interface';
 import { Readable } from 'stream';
 import { OssConfig } from '@/modules/storage/config/oss.config';
 

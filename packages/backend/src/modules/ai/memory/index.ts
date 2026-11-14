@@ -2,7 +2,11 @@
  * Memory Index
  */
 
-export { Memory, MemoryEntry, MemoryProvider } from '../interfaces/memory.interface';
+export {
+  Memory,
+  MemoryEntry,
+  MemoryProvider,
+} from '../interfaces/memory.interface';
 export {
   RedisMemory,
   RedisMemoryProvider,

@@ -58,7 +58,13 @@ export class InterviewGateway
   // drained on every end_audio utterance).
   private sessionRecordings = new Map<
     string,
-    { userId: string; chunks: Buffer[]; totalBytes: number; firstChunkAt: number; lastChunkAt: number }
+    {
+      userId: string;
+      chunks: Buffer[];
+      totalBytes: number;
+      firstChunkAt: number;
+      lastChunkAt: number;
+    }
   >();
 
   /** Active realtime voice calls. Key: sessionId. */
@@ -406,13 +412,16 @@ export class InterviewGateway
           },
           onClosed: () => {
             // Unexpected drop: notify the client so it can fall back.
-            if (!state.closing && this.voiceCalls.get(data.sessionId) === state) {
+            if (
+              !state.closing &&
+              this.voiceCalls.get(data.sessionId) === state
+            ) {
               this.logger.warn(
                 `Voice call connection lost for session ${data.sessionId}`
               );
-              this.server
-                .to(data.sessionId)
-                .emit('voice_error', { message: 'Realtime voice connection lost.' });
+              this.server.to(data.sessionId).emit('voice_error', {
+                message: 'Realtime voice connection lost.',
+              });
             }
           },
         },
@@ -428,12 +437,15 @@ export class InterviewGateway
       client.emit('voice_started', { sessionId: data.sessionId });
       // Greeting + first question without waiting for user speech.
       state.rt.createResponse();
-      this.logger.log(`Realtime voice call started for session ${data.sessionId}`);
+      this.logger.log(
+        `Realtime voice call started for session ${data.sessionId}`
+      );
     } catch (err: any) {
       this.voiceCalls.delete(data.sessionId);
       this.logger.error('Failed to start realtime voice call:', err?.message);
       client.emit('voice_error', {
-        message: 'Realtime voice failed to start. Falling back to the standard flow.',
+        message:
+          'Realtime voice failed to start. Falling back to the standard flow.',
       });
     }
   }
@@ -515,7 +527,9 @@ export class InterviewGateway
     state.rt.close();
 
     const durationSec = state.recording.chunks.length
-      ? Math.round(state.recording.totalBytes / (2 * state.recording.sampleRate))
+      ? Math.round(
+          state.recording.totalBytes / (2 * state.recording.sampleRate)
+        )
       : 0;
 
     // Persist the dialogue (user answers + interviewer questions).
@@ -535,8 +549,7 @@ export class InterviewGateway
 
         const transcript = state.dialogueParts
           .map(
-            (part) =>
-              `[${part.role === 'user' ? '我' : '面试官'}] ${part.text}`
+            (part) => `[${part.role === 'user' ? '我' : '面试官'}] ${part.text}`
           )
           .join('\n');
         const existing = await this.prisma.interviewSession.findUnique({

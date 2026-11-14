@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
 
 export enum InterviewMode {
   MOCK = 'mock', // 模拟面试：AI 提问，用户回答

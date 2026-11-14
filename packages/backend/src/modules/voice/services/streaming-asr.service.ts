@@ -35,8 +35,7 @@ interface DashScopeMessage {
   };
 }
 
-const DASHSCOPE_WS_URL =
-  'wss://dashscope.aliyuncs.com/api-ws/v1/inference';
+const DASHSCOPE_WS_URL = 'wss://dashscope.aliyuncs.com/api-ws/v1/inference';
 const DEFAULT_MODEL = 'paraformer-realtime-v2';
 
 /**
@@ -115,10 +114,7 @@ export class StreamingAsrSession {
           if (!sentence?.text) return;
           // During ongoing speech end_time stays -1; once >= 0 the
           // sentence is final (VAD-based segmentation by Paraformer).
-          if (
-            typeof sentence.end_time === 'number' &&
-            sentence.end_time >= 0
-          ) {
+          if (typeof sentence.end_time === 'number' && sentence.end_time >= 0) {
             this.callbacks.onSentenceEnd?.(sentence.text.trim());
           } else {
             this.callbacks.onPartial?.(sentence.text.trim());

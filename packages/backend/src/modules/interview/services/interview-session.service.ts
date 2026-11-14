@@ -258,8 +258,7 @@ export class InterviewSessionService {
       }
 
       const resumeData = session.optimization.resume?.parsedData as unknown as
-        | ParsedResumeData
-        | undefined;
+        ParsedResumeData | undefined;
       const jobData = session.optimization.job
         ?.parsedRequirements as unknown as ParsedJobData | undefined;
 
@@ -495,11 +494,9 @@ export class InterviewSessionService {
     // Get resume and job data
     const optimization = session.optimization;
     const resumeData = optimization?.resume?.parsedData as unknown as
-      | ParsedResumeData
-      | undefined;
+      ParsedResumeData | undefined;
     const jobData = optimization?.job?.parsedRequirements as unknown as
-      | ParsedJobData
-      | undefined;
+      ParsedJobData | undefined;
 
     let aiResponse: string;
 
@@ -916,11 +913,9 @@ export class InterviewSessionService {
     }
 
     const resumeData = session.optimization?.resume?.parsedData as unknown as
-      | ParsedResumeData
-      | undefined;
+      ParsedResumeData | undefined;
     const jobData = session.optimization?.job?.parsedRequirements as unknown as
-      | ParsedJobData
-      | undefined;
+      ParsedJobData | undefined;
 
     const resumeText = JSON.stringify({
       name: resumeData?.personalInfo?.name || 'Candidate',
@@ -1032,11 +1027,9 @@ export class InterviewSessionService {
     }
 
     const resumeData = session.optimization?.resume?.parsedData as unknown as
-      | ParsedResumeData
-      | undefined;
+      ParsedResumeData | undefined;
     const jobData = session.optimization?.job?.parsedRequirements as unknown as
-      | ParsedJobData
-      | undefined;
+      ParsedJobData | undefined;
 
     const questions = session.optimizationId
       ? await this.prisma.interviewQuestion.findMany({
@@ -1091,9 +1084,9 @@ export class InterviewSessionService {
         '1. 只在面试官提出问题时输出简明扼要的参考答案；寒暄、陈述、确认等非提问内容不输出任何回答。\n' +
         '2. 参考答案用要点列表（3-5 条），结合候选人的真实经历，每条不超过两句话。\n' +
         '3. 不要输出寒暄、重复问题原文或"好的"之类的填充语，直接给要点。'
-      : 'You are the candidate\'s interview assistant. The audio comes from the interviewer (captured via the candidate\'s device). Rules:\n' +
+      : "You are the candidate's interview assistant. The audio comes from the interviewer (captured via the candidate's device). Rules:\n" +
         '1. Only output a concise reference answer when the interviewer asks a question; do not respond to greetings, statements or confirmations.\n' +
-        '2. Format answers as 3-5 bullet points grounded in the candidate\'s real experience, each at most two sentences.\n' +
+        "2. Format answers as 3-5 bullet points grounded in the candidate's real experience, each at most two sentences.\n" +
         '3. Never output filler phrases, do not repeat the question, go straight to the points.';
 
     return base + this.buildContextBlock(resumeData, jobData);

@@ -176,6 +176,9 @@ services:
     build:
       context: ..
       dockerfile: packages/frontend/Dockerfile
+      args:
+        # 必须与后端 APP_EDITION 一致，否则 OSS 部署仍会渲染调用 /payments/* 的 EE 页面
+        VITE_APP_EDITION: ${APP_EDITION:-oss}
     image: ${FRONTEND_IMAGE:-intervai/frontend:local}
     container_name: frontend
     depends_on:

@@ -88,7 +88,7 @@ export class MatchAnalysisService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly aiService: AIService
-  ) { }
+  ) {}
 
   async analyzeMatch(
     resumeId: string,
@@ -157,7 +157,9 @@ export class MatchAnalysisService {
     const breakdown = data.breakdown || {};
     const scoreOf = (key: string, fallback = 50): number => {
       const value = Number(breakdown[key]?.score);
-      return Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : fallback;
+      return Number.isFinite(value)
+        ? Math.max(0, Math.min(100, Math.round(value)))
+        : fallback;
     };
 
     const overallScore = Number.isFinite(Number(data.overallScore))

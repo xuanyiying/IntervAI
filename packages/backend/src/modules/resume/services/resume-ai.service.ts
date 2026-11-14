@@ -96,7 +96,7 @@ export class ResumeAIService {
     maxScore: 100,
   } as const;
 
-  constructor(private readonly aiService: AIService) { }
+  constructor(private readonly aiService: AIService) {}
 
   /**
    * Execute skill with retry logic and error handling
@@ -275,7 +275,7 @@ export class ResumeAIService {
     // Email
     if (!result.email) {
       const emailMatch = ctx.match(
-        /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/
+        /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
       );
       if (emailMatch?.[0]) {
         result.email = emailMatch[0];
@@ -286,13 +286,13 @@ export class ResumeAIService {
     // Phone — prefer labeled patterns, then standalone mobile numbers
     if (!result.phone) {
       const phonePatterns = [
-        /(?:电话|手机|Tel|Phone|联系)[:：]?\s*([+\d][\d\s\-]{6,15})/,
+        /(?:电话|手机|Tel|Phone|联系)[:：]?\s*([+\d][\d\s-]{6,15})/,
         /\b(1[3-9]\d{9})\b/,
       ];
       for (const pat of phonePatterns) {
         const m = ctx.match(pat);
         if (m?.[1]) {
-          result.phone = m[1].replace(/[\s\-]/g, '');
+          result.phone = m[1].replace(/[\s-]/g, '');
           changed = true;
           break;
         }
@@ -477,16 +477,19 @@ export class ResumeAIService {
 
     // ── Summary ──
     const summaryOk =
-      !!parsedData.summary &&
-      parsedData.summary.length >= S.summary.minLength;
+      !!parsedData.summary && parsedData.summary.length >= S.summary.minLength;
     if (summaryOk) {
       strengths.push(
-        zh ? '专业总结完整且充实' : 'Professional summary is present and substantive'
+        zh
+          ? '专业总结完整且充实'
+          : 'Professional summary is present and substantive'
       );
     } else {
       weaknesses.push({
         key: 'summary',
-        text: zh ? '缺少专业总结或内容过短' : 'Professional summary is missing or too brief',
+        text: zh
+          ? '缺少专业总结或内容过短'
+          : 'Professional summary is missing or too brief',
       });
       suggestions.push({
         key: 'summary',
@@ -513,7 +516,9 @@ export class ResumeAIService {
     } else {
       weaknesses.push({
         key: 'skills',
-        text: zh ? '技能种类较少，覆盖面不足' : 'Limited skill diversity — few skills listed',
+        text: zh
+          ? '技能种类较少，覆盖面不足'
+          : 'Limited skill diversity — few skills listed',
       });
       suggestions.push({
         key: 'skills',
@@ -557,8 +562,7 @@ export class ResumeAIService {
         ...(Array.isArray(exp.achievements) ? exp.achievements : []),
         ...(Array.isArray(exp.description) ? exp.description : []),
       ].some(
-        (item) =>
-          typeof item === 'string' && S.achievements.pattern.test(item)
+        (item) => typeof item === 'string' && S.achievements.pattern.test(item)
       )
     );
     if (hasQuantifiedAchievements) {
@@ -570,7 +574,9 @@ export class ResumeAIService {
     } else {
       weaknesses.push({
         key: 'quantified',
-        text: zh ? '工作经历缺少量化成果' : 'Work experience lacks quantified achievements',
+        text: zh
+          ? '工作经历缺少量化成果'
+          : 'Work experience lacks quantified achievements',
       });
       suggestions.push({
         key: 'quantified',
@@ -596,7 +602,9 @@ export class ResumeAIService {
       });
       suggestions.push({
         key: 'education',
-        text: zh ? '补充您的教育经历（学校、专业、学位）' : 'Add your educational background',
+        text: zh
+          ? '补充您的教育经历（学校、专业、学位）'
+          : 'Add your educational background',
       });
     }
 
@@ -674,8 +682,8 @@ export class ResumeAIService {
       contentScore: Math.min(
         15,
         (summaryOk ? 7 : 0) +
-        (contactComplete ? 5 : 0) +
-        Math.min(3, certifications.length)
+          (contactComplete ? 5 : 0) +
+          Math.min(3, certifications.length)
       ),
       structureScore:
         (experience.length > 0 ? 8 : 0) + (education.length > 0 ? 7 : 0),
@@ -749,13 +757,13 @@ export class ResumeAIService {
             : 'Needs Improvement';
     const summary = zh
       ? `您的简历综合得分为 ${overallScore} 分（${level}）。` +
-      (structuredSuggestions.length > 0
-        ? `完善以下 ${structuredSuggestions.length} 项内容可显著提升简历竞争力。`
-        : '简历内容完整，保持更新即可。')
+        (structuredSuggestions.length > 0
+          ? `完善以下 ${structuredSuggestions.length} 项内容可显著提升简历竞争力。`
+          : '简历内容完整，保持更新即可。')
       : `Your resume scored ${overallScore}/100 (${level}).` +
-      (structuredSuggestions.length > 0
-        ? ` Improving the ${structuredSuggestions.length} items below will significantly strengthen it.`
-        : ' The resume is complete — just keep it up to date.');
+        (structuredSuggestions.length > 0
+          ? ` Improving the ${structuredSuggestions.length} items below will significantly strengthen it.`
+          : ' The resume is complete — just keep it up to date.');
 
     return {
       overallScore,

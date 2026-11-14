@@ -13,6 +13,10 @@ describe('JwtStrategy', () => {
       if (key === 'JWT_SECRET') return 'test-secret';
       return null;
     }),
+    getOrThrow: jest.fn((key: string) => {
+      if (key === 'JWT_SECRET') return 'test-secret';
+      throw new Error(`Missing config: ${key}`);
+    }),
   };
 
   const mockPrismaService = {

@@ -129,4 +129,6 @@ Your prompt here: {{inputName}}
 - 修改 API 时同步 Swagger 装饰器与文档；全局前缀为 `/api/v1`，`/health` 不受前缀影响，指标 / 告警为 `/api/v1/metrics`、`/api/v1/alerts`。
 - 提交遵循 Conventional Commits，CI job 为 `lint`、`backend`、`frontend`（见 [docs/guide/workflows.md](./docs/guide/workflows.md)）。
 - E2E 用例在 `test/e2e/`，需要 PostgreSQL + Redis，通过 `pnpm --filter @interview-ai/backend test:e2e` 运行；默认 `pnpm test` 只跑 `src/` 内的单元测试。
-- 已知不一致：`.env.example` 端口 3000 与 Vite 代理 3001、`monitoring.config.ts` 为死配置、`ThrottlerModule` 未全局挂载、Swagger 生产未关闭、JWT 有默认兜底密钥。详见 [docs/architecture/system-architecture.md](./docs/architecture/system-architecture.md)。
+- 运行时要求 Node `>=22.19.0`（见 `.nvmrc`）。Node 20 下 `prisma generate` 会因 `@prisma/dev` 依赖纯 ESM 的 `zeptomatch` 抛 `ERR_REQUIRE_ESM`，且 `undici@8`（经 `cheerio` 引入）缺少 `worker_threads.markAsUncloneable` 会导致 `JobModule` 启动即崩。注意 shell 默认 `node` 可能仍是 20，跑构建/测试前先 `nvm use`。
+- **历史凭据已清理但未完全闭环**：`git filter-repo` 已从全部 16 个分支删除 7 个 `.env`/私钥文件并脱敏 2 个硬编码在 `.ts` 里的真实密钥，force push 后 `main` 为 `019552984`。但 GitHub 的 `refs/pull/*` 只读，17 个已关闭/合并 PR 仍公开返回旧凭据；**所有暴露过的密钥必须轮换**，且不要从旧历史 push。详见 [docs/guide/security.md](./docs/guide/security.md)。
+- 已知不一致：`.env.example` 端口 3000 与 Vite 代理 3001、`monitoring.config.ts` 为死配置、后端 678 处 `no-explicit-any` warning 与 `--max-warnings 0` 冲突导致 CI lint 仍红、8 个侧分支误含 `.pnpm-store/` 使仓库达 403 MB（`main` 干净）、GitHub 回报 168 个依赖漏洞（5 critical）。详见 [docs/architecture/system-architecture.md](./docs/architecture/system-architecture.md)。

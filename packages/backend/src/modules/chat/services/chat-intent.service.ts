@@ -500,7 +500,7 @@ export class ChatIntentService implements OnModuleInit {
   private getIntentForSceneAndKeyword(
     scene: string,
     keyword: string,
-    message: string
+    _message: string
   ): IntentResult | null {
     const sceneIntentMap: Record<
       string,
@@ -578,7 +578,7 @@ export class ChatIntentService implements OnModuleInit {
   private getImplicitSceneIntent(
     scene: string,
     message: string,
-    userId: string
+    _userId: string
   ): IntentResult | null {
     if (scene === 'resume_uploaded' && message.length < 20) {
       return {
@@ -811,7 +811,7 @@ export class ChatIntentService implements OnModuleInit {
   private async handleCareerAdvice(
     userId: string,
     message: string,
-    language: LanguageInput = 'ZH'
+    _language: LanguageInput = 'ZH'
   ): Promise<ChatResponse> {
     try {
       const resume = await this.getUserResumeContent(userId);
@@ -898,8 +898,6 @@ export class ChatIntentService implements OnModuleInit {
     message: string
   ): Promise<ChatResponse> {
     try {
-      const resume = await this.getUserResumeContent(userId);
-
       const result = await this.aiService.executeSkill(
         'salary-analyzer',
         {

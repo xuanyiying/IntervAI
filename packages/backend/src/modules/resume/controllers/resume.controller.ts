@@ -130,10 +130,8 @@ export class ResumeController {
       throw new UnauthorizedException('User ID required');
     }
 
-    const { buffer, fileType, filename } = await this.resumeService.getResumeFile(
-      resumeId,
-      userId
-    );
+    const { buffer, fileType, filename } =
+      await this.resumeService.getResumeFile(resumeId, userId);
 
     const mimeMap: Record<string, string> = {
       pdf: 'application/pdf',

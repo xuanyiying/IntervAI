@@ -15,7 +15,7 @@ export class AIQueueProcessor {
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
     private chatGateway: ChatGateway
-  ) { }
+  ) {}
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(

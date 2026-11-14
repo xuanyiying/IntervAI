@@ -36,7 +36,9 @@ function startMockRealtimeServer(): Promise<{
       clientEvents.push(event);
       // Mimic the realtime API: confirm config changes.
       if (event.type === 'session.update') {
-        ws.send(JSON.stringify({ type: 'session.updated', session: event.session }));
+        ws.send(
+          JSON.stringify({ type: 'session.updated', session: event.session })
+        );
       }
     });
   });
@@ -98,7 +100,10 @@ describe('QwenRealtimeSession', () => {
   }
 
   it('applies a text-only session config on connect', async () => {
-    const session = createSession({}, { outputAudio: false, instructions: 'be brief' });
+    const session = createSession(
+      {},
+      { outputAudio: false, instructions: 'be brief' }
+    );
     await session.open();
 
     const update = mock.clientEvents.find((e) => e.type === 'session.update');
@@ -224,7 +229,11 @@ describe('QwenRealtimeSession', () => {
 
   it('notifies onClosed when the server drops the connection', async () => {
     let closed = false;
-    const session = createSession({ onClosed: () => { closed = true; } });
+    const session = createSession({
+      onClosed: () => {
+        closed = true;
+      },
+    });
     await session.open();
 
     mock.server.clients.forEach((ws) => ws.close());

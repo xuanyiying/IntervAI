@@ -1,5 +1,5 @@
 # Stage 1: Prune
-FROM node:20-alpine AS pruner
+FROM node:22-alpine AS pruner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com
@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm dlx turbo prune --scope=@interview-ai/backend --docker
 
 # Stage 2: Build
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++ openssl
 WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com
@@ -48,7 +48,7 @@ RUN cp -r packages/backend/dist /app/deploy/dist && \
     cp packages/backend/.env.example /app/deploy/.env.example
 
 # Stage 3: Runtime
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 RUN apk add --no-cache \
@@ -73,8 +73,8 @@ RUN npm install -g prisma@7.9.1 && \
     printf "export default { schema: './prisma/schema.prisma', datasource: { url: process.env.DATABASE_URL } };\n" > /app/prisma.config.ts && \
     cd /app && prisma generate
 
-RUN mkdir -p /app/backups /app/logs && \
-    chown -R nestjs:nodejs /app/backups /app/logs
+RUN mkdir -p /app/logs && \
+    chown -R nestjs:nodejs /app/logs
 
 USER nestjs
 

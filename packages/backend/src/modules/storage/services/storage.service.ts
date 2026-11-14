@@ -2,14 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/infrastructure/database/services/prisma.service';
 import { OssFactory } from '../adapters/oss.factory';
 import { OssService } from '../interfaces/oss.interface';
-import { FileType, OssType, StorageFile } from '../interfaces/storage.interface';
+import {
+  FileType,
+  OssType,
+  StorageFile,
+} from '../interfaces/storage.interface';
 import { Storage } from '@prisma/client';
 import { OssConfigService } from '../config/oss.config';
 import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
 import { Readable } from 'stream';
-import { UploadFileData, GetFilesParams } from '../interfaces/storage.interface';
+import {
+  UploadFileData,
+  GetFilesParams,
+} from '../interfaces/storage.interface';
 
 @Injectable()
 export class StorageService {

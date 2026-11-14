@@ -86,7 +86,20 @@ graph TB
 文档按代码现状记录，以下问题需在改代码时一并处理：
 
 1. 实时语音与流式 ASR 依赖 `DASHSCOPE_API_KEY`；未配置时 `/realtime-interview` 的 `start_stream` 与 `/interview` 的 `voice_start` 直接返回降级错误，辅助面试只剩文字兜底路径。
-2. 可观测性与安全：`monitoring.config.ts` 的 `getMonitoringConfig()` 无调用点、`METRICS_PORT/PATH` 无独立服务；`ThrottlerModule` 未挂载 `APP_GUARD`（仅 user.controller 局部生效）；`main.ts` 无条件启用 Swagger，`jwt.strategy.ts` 仍有 `'your-secret-key'` 兜底值。`Caddyfile` 已在公网阻断运维端点与 `/api/docs*`。
-3. `release.yml` 仍使用已归档的 `actions/create-release@v1` / `upload-release-asset@v1`；`ci.yml` 的 PG15 与本地 compose 的 PG16 不一致；`dependabot.yml` 的 reviewers 为占位值。
-4. 前端 `VITE_BACKEND_URL`、OAuth 开关、`VITE_STRIPE_PUBLISHABLE_KEY` 等变量无代码读取点；后端 `APP_EDITION=oss` 时前端未定义 `VITE_APP_EDITION`，默认仍会启用 EE 路由。
-5. 历史提交（`1ccfbeb54`）含 `.env*` 与 TLS 私钥，虽已取消证书跟踪并修正 `.gitignore`，仍需轮换凭据与清理历史；prod compose 的 `redis:latest` / `minio:latest` 未锁版本，`POSTGRES_MAX_CONNECTIONS` 等非官方镜像变量无效。详见 [安全策略](../guide/security.md)。
+2. 可观测性：`monitoring.config.ts` 的 `getMonitoringConfig()` 无调用点、`METRICS_PORT/PATH` 无独立服务；`dependabot.yml` 的 reviewers 为占位值；prod compose 的 `POSTGRES_MAX_CONNECTIONS` 等非官方镜像变量无效。
+3. 前端 `VITE_BACKEND_URL`、OAuth 开关、`VITE_STRIPE_PUBLISHABLE_KEY` 等变量无代码读取点。
+4. 后端 lint 仍有 678 处 `@typescript-eslint/no-explicit-any` warning，而 `lint` 脚本为 `--max-warnings 0`，因此 CI 的 `lint` job 仍会失败。这是有意保留的历史类型债（消除它需要跨 124 个文件的类型重构）。前端 lint 已为 0 warning。
+5. 历史凭据已用 `git filter-repo` 从全部 16 个分支清除（7 个 `.env`/私钥文件删除 + 2 个硬编码在 `.ts` 里的真实密钥脱敏），并已 force push，远端 `main` 为 `019552984`。但 **GitHub 的 `refs/pull/*` 只读引用无法被 force push 改写**：17 个已关闭/合并 PR 仍公开返回旧凭据文件，需联系 GitHub Support 清理或转私有。**所有已暴露密钥仍须在各服务商轮换**。详见 [安全策略](../guide/security.md)。
+6. `main` 干净（685 文件）且 `.gitignore` 已忽略 `.pnpm-store/`，但 8 个侧分支（6 dependabot + 2 `trae/solo-agent-*`）各跟踪 9.6 万–10.3 万个文件含包缓存，使仓库达 403 MB；关闭过期 PR 并删分支即可瘦身。GitHub 另回报默认分支有 168 个依赖漏洞（5 critical / 55 high）。
+7. Jest 结束后不自动退出（存在未关闭的异步句柄），不影响断言结果，但 CI 需依赖超时或 `--forceExit`。
+
+### 5.1 已修复项（备查）
+
+- 运行时基线统一到 Node 22：`@prisma/dev` 依赖纯 ESM 的 `zeptomatch`，Node 20 下 `prisma generate` 抛 `ERR_REQUIRE_ESM`；`undici@8`（经 `cheerio` 引入，`engines: >=22.19.0`）需要 `worker_threads.markAsUncloneable`，Node 20 缺失会导致 `JobModule` 在启动时崩溃。两个 Dockerfile、`ci.yml`、`release.yml`、根 `engines` 与 `.nvmrc` 均已对齐。
+- `ThrottlerModule` 已通过 `APP_GUARD` 全局挂载；`main.ts` 设置 `trust proxy = 1`，使限流按真实客户端 IP 而非 Caddy 容器 IP 计数（否则 100 次/60 秒会退化为全站共享配额）。
+- `main.ts` 的 Swagger 改为生产默认关闭（需 `ENABLE_SWAGGER=true` 才暴露），并启用 `enableShutdownHooks()` 以在 SIGTERM 时排水 Bull / Prisma / Socket.IO。
+- `jwt.strategy.ts`、`auth.module.ts`、`chat.module.ts` 的 `'your-secret-key'` 兜底值已移除，改用 `configService.getOrThrow('JWT_SECRET')`，缺失即启动失败。
+- 版本对齐：`ci.yml` 的 PostgreSQL 升到 16 与 compose 一致；prod compose 的 `redis:7-alpine`、`minio/minio:RELEASE.2025-04-08T15-41-24Z` 已锁版本。
+- `release.yml` 已弃用归档的 `actions/create-release@v1` / `upload-release-asset@v1`，改用 runner 自带的 `gh release create` / `gh release upload`。
+- edition 一致性：frontend Dockerfile 增加 `ARG/ENV VITE_APP_EDITION`（默认 `oss`），prod compose 透传 `APP_EDITION`，`.env.example` 补上该变量，避免 OSS 部署仍渲染调用 `/payments/*` 的 EE 页面。
+- `packages/backend/scripts/openrouter.ts` 中硬编码的 OpenRouter 密钥已移除，改为读 `OPENROUTER_API_KEY` 且缺失即抛错；历史中的同一密钥已脱敏。

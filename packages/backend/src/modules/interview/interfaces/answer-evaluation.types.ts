@@ -134,9 +134,7 @@ export function aggregateDimensions(
   const result = Object.fromEntries(
     EVALUATION_DIMENSIONS.map((d) => [
       d,
-      sums[d].count > 0
-        ? Math.round(sums[d].total / sums[d].count)
-        : 50,
+      sums[d].count > 0 ? Math.round(sums[d].total / sums[d].count) : 50,
     ])
   ) as Record<EvaluationDimension, number>;
 
@@ -148,7 +146,8 @@ export function weightedOverallScore(
 ): number {
   return Math.round(
     EVALUATION_DIMENSIONS.reduce(
-      (sum, dimension) => sum + dimensions[dimension] * DIMENSION_WEIGHTS[dimension],
+      (sum, dimension) =>
+        sum + dimensions[dimension] * DIMENSION_WEIGHTS[dimension],
       0
     )
   );

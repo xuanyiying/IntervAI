@@ -4,10 +4,10 @@
 
 | 依赖     | 版本 / 说明                                                                         |
 | -------- | ----------------------------------------------------------------------------------- |
-| Node.js  | `>= 18`（根 `package.json` 的 `engines`）；`ci.yml` 用 Node 20，`release.yml` 用 18 |
+| Node.js  | `>= 22.19.0`（根 `package.json` 的 `engines`、`.nvmrc`）；`ci.yml` 与 `release.yml` 均用 Node 22。**不要用 Node 20**：`prisma generate` 会抛 `ERR_REQUIRE_ESM`，且 `undici@8` 缺少 `worker_threads.markAsUncloneable` 会让后端启动即崩 |
 | pnpm     | `>= 9`（`packageManager: pnpm@9.0.0`）                                              |
 | Docker   | Docker Engine + Compose v2（`docker compose`，非旧式 `docker-compose`）             |
-| 基础服务 | PostgreSQL 16、Redis 7、MinIO、Jaeger（本地 compose 提供；CI 的 PG 是 15）          |
+| 基础服务 | PostgreSQL 16、Redis 7、MinIO、Jaeger（本地 compose 与 CI 均为 PG 16）              |
 
 ## 2. 启动基础服务
 

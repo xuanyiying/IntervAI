@@ -10,7 +10,11 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 import path from 'path';
-import { OssService, UploadResult, FileInfo } from '../interfaces/oss.interface';
+import {
+  OssService,
+  UploadResult,
+  FileInfo,
+} from '../interfaces/oss.interface';
 import { Logger } from '@nestjs/common';
 import * as crypto from 'crypto';
 import { OssConfig } from '../config/oss.config';

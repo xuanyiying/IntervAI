@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   REGISTRY: ghcr.io
 
 jobs:
@@ -16,11 +16,12 @@ jobs:
     permissions:
       contents: write
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Extract version
         id: version
@@ -39,18 +40,17 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          release_name: Release ${{ steps.version.outputs.version }}
-          body: |
-            ## Changes in this Release
-            ${{ steps.changelog.outputs.changelog }}
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, 'alpha') || contains(steps.version.outputs.version, 'beta') || contains(steps.version.outputs.version, 'rc') }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          printf '## Changes in this Release\n%s\n' "$CHANGELOG" > RELEASE_NOTES.md
+          if [[ "$VERSION" == *alpha* || "$VERSION" == *beta* || "$VERSION" == *rc* ]]; then
+            gh release create "$VERSION" --title "Release $VERSION" --notes-file RELEASE_NOTES.md --prerelease
+          else
+            gh release create "$VERSION" --title "Release $VERSION" --notes-file RELEASE_NOTES.md
+          fi
 
   build-and-push:
     name: Build and Push Images
@@ -114,6 +114,8 @@ jobs:
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
+          build-args: |
+            VITE_APP_EDITION=${{ vars.APP_EDITION || 'oss' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -121,6 +123,8 @@ jobs:
     name: Publish Artifacts
     runs-on: ubuntu-latest
     needs: [create-release, build-and-push]
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -157,25 +161,15 @@ jobs:
           tar -czf frontend-${{ needs.create-release.outputs.version }}.tar.gz dist/
           cd ../..
 
-      - name: Upload backend artifact
-        uses: actions/upload-release-asset@v1
+      - name: Upload artifacts to release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./packages/backend/backend-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_name: backend-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload frontend artifact
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-release.outputs.upload_url }}
-          asset_path: ./packages/frontend/frontend-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_name: frontend-${{ needs.create-release.outputs.version }}.tar.gz
-          asset_content_type: application/gzip
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.create-release.outputs.version }}
+        run: |
+          gh release upload "$VERSION" \
+            "./packages/backend/backend-$VERSION.tar.gz" \
+            "./packages/frontend/frontend-$VERSION.tar.gz" \
+            --clobber
 
   notify-release:
     name: Notify Release

@@ -24,12 +24,13 @@ export class AIEngine {
   constructor(
     private aiService: AIService,
     private configService: ConfigService
-  ) { }
+  ) {}
 
   private get aiModel(): string {
     return (
       this.aiService.getModel() ||
-      this.configService.get('AI_MODEL') || 'deepseek:deepseek-chat'
+      this.configService.get('AI_MODEL') ||
+      'deepseek:deepseek-chat'
     );
   }
 

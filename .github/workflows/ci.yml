@@ -20,7 +20,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - uses: actions/cache@v4
         with:
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_DB: interview_ai
           POSTGRES_USER: interview_ai_user
@@ -79,7 +79,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - uses: actions/cache@v4
         with:
@@ -97,6 +97,7 @@ jobs:
     env:
       NODE_ENV: test
       VITE_API_BASE_URL: http://localhost:3000/api/v1
+      VITE_APP_EDITION: oss
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v3
@@ -104,7 +105,7 @@ jobs:
           version: 9
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - uses: actions/cache@v4
         with:

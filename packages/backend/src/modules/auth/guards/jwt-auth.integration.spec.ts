@@ -32,6 +32,11 @@ describe('JwtAuthGuard Integration', () => {
       if (key === 'JWT_EXPIRES_IN') return '1h';
       return null;
     }),
+    getOrThrow: jest.fn((key: string) => {
+      if (key === 'JWT_SECRET') return 'test-secret-key';
+      if (key === 'JWT_EXPIRES_IN') return '1h';
+      throw new Error(`Missing config: ${key}`);
+    }),
   };
 
   beforeAll(async () => {

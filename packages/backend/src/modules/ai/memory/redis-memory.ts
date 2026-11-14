@@ -3,7 +3,11 @@
  * Persistent conversation memory using Redis
  */
 
-import { Memory, MemoryEntry, MemoryProvider } from '../interfaces/memory.interface';
+import {
+  Memory,
+  MemoryEntry,
+  MemoryProvider,
+} from '../interfaces/memory.interface';
 
 // Re-export interfaces for convenience
 export { Memory, MemoryEntry, MemoryProvider };

@@ -1,5 +1,5 @@
 # Stage 1: Prune
-FROM node:20-alpine AS pruner
+FROM node:22-alpine AS pruner
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 ENV SHARP_BINARY_HOST=https://npmmirror.com/mirrors/sharp
@@ -15,7 +15,7 @@ COPY . .
 RUN pnpm dlx turbo prune --scope=@interview-ai/frontend --docker
 
 # Stage 2: Build
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 RUN apk add --no-cache libc6-compat python3 make g++
 WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com
@@ -35,6 +35,11 @@ RUN pnpm config set registry https://registry.npmmirror.com && \
 COPY --from=pruner /app/out/full/ .
 COPY turbo.json turbo.json
 ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+# 必须与后端 APP_EDITION 一致：oss 时不注册 EE 路由，否则订阅页会调用不存在的 /payments/*
+ARG VITE_APP_EDITION=oss
+ENV VITE_APP_EDITION=${VITE_APP_EDITION}
+
 RUN cd packages/frontend && pnpm run build
 
 # Stage 3: Export static files

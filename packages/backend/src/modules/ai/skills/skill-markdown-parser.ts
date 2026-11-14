@@ -4,7 +4,10 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common';
-import { SkillDefinition, SkillInputDefinition } from '../interfaces/skill.interface';
+import {
+  SkillDefinition,
+  SkillInputDefinition,
+} from '../interfaces/skill.interface';
 
 /**
  * Parsed frontmatter

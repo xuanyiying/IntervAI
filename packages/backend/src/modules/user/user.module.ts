@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from './services/user.service';
-import { UserController, UserHistoryController } from './controllers/user.controller';
+import {
+  UserController,
+  UserHistoryController,
+} from './controllers/user.controller';
 import { UserNotificationsController } from './controllers/user-notifications.controller';
 import { AdminController } from './controllers/admin.controller';
 import { PrismaModule } from '@/infrastructure/database/prisma.module';

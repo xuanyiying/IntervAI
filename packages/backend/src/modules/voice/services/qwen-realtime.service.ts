@@ -56,7 +56,10 @@ const QWEN_VOICES = new Set([
  * Map a legacy cosyvoice voice code to a Qwen realtime voice. Unknown or
  * "default" ids fall back to the configured default voice.
  */
-export function resolveQwenVoice(voiceId: string | undefined, fallback: string): string {
+export function resolveQwenVoice(
+  voiceId: string | undefined,
+  fallback: string
+): string {
   const id = (voiceId || '').trim();
   if (QWEN_VOICES.has(id)) return id;
   if (id.startsWith('longan') || id.startsWith('xunanchuan')) return id;
@@ -92,7 +95,7 @@ export class QwenRealtimeSession {
     private readonly model: string,
     private readonly callbacks: QwenRealtimeCallbacks,
     private readonly options: QwenRealtimeOptions
-  ) { }
+  ) {}
 
   async open(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -112,7 +115,10 @@ export class QwenRealtimeSession {
 
       ws.on('open', () => {
         // Config is applied once the server confirms with session.updated.
-        this.send({ type: 'session.update', session: this.buildSessionConfig() });
+        this.send({
+          type: 'session.update',
+          session: this.buildSessionConfig(),
+        });
       });
 
       ws.on('message', (data) => {
@@ -237,7 +243,8 @@ export class QwenRealtimeSession {
         }
         return;
       case 'error': {
-        const message = event.error?.message || event.error?.code || 'unknown realtime error';
+        const message =
+          event.error?.message || event.error?.code || 'unknown realtime error';
         this.logger.warn(`Realtime error event: ${message}`);
         clearTimeout(handshakeTimeout);
         if (!this.opened && !this.closed) {
@@ -251,7 +258,8 @@ export class QwenRealtimeSession {
         if (event.delta) this.callbacks.onPartial?.(event.delta);
         return;
       case 'conversation.item.input_audio_transcription.completed':
-        if (event.transcript) this.callbacks.onSentenceEnd?.(event.transcript.trim());
+        if (event.transcript)
+          this.callbacks.onSentenceEnd?.(event.transcript.trim());
         return;
       case 'input_audio_buffer.speech_started':
         this.callbacks.onSpeechStarted?.();
@@ -268,7 +276,9 @@ export class QwenRealtimeSession {
       case 'response.audio.delta':
         // Audio may arrive in `audio` (OpenAI style) or `delta` (Qwen quickstart).
         if (event.audio || event.delta)
-          this.callbacks.onAnswerAudio?.((event.audio || event.delta) as string);
+          this.callbacks.onAnswerAudio?.(
+            (event.audio || event.delta) as string
+          );
         return;
       case 'response.done': {
         const cancelled = event.response?.status === 'cancelled';

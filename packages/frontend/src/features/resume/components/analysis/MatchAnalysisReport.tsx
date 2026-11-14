@@ -181,7 +181,8 @@ export const MatchAnalysisReport: React.FC<MatchAnalysisReportProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAnalysis();  }, [resumeId, jobId]);
+    loadAnalysis();
+  }, [resumeId, jobId]);
 
   const loadAnalysis = async () => {
     try {

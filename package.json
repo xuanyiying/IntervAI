@@ -22,7 +22,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
-    "concurrently": "^8.2.0",
+    "concurrently": "^9.0.0",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
@@ -31,7 +31,7 @@
     "typescript": "^5.1.6"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=22.19.0",
     "pnpm": ">=9.0.0"
   },
   "packageManager": "pnpm@9.0.0",
@@ -70,7 +70,11 @@
       "langchain": ">=0.3.0",
       "langsmith": ">=0.3.0",
       "@remix-run/router": ">=1.21.0",
-      "expr-eval": ">=2.0.2"
+      "expr-eval": ">=2.0.2",
+      "shell-quote": ">=1.11.0",
+      "handlebars": ">=4.7.10",
+      "proxy-addr": ">=2.0.8",
+      "dompurify": ">=3.4.17"
     }
   }
 }

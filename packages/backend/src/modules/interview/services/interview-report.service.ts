@@ -199,8 +199,9 @@ export class InterviewReportService {
     );
 
     const transcript = messages
-      .map((m: any) =>
-        `${m.role}: ${m.content.replace(/<!--EVAL_JSON:[\s\S]*?-->/g, '').trim()}`
+      .map(
+        (m: any) =>
+          `${m.role}: ${m.content.replace(/<!--EVAL_JSON:[\s\S]*?-->/g, '').trim()}`
       )
       .join('\n');
 
@@ -295,10 +296,7 @@ export class InterviewReportService {
       recommendations: evaluations
         .flatMap((e) => e.feedback.improvements)
         .slice(0, 5) || ['继续加强专业知识学习'],
-      nextSteps: [
-        '针对薄弱维度进行专项练习',
-        '建议进行更多模拟面试',
-      ],
+      nextSteps: ['针对薄弱维度进行专项练习', '建议进行更多模拟面试'],
     };
   }
 
@@ -327,7 +325,9 @@ export class InterviewReportService {
     const overallScore =
       perQuestionEvaluations.length > 0
         ? weightedOverallScore(dimensions)
-        : normalizeScore(parsed.overallScore || weightedOverallScore(dimensions));
+        : normalizeScore(
+            parsed.overallScore || weightedOverallScore(dimensions)
+          );
 
     const detailedAnalysis = (parsed.detailedAnalysis || [])
       .slice(0, userMessages.length)
@@ -341,7 +341,9 @@ export class InterviewReportService {
         ),
         feedback:
           item.feedback ||
-          (perQuestionEvaluations[index]?.feedback.improvements ?? []).join('；') ||
+          (perQuestionEvaluations[index]?.feedback.improvements ?? []).join(
+            '；'
+          ) ||
           '暂无详细反馈',
         keywords: Array.isArray(item.keywords) ? item.keywords : [],
         suggestions: Array.isArray(item.suggestions) ? item.suggestions : [],
@@ -524,14 +526,10 @@ Please ensure to return pure JSON format, without any other text.`;
     const orderedEntries = Object.entries(analysis.dimensions).sort(
       ([keyA], [keyB]) =>
         (DIMENSION_LABELS_ZH[keyA as EvaluationDimension]
-          ? EVALUATION_DIMENSIONS.indexOf(
-              keyA as EvaluationDimension
-            )
+          ? EVALUATION_DIMENSIONS.indexOf(keyA as EvaluationDimension)
           : 99) -
         (DIMENSION_LABELS_ZH[keyB as EvaluationDimension]
-          ? EVALUATION_DIMENSIONS.indexOf(
-              keyB as EvaluationDimension
-            )
+          ? EVALUATION_DIMENSIONS.indexOf(keyB as EvaluationDimension)
           : 99)
     );
 

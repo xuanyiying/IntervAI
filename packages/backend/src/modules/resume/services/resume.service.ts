@@ -40,7 +40,7 @@ export class ResumeService {
     private storageService: StorageService,
     @Inject(forwardRef(() => AIQueueService))
     private aiQueueService: AIQueueService
-  ) { }
+  ) {}
 
   /**
    * Calculate MD5 hash of a buffer
