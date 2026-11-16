@@ -27,25 +27,19 @@ model User {
   verificationToken     String?
   resetPasswordToken    String?
   resetPasswordExpires  DateTime?
-  stripeCustomerId      String?
-  stripeSubscriptionId  String?
-  paddleCustomerId      String?
-  paddleSubscriptionId  String?
   subscriptionProvider  String?
   status                String              @default("ACTIVE")
   avatar                String?
-  accounts              Account[]
   conversations         Conversation[]
   generatedPdfs         GeneratedPDF[]
   interviewSessions     InterviewSession[]
-  invitationCode        InvitationCode?
   jobs                  Job[]
   messages              Message[]
   optimizations         Optimization[]
   resumes               Resume[]
-  sessions              Session[]
   storages              Storage[]
   subscriptionEvents    SubscriptionEvent[]
+  paymentOrders         PaymentOrder[]
   voices                Voice[]
   speakerProfile        SpeakerProfile?
 
@@ -103,48 +97,30 @@ model SubscriptionEvent {
   @@map("subscription_events")
 }
 
-model Session {
-  id        String   @id
-  userId    String
-  expiresAt DateTime
-  token     String   @unique
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime
-  updatedAt DateTime
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PaymentOrder {
+  id             String    @id @default(uuid())
+  orderNo        String    @unique
+  userId         String
+  provider       String
+  planId         String
+  tier           SubscriptionTier
+  period         String
+  amount         Int
+  currency       String    @default("CNY")
+  status         String    @default("PENDING")
+  channelTradeNo String?
+  subject        String?
+  paidAt         DateTime?
+  expiredAt      DateTime?
+  metadata       Json?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
-}
-
-model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("accounts")
-}
-
-model Verification {
-  id         String    @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
-
-  @@map("verification")
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("payment_orders")
 }
 
 model Resume {
@@ -231,6 +207,7 @@ model Optimization {
   suggestions        Json[]
   optimizedContent   Json?
   status             OptimizationStatus  @default(PENDING)
+  errorMessage       String?
   createdAt          DateTime            @default(now())
   completedAt        DateTime?
   generatedPdfs      GeneratedPDF[]
@@ -402,78 +379,6 @@ model PerformanceMetrics {
   @@map("performance_metrics")
 }
 
-model AuditLog {
-  id        String   @id @default(uuid())
-  action    String
-  resource  String
-  userId    String?
-  details   Json?
-  timestamp DateTime @default(now())
-
-  @@index([action])
-  @@index([resource])
-  @@index([userId])
-  @@index([timestamp])
-  @@map("audit_logs")
-}
-
-model AICallLog {
-  id              String   @id @default(uuid())
-  model           String
-  provider        String
-  scenario        String?
-  requestContent  String?
-  responseContent String?
-  inputTokens     Int?
-  outputTokens    Int?
-  latency         Int
-  success         Boolean
-  errorCode       String?
-  errorMessage    String?
-  stackTrace      String?
-  userId          String?
-  timestamp       DateTime @default(now())
-
-  @@index([model])
-  @@index([provider])
-  @@index([scenario])
-  @@index([success])
-  @@index([timestamp])
-  @@index([userId])
-  @@map("ai_call_logs")
-}
-
-model AIRetryLog {
-  id           String   @id @default(uuid())
-  model        String
-  provider     String
-  attempt      Int
-  maxAttempts  Int
-  errorCode    String?
-  errorMessage String?
-  timestamp    DateTime @default(now())
-
-  @@index([model])
-  @@index([provider])
-  @@index([timestamp])
-  @@map("ai_retry_logs")
-}
-
-model AIDegradationLog {
-  id               String   @id @default(uuid())
-  model            String
-  provider         String
-  reason           String
-  fallbackModel    String?
-  fallbackProvider String?
-  timestamp        DateTime @default(now())
-
-  @@index([model])
-  @@index([provider])
-  @@index([timestamp])
-  @@map("ai_degradation_logs")
-}
-
 model Conversation {
   id            String    @id @default(uuid())
   userId        String
@@ -507,46 +412,6 @@ model Message {
   @@index([userId])
   @@index([conversationId, createdAt])
   @@map("messages")
-}
-
-model InvitationCode {
-  id        String    @id @default(uuid())
-  code      String    @unique
-  isUsed    Boolean   @default(false)
-  usedBy    String?   @unique
-  usedAt    DateTime?
-  createdBy String
-  createdAt DateTime  @default(now())
-  expiresAt DateTime?
-  user      User?     @relation(fields: [usedBy], references: [id])
-
-  @@index([code])
-  @@index([isUsed])
-  @@index([isUsed, createdAt])
-  @@map("invitation_codes")
-}
-
-model SystemSettings {
-  id                       String   @id @default(uuid())
-  siteName                 String   @default("AI Resume Assistant")
-  siteDescription          String   @default("AI-powered resume optimization platform")
-  maintenanceMode          Boolean  @default(false)
-  allowRegistration        Boolean  @default(true)
-  requireEmailVerification Boolean  @default(false)
-  requireInviteCode        Boolean  @default(false)
-  sessionTimeout           Int      @default(30)
-  maxLoginAttempts         Int      @default(5)
-  lockoutDuration          Int      @default(15)
-  smtpHost                 String   @default("")
-  smtpPort                 Int      @default(587)
-  smtpUser                 String   @default("")
-  smtpPassword             String   @default("")
-  fromEmail                String   @default("")
-  fromName                 String   @default("AI Resume Assistant")
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
-
-  @@map("system_settings")
 }
 
 model Storage {
@@ -724,22 +589,4 @@ enum InterviewStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-model UserProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  skills            String[]
-  experience        Json?
-  education         Json?
-  preferences       Json?
-  targetRoles       String[]
-  targetLocations   String[]
-  salaryExpectation Json?
-  availability      String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([userId])
-  @@map("user_profiles")
 }

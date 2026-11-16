@@ -1,5 +1,6 @@
 import { ChatGateway } from '@/modules/chat/gateways/chat.gateway';
 import { ResumeAIService } from '@/modules/resume/services/resume-ai.service';
+import { ResumeOptimizerService } from '@/modules/resume/services/resume-optimizer.service';
 import { PrismaService } from '@/infrastructure/database/services/prisma.service';
 import { Process, Processor } from '@nestjs/bull';
 import { Inject, Logger, forwardRef } from '@nestjs/common';
@@ -14,8 +15,22 @@ export class AIQueueProcessor {
     private resumeAI: ResumeAIService,
     private prisma: PrismaService,
     @Inject(forwardRef(() => ChatGateway))
-    private chatGateway: ChatGateway
+    private chatGateway: ChatGateway,
+    @Inject(forwardRef(() => ResumeOptimizerService))
+    private resumeOptimizer: ResumeOptimizerService
   ) {}
+
+  @Process({ name: 'resume-optimization', concurrency: 4 })
+  async handleResumeOptimization(
+    job: Job<{ optimizationId: string; userId: string }>
+  ) {
+    const { optimizationId } = job.data;
+    this.logger.log(
+      `Processing resume optimization job for optimization ${optimizationId} (Job ID: ${job.id})`
+    );
+    await this.resumeOptimizer.processOptimization(optimizationId);
+    return { optimizationId };
+  }
 
   @Process({ name: 'resume-parsing', concurrency: 6 })
   async handleResumeParsing(

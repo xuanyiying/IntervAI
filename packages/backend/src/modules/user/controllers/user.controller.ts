@@ -16,7 +16,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiTags,
   ApiOperation,
@@ -127,7 +127,8 @@ export class UserController {
   }
 
   @Post('login')
-  @UseGuards(ThrottlerGuard)
+  // Applied by the global APP_GUARD; a route-level ThrottlerGuard would
+  // double-count against the same storage key (effectively halving the limit).
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })

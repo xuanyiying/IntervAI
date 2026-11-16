@@ -13,6 +13,10 @@ inputs:
     type: string
     required: false
     description: Target job description (JSON string)
+  diagnosisContext:
+    type: string
+    required: false
+    description: Prior diagnosis findings (weaknesses and suggestions) to target with the rewrites
   optimizationFocus:
     type: string
     required: false
@@ -165,6 +169,16 @@ When generating optimizations, classify each suggestion by `type`:
 
 {{/if}}
 
+{{#if diagnosisContext}}
+
+## Diagnosis Findings (MUST address)
+
+A prior diagnosis identified these issues. Every diagnosed problem that touches resume content MUST get a matching entry in `optimizations` with a concrete before/after rewrite. Do not ignore them.
+
+{{diagnosisContext}}
+
+{{/if}}
+
 {{#if optimizationFocus}}
 
 ## Optimization Focus Area
@@ -180,3 +194,10 @@ When generating optimizations, classify each suggestion by `type`:
 {{/if}}
 
 Generate optimized resume content in the specified JSON format above. Ensure each optimization has a clear `type` classification and provides actionable before/after comparisons.
+
+CRITICAL for the `optimizations` array:
+- `before` MUST be copied VERBATIM from the resume data (the exact bullet, sentence or value being rewritten) — never paraphrase it. This string is used to locate the content when merging.
+- `after` is the complete rewritten replacement (not a diff, not a fragment).
+- `section` must be one of: `summary`, `skills`, `experience`, `projects`, `education`, `certifications`, `general`.
+- For `experience` / `projects` suggestions, set `itemIndex` to the zero-based index of the targeted entry in the corresponding array.
+- Prefer 5-10 high-impact optimizations over many trivial ones.

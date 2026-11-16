@@ -8,6 +8,7 @@ import { ResumeEmptyState } from '@/features/resume/components/my-resumes/Resume
 import { ResumeViewMode } from '@/features/resume/components/my-resumes/ResumeDetailHeader';
 import JobInputDialog from '@/features/resume/components/job/JobInputDialog';
 import { jobService } from '@/features/resume/api/job-service';
+import { optimizationService } from '@/features/resume/api/optimization-service';
 import './MyResumesPage.css';
 
 const { Title } = Typography;
@@ -55,10 +56,25 @@ const MyResumesPage: React.FC = () => {
     if (currentResume) {
       fetchOptimizations(currentResume.id);
     }
+    setInitialOptimizationId(undefined);
     setViewMode('history');
     message.success(
       t('resume.optimization_success', '简历优化已完成并保存为新版本')
     );
+  };
+
+  const handleStartOptimizationFromAnalysis = async () => {
+    if (!currentResume) return;
+    try {
+      const optimization = await optimizationService.createOptimization(
+        currentResume.id
+      );
+      setInitialOptimizationId(optimization.id);
+      setViewMode('optimization');
+    } catch (error) {
+      console.error('Failed to start optimization:', error);
+      message.error(t('common.error'));
+    }
   };
 
   const handleSelectOptimization = (id: string) => {
@@ -103,6 +119,7 @@ const MyResumesPage: React.FC = () => {
               onSelectOptimization={handleSelectOptimization}
               initialOptimizationId={initialOptimizationId}
               onOptimizationSuccess={handleOptimizationSuccess}
+              onStartOptimization={handleStartOptimizationFromAnalysis}
             />
           ) : (
             <ResumeEmptyState

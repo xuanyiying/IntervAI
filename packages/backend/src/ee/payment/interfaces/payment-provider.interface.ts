@@ -1,8 +1,8 @@
-import { SubscriptionTier } from '@prisma/client';
 import { SubscriptionStatus, BillingStatus } from '@/types';
+import { PaymentProviderName } from '../constants/payment.constants';
 
 export interface SubscriptionDetails {
-  tier: SubscriptionTier;
+  tier: import('@prisma/client').SubscriptionTier;
   expiresAt: Date | null;
   status?: SubscriptionStatus;
   cancelAtPeriodEnd?: boolean;
@@ -18,38 +18,47 @@ export interface BillingRecord {
   pdfUrl: string;
 }
 
-export interface PaymentProvider {
-  createCheckoutSession(
-    userId: string,
-    priceId: string,
-    options?: {
-      tier?: SubscriptionTier;
-    }
-  ): Promise<{ url?: string; transactionId?: string }>;
-  handleWebhook(signature: string, payload: Buffer | any): Promise<void>;
-  getUserSubscription(userId: string): Promise<SubscriptionDetails>;
-  cancelSubscription(userId: string): Promise<any>;
-  getBillingHistory(userId: string): Promise<BillingRecord[]>;
-
-  // New optional methods for enhanced subscription management
-  updateSubscription?(
-    userId: string,
-    newPriceId: string
-  ): Promise<{ success: boolean; message?: string }>;
-  processRefund?(
-    userId: string,
-    transactionId: string,
-    amount?: number
-  ): Promise<{ success: boolean; refundId?: string }>;
-  getPaymentMethods?(userId: string): Promise<PaymentMethod[]>;
+export interface CreatePaymentInput {
+  orderNo: string;
+  amount: number;
+  subject: string;
+  notifyUrl: string;
+  returnUrl: string;
+  expiredAt: Date;
 }
 
-export interface PaymentMethod {
-  id: string;
-  type: 'card' | 'bank' | 'paypal' | 'other';
-  last4?: string;
-  brand?: string;
-  expiryMonth?: number;
-  expiryYear?: number;
-  isDefault: boolean;
+export interface CreatePaymentResult {
+  payUrl?: string;
+  codeUrl?: string;
+}
+
+export interface ChannelPaymentQuery {
+  paid: boolean;
+  channelTradeNo?: string;
+}
+
+export interface NotifyVerification {
+  orderNo: string;
+  channelTradeNo: string;
+  paidAmount: number;
+}
+
+export interface RefundInput {
+  orderNo: string;
+  channelTradeNo: string;
+  amount: number;
+  total: number;
+  reason?: string;
+}
+
+export interface PaymentProvider {
+  readonly name: PaymentProviderName;
+  isConfigured(): boolean;
+  createPayment(input: CreatePaymentInput): Promise<CreatePaymentResult>;
+  verifyNotify(
+    headers: Record<string, string | string[] | undefined>,
+    rawBody: Buffer
+  ): Promise<NotifyVerification>;
+  queryOrder(orderNo: string): Promise<ChannelPaymentQuery>;
+  refund(input: RefundInput): Promise<{ success: boolean; refundId?: string }>;
 }

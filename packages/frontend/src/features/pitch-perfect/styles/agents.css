@@ -87,6 +87,19 @@
   transition: all 0.3s ease !important;
 }
 
+.jd-tip {
+  margin: 0.6rem 0 0;
+  padding-left: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.page-container .form-group .ant-input-data-count {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
 /* Active Resume Display Card */
 .active-resume-card {
   padding: 1rem 1.25rem;

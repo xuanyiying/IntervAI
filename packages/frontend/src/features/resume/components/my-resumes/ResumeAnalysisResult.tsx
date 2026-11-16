@@ -15,6 +15,7 @@ import {
   WarningOutlined,
   RocketOutlined,
 } from '@ant-design/icons';
+import { Button } from 'antd';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { AnalysisDimensionCard } from './AnalysisDimensionCard';
@@ -43,10 +44,12 @@ interface AnalysisResult {
 
 interface ResumeAnalysisResultProps {
   result: AnalysisResult;
+  onOptimize?: () => void;
 }
 
 export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
   result,
+  onOptimize,
 }) => {
   const { t } = useTranslation();
 
@@ -142,7 +145,27 @@ export const ResumeAnalysisResult: React.FC<ResumeAnalysisResultProps> = ({
         </Col>
 
         <Col span={24}>
-          <Card title={t('resume.analysis.suggestions_title')} hoverable>
+          <Card
+            title={t('resume.analysis.suggestions_title')}
+            hoverable
+            extra={
+              onOptimize &&
+              result.suggestions.length > 0 && (
+                <Button
+                  type="primary"
+                  icon={<RocketOutlined />}
+                  onClick={onOptimize}
+                >
+                  {t('resume.analysis.optimize_cta')}
+                </Button>
+              )
+            }
+          >
+            {onOptimize && result.suggestions.length > 0 && (
+              <Paragraph type="secondary" className="mb-4">
+                {t('resume.analysis.optimize_hint')}
+              </Paragraph>
+            )}
             <List
               grid={{ gutter: 16, xs: 1, sm: 1, md: 2, lg: 2, xl: 3, xxl: 3 }}
               dataSource={result.suggestions}

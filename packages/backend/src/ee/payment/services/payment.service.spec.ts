@@ -1,289 +1,400 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentService } from './payment.service';
-import { StripePaymentProvider } from '../adapters/stripe-payment.provider';
-import { PaddlePaymentProvider } from '../adapters/paddle-payment.provider';
+import { AlipayPaymentProvider } from '../adapters/alipay-payment.provider';
+import { WechatPaymentProvider } from '../adapters/wechat-payment.provider';
 import { PrismaService } from '@/infrastructure/database/services/prisma.service';
-import { BadRequestException } from '@nestjs/common';
-import { BillingStatus } from '@/types';
+import { SubscriptionTier } from '@prisma/client';
 
-// Mock Provider Factory
-const createMockProvider = () => ({
-  createCheckoutSession: jest.fn(),
-  getUserSubscription: jest.fn(),
-  cancelSubscription: jest.fn(),
-  getBillingHistory: jest.fn(),
-  handleWebhook: jest.fn(),
-  updateSubscription: jest.fn(),
-  processRefund: jest.fn(),
-  getPaymentMethods: jest.fn(),
+const createMockProvider = (name: 'alipay' | 'wechat') => ({
+  name,
+  isConfigured: jest.fn().mockReturnValue(true),
+  createPayment: jest
+    .fn()
+    .mockResolvedValue(
+      name === 'alipay'
+        ? { payUrl: 'https://pay' }
+        : { codeUrl: 'weixin://wxpay' }
+    ),
+  verifyNotify: jest.fn(),
+  queryOrder: jest.fn().mockResolvedValue({ paid: false }),
+  refund: jest.fn(),
 });
 
 describe('PaymentService', () => {
   let service: PaymentService;
-  let stripeProvider: StripePaymentProvider;
-  let paddleProvider: PaddlePaymentProvider;
-  let prisma: PrismaService;
+  let alipayProvider: ReturnType<typeof createMockProvider>;
+  let wechatProvider: ReturnType<typeof createMockProvider>;
+  let prisma: any;
 
   const mockUser = {
     id: 'user-id',
     email: 'test@example.com',
-    subscriptionProvider: 'stripe',
-    stripeSubscriptionId: 'sub_123',
+    subscriptionTier: SubscriptionTier.FREE,
+    subscriptionExpiresAt: null,
+    subscriptionProvider: null,
+  };
+
+  const pendingOrder = {
+    id: 'order-1',
+    orderNo: 'IV20261115120000000001',
+    userId: 'user-id',
+    provider: 'alipay',
+    planId: 'pro_monthly',
+    tier: SubscriptionTier.PRO,
+    period: 'MONTHLY',
+    amount: 1900,
+    currency: 'CNY',
+    status: 'PENDING',
+    channelTradeNo: null,
+    subject: 'Pro 月度会员',
+    paidAt: null,
+    expiredAt: new Date(Date.now() + 10 * 60 * 1000),
+    createdAt: new Date(),
   };
 
   beforeEach(async () => {
+    alipayProvider = createMockProvider('alipay');
+    wechatProvider = createMockProvider('wechat');
+
+    prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue(mockUser),
+        update: jest.fn(),
+      },
+      paymentOrder: {
+        create: jest.fn().mockResolvedValue({ ...pendingOrder }),
+        findUnique: jest.fn().mockResolvedValue({ ...pendingOrder }),
+        findMany: jest.fn().mockResolvedValue([]),
+        update: jest.fn(),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      subscriptionEvent: {
+        create: jest.fn(),
+      },
+      $transaction: jest.fn((cb) => cb(prisma)),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentService,
+        { provide: AlipayPaymentProvider, useValue: alipayProvider },
+        { provide: WechatPaymentProvider, useValue: wechatProvider },
+        { provide: PrismaService, useValue: prisma },
         {
-          provide: StripePaymentProvider,
-          useValue: createMockProvider(),
-        },
-        {
-          provide: PaddlePaymentProvider,
-          useValue: createMockProvider(),
-        },
-        {
-          provide: PrismaService,
+          provide: ConfigService,
           useValue: {
-            user: {
-              findUnique: jest.fn().mockResolvedValue(mockUser),
-              update: jest.fn(),
-            },
-            $transaction: jest.fn((cb) => cb(prisma)),
+            get: jest.fn().mockReturnValue(undefined),
           },
         },
       ],
     }).compile();
 
     service = module.get<PaymentService>(PaymentService);
-    stripeProvider = module.get<StripePaymentProvider>(StripePaymentProvider);
-    paddleProvider = module.get<PaddlePaymentProvider>(PaddlePaymentProvider);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  describe('createCheckoutSession', () => {
-    it('should call stripe provider by default', async () => {
-      await service.createCheckoutSession('user-id', 'price-id');
-      expect(stripeProvider.createCheckoutSession).toHaveBeenCalledWith(
+  describe('getPlans', () => {
+    it('returns catalog with server-side prices', () => {
+      const plans = service.getPlans() as any[];
+      expect(plans.map((p) => p.planId)).toEqual([
+        'pro_monthly',
+        'pro_yearly',
+        'enterprise_monthly',
+        'enterprise_yearly',
+      ]);
+      expect(plans.every((p) => p.amount > 0 && p.currency === 'CNY')).toBe(
+        true
+      );
+    });
+  });
+
+  describe('createPayment', () => {
+    it('creates a pending order and returns alipay pay url', async () => {
+      const result: any = await service.createPayment(
         'user-id',
-        'price-id',
-        undefined
+        'pro_monthly',
+        'alipay'
+      );
+
+      expect(result.orderNo).toMatch(/^IV\d{14}\d{6}$/);
+      expect(result.amount).toBe(1900);
+      expect(result.payUrl).toBe('https://pay');
+      expect(prisma.paymentOrder.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 'user-id',
+            provider: 'alipay',
+            tier: SubscriptionTier.PRO,
+            status: 'PENDING',
+            amount: 1900,
+          }),
+        })
+      );
+      expect(alipayProvider.createPayment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderNo: result.orderNo,
+          amount: 1900,
+          notifyUrl: expect.stringContaining('/payments/notify/alipay'),
+        })
       );
     });
 
-    it('should call paddle provider when specified', async () => {
-      await service.createCheckoutSession('user-id', 'price-id', 'paddle');
-      expect(paddleProvider.createCheckoutSession).toHaveBeenCalledWith(
+    it('returns wechat code url', async () => {
+      prisma.paymentOrder.create.mockResolvedValue({
+        ...pendingOrder,
+        provider: 'wechat',
+      });
+
+      const result: any = await service.createPayment(
         'user-id',
-        'price-id',
-        undefined
+        'pro_yearly',
+        'wechat'
       );
+
+      expect(result.codeUrl).toBe('weixin://wxpay');
+    });
+
+    it('throws for unknown plan', async () => {
+      await expect(
+        service.createPayment('user-id', 'fake_plan', 'alipay')
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws when provider is not configured', async () => {
+      alipayProvider.isConfigured.mockReturnValue(false);
+      await expect(
+        service.createPayment('user-id', 'pro_monthly', 'alipay')
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('closes the order when provider fails', async () => {
+      alipayProvider.createPayment.mockRejectedValue(new Error('gateway down'));
+
+      await expect(
+        service.createPayment('user-id', 'pro_monthly', 'alipay')
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.paymentOrder.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'CLOSED' },
+        })
+      );
+    });
+  });
+
+  describe('getOrderStatus', () => {
+    it('queries the channel and marks paid when callback is delayed', async () => {
+      alipayProvider.queryOrder.mockResolvedValue({
+        paid: true,
+        channelTradeNo: '20261115xxx',
+      });
+
+      const result: any = await service.getOrderStatus(
+        'user-id',
+        pendingOrder.orderNo
+      );
+
+      expect(result.status).toBe('PAID');
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            subscriptionTier: SubscriptionTier.PRO,
+          }),
+        })
+      );
+    });
+
+    it('keeps pending status when channel reports unpaid', async () => {
+      const result: any = await service.getOrderStatus(
+        'user-id',
+        pendingOrder.orderNo
+      );
+
+      expect(result.status).toBe('PENDING');
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('does not query channel for expired orders', async () => {
+      prisma.paymentOrder.findUnique.mockResolvedValue({
+        ...pendingOrder,
+        expiredAt: new Date(Date.now() - 60 * 1000),
+      });
+
+      const result: any = await service.getOrderStatus(
+        'user-id',
+        pendingOrder.orderNo
+      );
+
+      expect(alipayProvider.queryOrder).not.toHaveBeenCalled();
+      expect(result.status).toBe('PENDING');
+    });
+
+    it('forbids access to other users orders', async () => {
+      await expect(
+        service.getOrderStatus('someone-else', pendingOrder.orderNo)
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('handleNotify', () => {
+    it('marks order paid and extends subscription', async () => {
+      alipayProvider.verifyNotify.mockResolvedValue({
+        orderNo: pendingOrder.orderNo,
+        channelTradeNo: 'trade-1',
+        paidAmount: 1900,
+      });
+
+      const result = await service.handleNotify('alipay', {}, Buffer.from(''));
+
+      expect(result).toEqual({
+        orderNo: pendingOrder.orderNo,
+        status: 'PAID',
+        duplicate: false,
+      });
+      expect(prisma.paymentOrder.updateMany).toHaveBeenCalledWith({
+        where: { id: pendingOrder.id, status: 'PENDING' },
+        data: expect.objectContaining({ status: 'PAID' }),
+      });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-id' },
+          data: expect.objectContaining({
+            subscriptionTier: SubscriptionTier.PRO,
+            subscriptionProvider: 'alipay',
+          }),
+        })
+      );
+      expect(prisma.subscriptionEvent.create).toHaveBeenCalled();
+    });
+
+    it('renews on top of an existing active subscription', async () => {
+      alipayProvider.verifyNotify.mockResolvedValue({
+        orderNo: pendingOrder.orderNo,
+        channelTradeNo: 'trade-1',
+        paidAmount: 1900,
+      });
+      const futureExpiry = new Date('2027-01-01T00:00:00.000Z');
+      prisma.user.findUnique.mockResolvedValue({
+        ...mockUser,
+        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionExpiresAt: futureExpiry,
+      });
+
+      await service.handleNotify('alipay', {}, Buffer.from(''));
+
+      const update = prisma.user.update.mock.calls[0][0];
+      expect(update.data.subscriptionExpiresAt.getUTCMonth()).toBe(1); // 2027-02-01
+      expect(prisma.subscriptionEvent.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'renew' }),
+        })
+      );
+    });
+
+    it('rejects notifications whose amount differs from the order', async () => {
+      alipayProvider.verifyNotify.mockResolvedValue({
+        orderNo: pendingOrder.orderNo,
+        channelTradeNo: 'trade-1',
+        paidAmount: 1,
+      });
+
+      await expect(
+        service.handleNotify('alipay', {}, Buffer.from(''))
+      ).rejects.toThrow(BadRequestException);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('is idempotent for repeated callbacks', async () => {
+      alipayProvider.verifyNotify.mockResolvedValue({
+        orderNo: pendingOrder.orderNo,
+        channelTradeNo: 'trade-1',
+        paidAmount: 1900,
+      });
+      prisma.paymentOrder.findUnique.mockResolvedValue({
+        ...pendingOrder,
+        status: 'PAID',
+      });
+
+      const result = await service.handleNotify('alipay', {}, Buffer.from(''));
+
+      expect(result.duplicate).toBe(true);
+      expect(prisma.paymentOrder.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('does not write when another callback already claimed the order', async () => {
+      alipayProvider.verifyNotify.mockResolvedValue({
+        orderNo: pendingOrder.orderNo,
+        channelTradeNo: 'trade-1',
+        paidAmount: 1900,
+      });
+      prisma.paymentOrder.updateMany.mockResolvedValue({ count: 0 });
+
+      await service.handleNotify('alipay', {}, Buffer.from(''));
+
+      expect(prisma.user.update).not.toHaveBeenCalled();
     });
   });
 
   describe('getUserSubscription', () => {
-    it('should return subscription from paddle if provider is paddle', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'paddle',
-      } as any);
+    it('returns active status while subscription has not expired', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionExpiresAt: new Date(Date.now() + 86400000),
+        subscriptionProvider: 'alipay',
+      });
 
-      await service.getUserSubscription('user-id');
-      expect(paddleProvider.getUserSubscription).toHaveBeenCalledWith(
-        'user-id'
-      );
+      const result = await service.getUserSubscription('user-id');
+      expect(result.status).toBe('ACTIVE');
+      expect(result.tier).toBe(SubscriptionTier.PRO);
     });
 
-    it('should return subscription from stripe if provider is stripe', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
+    it('omits status after expiry', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        subscriptionTier: SubscriptionTier.PRO,
+        subscriptionExpiresAt: new Date(Date.now() - 86400000),
+        subscriptionProvider: 'alipay',
+      });
 
-      await service.getUserSubscription('user-id');
-      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith(
-        'user-id'
-      );
-    });
-
-    it('should default to stripe if no provider set', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: null,
-        stripeSubscriptionId: null,
-      } as any);
-
-      await service.getUserSubscription('user-id');
-      expect(stripeProvider.getUserSubscription).toHaveBeenCalledWith(
-        'user-id'
-      );
-    });
-
-    it('should throw BadRequestException if user not found', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
-      await expect(service.getUserSubscription('user-id')).rejects.toThrow(
-        BadRequestException
-      );
-    });
-  });
-
-  describe('cancelSubscription', () => {
-    it('should cancel paddle subscription', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'paddle',
-      } as any);
-
-      await service.cancelSubscription('user-id');
-      expect(paddleProvider.cancelSubscription).toHaveBeenCalledWith('user-id');
-    });
-
-    it('should cancel stripe subscription', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      await service.cancelSubscription('user-id');
-      expect(stripeProvider.cancelSubscription).toHaveBeenCalledWith('user-id');
+      const result = await service.getUserSubscription('user-id');
+      expect(result.status).toBeUndefined();
     });
   });
 
   describe('getBillingHistory', () => {
-    it('should aggregate history from both providers', async () => {
-      const date1 = new Date('2023-01-01');
-      const date2 = new Date('2023-02-01');
-
-      jest.spyOn(stripeProvider, 'getBillingHistory').mockResolvedValue([
+    it('maps paid and refunded orders to billing records', async () => {
+      prisma.paymentOrder.findMany.mockResolvedValue([
         {
-          id: '1',
-          date: date1,
-          amount: 10,
-          currency: 'USD',
-          status: BillingStatus.PAID,
-          pdfUrl: 'url',
+          orderNo: 'IV1',
+          amount: 1900,
+          currency: 'CNY',
+          status: 'PAID',
+          paidAt: new Date('2026-11-01T00:00:00.000Z'),
+          createdAt: new Date('2026-11-01T00:00:00.000Z'),
         },
-      ]);
-      jest.spyOn(paddleProvider, 'getBillingHistory').mockResolvedValue([
         {
-          id: '2',
-          date: date2,
-          amount: 20,
-          currency: 'USD',
-          status: BillingStatus.PAID,
-          pdfUrl: 'url',
+          orderNo: 'IV2',
+          amount: 9900,
+          currency: 'CNY',
+          status: 'REFUNDED',
+          paidAt: new Date('2026-10-01T00:00:00.000Z'),
+          createdAt: new Date('2026-10-01T00:00:00.000Z'),
         },
       ]);
 
-      const result = await service.getBillingHistory('user-id');
+      const records = await service.getBillingHistory('user-id');
 
-      expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('2'); // Newer date first
-      expect(result[1].id).toBe('1');
-    });
-
-    it('should return empty array if user not found', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(null);
-      const result = await service.getBillingHistory('user-id');
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('handleWebhook', () => {
-    it('should delegate to stripe provider', async () => {
-      await service.handleWebhook('sig', {}, 'stripe');
-      expect(stripeProvider.handleWebhook).toHaveBeenCalledWith('sig', {});
-    });
-
-    it('should delegate to paddle provider', async () => {
-      await service.handleWebhook('sig', {}, 'paddle');
-      expect(paddleProvider.handleWebhook).toHaveBeenCalledWith('sig', {});
-    });
-  });
-
-  describe('updateSubscription', () => {
-    it('should call updateSubscription on provider', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      await service.updateSubscription('user-id', 'new-price');
-      expect((stripeProvider as any).updateSubscription).toHaveBeenCalledWith(
-        'user-id',
-        'new-price'
-      );
-      expect(prisma.$transaction).toHaveBeenCalled();
-    });
-
-    it('should throw error if provider does not support update', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      // Temporarily remove updateSubscription from mock
-      const originalUpdate = (stripeProvider as any).updateSubscription;
-      (stripeProvider as any).updateSubscription = undefined;
-
-      await expect(
-        service.updateSubscription('user-id', 'new-price')
-      ).rejects.toThrow(BadRequestException);
-
-      // Restore
-      (stripeProvider as any).updateSubscription = originalUpdate;
-    });
-  });
-
-  describe('processRefund', () => {
-    it('should call processRefund on provider', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      await service.processRefund('user-id', 'tx-id');
-      expect((stripeProvider as any).processRefund).toHaveBeenCalledWith(
-        'user-id',
-        'tx-id',
-        undefined
-      );
-    });
-  });
-
-  describe('getPaymentMethods', () => {
-    it('should call getPaymentMethods on provider', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      await service.getPaymentMethods('user-id');
-      expect((stripeProvider as any).getPaymentMethods).toHaveBeenCalledWith(
-        'user-id'
-      );
-    });
-
-    it('should return empty array if provider does not support getPaymentMethods', async () => {
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValue({
-        ...mockUser,
-        subscriptionProvider: 'stripe',
-      } as any);
-
-      // Temporarily remove getPaymentMethods from mock
-      const originalMethod = (stripeProvider as any).getPaymentMethods;
-      (stripeProvider as any).getPaymentMethods = undefined;
-
-      const result = await service.getPaymentMethods('user-id');
-      expect(result).toEqual([]);
-
-      // Restore
-      (stripeProvider as any).getPaymentMethods = originalMethod;
+      expect(records).toHaveLength(2);
+      expect(records[0]).toMatchObject({
+        id: 'IV1',
+        amount: 19,
+        currency: 'cny',
+      });
+      expect(records[1].status).toBe('VOID');
     });
   });
 });

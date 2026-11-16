@@ -18,8 +18,9 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   // Voiceprint enrollment uploads raw PCM as base64 JSON (~400KB for 9s),
   // exceeding the default 100kb JSON limit — register parsers explicitly.
+  // bodyParser 关闭后 Nest 的 rawBody 捕获不生效，改由各 parser 的 verify
+  // 回调保存原始报文，供支付渠道回调验签（微信 APIv3）使用。
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
     bodyParser: false,
   });
 
@@ -27,8 +28,17 @@ async function bootstrap() {
   // 不设 trust proxy 时 req.ip 恒为 Caddy 容器 IP，全局限流会退化成全站共享配额。
   app.set('trust proxy', 1);
 
-  app.use(express.json({ limit: '4mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '4mb' }));
+  const captureRawBody = (
+    req: express.Request,
+    _res: express.Response,
+    buf: Buffer
+  ) => {
+    (req as express.Request & { rawBody?: Buffer }).rawBody = buf;
+  };
+  app.use(express.json({ limit: '4mb', verify: captureRawBody }));
+  app.use(
+    express.urlencoded({ extended: true, limit: '4mb', verify: captureRawBody })
+  );
 
   // Initialize OpenTelemetry (optional, env controlled)
   await initOpenTelemetry();

@@ -62,6 +62,32 @@ export interface ParsedResumeData {
 }
 
 /**
+ * Resume diagnosis result — shared contract between AI diagnosis,
+ * rule-based fallback and the frontend analysis view.
+ * Dimension caps: project 40 / skillMatch 20 / content 15 / structure 15 / expression 10.
+ */
+export interface ResumeDiagnosis {
+  overallScore: number;
+  scoreDetail: {
+    projectScore: number;
+    skillMatchScore: number;
+    contentScore: number;
+    structureScore: number;
+    expressionScore: number;
+  };
+  language: 'zh' | 'en';
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: Array<{
+    category: string;
+    priority: string;
+    issue: string;
+    recommendation: string;
+  }>;
+}
+
+/**
  * Score results of matching a resume against a job description
  */
 export interface MatchScore {

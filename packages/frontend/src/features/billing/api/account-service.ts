@@ -7,7 +7,7 @@ export type SubscriptionAction =
 
 export interface SubscriptionRecord {
   id: string;
-  provider: 'stripe' | 'paddle' | 'manual';
+  provider: 'alipay' | 'wechat' | 'manual';
   externalSubscriptionId?: string | null;
   tier: SubscriptionTier;
   status: SubscriptionStatus;

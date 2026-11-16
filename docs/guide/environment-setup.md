@@ -37,8 +37,8 @@ cp packages/backend/.env.example packages/backend/.env
 cp packages/frontend/.env.example packages/frontend/.env
 ```
 
-- **后端实际读取**：`DATABASE_URL`、`REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`、`JWT_SECRET` / `JWT_EXPIRES_IN`、`CORS_ORIGIN`、`FRONTEND_URL`、`APP_EDITION`、`AI_MODEL` / `AI_EMBEDDING_MODEL`、`OPENAI_API_KEY` / `DEEPSEEK_API_KEY` / `QWEN_API_KEY` / `GEMINI_API_KEY` / `SILICONCLOUD_API_KEY` / `OPENROUTER_API_KEY` / `OLLAMA_BASE_URL`、`DASHSCOPE_API_KEY`、`OSS_TYPE` 与 `OSS_*`、`GOOGLE_*` / `GITHUB_*`、`LOG_LEVEL`、`SENTRY_DSN`、`OTEL_ENABLE` / `OTEL_OTLP_URL`。`packages/backend/.env.example` 是起步清单，生产所需的完整变量见 [部署与运维](../../deployment/README.md)。
-- **前端实际读取**：`VITE_API_BASE_URL`（默认 `/api/v1`）、`VITE_APP_EDITION`（控制 EE 路由）、`VITE_PADDLE_CLIENT_TOKEN` 与价格 ID。`VITE_BACKEND_URL`、`VITE_GOOGLE_OAUTH_ENABLED`、`VITE_GITHUB_OAUTH_ENABLED`、`VITE_STRIPE_PUBLISHABLE_KEY` 目前在 `src` 中没有读取点。
+- **后端实际读取**：`DATABASE_URL`、`REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD`、`JWT_SECRET` / `JWT_EXPIRES_IN`、`CORS_ORIGIN`、`FRONTEND_URL`、`APP_EDITION`、`AI_MODEL` / `AI_EMBEDDING_MODEL`、`OPENAI_API_KEY` / `DEEPSEEK_API_KEY` / `QWEN_API_KEY` / `GEMINI_API_KEY` / `SILICONCLOUD_API_KEY` / `OPENROUTER_API_KEY` / `OLLAMA_BASE_URL`、`DASHSCOPE_API_KEY`、`OSS_TYPE` 与 `OSS_*`、`GOOGLE_*` / `GITHUB_*`、`LOG_LEVEL`、`SENTRY_DSN`、`OTEL_ENABLE` / `OTEL_OTLP_URL`；EE 版支付为 `ALIPAY_*` / `WECHAT_PAY_*` / `PAYMENT_NOTIFY_BASE_URL`（见 `src/ee/payment/README.md`）。`packages/backend/.env.example` 是起步清单，生产所需的完整变量见 [部署与运维](../../deployment/README.md)。
+- **前端实际读取**：`VITE_API_BASE_URL`（默认 `/api/v1`）、`VITE_APP_EDITION`（控制 EE 路由）。`VITE_BACKEND_URL`、`VITE_GOOGLE_OAUTH_ENABLED`、`VITE_GITHUB_OAUTH_ENABLED` 目前在 `src` 中没有读取点；支付无需前端密钥，定价由服务端 `/payments/plans` 提供。
 - **死变量**：`ENCRYPTION_KEY`、`STORAGE_PROVIDER`、`CSP_ENABLED`、`RATE_LIMIT_*` 等未被运行时读取，配置不生效。
 - 根目录 `.env` 由项目保留；根 `.env.example`、`.env.production.example`、`.env.docker`、`.env.production` 已从工作区移除，生产配置不再有示例文件，请按部署文档手工创建 `.env.production`。
 

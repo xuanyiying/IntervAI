@@ -49,12 +49,18 @@ export const ResumeHistoryView: React.FC<ResumeHistoryViewProps> = ({
                   </div>
                   <Tag
                     color={
-                      opt.status === 'COMPLETED' ? 'success' : 'processing'
+                      opt.status === 'COMPLETED'
+                        ? 'success'
+                        : opt.status === 'FAILED'
+                          ? 'error'
+                          : 'processing'
                     }
                   >
                     {opt.status === 'COMPLETED'
                       ? t('common.completed')
-                      : t('common.processing')}
+                      : opt.status === 'FAILED'
+                        ? t('common.failed')
+                        : t('common.processing')}
                   </Tag>
                 </div>
                 <div className="flex justify-between items-center mt-3">

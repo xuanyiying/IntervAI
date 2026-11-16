@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PitchPerfectCard } from '@/features/pitch-perfect/components/PitchPerfectCard';
 import { useResumeStore } from '@/features/resume';
 import { useTranslation } from 'react-i18next';
 import { ParsedResumeData } from '@/shared/types';
-import { Alert, Button, Space } from 'antd';
+import { Alert, Button, Space, Input } from 'antd';
 import { FileTextOutlined, HighlightOutlined } from '@ant-design/icons';
 import '@/shared/styles/common.css';
 import '@/features/pitch-perfect/styles/agents.css';
 
+const JD_MAX_LENGTH = 30000;
+
 export const PitchPerfectPage: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { currentResume, fetchResumes } = useResumeStore();
   const [jobDescription, setJobDescription] = useState('');
   const [showForm, setShowForm] = useState(true);
@@ -22,7 +26,7 @@ export const PitchPerfectPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentResume?.parsedData && jobDescription.trim()) {
+    if (currentResume?.parsedData) {
       setShowForm(false);
     }
   };
@@ -66,7 +70,7 @@ export const PitchPerfectPage: React.FC = () => {
                   <Button
                     type="link"
                     className="change-btn"
-                    onClick={() => (window.location.href = '/resumes')}
+                    onClick={() => navigate('/resumes')}
                   >
                     {t('pitchPerfect.change', '更换')}
                   </Button>
@@ -84,7 +88,7 @@ export const PitchPerfectPage: React.FC = () => {
                     <Button
                       size="small"
                       type="primary"
-                      onClick={() => (window.location.href = '/resumes')}
+                      onClick={() => navigate('/resumes')}
                     >
                       {t('pitchPerfect.go_upload', '去上传')}
                     </Button>
@@ -97,18 +101,30 @@ export const PitchPerfectPage: React.FC = () => {
               <label htmlFor="jd">
                 {t('pitchPerfect.job_description', '职位描述')}:
               </label>
-              <textarea
+              <Input.TextArea
                 id="jd"
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder={t(
                   'pitchPerfect.job_description_placeholder',
-                  '粘贴职位描述内容'
+                  '粘贴职位描述内容（可选，留空则生成通用自我介绍）'
                 )}
                 className="form-textarea"
                 rows={10}
-                required
+                maxLength={JD_MAX_LENGTH}
+                showCount={{
+                  formatter: ({ count }) =>
+                    t('pitchPerfect.jd_count', '{{count}} / 30000', {
+                      count,
+                    }),
+                }}
               />
+              <p className="jd-tip">
+                {t(
+                  'pitchPerfect.jd_tip',
+                  '职位描述为可选项：填写后 AI 会针对性匹配岗位亮点；留空则基于简历生成通用自我介绍。'
+                )}
+              </p>
             </div>
 
             <div className="form-actions">
@@ -126,7 +142,7 @@ export const PitchPerfectPage: React.FC = () => {
         </div>
       ) : (
         <div className="content-container">
-          {resumeData && jobDescription && currentResume && (
+          {resumeData && currentResume && (
             <PitchPerfectCard
               resumeId={currentResume.id}
               resumeData={resumeData as any as ParsedResumeData}

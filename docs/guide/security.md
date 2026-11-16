@@ -80,7 +80,7 @@ GitHub 的 `refs/pull/<N>/head` 与 `refs/pull/<N>/merge` 是**只读引用，fo
 | 限流         | `app.module.ts:63-68` 配置 100 次 / 60 秒，并在 `:117-120` 通过 `APP_GUARD` **全局挂载 `ThrottlerGuard`**；`main.ts:28` 设 `trust proxy: 1`，使 `req.ip` 取 Caddy 覆写的真实客户端 IP（否则全站共享同一配额）。`RATE_LIMIT_*` 仍无读取点                                         |
 | 运维端点     | `metrics` / `alerts` controller 无鉴权（`MonitoringGuard` 恒 `return true`），且 `alerting.controller.ts` 含 `POST` 创建 / 解决告警；`Caddyfile` 已对公网返回 403，但内网 `backend:3000` 仍可直接调用                                              |
 | API 文档     | `main.ts:162-180` 生产默认关闭，需显式 `ENABLE_SWAGGER=true` 才 `SwaggerModule.setup('api/docs')`；`Caddyfile` 另在公网阻断 `/api/docs*`                                                                                                                                |
-| 日志与审计   | Winston 请求日志中间件（`app.module.ts`）、`AuditLog` 模型                                                                                                                                                                                         |
+| 日志与审计   | Winston 请求日志中间件（`app.module.ts`）                                                                                                                                                                                                         |
 | AI 密钥      | 运行时 Provider 密钥来自环境变量（`OPENAI_API_KEY`、`DEEPSEEK_API_KEY` 等，见 `modules/ai/services/ai.service.ts`）；`ModelConfig.apiKey` 只是管理端元数据，按明文存储（`admin.controller.ts` 与 `scripts/manage-model-config.ts` 一致），请勿填入真实生产密钥 |
 
 ## 部署注意事项

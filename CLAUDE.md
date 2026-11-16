@@ -120,7 +120,7 @@ Your prompt here: {{inputName}}
 ## 环境变量
 
 - 后端示例：`packages/backend/.env.example`（`DATABASE_URL`、`REDIS_*`、`JWT_SECRET`、`AI_MODEL` / `AI_EMBEDDING_MODEL`、各 `*_API_KEY`、`OSS_TYPE` / `OSS_*`、`APP_EDITION`、`CORS_ORIGIN` 等）。
-- 前端示例：`packages/frontend/.env.example`（`VITE_API_BASE_URL`、`VITE_APP_EDITION`、Paddle 前端键）；`VITE_BACKEND_URL`、OAuth 开关、`VITE_STRIPE_PUBLISHABLE_KEY` 当前无代码读取点。
+- 前端示例：`packages/frontend/.env.example`（`VITE_API_BASE_URL`、`VITE_APP_EDITION`）；`VITE_BACKEND_URL`、OAuth 开关当前无代码读取点。支付走支付宝/微信（EE `src/ee/payment`，一次性收款 + 订单表 `payment_orders`），价格由服务端 `/payments/plans` 提供，前端无支付密钥。
 - 部署：根目录 `.env`（项目保留）/ `.env.production`，不再维护 `.env.production.example`；完整必填变量见 [deployment/README.md](./deployment/README.md)。`ENCRYPTION_KEY`、`STORAGE_PROVIDER`、`CSP_ENABLED`、`RATE_LIMIT_*` 等均为未被读取的死变量。
 - 监控 / 可观测性：`SENTRY_DSN`、`OTEL_ENABLE`、`OTEL_OTLP_URL`、`LOG_LEVEL`、`ALERT_WEBHOOK_URL`、`SLACK_WEBHOOK_URL` 有效；`infrastructure/monitoring/config/monitoring.config.ts` 的 `getMonitoringConfig()` 无调用点，见 [docs/guide/monitoring.md](./docs/guide/monitoring.md)。
 

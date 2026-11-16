@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Input,
   Button,
@@ -12,6 +12,7 @@ import {
   Empty,
   Spin,
   Tabs,
+  Alert,
 } from 'antd';
 import {
   RocketOutlined,
@@ -22,6 +23,7 @@ import {
   BulbOutlined,
   StarOutlined,
   FileSearchOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { normalizeLanguage } from '@/shared/lib/i18n';
@@ -30,10 +32,14 @@ import { jobService } from '@/features/resume/api/job-service';
 import { interviewService } from '@/features/interview/api/interview-service';
 import { Optimization, Suggestion, SuggestionStatus } from '@/shared/types';
 import StreamingMarkdownBubble from '@/features/interview/components/StreamingMarkdownBubble';
+import InlineDiffViewer from '@/features/resume/components/optimization/InlineDiffViewer';
 import '@/features/resume/components/optimization/ResumeOptimizationDialog.css'; // Reuse styles
 
 const { TextArea } = Input;
 const { Text, Paragraph, Title } = Typography;
+
+const POLL_INTERVAL_MS = 3000;
+const POLL_MAX_ATTEMPTS = 60; // ~3 minutes
 
 interface ResumeOptimizationViewProps {
   resumeId: string;
@@ -56,33 +62,116 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
   const [jdText, setJdText] = useState('');
   const [loading, setLoading] = useState(false);
   const [optimization, setOptimization] = useState<Optimization | null>(null);
-  const [step, setStep] = useState<'input' | 'review'>('input');
+  const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
+  const [genError, setGenError] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+  const lastJobIdRef = useRef<string | undefined>(undefined);
+  const pollStateRef = useRef<{ cancelled: boolean } | null>(null);
 
   // STAR Polisher State
   const [starExperienceText, setStarExperienceText] = useState('');
   const [starLoading, setStarLoading] = useState(false);
   const [starResult, setStarResult] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (initialOptimizationId) {
-      fetchOptimization(initialOptimizationId);
-    } else {
-      // Reset state if no ID provided (new optimization)
-      setStep('input');
-      setOptimization(null);
-      setJdText('');
+  const cancelPolling = () => {
+    if (pollStateRef.current) {
+      pollStateRef.current.cancelled = true;
+      pollStateRef.current = null;
     }
-  }, [initialOptimizationId]);
+  };
+
+  useEffect(() => {
+    return cancelPolling;
+  }, []);
+
+  const pollOptimization = async (id: string) => {
+    cancelPolling();
+    const pollState = { cancelled: false };
+    pollStateRef.current = pollState;
+
+    for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+      if (pollState.cancelled) return;
+
+      let opt: Optimization;
+      try {
+        opt = await optimizationService.getOptimization(id);
+      } catch {
+        continue; // transient network error — keep polling
+      }
+
+      if (pollState.cancelled) return;
+
+      if (opt.status === 'COMPLETED') {
+        setOptimization(opt);
+        setStep('review');
+        return;
+      }
+      if (opt.status === 'FAILED') {
+        setGenError(opt.errorMessage || t('resume.optimization_failed'));
+        setStep('input');
+        return;
+      }
+    }
+
+    if (!pollState.cancelled) {
+      setGenError(t('resume.optimization_timeout'));
+      setStep('input');
+    }
+  };
 
   const fetchOptimization = async (id: string) => {
     try {
       setLoading(true);
-      const result = await optimizationService.getOptimization(id);
-      setOptimization(result);
-      setStep('review');
+      setGenError(null);
+      const opt = await optimizationService.getOptimization(id);
+      if (opt.status === 'COMPLETED') {
+        setOptimization(opt);
+        setStep('review');
+      } else if (opt.status === 'FAILED') {
+        setGenError(opt.errorMessage || t('resume.optimization_failed'));
+        setStep('input');
+      } else {
+        setOptimization(null);
+        setStep('generating');
+        await pollOptimization(id);
+      }
     } catch (error) {
       console.error('Failed to fetch optimization:', error);
       message.error(t('common.error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialOptimizationId) {
+      fetchOptimization(initialOptimizationId);
+    } else {
+      cancelPolling();
+      setStep('input');
+      setOptimization(null);
+      setJdText('');
+      setGenError(null);
+    }
+  }, [initialOptimizationId]);
+
+  const startOptimization = async (jobId?: string) => {
+    try {
+      setLoading(true);
+      setGenError(null);
+      lastJobIdRef.current = jobId;
+      const result = await optimizationService.createOptimization(
+        resumeId,
+        jobId
+      );
+      setOptimization(null);
+      setStep('generating');
+      await pollOptimization(result.id);
+    } catch (error) {
+      console.error('Optimization failed:', error);
+      setGenError(t('resume.optimization_failed'));
+      setStep('input');
     } finally {
       setLoading(false);
     }
@@ -95,29 +184,22 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
     }
 
     try {
-      setLoading(true);
-      // 1. Create job from JD
       const job = await jobService.createJob({
         title: t('resume.target_position_default'),
         company: t('resume.target_company_default'),
         jobDescription: jdText,
         requirements: jdText, // Also use as requirements for backend logic
       });
-
-      // 2. Start optimization
-      const result = await optimizationService.createOptimization(
-        resumeId,
-        job.id
-      );
-      setOptimization(result);
-      setStep('review');
+      await startOptimization(job.id);
     } catch (error) {
-      console.error('Optimization failed:', error);
+      console.error('Job creation failed:', error);
       message.error(t('common.error'));
-    } finally {
-      setLoading(false);
     }
   };
+
+  const handleOptimizeWithoutJd = () => startOptimization(undefined);
+
+  const handleRetry = () => startOptimization(lastJobIdRef.current);
 
   const handleStarPolish = async () => {
     if (!starExperienceText.trim()) {
@@ -157,7 +239,6 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             }
           : prev
       );
-      message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));
     }
@@ -179,7 +260,6 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             }
           : prev
       );
-      message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));
     }
@@ -202,9 +282,44 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
             }
           : prev
       );
-      message.success(t('common.operation_success'));
     } catch (error) {
       message.error(t('common.error'));
+    }
+  };
+
+  const handleApply = async () => {
+    if (!optimization) return;
+
+    const acceptedCount = (optimization.suggestions || []).filter(
+      (s) => s.status === SuggestionStatus.ACCEPTED
+    ).length;
+
+    if (!acceptedCount) {
+      message.warning(t('resume.no_accepted_suggestions'));
+      return;
+    }
+
+    try {
+      setApplying(true);
+      const result = await optimizationService.applyChanges(optimization.id);
+      if (result.failedCount > 0) {
+        message.warning(
+          t('resume.apply_partial', {
+            applied: result.appliedCount,
+            failed: result.failedCount,
+          })
+        );
+      } else {
+        message.success(
+          t('resume.apply_success', { applied: result.appliedCount })
+        );
+      }
+      onSuccess?.();
+    } catch (error) {
+      console.error('Apply changes failed:', error);
+      message.error(t('resume.apply_failed'));
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -213,34 +328,14 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
     message.success(t('resume.copy_content') + ' ' + t('common.success'));
   };
 
-  const handleCopyOptimized = (text: string) => {
-    navigator.clipboard.writeText(text);
-    message.success(t('common.copy_success'));
-  };
-
   const renderDiff = (suggestion: Suggestion) => {
     return (
       <div className="diff-container">
-        <div className="diff-section">
-          <span className="diff-label">{t('resume.diff_original')}</span>
-          <div className="diff-content diff-original">
-            {suggestion.original}
-          </div>
-        </div>
-        <div className="diff-section">
-          <span className="diff-label">{t('resume.diff_optimized')}</span>
-          <div className="diff-content diff-optimized group/opt">
-            {suggestion.optimized}
-            <Tooltip title={t('common.copy')}>
-              <Button
-                size="small"
-                icon={<CopyOutlined />}
-                className="absolute top-2 right-2 opacity-0 group-hover/opt:opacity-100 transition-opacity"
-                onClick={() => handleCopyOptimized(suggestion.optimized)}
-              />
-            </Tooltip>
-          </div>
-        </div>
+        <InlineDiffViewer
+          original={suggestion.original}
+          optimized={suggestion.optimized}
+          splitView
+        />
         {suggestion.reason && (
           <div className="suggestion-reason-box">
             <BulbOutlined className="text-amber-500 mt-1" />
@@ -251,37 +346,24 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
     );
   };
 
-  const renderJobMatchContent = () => {
-    return step === 'input' ? (
-      <div className="py-4 max-w-4xl mx-auto">
-        <Paragraph className="text-secondary mb-6">
-          {t('resume.optimization_desc')}
-        </Paragraph>
-        <TextArea
-          rows={12}
-          value={jdText}
-          onChange={(e) => setJdText(e.target.value)}
-          placeholder={t('resume.jd_input_placeholder')}
-          className="jd-textarea mb-6"
-        />
-        <Button
-          type="primary"
-          icon={<RocketOutlined />}
-          loading={loading}
-          onClick={handleStartOptimization}
-          block
-          size="large"
-        >
-          {t('common.submit')}
-        </Button>
-      </div>
-    ) : (
+  const renderReviewContent = () => {
+    const suggestions = optimization?.suggestions || [];
+    const acceptedCount = suggestions.filter(
+      (s) => s.status === SuggestionStatus.ACCEPTED
+    ).length;
+
+    return (
       <div className="optimization-content custom-scrollbar">
         <div className="sticky-header mb-4 flex justify-between items-center">
           <div>
             <Text strong className="text-lg">
-              {t('resume.optimization_suggestions')} (
-              {optimization?.suggestions.length || 0})
+              {t('resume.optimization_suggestions')} ({suggestions.length})
+            </Text>
+            <Text className="ml-3 text-secondary">
+              {t('resume.accepted_count', {
+                accepted: acceptedCount,
+                total: suggestions.length,
+              })}
             </Text>
           </div>
           <Space>
@@ -291,15 +373,11 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
           </Space>
         </div>
 
-        {loading ? (
-          <div className="py-20 text-center">
-            <Spin tip={t('resume.optimizing')} />
-          </div>
-        ) : !optimization?.suggestions.length ? (
+        {!suggestions.length ? (
           <Empty description={t('resume.no_suggestions')} />
         ) : (
           <List
-            dataSource={optimization.suggestions}
+            dataSource={suggestions}
             renderItem={(suggestion) => (
               <List.Item className="optimization-list-item block mb-4">
                 <div className="flex justify-between items-start mb-3">
@@ -362,6 +440,71 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
         )}
       </div>
     );
+  };
+
+  const renderGenerating = () => (
+    <div className="py-20 text-center">
+      <Spin tip={t('resume.optimization_generating')} size="large" />
+      <Paragraph className="text-secondary mt-6">
+        {t('resume.optimization_generating_hint')}
+      </Paragraph>
+    </div>
+  );
+
+  const renderInputWithError = () => (
+    <div className="py-4 max-w-4xl mx-auto">
+      {genError && (
+        <Alert
+          type="error"
+          showIcon
+          message={t('resume.optimization_failed')}
+          description={genError}
+          action={
+            <Button size="small" danger onClick={handleRetry}>
+              {t('resume.retry')}
+            </Button>
+          }
+          className="mb-6"
+        />
+      )}
+      <Paragraph className="text-secondary mb-6">
+        {t('resume.optimization_desc')}
+      </Paragraph>
+      <TextArea
+        rows={12}
+        value={jdText}
+        onChange={(e) => setJdText(e.target.value)}
+        placeholder={t('resume.jd_input_placeholder')}
+        className="jd-textarea mb-6"
+      />
+      <Space direction="vertical" className="w-full" size="middle">
+        <Button
+          type="primary"
+          icon={<RocketOutlined />}
+          loading={loading}
+          onClick={handleStartOptimization}
+          block
+          size="large"
+        >
+          {t('common.submit')}
+        </Button>
+        <Button
+          icon={<GlobalOutlined />}
+          loading={loading}
+          onClick={handleOptimizeWithoutJd}
+          block
+        >
+          {t('resume.optimize_without_jd')}
+        </Button>
+      </Space>
+    </div>
+  );
+
+  const renderJobMatchContent = () => {
+    if (step === 'generating') {
+      return renderGenerating();
+    }
+    return step === 'input' ? renderInputWithError() : renderReviewContent();
   };
 
   const renderStarPolisherContent = () => {
@@ -456,7 +599,12 @@ export const ResumeOptimizationView: React.FC<ResumeOptimizationViewProps> = ({
         {step === 'review' && activeTab === 'job-match' && (
           <Space>
             <Button onClick={() => setStep('input')}>{t('common.back')}</Button>
-            <Button type="primary" icon={<SaveOutlined />} onClick={onSuccess}>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={applying}
+              onClick={handleApply}
+            >
               {t('resume.apply_changes')}
             </Button>
           </Space>

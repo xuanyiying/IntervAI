@@ -43,10 +43,19 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     try {
       const resumes = await resumeService.getResumes();
       set({ resumes });
-      // Set primary as current if exists
-      const primary = resumes.find((r) => r.isPrimary);
-      if (primary && !get().currentResume) {
-        set({ currentResume: primary });
+      // Refresh the selected resume with fresh data (e.g. version bumped by
+      // an applied optimization); fall back to primary when nothing selected
+      const selected = get().currentResume;
+      if (selected) {
+        const fresh = resumes.find((r) => r.id === selected.id);
+        if (fresh) {
+          set({ currentResume: fresh });
+        }
+      } else {
+        const primary = resumes.find((r) => r.isPrimary);
+        if (primary) {
+          set({ currentResume: primary });
+        }
       }
     } catch (error) {
       console.error('Failed to fetch resumes:', error);

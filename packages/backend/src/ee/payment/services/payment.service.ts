@@ -1,186 +1,362 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { PaymentProvider } from '../interfaces/payment-provider.interface';
-import { StripePaymentProvider } from '../adapters/stripe-payment.provider';
-import { PaddlePaymentProvider } from '../adapters/paddle-payment.provider';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { randomInt } from 'node:crypto';
 import { PrismaService } from '@/infrastructure/database/services/prisma.service';
-import { SubscriptionTier } from '@prisma/client';
+import { SubscriptionTier, PaymentOrder } from '@prisma/client';
+import {
+  PaymentProvider,
+  SubscriptionDetails,
+  BillingRecord,
+} from '../interfaces/payment-provider.interface';
+import { AlipayPaymentProvider } from '../adapters/alipay-payment.provider';
+import { WechatPaymentProvider } from '../adapters/wechat-payment.provider';
+import {
+  PaymentProviderName,
+  PaymentOrderStatus,
+  BillingPeriod,
+  PAYMENT_PLANS,
+  getPaymentPlan,
+  PAYMENT_ORDER_EXPIRE_MINUTES,
+} from '../constants/payment.constants';
+import { BillingStatus, SubscriptionStatus } from '@/types';
 
 @Injectable()
 export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(
-    private stripeProvider: StripePaymentProvider,
-    private paddleProvider: PaddlePaymentProvider,
-    private prisma: PrismaService
+    private alipayProvider: AlipayPaymentProvider,
+    private wechatProvider: WechatPaymentProvider,
+    private prisma: PrismaService,
+    private configService: ConfigService
   ) {}
 
-  private getProvider(providerName: string = 'stripe'): PaymentProvider {
-    if (providerName === 'paddle') {
-      return this.paddleProvider;
-    }
-    return this.stripeProvider;
+  private getProvider(providerName: string): PaymentProvider {
+    if (providerName === PaymentProviderName.ALIPAY) return this.alipayProvider;
+    if (providerName === PaymentProviderName.WECHAT) return this.wechatProvider;
+    throw new BadRequestException(`不支持的支付渠道: ${providerName}`);
   }
 
-  async createCheckoutSession(
-    userId: string,
-    priceId: string,
-    providerName: 'stripe' | 'paddle' = 'stripe',
-    options?: { tier?: SubscriptionTier }
-  ) {
+  getPlans() {
+    return Object.values(PAYMENT_PLANS);
+  }
+
+  async createPayment(userId: string, planId: string, providerName: string) {
+    const plan = getPaymentPlan(planId);
+    if (!plan) {
+      throw new BadRequestException(`未知购买计划: ${planId}`);
+    }
+
     const provider = this.getProvider(providerName);
-    return provider.createCheckoutSession(userId, priceId, options);
-  }
+    if (!provider.isConfigured()) {
+      throw new BadRequestException(
+        `支付渠道 ${provider.name} 未配置，请检查服务端环境变量`
+      );
+    }
 
-  async getUserSubscription(userId: string) {
-    // We need to check which provider has the active subscription
-    // Or we can check the user record to see which provider is set
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new BadRequestException('User not found');
 
-    // If user has a specific provider set for subscription, use it
-    if (user.subscriptionProvider === 'paddle') {
-      return this.paddleProvider.getUserSubscription(userId);
-    } else if (
-      user.subscriptionProvider === 'stripe' ||
-      user.stripeSubscriptionId
-    ) {
-      return this.stripeProvider.getUserSubscription(userId);
-    }
-
-    // Default to checking both or just returning default (free)
-    // If no active subscription, return default from Stripe provider (it handles defaults)
-    return this.stripeProvider.getUserSubscription(userId);
-  }
-
-  async cancelSubscription(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
-
-    if (user.subscriptionProvider === 'paddle') {
-      return this.paddleProvider.cancelSubscription(userId);
-    } else {
-      return this.stripeProvider.cancelSubscription(userId);
-    }
-  }
-
-  async getBillingHistory(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return [];
-
-    // Ideally we should aggregate history from both if user switched
-    // For now, let's return history from the current provider or both
-    const stripeHistory = await this.stripeProvider.getBillingHistory(userId);
-    const paddleHistory = await this.paddleProvider.getBillingHistory(userId);
-
-    return [...stripeHistory, ...paddleHistory].sort(
-      (a, b) => b.date.getTime() - a.date.getTime()
+    const expiredAt = new Date(
+      Date.now() + PAYMENT_ORDER_EXPIRE_MINUTES * 60 * 1000
     );
+    const order = await this.prisma.paymentOrder.create({
+      data: {
+        orderNo: this.generateOrderNo(),
+        userId,
+        provider: provider.name,
+        planId: plan.planId,
+        tier: plan.tier,
+        period: plan.period,
+        amount: plan.amount,
+        currency: plan.currency,
+        status: PaymentOrderStatus.PENDING,
+        subject: plan.title,
+        expiredAt,
+      },
+    });
+
+    try {
+      const result = await provider.createPayment({
+        orderNo: order.orderNo,
+        amount: order.amount,
+        subject: order.subject || plan.title,
+        notifyUrl: this.getNotifyUrl(provider.name),
+        returnUrl: this.getReturnUrl(),
+        expiredAt,
+      });
+
+      if (!result.payUrl && !result.codeUrl) {
+        throw new Error('支付渠道未返回支付凭据');
+      }
+
+      return {
+        orderNo: order.orderNo,
+        provider: provider.name,
+        planId: plan.planId,
+        tier: plan.tier,
+        amount: order.amount,
+        currency: order.currency,
+        expiredAt,
+        ...result,
+      };
+    } catch (error: any) {
+      this.logger.error(
+        `创建支付失败 orderNo=${order.orderNo} provider=${provider.name}: ${error.message}`
+      );
+      await this.prisma.paymentOrder.update({
+        where: { id: order.id },
+        data: { status: PaymentOrderStatus.CLOSED },
+      });
+      throw new BadRequestException(`发起支付失败: ${error.message}`);
+    }
   }
 
-  async handleWebhook(
-    signature: string,
-    payload: any,
-    providerName: 'stripe' | 'paddle'
-  ) {
+  async getOrderStatus(userId: string, orderNo: string) {
+    const order = await this.prisma.paymentOrder.findUnique({
+      where: { orderNo },
+    });
+    if (!order) throw new NotFoundException('订单不存在');
+    if (order.userId !== userId) throw new ForbiddenException('无权访问该订单');
+
+    if (order.status === PaymentOrderStatus.PENDING && !this.isExpired(order)) {
+      // 回调可能延迟，主动向渠道查询一次
+      try {
+        const provider = this.getProvider(order.provider);
+        const channel = await provider.queryOrder(order.orderNo);
+        if (channel.paid) {
+          await this.markOrderPaid(order, channel.channelTradeNo ?? null);
+          return this.toOrderStatus({
+            ...order,
+            status: PaymentOrderStatus.PAID,
+            channelTradeNo: channel.channelTradeNo ?? null,
+          });
+        }
+      } catch (error: any) {
+        this.logger.warn(
+          `渠道订单查询失败 orderNo=${order.orderNo}: ${error.message}`
+        );
+      }
+    }
+
+    return this.toOrderStatus(order);
+  }
+
+  async handleNotify(
+    providerName: string,
+    headers: Record<string, string | string[] | undefined>,
+    rawBody: Buffer
+  ): Promise<{ orderNo: string; status: string; duplicate: boolean }> {
     const provider = this.getProvider(providerName);
-    return provider.handleWebhook(signature, payload);
+
+    const verified = await provider.verifyNotify(headers, rawBody);
+    const order = await this.prisma.paymentOrder.findUnique({
+      where: { orderNo: verified.orderNo },
+    });
+    if (!order) {
+      throw new NotFoundException(`回调订单不存在: ${verified.orderNo}`);
+    }
+    if (verified.paidAmount !== order.amount) {
+      this.logger.error(
+        `回调金额不一致 orderNo=${order.orderNo}: 期望 ${order.amount} 分，回调 ${verified.paidAmount} 分`
+      );
+      throw new BadRequestException('回调金额与订单不一致');
+    }
+
+    if (order.status !== PaymentOrderStatus.PENDING) {
+      return { orderNo: order.orderNo, status: order.status, duplicate: true };
+    }
+
+    await this.markOrderPaid(order, verified.channelTradeNo);
+    return {
+      orderNo: order.orderNo,
+      status: PaymentOrderStatus.PAID,
+      duplicate: false,
+    };
   }
 
   /**
-   * Update subscription to a new plan
+   * 幂等落账：事务内只有抢到 PENDING → PAID 的那次更新会继续写入
+   * 用户订阅与订阅事件，重复回调直接跳过。
    */
-  async updateSubscription(userId: string, newPriceId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
-
-    const providerName = user.subscriptionProvider || 'stripe';
-    const provider = this.getProvider(providerName);
-
-    if (!provider.updateSubscription) {
-      this.logger.warn(
-        `updateSubscription not implemented for ${providerName}`
-      );
-      throw new BadRequestException(
-        `Subscription update not supported for ${providerName}`
-      );
-    }
-
-    // Use transaction to ensure data consistency if we were updating local state here directly
-    // Ideally, we wait for webhook to update local state, but we might want to log the attempt
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Call provider to update subscription
-      const result = await provider.updateSubscription!(userId, newPriceId);
-
-      // 2. Optimistically update local state or log the action
-      // We don't update subscriptionTier immediately, we let webhook handle it for source of truth
-      // But we can log an event
-      await tx.user.update({
-        where: { id: userId },
+  private async markOrderPaid(
+    order: PaymentOrder,
+    channelTradeNo: string | null
+  ) {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.paymentOrder.updateMany({
+        where: { id: order.id, status: PaymentOrderStatus.PENDING },
         data: {
-          // Optional: You might want to set a flag like 'subscriptionUpdatePending'
+          status: PaymentOrderStatus.PAID,
+          channelTradeNo,
+          paidAt: new Date(),
+        },
+      });
+      if (claimed.count === 0) return false;
+
+      const user = await tx.user.findUnique({ where: { id: order.userId } });
+      if (!user) throw new BadRequestException('User not found');
+
+      const now = new Date();
+      const base =
+        user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
+          ? user.subscriptionExpiresAt
+          : now;
+      const expiresAt = this.addPeriod(base, order.period);
+
+      await tx.user.update({
+        where: { id: order.userId },
+        data: {
+          subscriptionTier: order.tier,
+          subscriptionExpiresAt: expiresAt,
+          subscriptionProvider: order.provider,
         },
       });
 
-      this.logger.log(`Subscription update initiated for user ${userId}`);
-      return result;
+      const tierRank = (t: SubscriptionTier) =>
+        t === SubscriptionTier.FREE ? 0 : t === SubscriptionTier.PRO ? 1 : 2;
+      const beforeTier = user.subscriptionTier;
+      const action =
+        tierRank(beforeTier) === tierRank(order.tier)
+          ? 'renew'
+          : tierRank(beforeTier) < tierRank(order.tier)
+            ? 'upgrade'
+            : 'downgrade';
+
+      await tx.subscriptionEvent.create({
+        data: {
+          userId: order.userId,
+          provider: order.provider,
+          externalSubscriptionId: channelTradeNo || order.orderNo,
+          tier: order.tier,
+          status: 'ACTIVE',
+          action,
+          effectiveAt: now,
+          expiresAt,
+          metadata: {
+            orderNo: order.orderNo,
+            planId: order.planId,
+            amount: order.amount,
+          },
+        },
+      });
+
+      this.logger.log(
+        `订单支付完成 orderNo=${order.orderNo} user=${order.userId} tier=${order.tier} 至 ${expiresAt.toISOString()}`
+      );
+      return true;
     });
+
+    if (!updated) {
+      this.logger.log(`回调重复，订单已处理 orderNo=${order.orderNo}`);
+    }
   }
 
-  /**
-   * Process a refund for a transaction
-   */
-  async processRefund(userId: string, transactionId: string, amount?: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  async getUserSubscription(userId: string): Promise<SubscriptionDetails> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        subscriptionTier: true,
+        subscriptionExpiresAt: true,
+        subscriptionProvider: true,
+      },
+    });
     if (!user) throw new BadRequestException('User not found');
 
-    const providerName = user.subscriptionProvider || 'stripe';
-    const provider = this.getProvider(providerName);
+    const now = new Date();
+    const active =
+      !!user.subscriptionExpiresAt && user.subscriptionExpiresAt > now;
 
-    if (!provider.processRefund) {
-      this.logger.warn(`processRefund not implemented for ${providerName}`);
-      throw new BadRequestException(
-        `Refund processing not supported for ${providerName}`
-      );
-    }
+    return {
+      tier: user.subscriptionTier,
+      expiresAt: user.subscriptionExpiresAt,
+      status: active ? SubscriptionStatus.ACTIVE : undefined,
+      currentPeriodEnd: active ? user.subscriptionExpiresAt! : undefined,
+    };
+  }
 
-    this.logger.log(
-      `Processing refund for user ${userId}, transaction ${transactionId}`
-    );
-
-    return this.prisma.$transaction(async (_tx) => {
-      const result = await provider.processRefund!(
+  async getBillingHistory(userId: string): Promise<BillingRecord[]> {
+    const orders = await this.prisma.paymentOrder.findMany({
+      where: {
         userId,
-        transactionId,
-        amount
-      );
-
-      // Log the refund action securely
-      // In a real app, you would have a Refund or Transaction table to update
-      // For now, we assume this is sufficient validation that the DB is alive before calling external
-      // or we can update user status if full refund implies cancellation
-
-      return result;
+        status: { in: [PaymentOrderStatus.PAID, PaymentOrderStatus.REFUNDED] },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     });
+
+    return orders.map((order) => ({
+      id: order.orderNo,
+      amount: order.amount / 100,
+      currency: order.currency.toLowerCase(),
+      status:
+        order.status === PaymentOrderStatus.REFUNDED
+          ? BillingStatus.VOID
+          : BillingStatus.PAID,
+      date: order.paidAt || order.createdAt,
+      pdfUrl: '',
+    }));
   }
 
-  /**
-   * Get user's saved payment methods
-   */
-  async getPaymentMethods(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new BadRequestException('User not found');
+  private isExpired(order: PaymentOrder): boolean {
+    return !!order.expiredAt && order.expiredAt.getTime() <= Date.now();
+  }
 
-    const providerName = user.subscriptionProvider || 'stripe';
-    const provider = this.getProvider(providerName);
+  private toOrderStatus(order: PaymentOrder) {
+    return {
+      orderNo: order.orderNo,
+      provider: order.provider,
+      planId: order.planId,
+      tier: order.tier,
+      amount: order.amount,
+      currency: order.currency,
+      status: order.status,
+      paidAt: order.paidAt,
+      expiredAt: order.expiredAt,
+    };
+  }
 
-    if (!provider.getPaymentMethods) {
-      this.logger.debug(
-        `getPaymentMethods not implemented for ${providerName}`
-      );
-      return [];
+  private generateOrderNo(): string {
+    const now = new Date();
+    const pad = (n: number, len = 2) => String(n).padStart(len, '0');
+    const ts =
+      now.getFullYear() +
+      pad(now.getMonth() + 1) +
+      pad(now.getDate()) +
+      pad(now.getHours()) +
+      pad(now.getMinutes()) +
+      pad(now.getSeconds());
+    return `IV${ts}${randomInt(0, 1000000).toString().padStart(6, '0')}`;
+  }
+
+  private addPeriod(base: Date, period: string): Date {
+    const next = new Date(base);
+    if (period === BillingPeriod.YEARLY) {
+      next.setFullYear(next.getFullYear() + 1);
+    } else {
+      next.setMonth(next.getMonth() + 1);
     }
+    return next;
+  }
 
-    return provider.getPaymentMethods(userId);
+  private getNotifyUrl(providerName: string): string {
+    const base =
+      this.configService.get<string>('PAYMENT_NOTIFY_BASE_URL') ||
+      `http://localhost:${this.configService.get<number>('PORT') || 3000}${
+        this.configService.get<string>('API_PREFIX') || '/api/v1'
+      }`;
+    return `${base}/payments/notify/${providerName}`;
+  }
+
+  private getReturnUrl(): string {
+    const frontend =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    return `${frontend}/payment/success`;
   }
 }

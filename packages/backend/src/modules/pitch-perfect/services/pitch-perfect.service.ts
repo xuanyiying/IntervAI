@@ -45,10 +45,8 @@ export class PitchPerfectService {
   ): Promise<PitchPerfectOutput> {
     const { resumeData, jobDescription, style, matchAnalysis } = dto;
 
-    if (!resumeData || !jobDescription) {
-      throw new BadRequestException(
-        'Resume data and job description are required'
-      );
+    if (!resumeData) {
+      throw new BadRequestException('Resume data is required');
     }
 
     try {
@@ -56,7 +54,7 @@ export class PitchPerfectService {
         'pitch-perfect',
         {
           resumeData: JSON.stringify(resumeData),
-          jobDescription,
+          jobDescription: jobDescription ?? '',
           style: style || 'technical',
           ...(matchAnalysis ? { matchAnalysis } : {}),
         },

@@ -7,6 +7,7 @@ import { PdfGenerationService } from './services/pdf-generation.service';
 import { MatchAnalysisService } from './services/match-analysis.service';
 import { ResumeParserService } from './services/resume-parser.service';
 import { ResumeAIService } from './services/resume-ai.service';
+import { ResumeVersionService } from './services/resume-version.service';
 import { ResumeController } from './controllers/resume.controller';
 import { ResumeOptimizerController } from './controllers/resume-optimizer.controller';
 import { PdfGenerationController } from './controllers/pdf-generation.controller';
@@ -45,6 +46,7 @@ import { PdfProcessor } from './processors/pdf.processor';
     MatchAnalysisService,
     ResumeParserService,
     ResumeAIService,
+    ResumeVersionService,
     PdfProcessor,
   ],
   controllers: [

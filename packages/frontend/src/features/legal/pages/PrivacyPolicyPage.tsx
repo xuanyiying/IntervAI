@@ -18,7 +18,10 @@ const PrivacyPolicyPage: React.FC = () => {
           <ul>
             <li>Account information (email, name, password)</li>
             <li>Resume content and job descriptions you upload</li>
-            <li>Payment information (processed securely through Stripe)</li>
+            <li>
+              Payment information (processed securely through Alipay / WeChat
+              Pay)
+            </li>
             <li>Usage data and analytics</li>
           </ul>
         </Paragraph>
@@ -40,7 +43,8 @@ const PrivacyPolicyPage: React.FC = () => {
           We implement appropriate technical and organizational measures to
           protect your personal data. Your data is stored securely using
           industry-standard encryption. Payment information is handled by our
-          payment processor (Stripe) and is not stored on our servers.
+          payment processors (Alipay / WeChat Pay) and is not stored on our
+          servers.
         </Paragraph>
 
         <Title level={2}>4. AI Processing</Title>

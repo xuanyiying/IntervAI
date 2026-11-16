@@ -1,6 +1,8 @@
 import { AIService } from '@/modules/ai';
+import { AIQueueService } from '@/modules/ai/queue/ai-queue.service';
 import { QuotaService } from '@/modules/quota/services/quota.service';
 import { PrismaService } from '@/infrastructure/database/services/prisma.service';
+import { ResumeVersionService } from './resume-version.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as fc from 'fast-check';
 import { ResumeOptimizerService } from './resume-optimizer.service';
@@ -43,6 +45,14 @@ describe('ResumeOptimizerService Property Tests', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AIService, useValue: mockAIService },
         { provide: QuotaService, useValue: mockQuotaService },
+        {
+          provide: AIQueueService,
+          useValue: { addResumeOptimizationJob: jest.fn() },
+        },
+        {
+          provide: ResumeVersionService,
+          useValue: { createVersion: jest.fn() },
+        },
       ],
     }).compile();
 

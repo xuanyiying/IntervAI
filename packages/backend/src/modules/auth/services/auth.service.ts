@@ -138,19 +138,20 @@ export class AuthService {
       await this.invitationService.markAsUsed(sanitizedInvitationCode, user.id);
     }
 
-    // Send verification email
-    try {
-      await this.emailService.sendVerificationEmail(
+    // Fire-and-forget: the code is already in Redis, and a hanging SMTP
+    // connection must not block the registration response.
+    this.emailService
+      .sendVerificationEmail(
         user.email,
         verificationCode,
         user.username || undefined
+      )
+      .then(() => this.logger.log(`Verification email sent to ${user.email}`))
+      .catch((error) =>
+        this.logger.warn(
+          `Failed to send verification email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
       );
-      this.logger.log(`Verification email sent to ${user.email}`);
-    } catch (error) {
-      this.logger.warn(
-        `Failed to send verification email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
 
     return this.generateAuthResponse(user);
   }
@@ -259,19 +260,16 @@ export class AuthService {
       600 // 10 minutes
     );
 
-    try {
-      await this.emailService.sendPasswordResetEmail(
-        user.email,
-        resetCode,
-        user.username || undefined
+    // Fire-and-forget: a hanging SMTP connection must not block the response.
+    this.emailService
+      .sendPasswordResetEmail(user.email, resetCode, user.username || undefined)
+      .then(() => this.logger.log(`Password reset email sent to ${user.email}`))
+      .catch((error) =>
+        this.logger.error(
+          `Failed to send password reset email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          error instanceof Error ? error.stack : undefined
+        )
       );
-      this.logger.log(`Password reset email sent to ${user.email}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to send password reset email to ${user.email}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        error instanceof Error ? error.stack : undefined
-      );
-    }
   }
 
   /**

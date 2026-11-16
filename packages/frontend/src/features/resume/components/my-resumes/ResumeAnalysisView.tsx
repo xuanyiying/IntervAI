@@ -31,10 +31,12 @@ interface AnalysisResult {
 
 interface ResumeAnalysisViewProps {
   resumeId: string | null;
+  onOptimize?: () => void;
 }
 
 export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
   resumeId,
+  onOptimize,
 }) => {
   const { t } = useTranslation();
   const [analyzing, setAnalyzing] = useState(false);
@@ -128,7 +130,9 @@ export const ResumeAnalysisView: React.FC<ResumeAnalysisViewProps> = ({
 
         {analyzing && !result && <ResumeAnalysisLoading />}
 
-        {result && <ResumeAnalysisResult result={result} />}
+        {result && (
+          <ResumeAnalysisResult result={result} onOptimize={onOptimize} />
+        )}
       </div>
     </div>
   );

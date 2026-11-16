@@ -54,7 +54,7 @@ graph TB
 
 - Prisma 7（`schema.prisma` 的 datasource 为 `postgresql`，连接串由 `DATABASE_URL` 通过 `prisma.config.ts` 提供），运行时用 `@prisma/adapter-pg` 的 `PrismaPg` 适配器。
 - 迁移位于 `prisma/migrations/`，本地 `prisma migrate dev`，CI 与部署使用 `prisma migrate deploy`；seed 在 `prisma/seed.ts`、`prisma/seeds/seed-admin.ts`。
-- 主要模型：`User`、`Session` / `Account` / `Verification`、`Resume` / `ResumeVersion`、`Job`、`Optimization`、`GeneratedPDF`、`Template`、`InterviewSession` / `InterviewMessage` / `InterviewQuestion` / `InterviewerPersona`、`Conversation` / `Message`、`ModelConfig`、`PromptTemplate` / `PromptTemplateVersion`、`UsageRecord`、`Storage`、`AuditLog` 及若干 AI 日志表。
+- 主要模型：`User`、`Resume` / `ResumeVersion`、`Job`、`Optimization`、`GeneratedPDF`、`Template`、`InterviewSession` / `InterviewMessage` / `InterviewQuestion` / `InterviewerPersona` / `SpeakerProfile`、`Conversation` / `Message`、`ModelConfig`、`PromptTemplate` / `PromptTemplateVersion`、`UsageRecord`、`PerformanceMetrics`、`SubscriptionEvent` / `PaymentOrder`、`Voice`、`Storage`。
 - Redis 用于缓存、Bull 队列与 Socket.IO adapter；文件对象存储由 `OSS_TYPE`（`MINIO` / `S3` / `OSS`）选择 provider，实现见 `modules/storage/adapters/`。
 
 ### AI 层
@@ -87,7 +87,7 @@ graph TB
 
 1. 实时语音与流式 ASR 依赖 `DASHSCOPE_API_KEY`；未配置时 `/realtime-interview` 的 `start_stream` 与 `/interview` 的 `voice_start` 直接返回降级错误，辅助面试只剩文字兜底路径。
 2. 可观测性：`monitoring.config.ts` 的 `getMonitoringConfig()` 无调用点、`METRICS_PORT/PATH` 无独立服务；`dependabot.yml` 的 reviewers 为占位值；prod compose 的 `POSTGRES_MAX_CONNECTIONS` 等非官方镜像变量无效。
-3. 前端 `VITE_BACKEND_URL`、OAuth 开关、`VITE_STRIPE_PUBLISHABLE_KEY` 等变量无代码读取点。
+3. 前端 `VITE_BACKEND_URL`、OAuth 开关等变量无代码读取点；支付走服务端 `/payments/plans` 计划目录，前端无支付密钥。
 4. 后端 lint 仍有 678 处 `@typescript-eslint/no-explicit-any` warning，而 `lint` 脚本为 `--max-warnings 0`，因此 CI 的 `lint` job 仍会失败。这是有意保留的历史类型债（消除它需要跨 124 个文件的类型重构）。前端 lint 已为 0 warning。
 5. 历史凭据已用 `git filter-repo` 从全部 16 个分支清除（7 个 `.env`/私钥文件删除 + 2 个硬编码在 `.ts` 里的真实密钥脱敏），并已 force push，远端 `main` 为 `019552984`。但 **GitHub 的 `refs/pull/*` 只读引用无法被 force push 改写**：17 个已关闭/合并 PR 仍公开返回旧凭据文件，需联系 GitHub Support 清理或转私有。**所有已暴露密钥仍须在各服务商轮换**。详见 [安全策略](../guide/security.md)。
 6. `main` 干净（685 文件）且 `.gitignore` 已忽略 `.pnpm-store/`，但 8 个侧分支（6 dependabot + 2 `trae/solo-agent-*`）各跟踪 9.6 万–10.3 万个文件含包缓存，使仓库达 403 MB；关闭过期 PR 并删分支即可瘦身。GitHub 另回报默认分支有 168 个依赖漏洞（5 critical / 55 high）。

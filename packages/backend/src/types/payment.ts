@@ -3,8 +3,7 @@
  */
 
 /**
- * Status of a subscription
- * Matches Stripe subscription status but in uppercase
+ * 订阅状态（与支付宝 / 微信订单及订阅事件记录对齐）
  */
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',

@@ -1,16 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Card,
-  Typography,
-  Button,
-  Table,
-  Tag,
-  Modal,
-  message,
-  Descriptions,
-  Space,
-} from 'antd';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Table, Tag, message, Descriptions, Space } from 'antd';
 import {
   paymentService,
   SubscriptionDetails,
@@ -22,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate } from '@/shared/utils/format';
 
 const { Title, Text } = Typography;
-const { confirm } = Modal;
 
 const SubscriptionManagementPage: React.FC = () => {
   const { t } = useTranslation();
@@ -31,7 +19,6 @@ const SubscriptionManagementPage: React.FC = () => {
   );
   const [billingHistory, setBillingHistory] = useState<BillingRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [canceling, setCanceling] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -54,30 +41,6 @@ const SubscriptionManagementPage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleCancelSubscription = () => {
-    confirm({
-      title: t('subscription.cancel_confirm_title'),
-      icon: <ExclamationCircleOutlined />,
-      content: t('subscription.cancel_confirm_content'),
-      okText: t('subscription.cancel_confirm_ok'),
-      okType: 'danger',
-      cancelText: t('subscription.cancel_confirm_cancel'),
-      onOk: async () => {
-        try {
-          setCanceling(true);
-          await paymentService.cancelSubscription();
-          message.success(t('subscription.cancel_success'));
-          fetchData(); // Refresh data
-        } catch (error) {
-          console.error('Failed to cancel subscription:', error);
-          message.error(t('subscription.cancel_failed'));
-        } finally {
-          setCanceling(false);
-        }
-      },
-    });
-  };
-
   const columns = [
     {
       title: t('subscription.columns.date'),
@@ -96,22 +59,35 @@ const SubscriptionManagementPage: React.FC = () => {
       title: t('subscription.columns.status'),
       dataIndex: 'status',
       key: 'status',
-      render: (status: BillingStatus) => (
-        <Tag color={status === BillingStatus.PAID ? 'success' : 'error'}>
-          {status === BillingStatus.PAID
-            ? t('subscription.billing_status.paid')
-            : t('subscription.billing_status.failed')}
-        </Tag>
-      ),
+      render: (status: BillingStatus) => {
+        if (status === BillingStatus.PAID) {
+          return (
+            <Tag color="success">{t('subscription.billing_status.paid')}</Tag>
+          );
+        }
+        if (status === BillingStatus.VOID) {
+          return (
+            <Tag color="default">
+              {t('subscription.billing_status.refunded')}
+            </Tag>
+          );
+        }
+        return (
+          <Tag color="error">{t('subscription.billing_status.failed')}</Tag>
+        );
+      },
     },
     {
       title: t('subscription.columns.invoice'),
       key: 'action',
-      render: (_: any, record: BillingRecord) => (
-        <a href={record.pdfUrl} target="_blank" rel="noopener noreferrer">
-          {t('subscription.download_invoice')}
-        </a>
-      ),
+      render: (_: any, record: BillingRecord) =>
+        record.pdfUrl ? (
+          <a href={record.pdfUrl} target="_blank" rel="noopener noreferrer">
+            {t('subscription.download_invoice')}
+          </a>
+        ) : (
+          <Text type="secondary">—</Text>
+        ),
     },
   ];
 
@@ -128,7 +104,6 @@ const SubscriptionManagementPage: React.FC = () => {
                   tier={subscription.tier}
                   status={subscription.status}
                   expiresAt={subscription.expiresAt}
-                  cancelAtPeriodEnd={subscription.cancelAtPeriodEnd}
                 />
               </Descriptions.Item>
               <Descriptions.Item label={t('subscription.status')}>
@@ -148,18 +123,13 @@ const SubscriptionManagementPage: React.FC = () => {
             <Text>{t('subscription.no_active_subscription')}</Text>
           )}
 
-          {subscription?.status === SubStatus.ACTIVE &&
-            !subscription.cancelAtPeriodEnd && (
-              <div style={{ marginTop: 24 }}>
-                <Button
-                  danger
-                  onClick={handleCancelSubscription}
-                  loading={canceling}
-                >
-                  {t('subscription.cancel')}
-                </Button>
-              </div>
-            )}
+          {subscription?.status === SubStatus.ACTIVE && (
+            <div style={{ marginTop: 24 }}>
+              <Text type="secondary">
+                {t('subscription.auto_expire_note')}
+              </Text>
+            </div>
+          )}
         </Card>
 
         <Card title={t('subscription.billing_history')} loading={loading}>

@@ -39,6 +39,28 @@ export class AIQueueService {
   }
 
   /**
+   * Add a resume optimization job (generates before/after suggestions)
+   */
+  async addResumeOptimizationJob(optimizationId: string, userId: string) {
+    this.logger.log(
+      `Adding resume optimization job for optimization ${optimizationId}`
+    );
+    return this.aiQueue.add(
+      'resume-optimization',
+      { optimizationId, userId },
+      {
+        attempts: 2,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      }
+    );
+  }
+
+  /**
    * Add a job to send cached optimization result to conversation
    */
   async addSendOptimizationJob(

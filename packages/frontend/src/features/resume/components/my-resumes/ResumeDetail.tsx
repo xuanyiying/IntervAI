@@ -30,6 +30,8 @@ interface ResumeDetailProps {
   // For Optimization View
   initialOptimizationId?: string;
   onOptimizationSuccess?: () => void;
+  // From analysis view: start an optimization for this resume
+  onStartOptimization?: () => void;
 }
 
 export const ResumeDetail: React.FC<ResumeDetailProps> = ({
@@ -41,6 +43,7 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
   onSelectOptimization = () => {},
   initialOptimizationId,
   onOptimizationSuccess,
+  onStartOptimization,
 }) => {
   const { t } = useTranslation();
 
@@ -95,7 +98,12 @@ export const ResumeDetail: React.FC<ResumeDetailProps> = ({
       case 'detail':
         return renderParsedContent();
       case 'analysis':
-        return <ResumeAnalysisView resumeId={resume.id} />;
+        return (
+          <ResumeAnalysisView
+            resumeId={resume.id}
+            onOptimize={onStartOptimization}
+          />
+        );
       case 'optimization':
         return (
           <ResumeOptimizationView

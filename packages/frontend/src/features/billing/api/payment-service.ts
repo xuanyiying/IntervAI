@@ -5,6 +5,17 @@ import {
 } from '@/shared/types';
 import axios from '@/shared/lib/axios';
 
+export type PaymentChannel = 'alipay' | 'wechat';
+
+export interface PaymentPlan {
+  planId: string;
+  tier: SubscriptionTier;
+  period: 'MONTHLY' | 'YEARLY';
+  amount: number;
+  currency: 'CNY';
+  title: string;
+}
+
 export interface SubscriptionDetails {
   tier: SubscriptionTier;
   status?: SubscriptionStatus;
@@ -22,27 +33,54 @@ export interface BillingRecord {
   pdfUrl: string;
 }
 
+export interface CreateOrderResult {
+  orderNo: string;
+  provider: PaymentChannel;
+  planId: string;
+  tier: SubscriptionTier;
+  amount: number;
+  currency: string;
+  expiredAt: string;
+  payUrl?: string;
+  codeUrl?: string;
+}
+
+export interface OrderStatusResult {
+  orderNo: string;
+  provider: PaymentChannel;
+  planId: string;
+  tier: SubscriptionTier;
+  amount: number;
+  currency: string;
+  status: 'PENDING' | 'PAID' | 'CLOSED' | 'REFUNDED';
+  paidAt?: string;
+  expiredAt?: string;
+}
+
 export const paymentService = {
-  createCheckoutSession: async (
-    priceId: string,
-    provider: 'stripe' | 'paddle' = 'stripe',
-    tier?: SubscriptionTier
-  ) => {
-    const response = await axios.post('/payments/create-checkout-session', {
-      priceId,
+  getPlans: async (): Promise<PaymentPlan[]> => {
+    const response = await axios.get('/payments/plans');
+    return response.data;
+  },
+
+  createOrder: async (
+    planId: string,
+    provider: PaymentChannel
+  ): Promise<CreateOrderResult> => {
+    const response = await axios.post('/payments/orders', {
+      planId,
       provider,
-      tier,
     });
+    return response.data;
+  },
+
+  getOrderStatus: async (orderNo: string): Promise<OrderStatusResult> => {
+    const response = await axios.get(`/payments/orders/${orderNo}`);
     return response.data;
   },
 
   getUserSubscription: async (): Promise<SubscriptionDetails> => {
     const response = await axios.get('/payments/subscription');
-    return response.data;
-  },
-
-  cancelSubscription: async () => {
-    const response = await axios.post('/payments/cancel-subscription');
     return response.data;
   },
 

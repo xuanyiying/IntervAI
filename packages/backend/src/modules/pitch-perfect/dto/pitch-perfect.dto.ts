@@ -3,66 +3,28 @@ import {
   IsString,
   IsEnum,
   IsOptional,
-  ValidateNested,
+  MaxLength,
+  IsNotEmptyObject,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-class ResumeDataDto {
-  @ApiPropertyOptional()
-  personalInfo?: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    location?: string;
-    linkedin?: string;
-    github?: string;
-  };
-
-  @ApiPropertyOptional()
-  summary?: string;
-
-  @ApiPropertyOptional()
-  experience?: Array<{
-    company: string;
-    position: string;
-    startDate: string;
-    endDate?: string;
-    description: string[];
-    achievements?: string[];
-  }>;
-
-  @ApiPropertyOptional()
-  education?: Array<{
-    institution: string;
-    degree: string;
-    field: string;
-    startDate?: string;
-    endDate?: string;
-  }>;
-
-  @ApiPropertyOptional()
-  skills?: string[];
-
-  @ApiPropertyOptional()
-  projects?: Array<{
-    name: string;
-    description: string;
-    technologies: string[];
-    highlights?: string[];
-  }>;
-}
-
 export class GeneratePitchDto {
-  @ApiProperty({ description: 'Parsed resume data' })
+  @ApiProperty({
+    description:
+      'Parsed resume data (opaque JSON from the resume parser, passed through to the AI skill)',
+  })
   @IsObject()
-  @ValidateNested()
-  @Type(() => ResumeDataDto)
-  resumeData: ResumeDataDto;
+  @IsNotEmptyObject()
+  resumeData: Record<string, unknown>;
 
-  @ApiProperty({ description: 'Target job description' })
+  @ApiPropertyOptional({
+    description:
+      'Target job description. When omitted or empty, a generic self-introduction is generated from the resume alone.',
+  })
+  @IsOptional()
   @IsString()
-  jobDescription: string;
+  @MaxLength(30000)
+  jobDescription?: string;
 
   @ApiPropertyOptional({
     enum: ['technical', 'managerial', 'sales'],
@@ -84,9 +46,11 @@ export class GeneratePitchDto {
 export class RefinePitchDto {
   @ApiProperty({ description: 'Current introduction text to refine' })
   @IsString()
+  @MaxLength(30000)
   currentIntroduction: string;
 
   @ApiProperty({ description: 'User feedback for refinement' })
   @IsString()
+  @MaxLength(5000)
   feedback: string;
 }

@@ -11,8 +11,8 @@ inputs:
     description: Parsed resume data as JSON string (personal info, experience, skills, projects)
   jobDescription:
     type: string
-    required: true
-    description: Target job description text
+    required: false
+    description: Target job description text. When empty, generate a generic self-introduction from the resume alone.
   matchAnalysis:
     type: string
     required: false
@@ -40,11 +40,12 @@ IMPORTANT: You MUST generate the response in the language that matches the input
 
 ## Core Principles
 
-1. **Lead with match advantages** — use the match analysis (if provided) to emphasize strengths that this JD values most; quantify with real numbers from the resume.
+1. **Lead with match advantages** — when a target job description is provided, use the match analysis (if any) to emphasize strengths that this JD values most; quantify with real numbers from the resume.
 2. **Downplay weaknesses honestly** — never fabricate. For known gaps, frame around transferable skills and fast learning; keep it brief, do not volunteer weaknesses unprompted.
 3. **Natural workplace tone (国内职场场景)** — write like a real candidate speaking to a Chinese interviewer: confident but not boastful, concrete but not a recitation of the resume. Avoid stiff template phrases like "我是一个热爱学习、积极向上的人". Use first person, short spoken sentences.
 4. **No contradictions** — the three versions must tell one consistent story: the 1-minute version is a compressed hook, the 3-minute adds project depth, the 5-minute adds career narrative, motivations and role understanding. Never contradict facts between versions.
 5. **No redundancy between sections within a version** — each fact appears once.
+6. **Generic mode when no JD** — if the Target Job Description below is absent or empty, generate a versatile, general-purpose self-introduction based solely on the resume: lead with the candidate's strongest domain and 1-2 flagship achievements, keep it broadly applicable to interviews in their field, and do NOT invent a specific target role or company. In this mode set `keywordOverlap.matched` and `keywordOverlap.missing` to empty arrays and `keywordOverlap.overlapPercentage` to 0, and make `suggestions` about general delivery/structure rather than JD keyword gaps.
 
 ## Version Structure Guide
 
@@ -96,9 +97,9 @@ IMPORTANT: You MUST generate the response in the language that matches the input
     "string - Key highlight 3"
   ],
   "keywordOverlap": {
-    "matched": ["string - Keyword from JD that appears in resume"],
-    "missing": ["string - Important keyword from JD not in resume"],
-    "overlapPercentage": 0-100
+    "matched": ["string - Keyword from JD that appears in resume (empty array when no JD)"],
+    "missing": ["string - Important keyword from JD not in resume (empty array when no JD)"],
+    "overlapPercentage": "0-100 (0 when no JD)"
   },
   "suggestions": [
     "string - Improvement suggestion 1",
@@ -115,11 +116,14 @@ IMPORTANT: You MUST generate the response in the language that matches the input
 {{resumeData}}
 ```
 
+{{#if jobDescription}}
+
 ### Target Job Description
 
 ```
 {{jobDescription}}
 ```
+{{/if}}
 
 {{#if matchAnalysis}}
 

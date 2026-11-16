@@ -6,6 +6,7 @@ import {
   type ParsedResumeData,
 } from '@/shared/types';
 import { useOptimizationStore } from '@/features/resume';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   Button,
@@ -19,6 +20,7 @@ import {
   Empty,
   Alert,
   Input,
+  message,
 } from 'antd';
 import {
   HistoryOutlined,
@@ -27,6 +29,8 @@ import {
   CheckCircleOutlined,
   ArrowLeftOutlined,
   ClockCircleOutlined,
+  CopyOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import { formatDateTime } from '@/shared/utils/format';
 import './PitchPerfectCard.css';
@@ -35,15 +39,18 @@ const { Title, Text, Paragraph } = Typography;
 
 type PitchVersionKey = 'oneMinute' | 'threeMinute' | 'fiveMinute';
 
-const VERSION_TABS: Array<{
-  key: PitchVersionKey;
-  label: string;
-  scenario: string;
-}> = [
-  { key: 'oneMinute', label: '1 分钟版', scenario: 'oneMinute' },
-  { key: 'threeMinute', label: '3 分钟版', scenario: 'threeMinute' },
-  { key: 'fiveMinute', label: '5 分钟版', scenario: 'fiveMinute' },
+const VERSION_TABS: Array<{ key: PitchVersionKey; fallbackLabel: string }> = [
+  { key: 'oneMinute', fallbackLabel: '1 分钟版' },
+  { key: 'threeMinute', fallbackLabel: '3 分钟版' },
+  { key: 'fiveMinute', fallbackLabel: '5 分钟版' },
 ];
+
+const getApiErrorMessage = (err: unknown, fallback: string): string => {
+  const data = (err as { response?: { data?: any } })?.response?.data;
+  if (data?.error?.message) return String(data.error.message);
+  if (data?.message) return String(data.message);
+  return err instanceof Error ? err.message : fallback;
+};
 
 interface PitchPerfectCardProps {
   resumeId: string;
@@ -61,6 +68,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
   matchAnalysis,
   onBack,
 }) => {
+  const { t } = useTranslation();
   const [style, setStyle] = useState<'technical' | 'managerial' | 'sales'>(
     'technical'
   );
@@ -103,7 +111,12 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         style,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate pitch');
+      setError(
+        getApiErrorMessage(
+          err,
+          t('pitchPerfect.generate_failed', '生成失败，请稍后重试')
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -111,7 +124,12 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
   const handleRefine = async () => {
     if (!currentVersion || !feedback.trim()) {
-      setError('Please provide feedback for refinement');
+      setError(
+        t(
+          'pitchPerfect.refine_feedback_required',
+          '请先输入微调要求，例如"突出我的领导力"'
+        )
+      );
       return;
     }
 
@@ -145,9 +163,44 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         style,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to refine pitch');
+      setError(
+        getApiErrorMessage(
+          err,
+          t('pitchPerfect.refine_failed', '微调失败，请稍后重试')
+        )
+      );
     } finally {
       setRefining(false);
+    }
+  };
+
+  const copyWithFallback = (text: string): boolean => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  };
+
+  const handleCopy = async (text: string) => {
+    let ok = false;
+    try {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    } catch {
+      // Clipboard API can be denied in embedded webviews; fall back to execCommand
+      ok = copyWithFallback(text);
+    }
+    if (ok) {
+      message.success(t('pitchPerfect.copied', '已复制到剪贴板'));
+    } else {
+      message.error(
+        t('pitchPerfect.copy_failed', '复制失败，请手动选择文本复制')
+      );
     }
   };
 
@@ -160,14 +213,24 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
   const renderVersionContent = (version: PitchVersion) => (
     <div className="space-y-4">
-      <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-gray-200 leading-relaxed italic">
-        "{version.text}"
+      <div className="flex justify-between items-start gap-3">
+        <div className="p-4 rounded-xl bg-white/5 border border-white/10 text-gray-200 leading-relaxed italic flex-1">
+          "{version.text}"
+        </div>
+        <Button
+          size="small"
+          icon={<CopyOutlined />}
+          onClick={() => handleCopy(version.text)}
+          className="!bg-white/5 !border-white/10 !text-gray-300 shrink-0"
+        >
+          {t('pitchPerfect.copy', '复制')}
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
-            关键要点
+            {t('pitchPerfect.key_points', '关键要点')}
           </Text>
           <ul className="space-y-1">
             {version.keyPoints.map((point, i) => (
@@ -179,7 +242,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
         </div>
         <div>
           <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
-            使用场景
+            {t('pitchPerfect.use_scenario', '使用场景')}
           </Text>
           <Paragraph className="!text-gray-400 text-sm !mb-2">
             {version.useScenario}
@@ -188,7 +251,10 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
             icon={<ClockCircleOutlined />}
             className="!bg-white/5 !border-white/10 !text-gray-300"
           >
-            约 {version.wordCount} 字
+            {t('pitchPerfect.word_count', {
+              count: version.wordCount,
+              defaultValue: '约 {{count}} 字',
+            })}
           </Tag>
         </div>
       </div>
@@ -209,7 +275,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               />
             )}
             <Title level={4} className="!text-white !m-0">
-              自我介绍
+              {t('pitchPerfect.title', '自我介绍')}
             </Title>
           </div>
           <Button
@@ -217,7 +283,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
             onClick={() => setShowHistory(!showHistory)}
             type={showHistory ? 'primary' : 'default'}
           >
-            历史版本 ({history.length})
+            {t('pitchPerfect.history', '历史版本')} ({history.length})
           </Button>
         </div>
 
@@ -225,7 +291,16 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
           <div className="history-section animate-fade-in">
             <List
               dataSource={history}
-              locale={{ emptyText: <Empty description="暂无历史优化记录" /> }}
+              locale={{
+                emptyText: (
+                  <Empty
+                    description={t(
+                      'pitchPerfect.history_empty',
+                      '暂无历史优化记录'
+                    )}
+                  />
+                ),
+              }}
               renderItem={(item) => (
                 <List.Item
                   className="cursor-pointer hover:bg-white/5 rounded-lg p-3 transition-colors"
@@ -256,22 +331,33 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               className="w-full mt-4"
               onClick={() => setShowHistory(false)}
             >
-              返回当前
+              {t('pitchPerfect.back_to_current', '返回当前')}
             </Button>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="space-y-2">
-                <label className="text-gray-400 text-sm">风格偏好</label>
+                <label className="text-gray-400 text-sm">
+                  {t('pitchPerfect.style_label', '风格偏好')}
+                </label>
                 <Select
                   className="w-full"
                   value={style}
                   onChange={setStyle}
                   options={[
-                    { value: 'technical', label: '技术型' },
-                    { value: 'managerial', label: '管理型' },
-                    { value: 'sales', label: '销售/市场型' },
+                    {
+                      value: 'technical',
+                      label: t('pitchPerfect.style_technical', '技术型'),
+                    },
+                    {
+                      value: 'managerial',
+                      label: t('pitchPerfect.style_managerial', '管理型'),
+                    },
+                    {
+                      value: 'sales',
+                      label: t('pitchPerfect.style_sales', '销售/市场型'),
+                    },
                   ]}
                 />
               </div>
@@ -283,10 +369,37 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                   onClick={handleGenerate}
                   loading={loading}
                 >
-                  {result ? '重新生成' : '开始生成'}
+                  {result
+                    ? t('pitchPerfect.regenerate', '重新生成')
+                    : t('pitchPerfect.generate', '开始生成')}
                 </Button>
               </div>
             </div>
+
+            {!jobDescription.trim() && (
+              <Alert
+                className="mb-6"
+                type="info"
+                showIcon
+                message={t(
+                  'pitchPerfect.generic_mode_notice',
+                  '未填写职位描述，将基于简历生成通用自我介绍。'
+                )}
+              />
+            )}
+
+            {loading && !result && (
+              <Alert
+                className="mb-6"
+                type="info"
+                showIcon
+                icon={<LoadingOutlined spin />}
+                message={t(
+                  'pitchPerfect.generating',
+                  '正在生成自我介绍，通常需要 10-30 秒，请稍候…'
+                )}
+              />
+            )}
 
             {error && (
               <Alert message={error} type="error" showIcon className="mb-6" />
@@ -296,14 +409,15 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
               <div className="results-display space-y-8 animate-fade-in">
                 <section>
                   <Title level={5} className="!text-primary-400">
-                    <CheckCircleOutlined /> 推荐个人介绍
+                    <CheckCircleOutlined />{' '}
+                    {t('pitchPerfect.recommended_pitch', '推荐个人介绍')}
                   </Title>
                   <Tabs
                     activeKey={activeVersion}
                     onChange={(key) => setActiveVersion(key as PitchVersionKey)}
                     items={VERSION_TABS.map((tab) => ({
                       key: tab.key,
-                      label: tab.label,
+                      label: t(`pitchPerfect.${tab.key}`, tab.fallbackLabel),
                       children: renderVersionContent(result.versions[tab.key]),
                     }))}
                   />
@@ -312,7 +426,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <section>
                     <Title level={5} className="!text-gray-300">
-                      关键亮点 (Highlights)
+                      {t('pitchPerfect.highlights', '关键亮点')}
                     </Title>
                     <ul className="space-y-2">
                       {result.highlights.map((h, i) => (
@@ -325,12 +439,13 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
                   <section>
                     <Title level={5} className="!text-gray-300">
-                      关键词匹配 ({result.keywordOverlap.overlapPercentage}%)
+                      {t('pitchPerfect.keyword_match', '关键词匹配')} (
+                      {result.keywordOverlap.overlapPercentage}%)
                     </Title>
                     <div className="space-y-4">
                       <div>
                         <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
-                          已命中
+                          {t('pitchPerfect.matched', '已命中')}
                         </Text>
                         <Space wrap>
                           {result.keywordOverlap.matched.map((kw) => (
@@ -345,7 +460,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                       </div>
                       <div>
                         <Text className="text-xs text-gray-500 block mb-2 uppercase tracking-wider">
-                          建议补充
+                          {t('pitchPerfect.missing', '建议补充')}
                         </Text>
                         <Space wrap>
                           {result.keywordOverlap.missing.map((kw) => (
@@ -365,7 +480,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                 {result.suggestions.length > 0 && (
                   <section>
                     <Title level={5} className="!text-gray-300">
-                      改进建议
+                      {t('pitchPerfect.suggestions', '改进建议')}
                     </Title>
                     <div className="p-4 rounded-xl bg-primary-500/5 border border-primary-500/10">
                       <List
@@ -385,19 +500,24 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
 
                 <section className="refinement-box">
                   <Title level={5} className="!text-gray-300">
-                    继续微调
+                    {t('pitchPerfect.refine_title', '继续微调')}
                   </Title>
                   <Text type="secondary" className="text-xs block mb-2">
-                    将对当前选中的「
-                    {
-                      VERSION_TABS.find((tab) => tab.key === activeVersion)
-                        ?.label
-                    }
-                    」版本进行微调
+                    {t('pitchPerfect.refine_hint', {
+                      version: t(
+                        `pitchPerfect.${activeVersion}`,
+                        VERSION_TABS.find((tab) => tab.key === activeVersion)
+                          ?.fallbackLabel ?? '1 分钟版'
+                      ),
+                      defaultValue: '将对当前选中的「{{version}}」版本进行微调',
+                    })}
                   </Text>
                   <Space.Compact className="w-full">
                     <Input
-                      placeholder="例如：'让语气更强硬一些'、'突出我的领导力'..."
+                      placeholder={t(
+                        'pitchPerfect.refine_placeholder',
+                        "例如：'让语气更强硬一些'、'突出我的领导力'..."
+                      )}
                       value={feedback}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                         setFeedback(e.target.value)
@@ -412,7 +532,7 @@ export const PitchPerfectCard: React.FC<PitchPerfectCardProps> = ({
                       onClick={handleRefine}
                       loading={refining}
                     >
-                      发送
+                      {t('pitchPerfect.send', '发送')}
                     </Button>
                   </Space.Compact>
                 </section>

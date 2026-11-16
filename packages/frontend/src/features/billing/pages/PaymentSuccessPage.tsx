@@ -1,37 +1,55 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Result, Button, Typography, Card, Spin } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { paymentService } from '@/features/billing/api/payment-service';
 
 const { Paragraph, Text } = Typography;
+
+const POLL_INTERVAL_MS = 2000;
+const POLL_MAX_ATTEMPTS = 10;
 
 const PaymentSuccessPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const [loading, setLoading] = useState(true);
+  // 服务端跳转参数为 orderNo；支付宝同步回跳自动附加 out_trade_no
+  const orderNo = searchParams.get('orderNo') || searchParams.get('out_trade_no');
+  const [loading, setLoading] = useState(!!orderNo);
+  const [paid, setPaid] = useState(!orderNo);
   const { refreshProfile } = useAuthStore();
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const verifySubscription = async () => {
-      try {
-        // Wait a moment for webhook to process
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        await refreshProfile();
-      } catch (error) {
-        console.error('Failed to refresh profile:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (!orderNo) return;
 
-    if (sessionId) {
-      verifySubscription();
-    } else {
-      setLoading(false);
-    }
-  }, [sessionId, refreshProfile, searchParams]);
+    let attempts = 0;
+    // 渠道异步通知可能比页面跳转慢，这里轮询兜底确认订单状态
+    timerRef.current = setInterval(async () => {
+      attempts += 1;
+      if (attempts > POLL_MAX_ATTEMPTS) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        await refreshProfile().catch(() => undefined);
+        setLoading(false);
+        return;
+      }
+      try {
+        const order = await paymentService.getOrderStatus(orderNo);
+        if (order.status === 'PAID') {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setPaid(true);
+          await refreshProfile().catch(() => undefined);
+          setLoading(false);
+        }
+      } catch {
+        // 查询失败继续重试
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [orderNo, refreshProfile]);
 
   if (loading) {
     return (
@@ -43,7 +61,7 @@ const PaymentSuccessPage: React.FC = () => {
           height: '100vh',
         }}
       >
-        <Spin size="large" tip="Verifying your subscription..." />
+        <Spin size="large" tip="正在确认支付结果..." />
       </div>
     );
   }
@@ -55,7 +73,7 @@ const PaymentSuccessPage: React.FC = () => {
           status="success"
           icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
           title="Payment Successful!"
-          subTitle="Thank you for upgrading to Pro. Your subscription is now active."
+          subTitle="Thank you for upgrading. Your subscription is now active."
           extra={[
             <Button
               type="primary"
@@ -74,11 +92,12 @@ const PaymentSuccessPage: React.FC = () => {
         >
           <div style={{ textAlign: 'center' }}>
             <Paragraph>
-              <Text strong>Order ID:</Text> {sessionId || 'N/A'}
+              <Text strong>Order No:</Text> {orderNo || 'N/A'}
             </Paragraph>
             <Paragraph>
-              You now have access to all Pro features including unlimited
-              optimizations and premium templates.
+              {paid
+                ? 'You now have access to all premium features.'
+                : 'Payment confirmation is still processing. Your plan will activate automatically once the channel confirms the payment.'}
             </Paragraph>
           </div>
         </Result>

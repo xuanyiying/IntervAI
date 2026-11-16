@@ -704,13 +704,16 @@ export class ResumeService {
       };
     }
 
-    const analysis = this.resumeAI.analyzeParsedResume(parsedData, userId);
+    const analysis = await this.resumeAI.diagnoseResume(parsedData, userId);
 
     // Persist so the result survives page refreshes
     const analyzedAt = new Date();
     await this.prisma.resume.update({
       where: { id: resumeId },
-      data: { analysisResult: analysis, analyzedAt },
+      data: {
+        analysisResult: analysis as unknown as Prisma.InputJsonValue,
+        analyzedAt,
+      },
     });
 
     return {

@@ -73,7 +73,7 @@ describe('AccountService', () => {
             {
               id: 'evt-1',
               userId: 'u1',
-              provider: 'stripe',
+              provider: 'alipay',
               externalSubscriptionId: 'sub_1',
               tier: SubscriptionTier.PRO,
               status: 'ACTIVE',

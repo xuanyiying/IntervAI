@@ -5,7 +5,12 @@
  */
 
 import { AIService } from '@/modules/ai';
-import { OptimizationSuggestion, ParsedResumeData } from '@/types';
+import {
+  OptimizationSuggestion,
+  ParsedJobData,
+  ParsedResumeData,
+  ResumeDiagnosis,
+} from '@/types';
 import { SuggestionStatus, SuggestionType } from '@/types/ai';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -432,6 +437,132 @@ export class ResumeAIService {
   }
 
   /**
+   * AI-powered deep diagnosis. Falls back to local rule-based scoring when
+   * the AI call fails or returns an unusable result, so diagnosis always works.
+   */
+  async diagnoseResume(
+    parsedData: ParsedResumeData,
+    userId: string,
+    jobData?: ParsedJobData | null
+  ): Promise<ResumeDiagnosis> {
+    try {
+      const data = await this.executeSkillWithRetry(
+        'resume-diagnosis',
+        {
+          resumeData: JSON.stringify(parsedData),
+          ...(jobData ? { targetJob: JSON.stringify(jobData) } : {}),
+        },
+        userId
+      );
+
+      const diagnosis = this.normalizeDiagnosis(data, parsedData);
+      if (diagnosis) {
+        return diagnosis;
+      }
+      this.logger.warn(
+        'AI diagnosis returned unusable result, falling back to rule-based scoring'
+      );
+    } catch (error) {
+      this.logger.warn(
+        'AI diagnosis failed, falling back to rule-based scoring:',
+        error
+      );
+    }
+
+    return this.analyzeParsedResume(parsedData, userId);
+  }
+
+  /**
+   * Validate and normalize the AI diagnosis output against the frontend
+   * contract. Returns null when the result is too broken to trust.
+   */
+  private normalizeDiagnosis(
+    data: any,
+    parsedData: ParsedResumeData
+  ): ResumeDiagnosis | null {
+    let raw = data;
+    if (typeof raw === 'string') {
+      try {
+        raw = JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    }
+    if (raw && typeof raw === 'object' && typeof raw.raw === 'string') {
+      try {
+        raw = JSON.parse(raw.raw);
+      } catch {
+        return null;
+      }
+    }
+    if (!raw || typeof raw !== 'object') return null;
+
+    const detail = raw.scoreDetail;
+    if (!detail || typeof detail !== 'object') return null;
+
+    const clamp = (value: any, cap: number): number => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.min(cap, Math.round(n)));
+    };
+
+    const scoreDetail = {
+      projectScore: clamp(detail.projectScore, 40),
+      skillMatchScore: clamp(detail.skillMatchScore, 20),
+      contentScore: clamp(detail.contentScore, 15),
+      structureScore: clamp(detail.structureScore, 15),
+      expressionScore: clamp(detail.expressionScore, 10),
+    };
+    const overallScore = Object.values(scoreDetail).reduce((a, b) => a + b, 0);
+
+    const toStringArray = (arr: any): string[] =>
+      Array.isArray(arr)
+        ? arr.filter((s): s is string => typeof s === 'string' && !!s.trim())
+        : [];
+
+    const suggestions = Array.isArray(raw.suggestions)
+      ? raw.suggestions
+          .filter((s: any) => s && typeof s === 'object')
+          .map((s: any) => ({
+            category: String(s.category || '').trim(),
+            priority: String(s.priority || '').trim(),
+            issue: String(s.issue || '').trim(),
+            recommendation: String(s.recommendation || '').trim(),
+          }))
+          .filter((s: any) => s.issue || s.recommendation)
+      : [];
+
+    const strengths = toStringArray(raw.strengths);
+    const weaknesses = toStringArray(raw.weaknesses);
+
+    // A diagnosis with neither suggestions nor strengths/weaknesses is empty
+    // noise — prefer the rule-based fallback which always produces content.
+    if (!suggestions.length && !strengths.length && !weaknesses.length) {
+      return null;
+    }
+
+    const language: 'zh' | 'en' =
+      raw.language === 'en' || raw.language === 'zh'
+        ? raw.language
+        : this.detectResumeLanguage(parsedData);
+
+    const summary =
+      typeof raw.summary === 'string' && raw.summary.trim()
+        ? raw.summary.trim()
+        : this.analyzeParsedResume(parsedData, '').summary;
+
+    return {
+      overallScore,
+      scoreDetail,
+      language,
+      summary,
+      strengths,
+      weaknesses,
+      suggestions,
+    };
+  }
+
+  /**
    * Analyze parsed resume data using local rule-based scoring.
    * No AI call needed — the parsed data already has all structured info.
    * Output language follows the resume language (Chinese resume → Chinese
@@ -441,26 +572,7 @@ export class ResumeAIService {
   analyzeParsedResume(
     parsedData: ParsedResumeData,
     _userId: string
-  ): {
-    overallScore: number;
-    scoreDetail: {
-      projectScore: number;
-      skillMatchScore: number;
-      contentScore: number;
-      structureScore: number;
-      expressionScore: number;
-    };
-    language: 'zh' | 'en';
-    summary: string;
-    strengths: string[];
-    weaknesses: string[];
-    suggestions: {
-      category: string;
-      priority: string;
-      issue: string;
-      recommendation: string;
-    }[];
-  } {
+  ): ResumeDiagnosis {
     const lang = this.detectResumeLanguage(parsedData);
     const zh = lang === 'zh';
     const S = ResumeAIService.SCORING;
@@ -903,9 +1015,16 @@ export class ResumeAIService {
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
+    // Defense-in-depth: a failed JSON salvage can land here with the whole
+    // model output as one line — never treat a JSON dump or oversized text
+    // as a person's name.
+    const firstLine = lines[0] || '';
+    const usableAsName =
+      firstLine.length <= 60 && !/^[{\[]/.test(firstLine);
+
     return {
       personalInfo: {
-        name: lines[0] || '',
+        name: usableAsName ? firstLine : '',
         email: '',
         phone: '',
         location: '',
@@ -913,7 +1032,7 @@ export class ResumeAIService {
         github: '',
         website: '',
       },
-      summary: lines.slice(1, 3).join(' ') || '',
+      summary: usableAsName ? lines.slice(1, 3).join(' ') || '' : '',
       skills: [],
       experience: [],
       education: [],

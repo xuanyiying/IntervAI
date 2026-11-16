@@ -1,30 +1,34 @@
 import { Injectable } from '@nestjs/common';
-import { SubscriptionTier } from '@prisma/client';
 
 @Injectable()
 export class PaymentService {
-  async createCheckoutSession(
+  getPlans(): unknown[] {
+    return [];
+  }
+
+  async createPayment(
     _userId: string,
-    _priceId: string,
-    _provider: 'stripe' | 'paddle',
-    _options?: { tier?: SubscriptionTier; metadata?: Record<string, any> }
-  ): Promise<{ url: string }> {
-    return { url: '/payment/success' };
+    _planId: string,
+    _provider: 'alipay' | 'wechat'
+  ): Promise<unknown> {
+    throw new Error('Payment is not available in OSS edition');
+  }
+
+  async getOrderStatus(_userId: string, _orderNo: string): Promise<unknown> {
+    return null;
   }
 
   async getUserSubscription(_userId: string): Promise<any> {
     return null;
   }
 
-  async cancelSubscription(_userId: string): Promise<void> {}
-
   async getBillingHistory(_userId: string): Promise<any[]> {
     return [];
   }
 
-  async handleWebhook(
-    _signature: string,
-    _payload: Buffer,
-    _provider: 'stripe' | 'paddle'
+  async handleNotify(
+    _provider: 'alipay' | 'wechat',
+    _headers: Record<string, string | string[] | undefined>,
+    _rawBody: Buffer
   ): Promise<void> {}
 }

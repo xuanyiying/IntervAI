@@ -401,12 +401,100 @@ export class SkillLoader {
       }
       // Fallback: parse from first { to last }
       const start = trimmed.indexOf('{');
-      const end = trimmed.lastIndexOf('}');
-      if (start !== -1 && end > start) {
-        return JSON.parse(trimmed.slice(start, end + 1));
+      if (start !== -1) {
+        const end = trimmed.lastIndexOf('}');
+        const sliced = end > start ? trimmed.slice(start, end + 1) : null;
+        const tail = trimmed.slice(start);
+        // Truncated output (no closing brace, or content after the last one
+        // that isn't closable) must try the full tail first, or the sliced
+        // candidate gets "successfully" repaired into a partial object.
+        const candidates: string[] =
+          end === -1 || end < trimmed.length - 1
+            ? [tail, ...(sliced ? [sliced] : [])]
+            : [sliced ?? tail];
+        for (const candidate of candidates) {
+          try {
+            return JSON.parse(candidate);
+          } catch {
+            const repaired = this.repairJsonCandidate(candidate);
+            if (repaired !== null) {
+              try {
+                return JSON.parse(repaired);
+              } catch {
+                // try next candidate
+              }
+            }
+          }
+        }
       }
       throw new Error('No valid JSON found in response');
     }
+  }
+
+  /**
+   * Repair near-valid JSON emitted by LLMs in two common modes:
+   *  - stray trailing closers/commas (e.g. `{...}}`) → trim them off
+   *  - truncated output (maxTokens cut mid-object) → auto-close open
+   *    strings and containers based on a string-aware scan
+   * Returns null when the damage is not repairable.
+   */
+  private repairJsonCandidate(candidate: string): string | null {
+    // Drop commas directly before closers (classic LLM slip: `{"a":1,}`)
+    const commaFixed = candidate.replace(/,(\s*[}\]])/g, '$1');
+    if (commaFixed !== candidate) {
+      try {
+        JSON.parse(commaFixed);
+        return commaFixed;
+      } catch {
+        // keep repairing
+      }
+    }
+
+    // Mode 1: stray trailing closers/commas — trim one at a time
+    let trimmedEnd = candidate;
+    for (let i = 0; i < 5 && trimmedEnd.length > 1; i++) {
+      if (!/[,}\]]$/.test(trimmedEnd)) break;
+      trimmedEnd = trimmedEnd.slice(0, -1);
+      try {
+        JSON.parse(trimmedEnd);
+        return trimmedEnd;
+      } catch {
+        // keep trimming
+      }
+    }
+
+    // Mode 2: truncated output — auto-close open strings and containers
+    // based on a string-aware bracket scan
+    const stack: string[] = [];
+    let inString = false;
+    let escaped = false;
+    for (const ch of candidate) {
+      if (inString) {
+        if (escaped) {
+          escaped = false;
+        } else if (ch === '\\') {
+          escaped = true;
+        } else if (ch === '"') {
+          inString = false;
+        }
+        continue;
+      }
+      if (ch === '"') {
+        inString = true;
+      } else if (ch === '{') {
+        stack.push('}');
+      } else if (ch === '[') {
+        stack.push(']');
+      } else if (ch === '}' || ch === ']') {
+        if (stack.pop() !== ch) return null;
+      }
+    }
+    if (!stack.length && !inString) return null;
+    let repaired = candidate;
+    if (inString) repaired += '"';
+    repaired = repaired.replace(/,\s*$/, '');
+    while (stack.length) repaired += stack.pop();
+    return repaired;
   }
 
   /**

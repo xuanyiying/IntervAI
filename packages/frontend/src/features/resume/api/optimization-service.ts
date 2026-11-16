@@ -15,6 +15,7 @@ export interface BatchResult {
 export interface ApplyResult {
   version: number;
   appliedCount: number;
+  failedCount: number;
   parsedData: any;
 }
 

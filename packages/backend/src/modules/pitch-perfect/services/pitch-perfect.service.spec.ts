@@ -177,16 +177,26 @@ describe('PitchPerfectService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should throw BadRequestException when jobDescription is missing', async () => {
-      await expect(
-        service.generatePitch(
-          {
-            resumeData: mockResumeData as any,
-            jobDescription: '',
-          },
-          mockUserId
-        )
-      ).rejects.toThrow(BadRequestException);
+    it('should generate in generic mode when jobDescription is empty', async () => {
+      aiService.executeSkill.mockResolvedValue({
+        success: true,
+        data: mockPitchOutput,
+        metadata: mockSkillMetadata,
+      });
+
+      await service.generatePitch(
+        {
+          resumeData: mockResumeData as any,
+          jobDescription: '',
+        },
+        mockUserId
+      );
+
+      expect(aiService.executeSkill).toHaveBeenCalledWith(
+        'pitch-perfect',
+        expect.objectContaining({ jobDescription: '' }),
+        mockUserId
+      );
     });
 
     it('should throw InternalServerErrorException when AI skill fails', async () => {

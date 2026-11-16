@@ -60,9 +60,11 @@ export class ResumeController {
           new MaxFileSizeValidator({
             maxSize: FILE_UPLOAD_CONFIG.MAX_FILE_SIZE,
           }),
+          // Nest 10 默认用 file-type 魔数嗅探，而 .txt/.md 无魔数必失败，改为按 mimetype 正则校验
           new FileTypeValidator({
             fileType:
               /(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|plain|markdown|x-markdown)/,
+            skipMagicNumbersValidation: true,
           }),
         ],
       })

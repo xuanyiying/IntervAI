@@ -302,6 +302,7 @@ export interface Optimization {
   suggestions: Suggestion[];
   optimizedContent?: ParsedResumeData;
   status: OptimizationStatus;
+  errorMessage?: string;
   createdAt: string;
   completedAt?: string;
 }

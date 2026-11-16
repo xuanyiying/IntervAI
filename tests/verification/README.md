@@ -36,7 +36,7 @@ Jest 配置见 `jest.config.js`：`ts-jest` preset、`testMatch` 为 `**/__tests
 
 ## 环境
 
-接口验证需要可访问的后端、PostgreSQL 与 Redis，参数在 `config/test.config.ts` 与 `config/.env.test` 中配置（含 `MOCK_STRIPE` / `MOCK_PADDLE` / `MOCK_OPENAI` / `MOCK_STORAGE` 等开关）。本地启动方式见 [环境配置指南](../../docs/guide/environment-setup.md)。
+接口验证需要可访问的后端、PostgreSQL 与 Redis，参数在 `config/test.config.ts` 与 `config/.env.test` 中配置（含 `MOCK_ALIPAY` / `MOCK_WECHAT` / `MOCK_OPENAI` / `MOCK_STORAGE` 等开关）。本地启动方式见 [环境配置指南](../../docs/guide/environment-setup.md)。
 
 ## 相关文档
 
